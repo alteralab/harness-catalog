@@ -105,7 +105,7 @@
 
 1. git 호스트에 빈 저장소를 만든다. 확인: `git ls-remote <url>`이 빈 결과로 성공한다.
 2. `examples/catalog-template/` 내용을 복사하고 `skills/pin-skill`·`skills/new-skill`을 `skills/` 아래에 넣어 첫 커밋을 `main`에 push한다. 확인: 원격의 루트에 `.harness-catalog`가 있고 내용이 `layout = 1`이다.
-3. `main` 보호: 강제 push 금지, 삭제 금지. 확인: `git push --force`가 거부된다(V7).
+3. `main` 보호: 강제 push 금지, 삭제 금지. 확인: `git push --force`가 거부된다(V7). Free 플랜의 비공개 저장소에는 이 설정이 없다(우산 §6-8, 2026-09-26 실측) — §6-8의 결정대로 한다.
 4. deploy key(쓰기 허용)를 등록하고 개인 키를 `.env`의 자리에 넣는다. 확인: 레지스트리 컨테이너 안에서 `git push --dry-run`이 성공한다.
 5. 자기 호스트의 CI 워크플로 파일을 활성화한다(GitHub이면 `.github/workflows/`로 옮긴다). 확인: 첫 커밋의 CI가 초록이다(V6).
 6. Dex에 하네스 제품의 정적 클라이언트가 있고 리다이렉트 URI가 그 제품 문서와 같다. 확인: 그 하네스에서 로그인 한 번(우산 V1).

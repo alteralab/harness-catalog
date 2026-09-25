@@ -84,6 +84,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | 4 | 인가 서버. P0의 SSO Server 실측 결과에 따라 Dex를 유지할지 SSO Server로 바꿀지 | 실측 뒤의 선택 | **결정(2026-09-26)**: Dex. pilot Q1(SSO Server 능력)은 기록용 실측으로만 남고 결정에 걸리지 않는다 |
 | 5 | 파일럿 사용자 범위. 사용자 하나로 시작하는가, `skills` 그룹에 몇 명을 넣는가 | 팀 구성의 사실 | **결정(2026-09-26)**: 실사용자 한 명. 시험(그룹 가입·탈퇴, 두 주체 동시 갱신 등)에 필요하면 LDAP에 시험 계정을 더한다. 시험 계정의 사용 기록은 Q8 집계에서 주체로 갈라 적는다 |
 | 7 | 브랜치 흐름. 코드 저장소는 `main` 하나에 PR로 합치는가, `dev` 브랜치를 두는가. 카탈로그 저장소는 설계상 `main` 하나(레지스트리가 직접 push, 사람 승인이 필요한 변경만 PR) | 팀의 작업 방식 | **결정(2026-09-26)**: 코드 저장소는 `main` + PR. CI는 PR에서 테스트·게이트, `main`에서 이미지 빌드·push(distribution D11) |
+| 8 | 브랜치 보호의 자리. `alteralab`은 Free 플랜이라 **비공개 저장소에는 브랜치 보호도 룰셋도 걸리지 않는다**(2026-09-26 실측: 룰셋·classic protection API 둘 다 403 "Upgrade to GitHub Pro or make this repository public"). 코드 저장소의 `main` + PR(§6-7)과 카탈로그 저장소의 "보호된 `main`"(DESIGN §2.1 저장소 초기화 표, 강제 push 금지)이 둘 다 이 제약에 걸린다. 선택지: (a) org를 Team으로(좌석 1, 유료) (b) 저장소를 공개로 (c) 서버 보호 없이 로컬 훅(`pre-push`에서 `main` 직접 push·강제 push 거부)과 규율로만 | 조직의 비용·공개 정책 | 미결 |
 | 6 | 라이선스와 배포 이름. 오픈소스로 내기로 했으니 LICENSE 파일, PyPI 패키지 이름(`harness-catalog`), 이미지 이름(예: `ghcr.io/alteralab/harness-catalog`) | 조직의 법·공개 정책 | **결정(2026-09-26)**: Apache-2.0. 이미지는 `ghcr.io/alteralab/harness-catalog`(비공개) + 보존 규칙(최근 SHA 태그 5개, 태그 없는 버전 삭제 — distribution D11). 빌드 기계 = 실행 기계(mini runner)라 운영 pull이 없다. PyPI에는 올리지 않는다(§7) — 패키지 이름 `harness-catalog`는 `pyproject.toml`에만 있고 설치는 이미지 또는 git 경로다. 저장소와 이미지는 비공개. GHCR의 컨테이너 저장·전송은 문서상 "currently free"(2026-09-26 확인, 비공개 포함)이고 Actions가 `GITHUB_TOKEN`으로 받는 전송은 계량 밖이다. org 플랜은 Free(좌석 1, 2026-09-26 `gh api` 실측)이며 지금 이미지 비용은 0이다 |
 
 ## 7. 불채택 표
@@ -142,6 +143,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 |---|---|---|---|
 | 2026-09-26 | 저장소 신설 | `git init`, altera-rules rules-v0.10.0 설치(common·lang/python·review, 훅 declared·ruff·ast-grep). 게이트 완주: `--check` 일치, selftest 통과, census 0(파이썬 없음), `pre-commit run --all-files` 통과. lang/python은 사용자 결정으로 소스 0인 시점에 미리 선언했다 | §3-5, V7 |
 | 2026-09-26 | 설계 개정 | 사용자 결정: 주기 fetch 간격을 설정값 `FETCH_INTERVAL_SECONDS`(기본 60초)로. DESIGN §2·§2.1·§11에 반영(설정값 일곱 = 필수 다섯 + 선택 둘) | DESIGN §11 |
+| 2026-09-26 | 브랜치 보호 시도 | `alteralab/harness-catalog`(비공개)에 룰셋과 classic protection을 API로 걸어 봤으나 둘 다 403(Free 플랜 제약). §6-8로 등록. 카탈로그 저장소의 "보호된 main" 요건도 같은 제약이라 distribution 체크리스트 3·V7은 §6-8이 정해져야 통과 가능 | §6-8 |
 | 2026-09-26 | 사용자 결정: 이미지 저장소 | GHCR 비공개 + 보존 규칙으로. Harbor·ECR·`registry:2`는 distribution 불채택 표에 사유와 함께 | distribution D11 |
 | 2026-09-26 | 사용자 결정 §6-3~7 | TLS는 mini의 `tailscale serve`(URL `https://mini.tail2f9fe3.ts.net/{mcp,dex}`), 인가 서버 Dex, 실사용자 한 명 + 시험 계정, Apache-2.0, 이미지 ghcr, PyPI 미게시(§7), 코드 저장소 `main` + PR. §6 미결 0 | §6 |
 | 2026-09-26 | 사용자 결정 §6-1·2 | 소유 GitHub org `alteralab`, 운영 호스트 `mini.altera.lab`, 개발은 로컬 compose. git 호스트 GitHub. PyPI `harness-catalog`·GitHub `alteralab/harness-catalog` 이름은 비어 있음(2026-09-26 실측). §6-7(브랜치 흐름) 추가 | §6 |
