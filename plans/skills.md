@@ -1,6 +1,6 @@
 # skills 계획 — 카탈로그에 실리는 절차 스킬 둘
 
-**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/skills/`의 정본이다. 카탈로그 자체가 스킬로 실어 나르는 절차 둘 — `pin-skill`(사람의 내려받기)과 `new-skill`(스킬 뼈대와 팀 규약) — 그리고 카탈로그 README의 **사용자 안내** 절 내용을 관할한다. 설계의 정본은 `../DESIGN-v3.md`(v3.2)이고 이 PLAN은 설계를 복제하지 않는다. 우산은 `../PLAN.md`이며 이 PLAN은 그 §4 P5 한 행을 편다.
+**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/skills/`의 정본이다. 카탈로그 자체가 스킬로 실어 나르는 절차 둘 — `pin-skill`(사람의 내려받기)과 `new-skill`(스킬 뼈대와 팀 규약) — 그리고 카탈로그 README의 **사용자 안내** 절 내용을 관할한다. 설계의 정본은 `../DESIGN.md`(v3.2)이고 이 PLAN은 설계를 복제하지 않는다. 우산은 `../PLAN.md`이며 이 PLAN은 그 §4 P5 한 행을 편다.
 
 ## 0. 한 장 요약
 

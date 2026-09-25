@@ -1,6 +1,6 @@
 # distribution 계획 — 패키징·배포(이미지·compose·예시 설정·템플릿·문서)
 
-**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/`의 배포·패키징 표면(루트 compose·Dockerfile, `docker/`, `examples/`, `docs/`, `scripts/`)의 정본이다. 우산 `PLAN.md` §1 표의 "distribution" 행이 관할을 정했고, 설계는 `DESIGN-v3.md`(v3.2) §2 신원 제공자 표·§2.1·§8이다. 이 문서는 설계를 복제하지 않고 "어떤 파일을, 어떤 순서로, 언제 끝났다고 하는가"만 적는다.
+**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/`의 배포·패키징 표면(루트 compose·Dockerfile, `docker/`, `examples/`, `docs/`, `scripts/`)의 정본이다. 우산 `PLAN.md` §1 표의 "distribution" 행이 관할을 정했고, 설계는 `DESIGN.md`(v3.2) §2 신원 제공자 표·§2.1·§8이다. 이 문서는 설계를 복제하지 않고 "어떤 파일을, 어떤 순서로, 언제 끝났다고 하는가"만 적는다.
 
 ## 0. 한 장 요약
 

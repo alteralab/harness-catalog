@@ -1,6 +1,6 @@
 # harness-catalog 계획 (우산)
 
-**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/`의 정본이다. 설계의 정본은 같은 디렉토리의 `DESIGN-v3.md`(v3.2, 단일 팀)이고 **이 PLAN은 설계를 복제하지 않는다.** 설계가 "무엇을·왜"를 적었으니 PLAN은 "누가·어떤 순서로·언제 끝났다고 하는가"만 적는다. 구성 요소마다 PLAN이 하나씩 있고 이 문서는 그 넷의 경계·순서·공통 규약·시스템 검증만 관할한다.
+**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/`의 정본이다. 설계의 정본은 같은 디렉토리의 `DESIGN.md`(v3.2, 단일 팀)이고 **이 PLAN은 설계를 복제하지 않는다.** 설계가 "무엇을·왜"를 적었으니 PLAN은 "누가·어떤 순서로·언제 끝났다고 하는가"만 적는다. 구성 요소마다 PLAN이 하나씩 있고 이 문서는 그 넷의 경계·순서·공통 규약·시스템 검증만 관할한다.
 
 ## 0. 한 장 요약
 
@@ -9,7 +9,7 @@
 ```
 harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬) 저장소는 별개다. 배치는 오픈소스 공통 골격(§3-8)
   README.md  LICENSE              # LICENSE는 §6 미결 6
-  DESIGN-v3.md                    # 설계 정본 (v3.2). 설계 변경은 여기 §11에 행을 더한다
+  DESIGN.md                    # 설계 정본 (v3.2). 설계 변경은 여기 §11에 행을 더한다
   PLAN.md                         # 이 문서 — 경계·순서·공통 규약·시스템 검증
   plans/                          # 구성 요소 계획 넷: service.md · distribution.md · skills.md · pilot.md
   REVIEW.md, altera-rules.yml, ruff.toml   # 규약 설치 (2026-09-26, common·lang/python·review)
