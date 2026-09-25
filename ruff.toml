@@ -1,0 +1,8 @@
+# Inherits the rule set that altera-rules attributes to its clauses; nothing else is enabled.
+# The rules repository is expected as a sibling checkout of this one (../altera-rules).
+extend = "../altera-rules/gates/ruff/base.toml"
+
+# extend-per-file-ignores: per-file-ignores로 쓰면 base의 면제를 통째로 덮어쓴다 (syntopicon에서 실측).
+[lint.extend-per-file-ignores]
+# The service entry point (uvicorn bootstrap) is the output layer: printing is its job.
+"src/harness_catalog/__main__.py" = ["T201", "T203"]
