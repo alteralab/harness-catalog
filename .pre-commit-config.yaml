@@ -1,0 +1,6 @@
+repos:
+  - repo: https://github.com/alteralab/altera-rules
+    rev: rules-v0.10.0
+    hooks:
+      - id: altera-rules-declared
+# altera-ruff·altera-ast-grep 은 파이썬 소스가 실재할 때 lang/python 선언과 함께 건다 (2026-09-26 파이썬 0).

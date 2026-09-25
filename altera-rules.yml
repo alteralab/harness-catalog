@@ -1,0 +1,6 @@
+rev: rules-v0.10.0
+surfaces:
+  - common
+  - review               # 검증 루브릭 -> REVIEW.md 추적 사본. 설계 문서가 Codex 적대 리뷰 6회를 거쳤고 PLAN·판정 원장이 V-REC-1의 주 표적
+# lang/python 은 설치하지 않는다 — 파이썬 소스 0 (2026-09-26). 서비스 코드 첫 커밋과 함께 선언한다 (service/PLAN.md).
+# lang/bash, purpose/* 도 설치하지 않는다 — 셸 0, SKILL.md 0 (2026-09-26).
