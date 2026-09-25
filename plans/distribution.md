@@ -105,7 +105,7 @@
 
 1. git 호스트에 빈 저장소를 만든다. 확인: `git ls-remote <url>`이 빈 결과로 성공한다.
 2. `examples/catalog-template/` 내용을 복사하고 `skills/pin-skill`·`skills/new-skill`을 `skills/` 아래에 넣어 첫 커밋을 `main`에 push한다. 확인: 원격의 루트에 `.harness-catalog`가 있고 내용이 `layout = 1`이다.
-3. `main` 보호: 강제 push 금지, 삭제 금지. 확인: `git push --force`가 거부된다(V7). Free 플랜의 비공개 저장소에는 이 설정이 없다(우산 §6-8, 2026-09-26 실측) — §6-8의 결정대로 한다.
+3. `main` 보호는 걸지 않는다(우산 §6-8 결정, DESIGN §11). 강제 push 금지는 규율이다. 확인 항목 없음.
 4. deploy key(쓰기 허용)를 등록하고 개인 키를 `.env`의 자리에 넣는다. 확인: 레지스트리 컨테이너 안에서 `git push --dry-run`이 성공한다.
 5. 자기 호스트의 CI 워크플로 파일을 활성화한다(GitHub이면 `.github/workflows/`로 옮긴다). 확인: 첫 커밋의 CI가 초록이다(V6).
 6. Dex에 하네스 제품의 정적 클라이언트가 있고 리다이렉트 URI가 그 제품 문서와 같다. 확인: 그 하네스에서 로그인 한 번(우산 V1).
@@ -161,7 +161,7 @@
 | V4 | 토큰 수명 | V2·V3 토큰의 `exp - iat` | 3600초 이하 | 대기 |
 | V5 | 표지 검사 | `.harness-catalog`가 없는 저장소, `layout = 2`인 저장소, 빈 저장소를 각각 가리켜 기동 | 각각 `/readyz` 503과 사유 `not_a_catalog`·`unsupported_layout`·`no_main_branch` | 대기 |
 | V6 | 템플릿 → CI 초록 | 템플릿 복사와 두 스킬로 첫 커밋 | 워크플로가 validate·gitleaks를 돌리고 초록. 도구 판이 service 이미지의 핀과 같다 | 대기 |
-| V7 | 브랜치 보호 | `main`에 `git push --force` | 거부 | 대기 |
+| V7 | 브랜치 보호 | 걸지 않기로 했다(우산 §6-8, DESIGN §11 사용자 결정 2026-09-26). Free 플랜 비공개 저장소에 설정이 없다 | 해당 없음 | 불채택 |
 | V8 | deploy key와 우회 push | 컨테이너 안에서 deploy key로 push 성공. 사람이 PR을 병합 | push 성공. 병합이 우산 V3의 허용오차(`FETCH_INTERVAL_SECONDS` 두 주기) 안에 `list_skills`에 나온다 | 대기 |
 | V12 | 이미지 보존 규칙 | 커밋 여섯을 연속으로 `main`에 합친 뒤 GHCR 패키지 버전 목록을 본다 | SHA 태그가 정확히 5개, 태그 없는 버전 0개, 마지막 다섯 커밋의 SHA와 일치 | 대기 |
 | V9 | 비밀 없음 | 저장소 전체 gitleaks | `.env` 없음, 검출 0 | 대기 |
