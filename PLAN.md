@@ -148,6 +148,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | 2026-09-26 | 설계 개정 | 사용자 결정: 주기 fetch 간격을 설정값 `FETCH_INTERVAL_SECONDS`(기본 60초)로. DESIGN §2·§2.1·§11에 반영(설정값 일곱 = 필수 다섯 + 선택 둘) | DESIGN §11 |
 | 2026-09-26 | 사용자 결정 §6-8 | `main` 보호를 우선하지 않는다. DESIGN §2.1·§8·§11 반영, distribution 체크리스트 3·V7 개정. §6 미결 0 | §6-8 |
 | 2026-09-26 | 브랜치 보호 시도 | `alteralab/harness-catalog`(비공개)에 룰셋과 classic protection을 API로 걸어 봤으나 둘 다 403(Free 플랜 제약). §6-8로 등록. 카탈로그 저장소의 "보호된 main" 요건도 같은 제약이라 distribution 체크리스트 3·V7은 §6-8이 정해져야 통과 가능 | §6-8 |
+| 2026-09-26 | 사용자 결정: `list_skills` 필드 | 선택에 쓰이는 필드만(`commit`·`metadata` 전체·본문 토큰 수 삭제, `evals`는 인자 있을 때 한 행). 근거는 Liu 2024·후옌·Anthropic과 호스트 여덟 사례(DESIGN §4·§10·§11). service D10·S6 삭제, V16, pilot Q6·Q7, skills 검수 6 | DESIGN §11 |
 | 2026-09-26 | 사용자 결정 §6-9·배치 | 읽기 신원은 LDAP 유지, GitHub 커넥터 실측은 지금 하지 않는다. `research/`는 원자료용 비추적 디렉토리, 실측 기록은 `plans/pilot/rN.md`, 측정 도구는 `tools/pilot/` | §3-8, §6-9 |
 | 2026-09-26 | Codex 교차 검증 3회 | v3.3 검증(이전 20건 중 18건 해소·소멸, 미해결 2건 + 신규 19건). 치명 둘 반영: 브랜치 판 `record_eval` 제거(`main` 병합 뒤 기록), `check --base` 입력 계약. §7 잔재·명단 불변식·되감기 승인·PLAN 잔재 정정 | DESIGN §11 9차 |
 | 2026-09-26 | 사용자 결정: v3.3 | 게시·인증을 레지스트리 도구에서 git 호스트의 트렁크 기반 워크플로로. 레지스트리 읽기 전용, `check`·`init` CLI, 브랜치 보호는 비용 때문에 예외(규율), 클라우드 샌드박스 세션 정의. PLAN 넷 동기(service P3·V, skills new-skill, distribution D14·D15·체크리스트, pilot Q13) | DESIGN §11 |

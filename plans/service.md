@@ -91,7 +91,6 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | D7 | JWKS·JWT | 기동 시 issuer의 `.well-known/openid-configuration`에서 `jwks_uri`를 읽고 `PyJWKClient(jwks_uri, cache_keys=True, lifespan=3600)`. 검증은 `jwt.decode(algorithms=["RS256","ES256"], audience=<공개 URL>, issuer=<issuer>, leeway=60, options={"require": ["exp","sub"]})` 뒤 `scope` 존재를 따로 확인. SDK `TokenVerifier.verify_token`이 `AccessToken(scopes=…)`을 돌려준다 | 문면(PyJWT·SDK). 모르는 `kid`의 재조회는 `PyJWKClient`의 동작이고 P1 시험이 확인한다 |
 | D8 | 서비스 주체 판별 표지 | **P3 착수 전까지 미정.** 판별은 순수 함수 `principal_kind(claims)` 하나에 가두고, 그 함수의 규칙은 파일럿 P0이 Dex 클라이언트 자격 증명 토큰의 실물(`sub`·`azp`·`groups`)을 기록한 뒤 정한다. DESIGN의 임시 규칙("`sub`가 등록된 client ID 집합에 있으면")은 그 집합의 출처가 필요한데 설정값은 일곱뿐이라 여덟째를 더하는 셈이 된다. 토큰 자체의 표지(`azp` 등)로 갈리면 설정 없이 닫고, 안 갈리면 DESIGN §11에 "설정값 여덟째"를 변경 요청으로 올린다. 이 PLAN이 조용히 정하지 않는다 | 설계 판단 + 미실측. P1·P2는 이 판별이 필요 없다(읽기는 인증된 전부). P3의 `record_eval` 허용과 `publish_skill` 거부만 걸린다 |
 | D9 | 시크릿 스캔 호출 | `check`가 `gitleaks dir <skill-dir> --no-banner --exit-code 2 --report-format json --report-path -`. 종료 0이면 통과, 2면 검출(파일·룰을 출력에), 그 밖(바이너리 없음·크래시)은 검사기 실패(종료 코드 2, fail-closed). 바이너리 파일의 취급은 P3에서 실측해 적는다 | 문면(gitleaks CLI). fail-closed는 DESIGN §5 검사기 운영 |
-| D10 | `body_tokens` 산출 | 토크나이저 의존을 들이지 않는다(DESIGN 표에 없다). 추정식 `ceil(len(utf8 bytes) / 4)`을 쓰고 응답 필드 설명에 "추정"임을 적는다. 정확도는 파일럿에서 하네스가 보고하는 실제 토큰 수와 견준다 | 휴리스틱. 이 값의 소비자는 루프의 예산 판단(DESIGN §4 예산)이고 문턱이 없어 오차가 결정을 뒤집지 않는다 |
 | D11 | 스케줄러 | Starlette lifespan 안에서 anyio 태스크 그룹 하나에 루프 둘. fetch 루프는 `FETCH_INTERVAL_SECONDS`마다 `catalog.refresh()`를 부르고 실패 시 지수 백오프(2배, 상한 = 간격의 16배)로 늘렸다가 성공하면 되돌린다. 보존 루프는 24시간마다 `catalog.purge_usage()`. 시험은 시계 없이 두 함수를 직접 부른다 | 설계 판단. DESIGN §2.1 실패 표 "fetch는 지수 백오프". 상한 16배는 휴리스틱 |
 | D12 | 마이그레이션 시점 | `bootstrap`이 기동 직후 마이그레이션 태스크 하나를 따로 띄운다. 이 태스크는 yoyo 적용을 시도하고 실패하면 자기 백오프(5초에서 2배, 상한 5분)로 다시 한다. fetch 루프와 무관하다. DB 경로(인덱스 트랜잭션·사용 기록·검색 순위·평가 결과)는 마이그레이션이 "적용됨"이 되기 전에는 열리지 않고 그동안은 `degraded: db_unavailable`이다. 기동은 막지 않는다(준비됨 조건이 아니다) | 설계 판단. DESIGN §2.1 "DB 연결은 준비됨의 조건이 아니다"를 마이그레이션에도 적용. fetch 주기와의 결합은 Codex 리뷰(2026-09-26)가 잡아 분리했다. 백오프 수치는 휴리스틱 |
 | D13 | 브레이커와 degraded 신호 | PostgreSQL 호출에 시간 초과(문장 5초)와 브레이커(연속 실패 3회 → 30초 열림), fetch에는 지수 백오프. 브레이커는 순수 상태 기계 하나를 `pg.py`가 든다. 열림·닫힘과 되감기 검출이 `degraded` 목록(`db_unavailable`·`main_rewound`)이 되고 **`/readyz` 본문에만** 실린다(DESIGN §2.1). 도구 응답에는 DESIGN §3이 정한 필드만 있다 | 설계 판단. 수치는 휴리스틱. 라이브러리를 들이지 않는 이유: 상태 기계가 열 줄이고 DESIGN 표에 없다 |
@@ -110,7 +109,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 2. `app/ports.py`·`app/model.py`: 요구 포트 넷의 Protocol, 스냅샷·주체·오류 코드.
 3. `adapters/git.py`: clone·fetch(`origin/main`)·`skills/*/SKILL.md` 트리 열거(각 디렉토리의 tree SHA와 그 판을 넣은 최근 커밋)·파일 읽기(`git show`)·삭제 이력(`git log --diff-filter=D --name-only -- 'skills/*/SKILL.md'`).
 4. `adapters/validate.py`: `skills_ref` 호출부. 패키지·함수 시그니처를 실측해 R4를 닫는다. 통과·실패 표본 둘.
-5. `app/catalog.py`: 구조 검사 넷 → 인덱스 빌드(메모리 스냅샷만) → 목록·검색(메모리 부분 일치, 순위 없음)·본문·파일(경로 이탈·심볼릭 링크·1 MB). `body_tokens` D10. 사용 기록은 이 단계에서 버린다(FactStore가 없으면 degraded).
+5. `app/catalog.py`: 구조 검사 넷 → 인덱스 빌드(메모리 스냅샷만) → 목록·검색(메모리 부분 일치, 순위 없음; 항목은 DESIGN §3의 최소 필드, `model`·`harness` 인자 시 평가 한 행)·본문·파일(경로 이탈·심볼릭 링크·1 MB). 사용 기록은 이 단계에서 버린다(FactStore가 없으면 degraded).
 6. `adapters/oidc.py`: D7. `app/authz.py`: 스코프↔도구, 그룹, 주체 종류(D8 미정 부분은 "사람"으로 고정하고 표식 남김 없이 P3에서 함수 본문을 채운다).
 7. `driving/mcp_tools.py`: 읽기 도구 넷 등록, `AuthSettings`(issuer·공개 URL·`required_scopes=["skills:read"]`), `streamable_http_app()`. `driving/ops.py`: `/healthz`·`/readyz`(503 사유 넷, 200 + `degraded`). `driving/scheduler.py`: 기동 1회 + fetch 루프(D11). `config.bootstrap`·`__main__`.
 8. `Dockerfile` 초판(다단계, git·gitleaks 포함) — 이미지가 P1 끝에 빌드된다. 이미지 이름은 `harness-catalog`, 태그는 git 짧은 SHA.
@@ -174,14 +173,13 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | S2 | 인덱스 빌드가 DB와 메모리를 함께 갱신하다 한쪽만 성공 | 순서 고정(DB 커밋 → 참조 교체). DB 실패는 degraded이고 다음 fetch 회차가 다시 시도한다. 메모리 사본이 DB보다 앞서는 것은 허용(같은 저장소 스냅샷에서 나온다) |
 | S4 | gitleaks가 바이너리(`assets/`)를 텍스트로 읽어 오탐 | P3에서 표본 바이너리(PNG·zip)로 gitleaks의 실제 동작을 재고 결과를 §9에 적는다. 저자 예외 승인 절차는 두지 않는다(DESIGN §5) |
 | S5 | `skills_ref`가 라이브러리 API를 안 주고 CLI만 준다 | 같은 포트(`SkillValidator`)를 서브프로세스 어댑터로 채운다. 앱은 모른다 |
-| S6 | `body_tokens` 추정이 실제와 크게 어긋난다 | 문턱이 없어 결정을 뒤집지 않는다(D10). 응답 필드 설명에 "추정"이라고 적는다 |
 
 ## 7. 검증 원장
 
 | # | 검증 | 방법 | 통과 기준 | 상태 |
 |---|---|---|---|---|
 | V1 | 기동 구조 검사 | 저장소 넷(닿지 않음·빈 저장소·표지 없음·`layout=2`·`skills/` 없음)을 각각 가리켜 기동 | 각각 `/readyz` 503 + 사유(`repo_unreachable`·`no_main_branch`·`not_a_catalog`·`unsupported_layout`·`layout_mismatch`)가 정확히 대응하고 저장소에 쓰기 0 | 대기 |
-| V2 | 빈 카탈로그 준비됨 | 템플릿 복사본(스킬 0) | `/readyz` 200, `list_skills` 빈 목록, 마지막 fetch 시각 있음 | 대기 |
+| V2 | 빈 카탈로그 준비됨 | `init`으로 만든 저장소(스킬 0) | `/readyz` 200, `list_skills` 빈 목록, 마지막 fetch 시각 있음 | 대기 |
 | V3 | 401 챌린지 | HTTP로 토큰 없음·서명 불일치·`aud` 다름·만료·`iss` 다름 다섯 | 다섯 전부 401 + `WWW-Authenticate: Bearer resource_metadata=… scope="skills:read"`, RFC 9728 메타데이터 GET이 200 | 대기 |
 | V4 | 403 두 종 | `skills:read`만으로 `record_eval`; `skills:write`이나 그룹 없음 | 전자 403 + `error="insufficient_scope"` 챌린지, 후자 403 + 챌린지 없음 + 본문 `not_a_member` | 대기 |
 | V5 | 인가 행렬 | 주체 셋(`skills-readers` 사람·그룹 없는 사람·서비스) × 도구 다섯 = 15칸을 `authz.decide` 단위 시험으로 | 15칸 전부 DESIGN 그림 4 표와 일치. 그룹 없음은 다섯 전부 `not_a_member` | 대기(서비스 주체 칸은 D8 뒤) |
@@ -195,7 +193,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | V13 | 은퇴 이름 | 스킬 디렉토리를 지운 PR 뒤 같은 이름의 디렉토리를 다시 넣은 PR | `check` 항목 5로 거부. 규율 위반으로 병합해도 인덱스 빌드가 그 스킬을 뺀다 | 대기 |
 | V14 | `replaced-by` | 없는 대상·이미 대체된 대상·자기 자신·순환 둘 | `check` 항목 6으로 넷 전부 거부. 유효한 대상은 통과하고 목록에 실린다 | 대기 |
 | V15 | `record_eval` | 없는 `id`·모르는 `sha`·101자 `model`·2001자 `note`·같은 `run_id` 두 번·`evals/` 없는 판 | 앞 넷 거부(`not_found`·`unknown_version`·`input_limit`), 같은 `run_id`는 행 하나 + 성공, `scenario_sha`가 빈 tree SHA | 대기 |
-| V16 | 최근 평가 | 한 판에 `(model, harness)` 둘, 같은 시각 두 행 | `list_skills`에 조합별 한 행, 동률은 `run_id` 큰 쪽. 병합으로 판이 바뀌면 비어 있음. 브랜치의 판으로 `record_eval`하면 `unknown_version`(레지스트리는 `main`만 안다) | 대기 |
+| V16 | 최근 평가 | 한 판에 `(model, harness)` 둘, 같은 시각 두 행 | `list_skills()`에는 `evals`가 없고, `list_skills(model, harness)`에는 그 조합의 한 행(동률은 `run_id` 큰 쪽), `load_skill`에는 조합별 최근 행 전부(주체 포함). 병합으로 판이 바뀌면 비어 있음. 브랜치의 판으로 `record_eval`하면 `unknown_version` | 대기 |
 | V17 | 파일 읽기 경계 | `../`, 절대 경로, 심볼릭 링크, 1 MB + 1 바이트 | 넷 전부 `path_rejected` 또는 `input_limit`, 정상 파일과 바이너리(base64)는 통과 | 대기 |
 | V18 | 크기 상한 | 51개, 1 MB + 1 파일, 합계 5 MB + 1, 심볼릭 링크 | `check` 항목 7로 넷 전부 거부. 바이너리(`assets/`)는 통과 | 대기 |
 | V19 | fetch 간격 설정 | `FETCH_INTERVAL_SECONDS=5`로 기동하고 우회 push | 5~10초 안에 인덱스 반영, 기본값 기동은 60~120초 안 | 대기 |
@@ -211,6 +209,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-26 | 설계 개정 반영 | `list_skills` 필드 최소화: D10·S6 삭제, P1-5·V16 개정(`model`·`harness` 인자) | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 9차 리뷰: `check --base`, 브랜치 판 `record_eval` 제거(D6·V16), D13에서 push 브레이커 제거 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | v3.3(git 워크플로): 쓰기 도구·인증·역할 계층 제거, `check`·`init`·`reindex` CLI, P3 재작성, V5 15칸, V9~V14·V18·V22 개정, V23~V25 삭제 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 8차 리뷰(publish·certify 모순): 유효 판 인덱스, 인증 ref, fail-closed, 인증 세대, `retire_requires_revoke`. P3-5 재작성, V22 개정, V23~V25 추가 | DESIGN §11 |

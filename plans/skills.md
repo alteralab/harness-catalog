@@ -91,7 +91,7 @@ skills/                            # 계획 정본은 plans/skills.md
 3. 카탈로그 저장소의 로컬 클론(없으면 사용자에게 경로를 묻고 clone)에서 `main`을 최신으로 한 뒤 브랜치 `skill/<name>`을 따고 `skills/<name>/`에 뼈대를 쓴다. 병합 전의 브랜치가 곧 비공개 초안이다(DESIGN §5 비공개). `SKILL.md`(frontmatter + 본문 절: 언제 쓰는가·단계·실패 대응 표), 스크립트가 있으면 `scripts/`, `evals/`.
 4. `references/conventions.md`의 점검표를 하나씩 지난다. 결정적인 일(계산·변환·조회)은 스크립트로, 판단은 본문 지시로 가른다. 파이썬 스크립트는 PEP 723 머리와 `uv run --script scripts/x.py` 호출로 적고 실행 비트에 기대지 않는다. 시스템 도구는 `metadata.requires-tools`(기계용)와 `compatibility`(사람용 문장) 둘 다에. 스크립트의 종료 코드는 2 입력 오류·3 대상 없음·4 시스템 도구 없음(설치 안내 한 줄과 함께).
 5. evals 최소 쌍을 둔다. 써야 하는 과제 하나(`<name>/evals/<case>/prompt.txt`·`expected.md`)와 쓰지 말아야 하는 과제 하나(`no-trigger-*`).
-6. description을 검수한다. 무엇을·언제 쓰는지, 검색될 낱말(사용자가 실제로 말할 표현)이 들었는지, 쓰지 말아야 할 상황이 한 줄 있는지.
+6. description을 검수한다. 무엇을·언제 쓰는지, 검색될 낱말(사용자가 실제로 말할 표현)이 들었는지, 쓰지 말아야 할 상황이 한 줄 있는지, **핵심 용례와 발동 낱말이 첫 문장에 있는지**(호스트가 설명을 자를 수 있고 모델은 첫머리를 더 잘 쓴다 — DESIGN §5.1).
 7. `harness-catalog check`를 돌린다(pre-commit 훅이 커밋 때 다시 돌리고 CI가 PR에서 또 돌린다). 위반 항목을 고친다.
 8. 두 프롬프트를 스킬 있이·없이 돌려 `expected.md`와 견준다. 결과는 PR 본문에 적는다(리뷰의 재료). 레지스트리에 `record_eval`로 붙이는 것은 병합 뒤다 — 레지스트리는 `main`만 알므로 병합된 판의 `sha`(`list_skills`)로 붙인다. `main` push의 CI가 대신 하도록 팀이 정할 수도 있다.
 9. 사용자에게 브랜치·점검표 결과를 보고하고 멈춘다. **사용자가 "올려"라고 할 때만** 커밋하고 push해 `gh pr create`(GitLab이면 `glab mr create`)로 PR을 연다. 병합은 사람이 git 호스트에서 한다. 클라우드 샌드박스 세션(git 자격 없음)이면 여기서 멈추고 로컬 세션에서 하라고 알린다.
@@ -189,6 +189,7 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-26 | 설계 개정 반영 | description 검수에 "핵심을 앞에" 추가(단계 6). `list_skills` 필드 최소화는 pin 절차에 영향 없음(`sha`만 본다) | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | v3.3: 게시는 PR — `new-skill` 단계 1·3·7·8·9 재작성(클론·브랜치·`check`·`gh pr create`·샌드박스 멈춤), pin은 현재 판 `sha`로, P2는 첫 PR | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 8차 리뷰: pin·새 판 확인은 유효 판 `sha`, 편집은 `latest_sha`에서, `unavailable`이면 멈춤 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 인증된 판: `pin-skill`의 기본은 인증 판(단계 3·5), 새 판 확인은 `certified_sha` 기준, 받는 동안 `sha`를 고정 | DESIGN §11 |
