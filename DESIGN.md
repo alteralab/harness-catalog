@@ -171,8 +171,62 @@ flowchart LR
 | 주체가 둘이다 | 사람 주체(`sub`가 사용자, `groups`에 팀 그룹)와 서비스 주체(`sub`가 클라이언트). **v3.2에서 서비스 주체는 내용을 쓰지 못한다.** 게시는 사람 토큰으로만 한다(§6 "올리기"가 어차피 사람의 지시 뒤에만이다). 다만 평가 결과 기록(`record_eval`)은 서비스 주체(CI의 평가 러너)도 한다. 내용이 아니라 추가 전용 사실이고 주체가 기록되기 때문이다. 스코프가 아니라 주체 종류로 허용한다(토큰 검증 계약 행). 무인 게시가 필요해지면 §7의 권한 행이 그 자리다 | `[it]` 클라이언트 자격 증명에서는 주체가 자원 소유자를 대신한 것이 아니라 클라이언트 자신. "사용자 명의 커밋"은 사람 주체에서만 성립한다 |
 | 팀원은 어디서 오는가 | IdP 그룹 둘. `skills`(팀원: 읽고 쓴다)와 `skills-certifiers`(인증자: 판을 인증·철회한다). 이름은 고정이고 매핑 표도 문법도 없다. 인증자는 보통 `skills`에도 속한다. 가입·탈퇴는 IdP에서 하고 다음 토큰부터 반영된다(최대 1시간 지연). 중첩 그룹은 IdP가 평탄화해 클레임에 넣는 것을 전제한다 | `[it]` 조직이 일하는 방식을 본뜬 굵은 역할을 쓰고, 서비스 기능 하나에 특정한 세밀한 역할을 디렉터리에 넣지 말라. "publish 가능" 같은 역할을 IdP에 만들지 않는다. 인증자는 조직에 실재하는 역할(팀의 판단 권한)이라 굵은 역할로 센다 |
 | 어디서 인가하는가 | 레지스트리 안, 도구 호출마다. 프록시는 하지 않는다 | `[it]` 게이트웨이가 할 수 있는 것은 굵은 인가까지이고 그 이상은 서비스에 지역적이어야 한다. 상류에 인가를 모으면 배포가 게이트웨이 설정에 묶여 독립 배포 가능성이 깨진다 |
-| 무엇을 인가하는가 | 읽기(검색·로드·파일)는 인증된 주체 전부(사람이든 서비스든). 내용 쓰기(게시·은퇴)는 `groups`에 `skills`가 있는 사람 주체만. 평가 기록(`record_eval`)은 그 사람 주체와 서비스 주체 모두. 인증·철회(`certify_skill`)는 `groups`에 `skills-certifiers`가 있는 사람 주체만(아니면 403 본문 `not_a_certifier`, 챌린지 없음). 그 밖은 403 | 위와 같다 |
+| 무엇을 인가하는가 | 읽기(검색·로드·파일)는 인증된 주체 전부(사람이든 서비스든). 내용 쓰기(게시·은퇴)는 `groups`에 `skills`가 있는 사람 주체만. 평가 기록(`record_eval`)은 그 사람 주체와 서비스 주체 모두. 인증·철회(`certify_skill`)는 `groups`에 `skills-certifiers`가 있는 사람 주체만(아니면 403 본문 `not_a_certifier`, 챌린지 없음). 그 밖은 403. 권한·역할·주체의 층은 그림 4 | 위와 같다 |
 | 혼란한 대리인은 | 레지스트리가 git에 push할 때 자기 deploy key를 쓰되 커밋 author는 토큰의 사용자다. 레지스트리가 사용자를 대신해 쓰는 유일한 하류가 git이고, 그 쓰기 범위는 인가 정책이 이미 판정한 경로 하나뿐이다 | `[it]` 상류가 중개자를 속여 해서는 안 될 일을 시키는 문제. 하류로 무엇을 보낼지 정하라는 조항에 따라 git으로 가는 것은 경로·파일·author뿐 |
+
+**그림 4 — 권한 모델.** 인증·인가 표의 "무엇을 인가하는가" 행을 권한 → 역할 → 주체의 층으로 편 것이다. `[it]` 게이트웨이·신원 제공자가 할 수 있는 것은 굵은 인가(로그인 여부, 그룹 소속)까지이고 어느 연산을 허용할지는 서비스 자신이 정해야 하므로, 그룹은 신원 제공자가, 역할과 권한은 레지스트리가 소유한다. `[it]` 역할의 정의와 접근 통제는 중앙에서 저작되고 각 프로덕트에서 지역적으로 실행되며 전역 정책은 최소로 둔다는 조문이 이 층 구분의 근거다. `[웹]` Polaris는 권한을 열거해 카탈로그 역할 → 주체 역할 → 주체의 2단으로 부여하되 "권한은 카탈로그 수준에서만, 세밀한 접근 통제는 없다"고 적고, `[웹]` Snowflake는 객체 소유권(DAC)을 두면서도 관리형 접근 스키마에서 소유자의 grant 결정권을 걷어 중앙으로 되모은다(둘 다 2026-09-26 확인). 이 설계는 그 공통분모(열거된 권한, 카탈로그 수준, 소유자 없음)만 가져온다.
+
+```mermaid
+flowchart LR
+    subgraph IDP["신원 제공자 (그룹 = 굵은 인가)"]
+        H0["사람 주체<br/>그룹 없음"]
+        H1["사람 주체<br/>groups ∋ skills"]
+        H2["사람 주체<br/>groups ∋ skills-certifiers"]
+        S0["서비스 주체<br/>클라이언트 자격 증명"]
+    end
+    subgraph REG["레지스트리 (역할·권한 = 세밀한 인가, 코드 고정)"]
+        R0["reader"]
+        R1["author"]
+        R2["certifier"]
+        R3["service"]
+        P0["CATALOG_READ"]
+        P1["SKILL_PUBLISH"]
+        P2["SKILL_CERTIFY"]
+        P3["EVAL_RECORD"]
+    end
+    subgraph TOOLS["도구 일곱"]
+        T0["list_skills · search_skills<br/>load_skill · get_skill_file"]
+        T1["publish_skill"]
+        T2["certify_skill"]
+        T3["record_eval"]
+    end
+    H0 --> R0
+    H1 --> R1
+    H2 --> R2
+    S0 --> R3
+    R0 --> P0
+    R1 --> P0
+    R1 --> P1
+    R1 --> P3
+    R2 --> P0
+    R2 --> P2
+    R3 --> P0
+    R3 --> P3
+    P0 --> T0
+    P1 --> T1
+    P2 --> T2
+    P3 --> T3
+```
+
+| 층 | 내용 | 소유 |
+|---|---|---|
+| 권한 (카탈로그 수준, 넷으로 열거) | `CATALOG_READ`: `list_skills`·`search_skills`·`load_skill`·`get_skill_file`. `SKILL_PUBLISH`: `publish_skill`(신규·갱신·은퇴). `SKILL_CERTIFY`: `certify_skill`(인증·철회). `EVAL_RECORD`: `record_eval`. 스킬 단위 권한은 없다 — 스킬별 읽기 제한은 역할이 아니라 격리 문제이고(`[it]` RBAC와 격리는 같은 것이 아니다) 그 자리는 §7의 둘째 저장소다 | 레지스트리(코드) |
+| 역할 (넷, 고정) | `reader` = CATALOG_READ. `author` = reader + SKILL_PUBLISH + EVAL_RECORD. `certifier` = reader + SKILL_CERTIFY. `service` = reader + EVAL_RECORD. 역할 계층은 두지 않고, 한 사람이 역할 둘이면 권한은 합집합이다 | 레지스트리(코드) |
+| 주체 → 역할 | 인증된 사람 주체 = `reader`. `groups`에 `skills` = `author`. `groups`에 `skills-certifiers` = `certifier`. 서비스 주체 = `service`(주체 종류로 판정, 그룹 무관). 그룹 이름 둘은 규약으로 고정하고 설정값에 두지 않는다(설정값 일곱 유지). 다른 조직이 설치할 때 바꾸는 것은 신원 제공자 쪽 그룹 이름이다 | 그룹은 신원 제공자, 대응은 레지스트리(코드) |
+| 접근 관리 | 레지스트리에 grant API·화면이 없다. 권한을 주고 뺏는 일은 신원 제공자의 그룹 편집이고 다음 토큰(≤1시간)부터 반영된다. 감사는 git author(게시), `certification`(인증), `usage_record`(읽기) | 신원 제공자 |
+| 없는 것 | 스킬별 소유자(`[웹]` Polaris에 없고 Snowflake는 되모은다), 역할 계층·보조 역할, 그룹→역할 매핑 설정(§7 재도입 행), 세밀한 층(§7 둘째 저장소), 스코프 셋째(`skills:write` 하나가 쓰기 셋을 덮고 역할이 가른다) | — |
+
+인가 정책(그림 2)은 이 표를 순수 함수 하나로 옮긴 것이고, 시험은 주체 넷 × 도구 일곱의 행렬을 이 표와 대조한다. 스코프와 역할의 관계: 스코프는 클라이언트가 요청한 범위(`skills:read`·`skills:write`)이고 역할은 주체가 가진 권한이다. 둘 다 통과해야 허용이며, 스코프 부족은 401/403 챌린지(재인가로 풀린다), 역할 부족은 403 본문(`not_a_member`·`not_a_certifier`, 재인가로 풀리지 않는다)이다.
 
 **신원 제공자의 교체 가능성 — 어댑터는 하나, 디렉터리는 여럿.** 오픈소스 셀프호스팅 제품(Gitea·Langfuse 등)이 설정으로 LDAP·OAuth·SAML 등 여러 신원 원천을 고르게 하는 것은 그 제품이 자기 로그인 화면과 세션을 갖기 때문이다. 이 레지스트리는 그렇지 않다. 클라이언트가 브라우저가 아니라 에이전트이고, `[웹]` MCP 인가 스펙이 HTTP 전송의 인가를 OAuth 2.1로 정하며 인가 서버는 "자원 서버와 함께 호스팅되거나 별개 개체"로 범위 밖에 둔다. OAuth 2.1에는 비밀번호 그랜트가 없고 `[it]` 그것을 쓰지 말라는 것이 이 KB의 권고이기도 하다. 그래서 **레지스트리는 LDAP에 바인드하지 않는다.** 레지스트리가 아는 신원 유형은 OIDC 하나이고, 그림 2의 "For verifying identity" 어댑터는 JWT를 JWKS로 검증하는 것 하나다. `[it]` 마이크로서비스마다 신원 제공자와의 핸드셰이크를 직접 하면 기능이 중복되므로 그것을 한 자리에 모으라는 조문과 같은 배치다.
 
@@ -690,6 +744,8 @@ skills/yt-subs/
 - `[웹]` Anthropic skill-creator(anthropics/skills, `init_skill.py`) https://github.com/anthropics/skills/tree/main/skills/skill-creator ; Codex `$skill-creator` https://learn.chatgpt.com/docs/build-skills
 - `[웹]` 셀프호스팅 compose의 백업 부재(2026-09-26 확인) — Langfuse https://langfuse.com/self-hosting/deployment/docker-compose ; DataHub quickstart https://docs.datahub.com/docs/quickstart ; Gitea backup https://docs.gitea.com/administration/backup-and-restore
 - `[it]` aggregates-and-consistency-boundaries(버전 번호와 낙관적 동시성 제어, 충돌은 재시도) — §2 게시의 동시성 근거
+- `[it]` tenant-isolation-concepts-and-enforcement-timing(RBAC와 인가와 격리는 같은 것이 아니다), medallion-security-and-access-management(플랫폼 역할은 굵은 층, 데이터 권한은 카탈로그의 세밀한 층), federated-computational-governance-principle(역할 정의는 중앙 저작·지역 실행, 전역 정책 최소화) — 그림 4 권한 모델의 근거
+- `[웹]` Apache Polaris 접근 통제(권한 열거, 카탈로그 역할→주체 역할 2단, 카탈로그 수준만) https://polaris.apache.org/releases/1.0.0/access-control/ ; Snowflake 접근 통제 개요(DAC+RBAC, 관리형 접근 스키마, 권한→역할→사용자) https://docs.snowflake.com/en/user-guide/security-access-control-overview — 2026-09-26 확인
 - `[it]` prompt-iteration-and-versioning(후옌: 모델마다 특이성, 프롬프트를 코드에서 떼기, 메타데이터, Dotprompt, git 버전 관리의 한계와 프롬프트 카탈로그) — §2 평가 결과 행·§7 프롬프트 카탈로그 행의 근거
 - `[altera-skills]` `schema/eval-result.yaml` 머리말이 인용한 DataHub assertionRunEvent("정의와 실행 결과 분리, append-only")와 HF model-index(revision 고정) — 그림 3 `eval_result`의 골격. 원 출처는 그 파일의 인용이며 이 문서가 직접 확인한 것은 아니다
 - `[it]` dead-programs-tell-no-lies(Tip 38 일찍 죽어라, 불구가 된 프로그램의 피해) — §2.1 기동 시 구조 검사의 근거
@@ -942,3 +998,9 @@ skills/yt-subs/
 | 결정 | 내용 | 근거 |
 |---|---|---|
 | 일곱째 도구 `certify_skill`과 표 `certification` | 인증자(IdP 그룹 `skills-certifiers`, 사람 주체)가 스킬의 판 하나를 인증·철회한다. `sha` 없는 `load_skill`·`get_skill_file`은 현재 인증 판이 있으면 그 판을 돌려주고, `list_skills`·`search_skills`가 `certified_sha`·`certified_at`·`certified_by`를 싣는다. 갱신은 인증을 옮기지 않아 새 판은 인증 전까지 루프에 닿지 않는다. 미인증 스킬은 현재 판이 기본값이라 새 스킬은 즉시 쓰인다. 게시의 검사 다섯과 "게시를 막는 사람 승인 없음"은 그대로다. 스킬별 소유자는 두지 않는다(그룹 하나가 인증자다). 바뀐 자리: 한 문장, 그림 1·2·3, §2 인증·인가 표(그룹 둘, 인가 행), 데이터 표, §2.1 백업 후보 셋, §3 도구 일곱·오류 코드 열셋, §4 루프·pin, §5·§5.1·§6·§7·§8 | 사용자 결정. 선례는 `[웹]` Snowflake CoCo의 certify(문면, §10): 저자는 자유롭게 올리고 소비자의 기본값은 인증 판이며 인증은 게시를 막지 않는다. 설계 안의 근거는 `[it]` 연합 컴퓨테이셔널 거버넌스(결정은 전역·실행은 지역)와 §5의 "게이트 대신 피드백 루프" — 인증은 그 루프를 닫는 사람 쪽 고리다. 대가: 표 하나·도구 하나·그룹 하나, 그리고 인증을 잃으면 미인증 판이 기본값이 되는 창(§2.1) |
+
+### 사용자 결정(2026-09-26): 권한 모델을 명시한다 (그림 4)
+
+| 결정 | 내용 | 근거 |
+|---|---|---|
+| 권한 넷 → 역할 넷 → 주체의 층을 표와 그림으로 적는다. 그룹→역할 대응은 코드 고정 | 권한 `CATALOG_READ`·`SKILL_PUBLISH`·`SKILL_CERTIFY`·`EVAL_RECORD`, 역할 `reader`·`author`·`certifier`·`service`, 그룹 `skills`·`skills-certifiers`. 스킬별 소유자·역할 계층·grant API·매핑 설정은 두지 않는다. 동작은 §2 인가 표와 같고 어휘와 시험 기준이 생겼다 | 사용자 결정. `[it]` 굵은 인가는 신원 제공자까지, 연산 허용은 서비스가(Newman); 역할 정의는 중앙 저작·지역 실행(Dehghani); RBAC≠격리(Golding). `[웹]` Polaris(권한 열거, 카탈로그 수준만, 소유자 없음)·Snowflake(관리형 접근 스키마가 소유자 grant권을 되모음)의 공통분모만 가져왔다. 대응을 설정으로 빼지 않은 이유는 설정값 일곱 유지와 매핑 오류가 인가 오류로 나타나는 위험 |

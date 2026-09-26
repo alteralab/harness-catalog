@@ -19,7 +19,7 @@
 | 저장소 표지와 기동 검사 넷 | §2.1 저장소 초기화 | `.harness-catalog`의 `layout = 1`, `skills/`, 실패 사유 넷(`repo_unreachable`·`no_main_branch`·`not_a_catalog`·`unsupported_layout`·`layout_mismatch`) |
 | DB 스키마 | 그림 3 + DDL + 규칙 일곱 | 업무 표 넷(`skill_index`·`usage_record`·`eval_result`·`certification`) + `index_state` + 마이그레이션 메타. DDL 문자열이 계약이다 |
 | 게시의 순서와 일관성 | §2 게시의 순서와 일관성 | 검증 → 임시 작업 트리 커밋 → push → 인덱스 동기 → 응답. non-fast-forward 3회, tree SHA 멱등, 클론 잠금 하나 |
-| 인증·인가 | §2 인증·인가 표 | JWT 검증 계약(`iss`·`aud`·`exp`·`nbf` 60초·RS256/ES256·`sub`·`scope`), 401/403 챌린지 경계, 스코프↔도구, 주체 둘 |
+| 인증·인가 | §2 인증·인가 표, 그림 4 권한 모델 | JWT 검증 계약(`iss`·`aud`·`exp`·`nbf` 60초·RS256/ES256·`sub`·`scope`), 401/403 챌린지 경계, 스코프↔도구, 권한 넷·역할 넷·그룹 둘의 표(코드 고정) |
 | 실패 시 동작 | §2.1 실패 시 동작 표 | PostgreSQL·push는 시간 초과+브레이커, fetch는 지수 백오프, JWKS는 캐시, DB 단절 시 메모리 사본으로 읽기 |
 | 파이썬 스택 | §2.1 Python 쪽 구체 표 | `mcp` v2 + Starlette + uvicorn, PyJWT, psycopg 3 + yoyo, git·gitleaks 서브프로세스, `skills_ref`, anyio, pydantic-settings, pytest·testcontainers, uv·ruff·pyright strict. **표에 없는 것은 넣지 않는다** |
 
@@ -41,7 +41,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
     app/
       ports.py              # 요구 포트 넷 = typing.Protocol: ContentStore·FactStore·IdentityVerifier·SkillValidator
       model.py              # SkillEntry·IndexSnapshot·Principal·오류 코드 열거. 순수 데이터
-      authz.py              # 인가 정책. 순수 함수 decide(principal, tool) -> Allow | Deny(reason)
+      authz.py              # 인가 정책. 그림 4의 표를 그대로: roles(principal) -> privileges -> decide(principal, tool) -> Allow | Deny(reason)
       catalog.py            # 카탈로그: 목록·검색·본문·파일, 인덱스 빌드(트랜잭션+메모리 사본), 구조 검사, 보존 삭제, 상태
       publish.py            # 게시·인증: 검사 다섯 → 임시 작업 트리 → push → 인덱스 동기, record_eval, certify_skill
       app.py                # App = 위 셋 + 어댑터 넷을 묶은 이름 붙은 형태. 제공 포트 = 이 객체의 함수 시그니처
@@ -184,7 +184,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | V2 | 빈 카탈로그 준비됨 | 템플릿 복사본(스킬 0) | `/readyz` 200, `list_skills` 빈 목록, 마지막 fetch 시각 있음 | 대기 |
 | V3 | 401 챌린지 | HTTP로 토큰 없음·서명 불일치·`aud` 다름·만료·`iss` 다름 다섯 | 다섯 전부 401 + `WWW-Authenticate: Bearer resource_metadata=… scope="skills:read"`, RFC 9728 메타데이터 GET이 200 | 대기 |
 | V4 | 403 두 종 | `skills:read`만으로 `publish_skill`; `skills:write`이나 그룹 없음 | 전자 403 + `error="insufficient_scope"` 챌린지, 후자 403 + 챌린지 없음 + 본문 `not_a_member` | 대기 |
-| V5 | 인가 행렬 | 주체 넷(`skills`+`skills-certifiers` 사람·`skills`만인 사람·그룹 없는 사람·서비스) × 도구 일곱 = 28칸을 `authz.decide` 단위 시험으로 | 28칸 전부 DESIGN §2 "무엇을 인가하는가" 행과 일치. `certify_skill`은 첫 주체만 허용, 둘째는 `not_a_certifier` | 대기(서비스 주체 칸은 D8 뒤) |
+| V5 | 인가 행렬 | 주체 넷(`skills`+`skills-certifiers` 사람·`skills`만인 사람·그룹 없는 사람·서비스) × 도구 일곱 = 28칸을 `authz.decide` 단위 시험으로 | 28칸 전부 DESIGN 그림 4 표(역할→권한→도구)와 일치. `certify_skill`은 첫 주체만 허용, 둘째는 `not_a_certifier`. 그룹 둘 다 있는 사람은 합집합 | 대기(서비스 주체 칸은 D8 뒤) |
 | V6 | 인덱스 세대 검사 | testcontainers: 커밋 B(자손)로 빌드 뒤 커밋 A(조상)로 빌드 | 두 번째 빌드 뒤 `index_state.commit_sha`가 B이고 행 집합이 B의 것 | 대기 |
 | V7 | 보존 삭제 | 경계 전후 1초의 행 둘을 넣고 `USAGE_RETENTION_DAYS`를 바꿔 두 번 실행 | 경계 밖 행만 지워지고 두 번째 실행이 0행. 설정값 변경이 삭제 경계를 옮긴다 | 대기 |
 | V8 | degraded 읽기 | DB 컨테이너를 멈춘 채 도구 넷 호출과 `/readyz` | 넷 전부 응답(검색은 부분 일치·`evals` 없음), `/readyz` 200 + `degraded: ["db_unavailable"]`, `record_eval`은 `unavailable`. 도구 응답에 `degraded` 필드가 없다 | 대기 |
@@ -211,6 +211,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-26 | 설계 개정 반영 | 권한 모델(DESIGN 그림 4): `authz.py`가 표를 그대로 옮기고 V5가 그 표와 대조 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 인증된 판(DESIGN §11, `certify_skill`·`certification`·규칙 7). P3에 5단계, V5를 28칸으로, V22 추가. 표 넷·도구 일곱 | DESIGN §11 |
 | 2026-09-26 | Codex 교차 검증 1회 | 반영: 도구 응답의 `degraded` 필드 삭제(D13, V8), 오류 코드 어휘를 DESIGN §3으로 이관(D14), 마이그레이션 재시도를 fetch 루프에서 분리(D12), 패키지 데이터 포함·`importlib.resources` 로딩과 설치본 검증(P2-5, V21), S4·S6의 미래 조건절 삭제. 기각 없음 | 상위 PLAN §11 |
 | 2026-09-26 | PLAN 초판 | 코드 배치·판정 D1~D16·단계 P1~P3·검증 V1~V20. 서비스 주체 판별(D8)은 파일럿 실측 전이라 미정으로 두었다 | 상위 PLAN §3-6 |
