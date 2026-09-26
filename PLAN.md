@@ -4,7 +4,7 @@
 
 ## 0. 한 장 요약
 
-만드는 것은 넷이다(DESIGN §2 "새로 만드는 것"). 스킬 저장소 하나(템플릿으로 세운다), PostgreSQL 하나, harness-catalog 서비스 하나(Python, MCP 도구 여섯), CI 검증 워크플로 하나. 운영 부품으로 Dex(인가 서버)가 compose에 함께 뜬다. 소비자는 둘(사람의 세션, 루프)이고 루프 자체는 이 저장소의 범위 밖이다. 설계는 초안이고 §9의 열린 질문 아홉이 남아 있다. 첫째(소유 팀·언어)는 사용자 결정(§6-1)이고, 그래서 첫 단계는 코드가 아니라 **나머지 여덟 중 서비스 없이 답할 수 있는 다섯을 실측으로 닫는 것**이며, 나머지 셋은 파일럿에서 잰다.
+만드는 것은 넷이다(DESIGN §2 "새로 만드는 것"). 스킬 저장소 하나(템플릿으로 세운다), PostgreSQL 하나, harness-catalog 서비스 하나(Python, MCP 도구 일곱), CI 검증 워크플로 하나. 운영 부품으로 Dex(인가 서버)가 compose에 함께 뜬다. 소비자는 둘(사람의 세션, 루프)이고 루프 자체는 이 저장소의 범위 밖이다. 설계는 초안이고 §9의 열린 질문 아홉이 남아 있다. 첫째(소유 팀·언어)는 사용자 결정(§6-1)이고, 그래서 첫 단계는 코드가 아니라 **나머지 여덟 중 서비스 없이 답할 수 있는 다섯을 실측으로 닫는 것**이며, 나머지 셋은 파일럿에서 잰다.
 
 ```
 harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬) 저장소는 별개다. 배치는 오픈소스 공통 골격(§3-8)
@@ -30,16 +30,16 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
 
 | 구성 요소 | 정체 | 정본 계획 | 소유 | 완료의 뜻 |
 |---|---|---|---|---|
-| **service** | MCP 서버(Streamable HTTP 2026-07-28 무세션), 헥사고날(포트 여덟·어댑터 일곱·Configurator), 도구 여섯, 인덱스·사용 기록·평가 결과 | `plans/service.md` | 플랫폼 팀(§6 미결 1) | 도구 여섯이 실제 Dex 토큰으로 호출되고 검증 원장 전 항목 통과 |
+| **service** | MCP 서버(Streamable HTTP 2026-07-28 무세션), 헥사고날(포트 여덟·어댑터 일곱·Configurator), 도구 일곱, 인덱스·사용 기록·평가 결과·인증 | `plans/service.md` | 플랫폼 팀(§6 미결 1) | 도구 일곱이 실제 Dex 토큰으로 호출되고 검증 원장 전 항목 통과 |
 | **distribution** | 이미지·루트 compose(빠른 시작: 서비스·PostgreSQL·Dex 정적 사용자), `examples/synology-ldap/`(우리 팀의 LDAP 연합 변형), 리버스 프록시 뒤 배치, `examples/catalog-template/`과 CI 워크플로, `docs/`(설치·설정·운영자 가이드) | `plans/distribution.md` | 플랫폼 팀 | 새 VM에서 `.env`만 채운 compose 한 번으로 `/readyz` 200, 템플릿 저장소의 CI 초록 |
 | **skills** | `pin-skill`(내려받기 절차)·`new-skill`(뼈대와 팀 규약)·카탈로그 README | `plans/skills.md` | 팀(스킬 저자) | 두 스킬이 카탈로그에 게시되고 파일럿 하네스 셋에서 지시대로 동작 |
 | **pilot** | §9 열린 질문 아홉 중 사용자 결정(첫째, §6-1)을 뺀 여덟과 **가정:** 태그 넷의 실측, 파일럿 하네스 셋(Claude Code·Codex·Cursor) 연결 | `plans/pilot.md` | 사용자 + 에이전트 | 여덟 질문 전부에 기록된 답(답·기각·범위 제외 중 하나) |
 
-경계 규칙 셋. ⑴ 한 커밋은 한 구성 요소만 만진다(루트 PLAN·DESIGN 커밋은 예외). ⑵ 구성 요소 사이의 계약은 DESIGN이 소유한다 — 도구 여섯의 시그니처(§3), 설정값 일곱(필수 다섯 + 기본값 있는 둘: 보존 일수·fetch 간격, §2), 저장소 표지 `.harness-catalog`(§2.1), `PINNED` 형식(§4). 어느 PLAN도 그 계약을 다시 적지 않고 DESIGN의 절을 가리킨다. ⑶ 계약을 바꾸는 일은 코드 변경이 아니라 설계 변경이라 DESIGN §11에 행을 먼저 더하고 그다음 해당 PLAN의 판정 원장에 적는다.
+경계 규칙 셋. ⑴ 한 커밋은 한 구성 요소만 만진다(루트 PLAN·DESIGN 커밋은 예외). ⑵ 구성 요소 사이의 계약은 DESIGN이 소유한다 — 도구 일곱의 시그니처(§3), 설정값 일곱(필수 다섯 + 기본값 있는 둘: 보존 일수·fetch 간격, §2), 저장소 표지 `.harness-catalog`(§2.1), `PINNED` 형식(§4). 어느 PLAN도 그 계약을 다시 적지 않고 DESIGN의 절을 가리킨다. ⑶ 계약을 바꾸는 일은 코드 변경이 아니라 설계 변경이라 DESIGN §11에 행을 먼저 더하고 그다음 해당 PLAN의 판정 원장에 적는다.
 
 ## 2. 범위
 
-**안.** DESIGN v3.2 = v3.0 배포 형태(compose 한 대) + 단일 팀 + 도구 여섯(`record_eval` 포함) + 사람의 내려받기(pin) + 평가 결과 표. 구현 언어 Python(§2.1 결정). 인가 서버는 Dex로 시작(§2 신원 제공자 표).
+**안.** DESIGN v3.2 = v3.0 배포 형태(compose 한 대) + 단일 팀 + 도구 일곱(`record_eval`·`certify_skill` 포함) + 사람의 내려받기(pin) + 평가 결과·인증 표. 구현 언어 Python(§2.1 결정). 인가 서버는 Dex로 시작(§2 신원 제공자 표).
 
 **밖.** 루프(우리가 만드는 무인 에이전트)는 카탈로그의 소비자이지 이 저장소의 산출물이 아니다. 루프 쪽 다섯 장치(트리거·정지·상태·검증·예산)와 루프 쪽 서킷 브레이커(§2.1 실패 표 마지막 행)는 루프 저장소가 짓는다. Helm 차트·백업 크론·벡터 검색·멀티 팀·toolbox·프롬프트 카탈로그는 §7의 "뺀 것"이고 이 계획에 단계가 없다(§7 불채택 표).
 
@@ -61,7 +61,7 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
 | **P0 착수 전 닫기** | pilot P0 · distribution P0 + §6 | §9 아홉 중 첫째(소유 팀·언어)는 §6-1이고, 나머지 여덟 중 서비스 없이 답할 수 있는 다섯: Synology SSO Server 능력, Dex+LDAP 실측 둘(장치 흐름·클라이언트 자격 증명 `sub`), 파일럿 하네스 셋의 MCP 개정판·RFC 9728·PKCE·장치 인가·클라이언트 등록 방식, 심볼릭 링크 단일 로드, 서비스 주체 표지. Dex 실측에는 개발 compose가 필요하므로 distribution P0(PostgreSQL+Dex 개발 compose, LDAP 스키마를 `ldapsearch`로 먼저 실측해 커넥터에 반영)이 P0 안에 있다. 그리고 §6의 사용자 결정 | 다섯 질문마다 `research/rN`에 실측 기록이 있고 DESIGN §9의 해당 항목이 답·기각·범위 제외 중 하나로 표시됐다. §6의 미결이 0이다 |
 | **P1 읽기 경로** | service P1 · distribution P1 | Configurator, 포트(Protocol), git 어댑터(clone·fetch·tree SHA), 검증 어댑터(validate), 기동 시 구조 검사 넷, 메모리 인덱스, 읽기 도구 넷, OIDC 어댑터(PyJWT+JWKS), `/healthz`·`/readyz`. DB 없이 동작(설계상 DB는 준비됨 조건이 아니다). distribution P1은 시험용 토큰 취득 절차(`scripts/dev-token.sh`: PKCE + `resource`, 클라이언트 자격 증명)와 Dex 설정의 LDAP 확정판 | 템플릿 구조의 시험 저장소를 가리켜 기동하면 `/readyz` 200이고, Dex가 낸 사람 토큰으로 SDK 인메모리 클라이언트가 아닌 **HTTP 경유** 읽기 도구 넷 호출이 전부 성공하며, 토큰 없음·잘못된 aud·만료 셋이 각각 401로 거부된다 |
 | **P2 사실 표** | service P2 | 마이그레이션(yoyo, 그림 3 DDL 그대로), PostgreSQL 어댑터, 인덱스 트랜잭션(규칙 3, `index_state` FOR UPDATE·자손 검사), 사용 기록, 스케줄러(기동 1회 · fetch 간격 `FETCH_INTERVAL_SECONDS` 기본 60초 · 보존 삭제 24시간 고정), 보존 삭제, DB 단절 시 degraded | testcontainers PostgreSQL에서 그림 3 DDL이 그대로 적용되고, 낡은 커밋의 빌드가 최신 인덱스를 되돌리지 않는 시험과 보존 삭제 멱등 시험이 통과하며, DB를 끊어도 `/readyz` 200 + `degraded`이고 읽기 넷이 답한다 |
-| **P3 쓰기 경로** | service P3 | `publish_skill`(검사 다섯, 임시 작업 트리, 사용자 명의 커밋, deploy key push, non-fast-forward 재시도 3회, tree SHA 멱등, `name_taken` git 질의, `replaced-by` 연쇄 검사, `retire`), `record_eval`(검증 넷, `run_id` 멱등, `scenario_sha` 서버 산출), 인가 정책(주체 종류·스코프·그룹) | §5의 검사 다섯 각각을 위반한 요청이 설계가 정한 오류(`name_taken`·`conflict`·403 `not_a_member`·validate 실패·시크릿 검출)로 거부되고, 통과한 게시가 push 직후 `search_skills`에 나오며, 같은 요청을 두 번 보내면 커밋이 하나다 |
+| **P3 쓰기 경로** | service P3 | `publish_skill`(검사 다섯, 임시 작업 트리, 사용자 명의 커밋, deploy key push, non-fast-forward 재시도 3회, tree SHA 멱등, `name_taken` git 질의, `replaced-by` 연쇄 검사, `retire`), `record_eval`(검증 넷, `run_id` 멱등, `scenario_sha` 서버 산출), `certify_skill`(인증자 그룹, 판 검증, `certification` 최근 행 규칙, `sha` 없는 로드의 인증 판 해석), 인가 정책(주체 종류·스코프·그룹 둘) | §5의 검사 다섯 각각을 위반한 요청이 설계가 정한 오류(`name_taken`·`conflict`·403 `not_a_member`·validate 실패·시크릿 검출)로 거부되고, 통과한 게시가 push 직후 `search_skills`에 나오며, 같은 요청을 두 번 보내면 커밋이 하나다 |
 | **P4 카탈로그 스킬 작성** | skills P1 | `pin-skill`·`new-skill` 작성과 로컬 검증, 팀 규약(종료 코드 2/3/4, PEP 723 + `uv run --script`, `metadata.requires-tools`, evals 최소 예시)을 `new-skill`의 `references/conventions.md`에, README 사용자 안내 절 문장. 게시는 아직이다(P5) | 두 스킬이 `skills-ref validate`를 통과하고 각자 양성·음성 evals 한 쌍이 있으며 `purpose/agent-skill` 게이트가 SKILL.md 둘을 검사하며 한 번 돌았다 |
 | **P5 배포·첫 카탈로그 저장소·게시** | distribution P2 · P3 · skills P2 | 이미지(다단계, git+gitleaks, CI가 한 번 빌드해 커밋 SHA 태그·digest 발행), 루트 compose(빠른 시작)와 `examples/synology-ldap/` 오버레이(Dex↔Synology LDAP, `skills` 그룹), 정적 클라이언트(하네스 셋 + CI 러너), 리버스 프록시 뒤 공개 URL, `examples/catalog-template/` 완성(표지·`skills/.gitkeep`·CI github/gitlab·README 체크리스트), `docs/` 초판, **첫 카탈로그 저장소 신설**(P4의 두 스킬을 첫 커밋에 넣는다), 그 뒤 두 스킬을 `publish_skill`로 게시해 `list_skills`에 보이게 한다 | 새 VM에서 `.env`만 채우고 `docker compose up`으로 셋이 뜨고 `/readyz` 200, 템플릿 복사본 저장소의 CI가 두 스킬로 초록, 브랜치 보호·deploy key 체크리스트 전 항목 확인, 두 스킬이 `list_skills`에 보인다 |
 | **P6 파일럿** | pilot P1 | §9의 나머지: 가정 셋(매 반복 검색 비용, 트라이그램 한국어 검색, 부하)과 하네스 몫 둘(`load_skill` 본문 잔존, 이름순 목록 한계), `pin-skill` 준수. 사용자 하나·루프 없이 세션 기반 측정 | §9 아홉 항목 전부에 기록된 답(첫째는 §6-1의 결정). 파일럿 하네스 셋에서 `pin-skill` 지시대로 임시 디렉토리→대조→이름 바꾸기가 관찰됐다. 설계를 뒤집은 것은 DESIGN §11 행으로 |
@@ -93,7 +93,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 
 | 항목 | 기각 근거 (왜 지금 아닌가) |
 |---|---|
-| 루프 구현을 이 저장소에 | 루프는 소비자다. 카탈로그와 닿는 자리가 둘뿐(반복마다 검색·로드, `publish_skill` 되쓰기)이고 그 둘은 도구 여섯으로 닫힌다. 루프의 다섯 장치는 카탈로그와 무관하다(§1.3) |
+| 루프 구현을 이 저장소에 | 루프는 소비자다. 카탈로그와 닿는 자리가 둘뿐(반복마다 검색·로드, `publish_skill` 되쓰기)이고 그 둘은 도구 일곱으로 닫힌다. 루프의 다섯 장치는 카탈로그와 무관하다(§1.3) |
 | 사전 통합 시험용 가짜 Dex(OIDC 모의 서버) | 개발 compose에 실제 Dex가 뜬다(distribution P1). 단위 시험은 OIDC 어댑터를 가짜로 바꾸면 되고, 통합은 실물로 한다. 모의 서버는 세 번째 인가 구현이다 |
 | Helm 차트를 지금 | 인스턴스 하나, 하루 수백 요청 추정(휴리스틱). compose 한 대가 설계의 v3.0이고 수 초 중단을 받아들였다(§2.1) |
 | 백업 크론 | 사용 기록은 v3.0이 읽지 않고 평가 결과의 손실은 감수하기로 했다(§2.1, §11 사용자 결정). 동급 셀프호스팅 셋도 compose에 백업이 없다(문면) |
@@ -145,6 +145,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | 2026-09-26 | 설계 개정 | 사용자 결정: 주기 fetch 간격을 설정값 `FETCH_INTERVAL_SECONDS`(기본 60초)로. DESIGN §2·§2.1·§11에 반영(설정값 일곱 = 필수 다섯 + 선택 둘) | DESIGN §11 |
 | 2026-09-26 | 사용자 결정 §6-8 | `main` 보호를 우선하지 않는다. DESIGN §2.1·§8·§11 반영, distribution 체크리스트 3·V7 개정. §6 미결 0 | §6-8 |
 | 2026-09-26 | 브랜치 보호 시도 | `alteralab/harness-catalog`(비공개)에 룰셋과 classic protection을 API로 걸어 봤으나 둘 다 403(Free 플랜 제약). §6-8로 등록. 카탈로그 저장소의 "보호된 main" 요건도 같은 제약이라 distribution 체크리스트 3·V7은 §6-8이 정해져야 통과 가능 | §6-8 |
+| 2026-09-26 | 사용자 결정: 인증된 판 | Snowflake certify 선례를 따라 `certify_skill`·`certification`·인증자 그룹 `skills-certifiers`를 설계에 넣었다(DESIGN §11). 게시 게이트는 그대로 없고 소비 기본값을 사람이 정한다. service P3·V5·V22, skills pin 기본, pilot Q6 반영 | DESIGN §11 |
 | 2026-09-26 | 사용자 결정: 이미지 저장소 | GHCR 비공개 + 보존 규칙으로. Harbor·ECR·`registry:2`는 distribution 불채택 표에 사유와 함께 | distribution D11 |
 | 2026-09-26 | 사용자 결정 §6-3~7 | TLS는 mini의 `tailscale serve`(URL `https://mini.tail2f9fe3.ts.net/{mcp,dex}`), 인가 서버 Dex, 실사용자 한 명 + 시험 계정, Apache-2.0, 이미지 ghcr, PyPI 미게시(§7), 코드 저장소 `main` + PR. §6 미결 0 | §6 |
 | 2026-09-26 | 사용자 결정 §6-1·2 | 소유 GitHub org `alteralab`, 운영 호스트 `mini.altera.lab`, 개발은 로컬 compose. git 호스트 GitHub. PyPI `harness-catalog`·GitHub `alteralab/harness-catalog` 이름은 비어 있음(2026-09-26 실측). §6-7(브랜치 흐름) 추가 | §6 |
