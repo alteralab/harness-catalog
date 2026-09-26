@@ -145,6 +145,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | 2026-09-26 | 설계 개정 | 사용자 결정: 주기 fetch 간격을 설정값 `FETCH_INTERVAL_SECONDS`(기본 60초)로. DESIGN §2·§2.1·§11에 반영(설정값 일곱 = 필수 다섯 + 선택 둘) | DESIGN §11 |
 | 2026-09-26 | 사용자 결정 §6-8 | `main` 보호를 우선하지 않는다. DESIGN §2.1·§8·§11 반영, distribution 체크리스트 3·V7 개정. §6 미결 0 | §6-8 |
 | 2026-09-26 | 브랜치 보호 시도 | `alteralab/harness-catalog`(비공개)에 룰셋과 classic protection을 API로 걸어 봤으나 둘 다 403(Free 플랜 제약). §6-8로 등록. 카탈로그 저장소의 "보호된 main" 요건도 같은 제약이라 distribution 체크리스트 3·V7은 §6-8이 정해져야 통과 가능 | §6-8 |
+| 2026-09-26 | Codex 교차 검증 2회 | publish·certify 모순(20건). 사용자 결정 (A): 인증 판은 레지스트리 소유 ref, editor는 저장소 쓰기 자격 없음. 유효 판 인덱스·fail-closed·인증 세대·`retire_requires_revoke`. DESIGN §11 8차 리뷰 표, service·skills·distribution 동기 | DESIGN §11 |
 | 2026-09-26 | 사용자 결정: 역할 3단 | reader·editor·admin 계층과 그룹 셋(DataHub·Langfuse 관례). DESIGN §2·그림 4·§5·§7·§11, service V5, distribution D4·체크리스트 | DESIGN §11 |
 | 2026-09-26 | 사용자 결정: 인증된 판 | Snowflake certify 선례를 따라 `certify_skill`·`certification`·인증자 그룹 `skills-admins`를 설계에 넣었다(DESIGN §11). 게시 게이트는 그대로 없고 소비 기본값을 사람이 정한다. service P3·V5·V22, skills pin 기본, pilot Q6 반영 | DESIGN §11 |
 | 2026-09-26 | 사용자 결정: 이미지 저장소 | GHCR 비공개 + 보존 규칙으로. Harbor·ECR·`registry:2`는 distribution 불채택 표에 사유와 함께 | distribution D11 |

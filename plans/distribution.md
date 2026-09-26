@@ -106,7 +106,7 @@
 1. git 호스트에 빈 저장소를 만든다. 확인: `git ls-remote <url>`이 빈 결과로 성공한다.
 2. `examples/catalog-template/` 내용을 복사하고 `skills/pin-skill`·`skills/new-skill`을 `skills/` 아래에 넣어 첫 커밋을 `main`에 push한다. 확인: 원격의 루트에 `.harness-catalog`가 있고 내용이 `layout = 1`이다.
 3. `main` 보호는 걸지 않는다(우산 §6-8 결정, DESIGN §11). 강제 push 금지는 규율이다. 확인 항목 없음.
-4. deploy key(쓰기 허용)를 등록하고 개인 키를 `.env`의 자리에 넣는다. 확인: 레지스트리 컨테이너 안에서 `git push --dry-run`이 성공한다.
+4. deploy key(쓰기 허용)를 등록하고 개인 키를 `.env`의 자리에 넣는다. 확인: 레지스트리 컨테이너 안에서 `git push --dry-run`이 성공하고, `refs/harness-catalog/certified/_probe`를 push·삭제할 수 있다. **저장소의 다른 쓰기 자격은 admin뿐이다** — editor·reader 계정은 읽기 권한만 준다(DESIGN 그림 1, 규칙 7). 확인: editor 계정으로 `git push`가 거부된다.
 5. 자기 호스트의 CI 워크플로 파일을 활성화한다(GitHub이면 `.github/workflows/`로 옮긴다). 확인: 첫 커밋의 CI가 초록이다(V6).
 6. Dex에 하네스 제품의 정적 클라이언트가 있고 리다이렉트 URI가 그 제품 문서와 같다. 확인: 그 하네스에서 로그인 한 번(우산 V1).
 7. LDAP 그룹 `skills-editors`(또는 `skills-admins`)에 첫 팀원이 있다. 확인: 그 사람의 토큰에 `groups`가 있다(V2). 카탈로그 저장소의 읽기 권한을 가진 사람 명단이 세 그룹의 합집합과 같다(그룹에 없는 사람은 레지스트리에서 `not_a_member`이므로 저장소 쪽만 넓으면 우회가 생긴다).
@@ -176,6 +176,7 @@
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-26 | 설계 개정 반영 | 8차 리뷰: 카탈로그 저장소 쓰기 자격은 deploy key와 admin뿐(체크리스트 4), 인증 ref push 확인 | DESIGN §11 |
 | 2026-09-26 | 사용자 결정: 이미지 저장소 | GHCR 비공개 + 보존 규칙(최근 SHA 태그 5개, 태그 없는 버전 삭제), 빌드 기계 = 실행 기계(mini runner)라 운영 pull 없음. Harbor(컨테이너 아홉, 소비자 없는 LDAP RBAC)·ECR(AWS 계정·전송 요금)·`registry:2`는 지금 아님 — 되돌리기는 `.env` 한 줄과 워크플로 한 단계 | D11, V12 |
 | 2026-09-26 | Codex 교차 검증 1회 | 반영: P0↔P1 순환 의존을 distribution P0 신설로 끊음(LDAP 스키마 `ldapsearch` 선실측), 시험용 토큰 절차 `scripts/dev-token.sh`(V11), 이미지 한 번 빌드·SHA 태그·digest(D11, V1), 비밀 취급 절차(D10, 체크리스트 11), D6·R2의 미래 조건절 삭제, 우산 단계 번호 재배열(P4 스킬 작성 → P5 배포·게시). 기각 없음 | 우산 §11 |
 | 2026-09-26 | PLAN 초판 | 파일 배치, 판정 D1~D18, 단계 셋, 체크리스트 11항, 검증 V1~V10. 코드·설정 파일은 아직 없다 | 우산 §4 |
