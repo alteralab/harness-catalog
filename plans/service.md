@@ -18,7 +18,7 @@
 | 설정값 여섯 | §2 그림 2 해설, §2.1 운영자가 아는 것 | 필수 다섯(저장소 URL·deploy key·issuer·공개 URL·PostgreSQL 접속) + 기본값 있는 하나(`FETCH_INTERVAL_SECONDS` 60). 일곱째는 없다. OTel exporter는 표준 `OTEL_EXPORTER_OTLP_*` 환경 변수이고 우리 설정값이 아니다 |
 | 저장소 표지와 기동 검사 넷 | §2.1 저장소 초기화 | `.harness-catalog`의 `layout = 1`, `skills/`, 실패 사유 넷(`repo_unreachable`·`no_main_branch`·`not_a_catalog`·`unsupported_layout`·`layout_mismatch`) |
 | DB 스키마 | 그림 3 + DDL + 규칙 다섯 | 업무 표 하나(`skill_index`) + `index_state` + 마이그레이션 메타. DDL 문자열이 계약이다 |
-| 게시 = git 워크플로 | §2 게시, §5, §5.1 ③ | 레지스트리는 `main`을 fetch·검사·인덱스만 한다. 검사 아홉(§5)은 `harness-catalog check` 하나이고 pre-commit·CI·인덱스 빌드가 같은 구현을 돈다. 되감기(`main_rewound`)는 규칙 3이 잡는다 |
+| 게시 = git 워크플로 | §2 게시, §5, §5.1 ③ | 레지스트리는 `main`을 fetch·검사·인덱스만 한다. 검사 열(§5)은 `harness-catalog check` 하나이고 pre-commit·CI·인덱스 빌드가 같은 구현을 돈다. 되감기(`main_rewound`)는 규칙 3이 잡는다 |
 | 인증·인가 | §2 인증·인가 표, 그림 4 | JWT 검증 계약(`iss`·`aud`·`exp`·`nbf` 60초·RS256/ES256·`sub`·`scope`), 401/403 챌린지 경계, 스코프↔도구, 역할 reader 하나(그룹 `skills-readers`, 서비스 주체) |
 | 실패 시 동작 | §2.1 실패 시 동작 표 | PostgreSQL·push는 시간 초과+브레이커, fetch는 지수 백오프, JWKS는 캐시, DB 단절 시 메모리 사본으로 읽기 |
 | 파이썬 스택 | §2.1 Python 쪽 구체 표 | `mcp` v2 + Starlette + uvicorn, PyJWT, psycopg 3 + yoyo, git·gitleaks 서브프로세스, `skills_ref`, anyio, pydantic-settings, pytest·testcontainers, uv·ruff·pyright strict. **표에 없는 것은 넣지 않는다** |
@@ -136,7 +136,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 4. `cli.py reindex --accept-rewind`: 규칙 3의 `main_rewound` 뒤 운영자가 명시적으로 인덱스를 새 `main`으로 다시 짓는 명령.
 6. `app/authz.py` 완성: 주체 셋(reader·그룹 없음·서비스) × 도구 넷 × 스코프.
 7. `packages/harbor-langfuse/`: 별도 배포물(`pyproject.toml`, `src/harbor_langfuse/plugin.py`), 서비스 이미지에 들어가지 않는다. Harbor `BaseJobPlugin` 구현. `on_job_start`에서 잡의 태스크 경로에서 스킬 이름과 `evals/` 케이스를 읽어 Langfuse dataset `<catalog>/<skill>`과 item(케이스, `input` = `instruction.md`)을 있으면 재사용·없으면 생성하고, dataset run(`run_name` = Harbor 잡 이름, `metadata` = `skill`·`sha`(주입한 스킬 원천의 ref)·`scenario_sha`(`evals/` tree)·`model`·`harness`(agent 이름)·`baseline`(스킬 원천 없음))을 연다. `on_job_end`에서 트라이얼마다 trace(입력 instruction, 출력 검증기 stdout 요약, 메타데이터 `trial_uri`·토큰·비용)와 run item, score `passed`(BOOLEAN, reward ≥ 1)를 만든다. 키는 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST` 환경 변수. Harbor의 `packages/harbor-langsmith/src/harbor_langsmith/plugin.py`(852줄, `_create_root_run`·`_create_feedback`·`_request` 재시도)를 본뜨되 ATIF 스텝은 그쪽도 올리지 않으므로 올리지 않는다. Langfuse SDK v3의 저수준 dataset run·score API 이름은 pilot Q14(e)가 실측한 뒤 쓴다.
-8. 시험: unit에서 검사 아홉 각각의 위반 표본(구조 결손 다섯, 스킬 위반 넷)과 통과 표본; adapters/git에서 임시 저장소에 `init`을 두 번 돌려 두 번째가 변경 0, GitHub·GitLab URL로 워크플로 파일이 갈리는지; 같은 표본을 CLI·인덱스 빌드 두 경로로 돌려 판정이 같은지; `main`을 되감은 클론으로 fetch해 `main_rewound`; 플러그인은 Harbor `JobResult` 표본으로 Langfuse 호출을 기록하는 가짜 클라이언트에 대해; http에서 403 실물.
+8. 시험: unit에서 검사 열 각각의 위반 표본(구조 결손 다섯, 스킬 위반 넷, 스킬 쌍의 복사본 드리프트 하나)과 통과 표본; adapters/git에서 임시 저장소에 `init`을 두 번 돌려 두 번째가 변경 0, GitHub·GitLab URL로 워크플로 파일이 갈리는지; 같은 표본을 CLI·인덱스 빌드 두 경로로 돌려 판정이 같은지; `main`을 되감은 클론으로 fetch해 `main_rewound`; 플러그인은 Harbor `JobResult` 표본으로 Langfuse 호출을 기록하는 가짜 클라이언트에 대해; http에서 403 실물.
 
 **끝:** §5의 검사 아홉 각각을 위반한 표본이 `check`에서 항목 번호와 함께 종료 1로 거부되고 인덱스 빌드에서 같은 스킬이 빠지며, `init`이 빈 저장소를 표지·`skills/`·CI·pre-commit·README가 있는 저장소로 만들고 두 번째 실행에서 변경이 없으며, PR로 병합한 스킬이 `FETCH_INTERVAL_SECONDS` 두 주기 안에 `search_skills`에 나온다.
 
@@ -184,7 +184,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | V6 | 인덱스 세대 검사 | testcontainers: 커밋 B(자손)로 빌드 뒤 커밋 A(조상)로 빌드 | 두 번째 빌드 뒤 `index_state.commit_sha`가 B이고 행 집합이 B의 것 | 대기 |
 | V7 | 도구 호출 스팬 | `InMemorySpanExporter`를 꽂고 도구 넷을 사람 토큰으로 호출(`search_skills`는 결과 0인 검색어 하나 포함) | 호출마다 `SERVER` 스팬 하나, 이름 `tools/call <tool>`, `gen_ai.tool.name`=도구, `langfuse.user.id`=토큰 `sub`; `load_skill`·`get_skill_file`에 `metadata.skill`·`.sha`(응답 `sha`와 같음); `search_skills`에 `.query`·`.result_count`(0). DB를 끊어도 스팬은 같다 | 대기 |
 | V8 | degraded 읽기 | DB 컨테이너를 멈춘 채 도구 넷 호출과 `/readyz` | 넷 전부 응답(검색은 부분 일치), `/readyz` 200 + `degraded: ["db_unavailable"]`. 도구 응답에 `degraded` 필드가 없다 | 대기 |
-| V9 | 검사 아홉 | §5의 아홉 항목 각각을 위반한 표본 저장소·스킬 | `check`가 항목 번호와 경로·사유를 출력하며 종료 1. 검사기(gitleaks)를 치우면 종료 2. 통과 표본은 종료 0 | 대기 |
+| V9 | 검사 열 | §5의 열 항목 각각을 위반한 표본 저장소·스킬 | `check`가 항목 번호와 경로·사유를 출력하며 종료 1(항목 9·10은 경고 출력 + 종료 0). 검사기(gitleaks)를 치우면 종료 2. 통과 표본은 종료 0 | 대기 |
 | V10 | 병합 반영 | 시험 저장소에 PR을 병합 | 우산 V3의 허용오차(`FETCH_INTERVAL_SECONDS` 두 주기) 안에 `search_skills`에 나오고 `sha`가 병합 커밋의 tree와 같다 | 대기 |
 | V11 | `init` 멱등·호스트별 | 빈 저장소(GitHub URL, GitLab URL 각각)에 `init` 두 번 | 첫 실행 뒤 표지·`skills/.gitkeep`·README·pre-commit 설정·그 호스트의 워크플로 파일이 있고, 두 번째 실행은 변경 0. `layout = 2` 표지가 있는 저장소에서는 종료 1 | 대기 |
 | V12 | 세 자리 동일 판정 | 같은 표본을 pre-commit 훅(`check`), CI(`check`), 인덱스 빌드 세 경로로 | 셋의 위반 목록이 같다 | 대기 |
@@ -206,6 +206,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-27 | 설계 개정 반영 | `check` 항목 10(복사본 드리프트 경고): §1 표, P3-8 표본, V9 | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.5: `usage_record`·보존 삭제·`USAGE_RETENTION_DAYS` 제거(설정값 여섯·표 하나·규칙 다섯), 스팬 속성을 `mcp_tools.py`에(P2-4), 스케줄러 루프 하나(D11), V7을 스팬 시험으로 | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.4: `record_eval`·`eval_result`·`skills:write` 제거(도구 넷·포트 일곱·표 둘·오류 코드 다섯. `evals.py`·V15·V16 삭제, D6·D8·D12·P2-2·P3·V4·V8 개정), 플러그인을 `packages/harbor-langfuse/`로(P3-7, V26) | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | Harbor 플러그인 모듈(P3-7a, V26). 서비스 이미지 밖의 선택 extra — v3.4에서 Langfuse 플러그인으로 대체 | DESIGN §11 |

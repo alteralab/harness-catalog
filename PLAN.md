@@ -23,7 +23,7 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
   examples/catalog-template/      #   카탈로그 저장소 템플릿(.harness-catalog, skills/, CI, README)
   docs/                           #   설치·설정값 여섯·운영자 가이드·카탈로그 저장소 신설
   scripts/                        #   운영 셸 스크립트. 첫 파일과 함께 lang/bash 선언
-  skills/                         # 카탈로그에 실리는 절차 스킬 pin-skill·new-skill — plans/skills.md
+  skills/                         # 카탈로그에 실리는 절차 스킬 pin-skill·write-skill — plans/skills.md
   plans/pilot/                    # 실측 기록 rN.md — plans/pilot.md
   tools/pilot/                    # 측정 도구(계측 stub·질의 러너 등, 추적)
   research/                       # 원자료(전사본·받아 둔 문서). 비추적(.gitignore)
@@ -35,7 +35,7 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
 |---|---|---|---|---|
 | **service** | MCP 서버(Streamable HTTP 2026-07-28 무세션, 읽기 전용), 헥사고날(포트 일곱·어댑터 일곱·Configurator), 도구 넷, 인덱스, CLI `init`·`check`·`reindex` | `plans/service.md` | 플랫폼 팀(§6 미결 1) | 도구 넷이 실제 Dex 토큰으로 호출되고 검증 원장 전 항목 통과 |
 | **distribution** | 이미지·루트 compose(빠른 시작: 서비스·PostgreSQL·Dex 정적 사용자), `examples/synology-ldap/`(우리 팀의 LDAP 연합 변형), 리버스 프록시 뒤 배치, `examples/catalog-template/`과 CI 워크플로, `docs/`(설치·설정·운영자 가이드) | `plans/distribution.md` | 플랫폼 팀 | 새 VM에서 `.env`만 채운 compose 한 번으로 `/readyz` 200, 템플릿 저장소의 CI 초록 |
-| **skills** | `pin-skill`(내려받기 절차)·`new-skill`(뼈대와 팀 규약)·카탈로그 README | `plans/skills.md` | 팀(스킬 저자) | 두 스킬이 카탈로그에 게시되고 파일럿 하네스 셋에서 지시대로 동작 |
+| **skills** | `pin-skill`(내려받기 절차)·`write-skill`(뼈대와 팀 규약)·카탈로그 README | `plans/skills.md` | 팀(스킬 저자) | 두 스킬이 카탈로그에 게시되고 파일럿 하네스 셋에서 지시대로 동작 |
 | **pilot** | §9 열린 질문 열하나 중 사용자 결정(첫째, §6-1)을 뺀 열과 **가정:** 태그 넷의 실측, 파일럿 하네스 셋(Claude Code·Codex·Cursor) 연결 | `plans/pilot.md` | 사용자 + 에이전트 | 여덟 질문 전부에 기록된 답(답·기각·범위 제외 중 하나) |
 
 경계 규칙 셋. ⑴ 한 커밋은 한 구성 요소만 만진다(루트 PLAN·DESIGN 커밋은 예외). ⑵ 구성 요소 사이의 계약은 DESIGN이 소유한다 — 도구 넷의 시그니처(§3), 설정값 여섯(필수 다섯 + 기본값 있는 하나: fetch 간격, §2), 도구 호출 스팬의 속성 규약(§2 데이터 표), 저장소 표지 `.harness-catalog`(§2.1), `PINNED` 형식(§4). 어느 PLAN도 그 계약을 다시 적지 않고 DESIGN의 절을 가리킨다. ⑶ 계약을 바꾸는 일은 코드 변경이 아니라 설계 변경이라 DESIGN §11에 행을 먼저 더하고 그다음 해당 PLAN의 판정 원장에 적는다.
@@ -64,8 +64,8 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
 | **P0 착수 전 닫기** | pilot P0 · distribution P0 + §6 | §9 열하나 중 첫째(소유 팀·언어)는 §6-1이고, 나머지 열 중 서비스 없이 답할 수 있는 다섯: Synology SSO Server 능력, Dex+LDAP 실측 둘(장치 흐름·클라이언트 자격 증명 `sub`), 파일럿 하네스 셋의 MCP 개정판·RFC 9728·PKCE·장치 인가·클라이언트 등록 방식, 심볼릭 링크 단일 로드, 서비스 주체 표지. Dex 실측에는 개발 compose가 필요하므로 distribution P0(PostgreSQL+Dex 개발 compose, LDAP 스키마를 `ldapsearch`로 먼저 실측해 커넥터에 반영)이 P0 안에 있다. 그리고 §6의 사용자 결정 | 다섯 질문마다 `research/rN`에 실측 기록이 있고 DESIGN §9의 해당 항목이 답·기각·범위 제외 중 하나로 표시됐다. §6의 미결이 0이다 |
 | **P1 읽기 경로** | service P1 · distribution P1 | Configurator, 포트(Protocol), git 어댑터(clone·fetch·tree SHA), 검증 어댑터(validate), 기동 시 구조 검사 넷, 메모리 인덱스, 읽기 도구 넷, OIDC 어댑터(PyJWT+JWKS), `/healthz`·`/readyz`. DB 없이 동작(설계상 DB는 준비됨 조건이 아니다). distribution P1은 시험용 토큰 취득 절차(`scripts/dev-token.sh`: PKCE + `resource`, 클라이언트 자격 증명)와 Dex 설정의 LDAP 확정판 | 템플릿 구조의 시험 저장소를 가리켜 기동하면 `/readyz` 200이고, Dex가 낸 사람 토큰으로 SDK 인메모리 클라이언트가 아닌 **HTTP 경유** 읽기 도구 넷 호출이 전부 성공하며, 토큰 없음·잘못된 aud·만료 셋이 각각 401로 거부된다 |
 | **P2 인덱스 표·스팬** | service P2 | 마이그레이션(yoyo, 그림 3 DDL 그대로), PostgreSQL 어댑터, 인덱스 트랜잭션(규칙 3, `index_state` FOR UPDATE·자손 검사), 스케줄러(기동 1회 · fetch 간격 `FETCH_INTERVAL_SECONDS` 기본 60초), 도구 호출 스팬 속성(MCP 어댑터), DB 단절 시 degraded | testcontainers PostgreSQL에서 그림 3 DDL이 그대로 적용되고, 낡은 커밋의 빌드가 최신 인덱스를 되돌리지 않는 시험이 통과하며, 도구 넷 호출이 속성 규약대로 스팬을 내고, DB를 끊어도 `/readyz` 200 + `degraded`이고 읽기 넷이 답한다 |
-| **P3 검사·초기화·Langfuse 플러그인** | service P3 | `harness-catalog check`(§5 검사 아홉, 종료 코드, 인덱스 빌드와 공용), `harness-catalog init <repo-url>`(구조·CI·pre-commit·README, 멱등, 호스트별), `reindex --accept-rewind`, 인가 정책(reader), `packages/harbor-langfuse/`(Harbor JobPlugin → Langfuse dataset run·trace·score) | §5의 검사 아홉 각각을 위반한 표본이 `check`에서 항목 번호와 함께 거부되고 인덱스 빌드에서 같은 스킬이 빠지며, `init`이 빈 저장소를 완성된 카탈로그 저장소로 만들고 두 번째 실행에서 변경이 없으며, PR로 병합한 스킬이 `FETCH_INTERVAL_SECONDS` 두 주기 안에 `search_skills`에 나온다 |
-| **P4 카탈로그 스킬 작성** | skills P1 | `pin-skill`·`new-skill`(브랜치·커밋·PR 절차 안내) 작성과 로컬 검증, 팀 규약(종료 코드 2/3/4, PEP 723 + `uv run --script`, `metadata.requires-tools`, evals 최소 예시)을 `new-skill`의 `references/conventions.md`에, README 사용자 안내 절 문장. 게시는 아직이다(P5) | 두 스킬이 `skills-ref validate`를 통과하고 각자 양성·음성 evals 한 쌍이 있으며 `purpose/agent-skill` 게이트가 SKILL.md 둘을 검사하며 한 번 돌았다 |
+| **P3 검사·초기화·Langfuse 플러그인** | service P3 | `harness-catalog check`(§5 검사 열, 종료 코드, 인덱스 빌드와 공용), `harness-catalog init <repo-url>`(구조·CI·pre-commit·README, 멱등, 호스트별), `reindex --accept-rewind`, 인가 정책(reader), `packages/harbor-langfuse/`(Harbor JobPlugin → Langfuse dataset run·trace·score) | §5의 검사 열 각각을 위반한 표본이 `check`에서 항목 번호와 함께 거부되고 인덱스 빌드에서 같은 스킬이 빠지며, `init`이 빈 저장소를 완성된 카탈로그 저장소로 만들고 두 번째 실행에서 변경이 없으며, PR로 병합한 스킬이 `FETCH_INTERVAL_SECONDS` 두 주기 안에 `search_skills`에 나온다 |
+| **P4 카탈로그 스킬 작성** | skills P1 | `pin-skill`·`write-skill`(브랜치·커밋·PR 절차 안내) 작성과 로컬 검증, 팀 규약(종료 코드 2/3/4, PEP 723 + `uv run --script`, `metadata.requires-tools`, evals 최소 예시)을 `write-skill`의 `references/conventions.md`에, README 사용자 안내 절 문장. 게시는 아직이다(P5) | 두 스킬이 `skills-ref validate`를 통과하고 각자 양성·음성 evals 한 쌍이 있으며 `purpose/agent-skill` 게이트가 SKILL.md 둘을 검사하며 한 번 돌았다 |
 | **P5 배포·첫 카탈로그 저장소·게시** | distribution P2 · P3 · skills P2 | 이미지(다단계, git+gitleaks, CI가 한 번 빌드해 커밋 SHA 태그·digest 발행), 루트 compose(빠른 시작)와 `examples/synology-ldap/` 오버레이(Dex↔Synology LDAP, 그룹 `skills-readers`), 정적 클라이언트(하네스 셋 + CI 러너), 리버스 프록시 뒤 공개 URL, `examples/catalog-template/` 완성(표지·`skills/.gitkeep`·CI github/gitlab·README 체크리스트), `docs/` 초판, **첫 카탈로그 저장소 신설**(`harness-catalog init`), 그 뒤 두 스킬을 첫 PR로 올려 병합해 `list_skills`에 보이게 한다 | 새 VM에서 `.env`만 채우고 `docker compose up`으로 셋이 뜨고 `/readyz` 200, `init`으로 만든 저장소의 첫 PR CI가 두 스킬로 초록, deploy key(읽기 전용)·권한 체크리스트 전 항목 확인, 두 스킬이 `list_skills`에 보인다 |
 | **P6 파일럿** | pilot P1 | §9의 나머지: 가정 셋(매 반복 검색 비용, 트라이그램 한국어 검색, 부하)과 하네스 몫 둘(`load_skill` 본문 잔존, 이름순 목록 한계), `pin-skill` 준수. 사용자 하나·루프 없이 세션 기반 측정 | §9 열한 항목 전부에 기록된 답(첫째는 §6-1의 결정). 파일럿 하네스 셋에서 `pin-skill` 지시대로 임시 디렉토리→대조→이름 바꾸기가 관찰됐다. 설계를 뒤집은 것은 DESIGN §11 행으로 |
 
@@ -108,7 +108,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | 관측 스택(OTel·Grafana) | 도구 호출 스팬은 이미 OTLP로 Langfuse에 가고, 대시보드를 요구하는 결정이 아직 없다 |
 | 프레임워크(FastAPI·ORM·DI·태스크 큐) | SDK가 Starlette 앱을 주고 HTTP 라우트는 둘, 표는 셋+1이라 감출 것이 없다(§2.1 Python 표). 표에 없는 것은 넣지 않는다 |
 | PyPI 게시 | 설치 단위는 컨테이너 이미지 하나다(DESIGN §2.1 "아티팩트 하나"). 이미지 없이 돌릴 사람은 `uv pip install git+https://github.com/alteralab/harness-catalog`로 같은 패키지를 받는다. PyPI는 이름 등록·릴리스 절차·토큰을 더하는데 그것을 요구하는 소비자가 없다 |
-| 카탈로그 스킬을 별도 저장소로 | 소비자 둘(`pin-skill`은 파일럿, `new-skill`은 저자)이고 저자가 한 사람이다. 이 저장소의 `skills/`에서 저작해 카탈로그 저장소에 PR로 올린다. 카탈로그 저장소의 사본이 정본이 되는 시점은 게시 순간이고, 그 뒤 `skills/`는 이력만 남는다 |
+| 카탈로그 스킬을 별도 저장소로 | 소비자 둘(`pin-skill`은 파일럿, `write-skill`은 저자)이고 저자가 한 사람이다. 이 저장소의 `skills/`에서 저작해 카탈로그 저장소에 PR로 올린다. 카탈로그 저장소의 사본이 정본이 되는 시점은 게시 순간이고, 그 뒤 `skills/`는 이력만 남는다 |
 
 ## 8. 리스크 대응표
 
@@ -130,7 +130,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | # | 검증 | 방법 | 통과 기준 | 상태 |
 |---|---|---|---|---|
 | V1 | 설치 1회 | 파일럿 하네스 셋에 URL 한 줄을 등록하고 로그인 한 번 뒤 `search_skills`가 답한다 | 셋 전부 URL 한 줄 + 로그인 한 번으로 성공. 추가 설정이 있으면 그 항목을 기록하고 불통과 | 대기 |
-| V2 | 병합 반영 | 하네스 A에서 `new-skill`로 PR을 열고 사람이 병합 → 하네스 B에서 `search_skills` | 병합 뒤 `FETCH_INTERVAL_SECONDS` 두 주기 안에 B의 검색에 나온다 | 대기 |
+| V2 | 병합 반영 | 하네스 A에서 `write-skill`로 PR을 열고 사람이 병합 → 하네스 B에서 `search_skills` | 병합 뒤 `FETCH_INTERVAL_SECONDS` 두 주기 안에 B의 검색에 나온다 | 대기 |
 | V3 | 직접 push 수용 | 규율을 어기고 PR 없이 `main`에 직접 push | 설정된 `FETCH_INTERVAL_SECONDS`의 두 주기 안에 인덱스에 반영되고(허용오차의 정의는 이 행이 소유하고 distribution V8·service V10·V19가 참조한다) 인덱스 빌드가 `check`를 돌렸다 | 대기 |
 | V4 | 검사 fail-closed | `check`에 걸리는 스킬(validate 실패, 시크릿)을 규율을 어기고 직접 push | 인덱스에서 빠지고 `/readyz`의 `degraded`에 적히며, 같은 변경을 PR로 올리면 CI가 붉다 | 대기 |
 | V5 | 재기동 복구 | 새 VM에 compose를 올리고 기존 카탈로그 저장소를 가리킨다 | fetch만으로 인덱스가 다시 지어지고 `/readyz` 200. 은퇴한 이름을 `check` 항목 5가 여전히 거부한다(이력에서 읽으므로) | 대기 |
@@ -149,13 +149,14 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | 2026-09-26 | 설계 개정 | 사용자 결정: 주기 fetch 간격을 설정값 `FETCH_INTERVAL_SECONDS`(기본 60초)로. DESIGN §2·§2.1·§11에 반영(설정값 여섯 = 필수 다섯 + 선택 둘) | DESIGN §11 |
 | 2026-09-26 | 사용자 결정 §6-8 | `main` 보호를 우선하지 않는다. DESIGN §2.1·§8·§11 반영, distribution 체크리스트 3·V7 개정. §6 미결 0 | §6-8 |
 | 2026-09-26 | 브랜치 보호 시도 | `alteralab/harness-catalog`(비공개)에 룰셋과 classic protection을 API로 걸어 봤으나 둘 다 403(Free 플랜 제약). §6-8로 등록. 카탈로그 저장소의 "보호된 main" 요건도 같은 제약이라 distribution 체크리스트 3·V7은 §6-8이 정해져야 통과 가능 | §6-8 |
+| 2026-09-27 | 사용자 결정: 공유 스크립트·write-skill·CI 게이트 | `check` 항목 10(복사본 드리프트 경고), §5.1 공유 규약, `new-skill`→`write-skill`, CI evals 잡은 항상 있고 `HARNESS_EVALS` 변수 + 러너 `.env` 자격으로 켜고 끈다. skills(D4·D11·V11), distribution(D19·D21·템플릿·docs), service(P3 검사 열·V9), pilot Q14(f) | DESIGN §11 |
 | 2026-09-27 | 사용자 결정: v3.5 사용 기록도 Langfuse | `usage_record`·보존 삭제·`USAGE_RETENTION_DAYS` 제거(설정값 여섯·표 하나·규칙 다섯). 도구 호출 스팬 속성 규약. service(P2·D11·D12·V7·V8), distribution(D20 OTel 환경 변수·`.env.example`), pilot Q8·Q15, skills README 문단 | DESIGN §11 |
 | 2026-09-27 | 사용자 결정: v3.4 평가 결과는 Langfuse | `eval_result`·`record_eval`·`skills:write`·`EVAL_RECORD` 제거(도구 넷·포트 일곱·표 둘·오류 코드 다섯). `packages/harbor-langfuse/` 신설. service(P3·V4·V8·V15·V16·V26·D6·D8), distribution(D5·D19·dev-token 스코프), skills(단계 8·D8·V9·description), pilot Q14(e) | DESIGN §11 |
 | 2026-09-26 | 사용자 결정: evals = Harbor | §5.1 형식·러너·자격(구독), §7 LangSmith 조건, §10 출처. skills(D8·V8·단계 5·8), distribution D19(CI 단계), service P3-7a·V26(플러그인), pilot Q14 | DESIGN §11 |
 | 2026-09-26 | 사용자 결정: `list_skills` 필드 | 선택에 쓰이는 필드만(`commit`·`metadata` 전체·본문 토큰 수 삭제, `evals`는 인자 있을 때 한 행). 근거는 Liu 2024·후옌·Anthropic과 호스트 여덟 사례(DESIGN §4·§10·§11). service D10·S6 삭제, V16, pilot Q6·Q7, skills 검수 6 | DESIGN §11 |
 | 2026-09-26 | 사용자 결정 §6-9·배치 | 읽기 신원은 LDAP 유지, GitHub 커넥터 실측은 지금 하지 않는다. `research/`는 원자료용 비추적 디렉토리, 실측 기록은 `plans/pilot/rN.md`, 측정 도구는 `tools/pilot/` | §3-8, §6-9 |
 | 2026-09-26 | Codex 교차 검증 3회 | v3.3 검증(이전 20건 중 18건 해소·소멸, 미해결 2건 + 신규 19건). 치명 둘 반영: 브랜치 판 `record_eval` 제거(`main` 병합 뒤 기록), `check --base` 입력 계약. §7 잔재·명단 불변식·되감기 승인·PLAN 잔재 정정 | DESIGN §11 9차 |
-| 2026-09-26 | 사용자 결정: v3.3 | 게시·인증을 레지스트리 도구에서 git 호스트의 트렁크 기반 워크플로로. 레지스트리 읽기 전용, `check`·`init` CLI, 브랜치 보호는 비용 때문에 예외(규율), 클라우드 샌드박스 세션 정의. PLAN 넷 동기(service P3·V, skills new-skill, distribution D14·D15·체크리스트, pilot Q13) | DESIGN §11 |
+| 2026-09-26 | 사용자 결정: v3.3 | 게시·인증을 레지스트리 도구에서 git 호스트의 트렁크 기반 워크플로로. 레지스트리 읽기 전용, `check`·`init` CLI, 브랜치 보호는 비용 때문에 예외(규율), 클라우드 샌드박스 세션 정의. PLAN 넷 동기(service P3·V, skills write-skill, distribution D14·D15·체크리스트, pilot Q13) | DESIGN §11 |
 | 2026-09-26 | Codex 교차 검증 2회 | publish·certify 모순(20건). 사용자 결정 (A): 인증 판은 레지스트리 소유 ref, editor는 저장소 쓰기 자격 없음. 유효 판 인덱스·fail-closed·인증 세대·`retire_requires_revoke`. DESIGN §11 8차 리뷰 표, service·skills·distribution 동기 | DESIGN §11 |
 | 2026-09-26 | 사용자 결정: 역할 3단 | reader·editor·admin 계층과 그룹 셋(DataHub·Langfuse 관례). DESIGN §2·그림 4·§5·§7·§11, service V5, distribution D4·체크리스트 | DESIGN §11 |
 | 2026-09-26 | 사용자 결정: 인증된 판 | Snowflake certify 선례를 따라 `certify_skill`·`certification`·인증자 그룹 `skills-admins`를 설계에 넣었다(DESIGN §11). 게시 게이트는 그대로 없고 소비 기본값을 사람이 정한다. service P3·V5·V22, skills pin 기본, pilot Q6 반영 | DESIGN §11 |

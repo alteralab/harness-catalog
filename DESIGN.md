@@ -419,7 +419,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 
 **바닐라인가 라이브러리인가.** 둘을 가른다. **pydantic은 쓴다.** SDK가 이미 의존하고, 설정(pydantic-settings)·도구 입력 스키마·응답 모델의 검증과 직렬화를 맡는다. 우리가 직접 쓰면 그것이 곧 중복이다. **헥사고날 프레임워크와 DI 프레임워크는 쓰지 않는다.** `[it]` 파이썬 세계에서 DI 프레임워크는 의심받고, 의존을 전부 명시적으로 선언했다면 조립은 부트스트랩 스크립트(합성 루트) 하나로 충분하다. 그것이 그림 2의 Configurator다. 같은 소스가 시그니처를 검사해 이름으로 의존을 맞추는 자기만의 주입기를 짰다가 공저자에게 과잉 설계라는 반론을 받았다고 적는다. DI 프레임워크가 값을 하는 자리는 여러 수준에서 주입이 필요할 때인데, 이 서비스는 어댑터 넷을 앱 함수에 꽂는 한 수준뿐이다. 포트는 `typing.Protocol`로 적는다. `[it]` 추상 기반 클래스는 필수가 아니고 덕 타이핑으로 추상이 성립하며, Protocol은 pyright가 어댑터가 포트를 만족하는지 정적으로 검사하게 해 준다. 실행 시점 강제는 없고 그것으로 충분하다. 요약하면 검증·직렬화·설정은 라이브러리(pydantic), 구조(포트·어댑터·조립)는 바닐라다. 코드 구조는 `[it]` 파이썬의 포트와 어댑터 규정(어댑터를 인수로 받는 함수가 포트, 추상 기반 클래스는 필수 아님)을 따르되 §2 "헥사고날은 여기까지다"의 경계를 지킨다. 대략 모듈 넷(app, adapters, mcp_tools, config)이고 수백 줄에서 천 줄 사이로 본다(추정).
 
-**저장소 초기화 — `harness-catalog init`이 한 번 쓴다.** 카탈로그 저장소가 갖춰야 할 것은 여섯이다. 표지 파일 `.harness-catalog`(내용 `layout = 1`. 이 저장소가 어느 배치의 카탈로그인지 선언한다), `skills/` 디렉토리(git은 빈 디렉토리를 남기지 않으므로 `skills/.gitkeep`), CI 워크플로(PR마다·`main` push마다 `harness-catalog check`, 그리고 `main` push에서 `harbor run --plugin harbor_langfuse`로 evals를 돌려 Langfuse에 남기는 선택 단계), pre-commit 설정(`harness-catalog check`를 로컬 훅으로), README(등록 한 줄, 브랜치 규율, 검색어에 비밀 금지), 그리고 `main` 직접 push·강제 push 금지라는 규율(설정이 아니다 — §11 브랜치 보호 예외). 앞의 다섯은 파일이고 **`harness-catalog init <repo-url>`**이 만든다. 운영자의 git 자격으로 저장소를 clone해 URL에서 호스트(GitHub·GitLab)를 알아내 그 호스트의 워크플로 파일을 놓고, 나머지 넷을 쓰고, 커밋해 push한다. 이미 있는 파일은 건드리지 않고 없는 것만 더하며(멱등), 표지가 있는데 `layout`이 다르면 멈춘다. 레지스트리 프로세스는 이 명령을 부르지 않는다 — 기동 시 저장소에 쓰지 않고 검사만 한다(`[it]` 토머스·헌트 Tip 38 "일찍 죽어라". 불구가 된 프로그램이 죽은 프로그램보다 더 큰 피해를 준다). init을 기동에서 뗀 이유는 둘이다. 쓰기 자격(운영자)과 읽기 자격(레지스트리 deploy key)이 다르고, CI 형식이 호스트별이라 그것을 아는 코드가 서비스 안에 있으면 git 어댑터의 호스트 중립이 깨진다. CLI는 서비스와 같은 패키지지만 다른 진입점이다. `[it]` 뉴먼은 맞춤 템플릿의 선택과 설정을 플랫폼 팀의 과제로 두되 사용은 선택이어야 한다고 적으며, 자동 템플릿 생성은 보통 짝이 되는 빌드 파이프라인도 함께 만든다고 적는다. 여기서 그 짝이 CI 워크플로다. 템플릿 파일의 원본은 코드 저장소의 `examples/catalog-template/`이고 init이 그것을 패키지 데이터로 들고 간다.
+**저장소 초기화 — `harness-catalog init`이 한 번 쓴다.** 카탈로그 저장소가 갖춰야 할 것은 여섯이다. 표지 파일 `.harness-catalog`(내용 `layout = 1`. 이 저장소가 어느 배치의 카탈로그인지 선언한다), `skills/` 디렉토리(git은 빈 디렉토리를 남기지 않으므로 `skills/.gitkeep`), CI 워크플로(PR마다·`main` push마다 `harness-catalog check`, 그리고 `main` push에서 `harbor run --plugin harbor_langfuse`로 evals를 돌려 Langfuse에 남기는 선택 잡 — 파일에 항상 있되 git 호스트의 변수 `HARNESS_EVALS=true`일 때만 만들어지고, 자격은 러너의 환경에서 읽는다. §5.1 "CI 게이트의 켜고 끄기"), pre-commit 설정(`harness-catalog check`를 로컬 훅으로), README(등록 한 줄, 브랜치 규율, 검색어에 비밀 금지), 그리고 `main` 직접 push·강제 push 금지라는 규율(설정이 아니다 — §11 브랜치 보호 예외). 앞의 다섯은 파일이고 **`harness-catalog init <repo-url>`**이 만든다. 운영자의 git 자격으로 저장소를 clone해 URL에서 호스트(GitHub·GitLab)를 알아내 그 호스트의 워크플로 파일을 놓고, 나머지 넷을 쓰고, 커밋해 push한다. 이미 있는 파일은 건드리지 않고 없는 것만 더하며(멱등), 표지가 있는데 `layout`이 다르면 멈춘다. 레지스트리 프로세스는 이 명령을 부르지 않는다 — 기동 시 저장소에 쓰지 않고 검사만 한다(`[it]` 토머스·헌트 Tip 38 "일찍 죽어라". 불구가 된 프로그램이 죽은 프로그램보다 더 큰 피해를 준다). init을 기동에서 뗀 이유는 둘이다. 쓰기 자격(운영자)과 읽기 자격(레지스트리 deploy key)이 다르고, CI 형식이 호스트별이라 그것을 아는 코드가 서비스 안에 있으면 git 어댑터의 호스트 중립이 깨진다. CLI는 서비스와 같은 패키지지만 다른 진입점이다. `[it]` 뉴먼은 맞춤 템플릿의 선택과 설정을 플랫폼 팀의 과제로 두되 사용은 선택이어야 한다고 적으며, 자동 템플릿 생성은 보통 짝이 되는 빌드 파이프라인도 함께 만든다고 적는다. 여기서 그 짝이 CI 워크플로다. 템플릿 파일의 원본은 코드 저장소의 `examples/catalog-template/`이고 init이 그것을 패키지 데이터로 들고 간다.
 
 **검사는 하나이고 세 자리에서 돈다.** `harness-catalog check [<repo-root>] [--base <commit>]`는 저장소 구조와 스킬마다의 규칙을 판정해 종료 코드로 말한다(0 통과, 1 위반, 2 검사기 실패 — fail-closed). 입력은 둘이다. 검사할 트리(작업 트리 또는 커밋)와, 변화를 볼 기준 커밋 `--base`(§5 항목 5·9가 쓴다: 어느 디렉토리가 새로 생기고 지워졌는가). 세 자리의 기준은 이렇다 — pre-commit 훅은 `HEAD`, PR의 CI는 `main`과의 merge-base, `main` push의 CI는 직전 `main` 커밋, 레지스트리의 인덱스 빌드는 `index_state.commit_sha`(첫 빌드는 기준 없음이라 5·9를 건너뛰고 그 사실을 로그에 적는다). 항목 5(이름 재사용)는 삭제 이력이 필요하므로 얕은 클론에서는 검사기 실패(종료 2)다 — CI는 `fetch-depth: 0`으로 받고, 레지스트리 클론은 전체 이력이며, 저자 머신의 클론은 보통 전체다. 같은 구현을 세 자리가 돌고, 입력(트리·기준·이력 깊이)이 같으면 판정이 같다. 항목은 §5에 있다. 규칙을 더하는 자리도 하나다.
 
@@ -505,7 +505,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 
 ## 5. 거버넌스 — 계산적이고, 게시는 git 호스트의 PR이며, 병합이 인증이다
 
-`[it]` 결정은 전역, 실행은 지역. 게시를 막는 것은 코드 하나(`harness-catalog check`)이고 그것이 검사하는 항목은 아홉이다.
+`[it]` 결정은 전역, 실행은 지역. 게시를 막는 것은 코드 하나(`harness-catalog check`)이고 그것이 검사하는 항목은 열이다.
 
 | # | 검사 | 자리 |
 |---|---|---|
@@ -518,6 +518,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 | 7 | 크기 상한: 파일 50개, 파일당 1 MB, 합계 5 MB. 심볼릭 링크 없음 | 스킬 |
 | 8 | `metadata.requires-tools`의 토큰 문법(§5.1) | 스킬 |
 | 9 | 은퇴는 디렉토리 삭제이고, `--base` 대비 지워진 스킬은 기준 커밋의 SKILL.md에 `replaced-by`가 있었다(권고 위반은 경고, 종료 코드에 안 걸린다) | 스킬(기준 커밋 대비) |
+| 10 | 복사된 스크립트의 드리프트: 서로 다른 스킬의 `scripts/` 아래 같은 상대 경로의 파일이 내용이 다르면 경고(어느 둘인지 출력). 공유 규약은 §5.1(경고, 종료 코드에 안 걸린다) | 저장소(스킬 쌍) |
 
 같은 명령이 세 자리에서 돈다. 저자 머신의 pre-commit 훅(커밋 전), PR과 `main` push의 CI(병합 전), 레지스트리의 인덱스 빌드(병합 뒤, 소비 전). 앞의 둘이 붉으면 병합하지 않는 것이 규율이고 — 브랜치 보호를 걸 수 없어(§11) 강제는 아니다 — 셋째는 규율이 깨져도 위반 스킬이 소비되지 않게 한다. **사람의 판단은 PR 리뷰다.** 리뷰어를 요구하지 않는다(팀 하나에서 셀프 병합이 병목보다 낫다, `[it]` 연합 컴퓨테이셔널 거버넌스: 수작업 인증은 병목). 리뷰를 받고 싶은 변경은 PR에서 받고, 병합한 사람이 그 판의 인증자다. 그래서 인증은 별도 사실이 아니라 병합 커밋이다. `[웹]` Snowflake CoCo가 certify를 별도 관리자 행위로 둔 것(§11 인증된 판)은 게시가 저자의 개인 저장소에서 일어나기 때문이고, 게시 자체가 공유 저장소의 병합인 이 설계에서는 병합이 그 자리다(dbt Cloud·Backstage처럼 카탈로그 파일이 git에 있고 병합이 곧 반영되는 꼴 — 모델 지식).
 
@@ -525,7 +526,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 - **비공개.** 카탈로그에 올리기 전의 스킬은 저자의 개인 디렉토리(어디든, 카탈로그 밖)나 아직 병합되지 않은 브랜치에 있다. 그것이 비공개다. `[it]` 특수 사례를 없애 흔한 경우가 엣지까지 처리하게 한다. "비공개 게시 상태"를 따로 두지 않는다.
 - **공유.** 팀(`skills-readers` 그룹)과 서비스 주체가 전부 읽는다. 디렉터리에 있을 뿐 그룹에 없는 사람은 읽지 못한다. **v3에는 스킬 단위 읽기 제한이 없다.** 팀 안에서는 저장소를 읽을 수 있으면 레지스트리로도 읽는다. 읽기 제한이 필요한 스킬이 생기면 git 호스트 권한이 걸린 둘째 저장소가 그 자리이고 레지스트리가 저장소 둘을 읽게 된다(§7).
 - **품질.** 게이트 대신 피드백 루프다. `[it]` 중복·저품질을 인증으로 막지 말고 검색 순위와 넛지로 격하하라. v3.0은 순위를 두지 않는다(이름순). 목록이 한 화면을 넘을 때 Langfuse의 사용 기록(도구 호출 스팬)에서 순위를 계산해 인덱스 열로 넣는다.
-- **감사.** 쓰기는 git 이력(커밋 author, PR, 병합 커밋). 읽기는 Langfuse의 도구 호출 스팬(§2 데이터 표). 속성은 주체(`langfuse.user.id`=`sub`)·도구(`gen_ai.tool.name`)·스킬 식별자·SHA·시각이고, `search_skills` 스팬에는 검색어와 결과 수가 더 있다(검색어는 2000자에서 자르고 제어 문자를 지운다. 어떤 질의가 어떤 스킬로 이어졌는지는 같은 주체의 뒤따르는 `load_skill`로 읽는다. MCP 2026-07-28에 세션이 없어 요청 간 상관 키는 두지 않는다. 검색어에 비밀을 넣지 말라는 안내는 `pin-skill`·`new-skill`과 같은 자리인 카탈로그 README에 둔다). 보존과 접근은 Langfuse 프로젝트의 것이다. v3.0은 쌓기만 하고 보지 않으며, 순위와 채택률이 나중에 이 기록에서 나온다.
+- **감사.** 쓰기는 git 이력(커밋 author, PR, 병합 커밋). 읽기는 Langfuse의 도구 호출 스팬(§2 데이터 표). 속성은 주체(`langfuse.user.id`=`sub`)·도구(`gen_ai.tool.name`)·스킬 식별자·SHA·시각이고, `search_skills` 스팬에는 검색어와 결과 수가 더 있다(검색어는 2000자에서 자르고 제어 문자를 지운다. 어떤 질의가 어떤 스킬로 이어졌는지는 같은 주체의 뒤따르는 `load_skill`로 읽는다. MCP 2026-07-28에 세션이 없어 요청 간 상관 키는 두지 않는다. 검색어에 비밀을 넣지 말라는 안내는 `pin-skill`·`write-skill`과 같은 자리인 카탈로그 README에 둔다). 보존과 접근은 Langfuse 프로젝트의 것이다. v3.0은 쌓기만 하고 보지 않으며, 순위와 채택률이 나중에 이 기록에서 나온다.
 - **evals.** 있으면 팀이 자기 스킬 디렉토리 안에 Harbor 태스크 형식으로 두고(§5.1) `harbor run`으로 자기가 돌린다. 결과는 Langfuse에 남는다(플러그인). 병합 조건이 아니다. PR의 CI가 돌려 검사 결과로 보이는 것과 `main` push의 CI가 병합된 판으로 돌려 Langfuse에 남기는 것은 팀의 선택이다.
 - **검사기 운영.** `check`는 레지스트리 이미지와 CI가 같은 패키지 판을 쓴다(pre-commit은 `rev`로 핀). 검사기 자체가 실패하면 통과로 치지 않는다(종료 코드 2, fail-closed). 시크릿 스캔 오탐은 저자가 해당 파일을 고치는 것이 유일한 길이고 예외 승인 절차는 두지 않는다.
 
@@ -539,18 +540,18 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 |---|---|---|---|
 | 착상 | 사람 | `[영상]` 36:27~36:37 하루 종일 돌린 워크플로가 성공했을 때, `[it]` 실세계 용법에서 시작한다 | 권고 |
 | 중복 확인 | 사람 + `search_skills` | 같은 일을 하는 스킬이 있는지 검색한다. 있으면 ③ 갱신 경로로 | 권고 |
-| 부트스트랩 | 사람 + 에이전트 | 스킬 뼈대(SKILL.md frontmatter·본문 절·`scripts/`·`evals/`)를 개인 디렉토리에 만든다. 뼈대를 만드는 것은 레지스트리 기능이 아니라 **스킬 하나**다. `[웹]` Anthropic의 `skill-creator`(anthropics/skills, `init_skill.py`로 디렉토리 생성)와 Codex 내장 `$skill-creator`가 같은 일을 하며, 카탈로그는 `pin-skill`과 같은 방식으로 `new-skill` 스킬을 실어 이 팀의 규약(결정/비결정 분리, 실패 대응 표, 종속성 적는 법)을 뼈대에 넣는다. 여기까지는 카탈로그 밖이다 | 권고 |
+| 부트스트랩 | 사람 + 에이전트 | 스킬 뼈대(SKILL.md frontmatter·본문 절·`scripts/`·`evals/`)를 개인 디렉토리에 만든다. 뼈대를 만드는 것은 레지스트리 기능이 아니라 **스킬 하나**다. `[웹]` Anthropic의 `skill-creator`(anthropics/skills, `init_skill.py`로 디렉토리 생성)와 Codex 내장 `$skill-creator`가 같은 일을 하며, 카탈로그는 `pin-skill`과 같은 방식으로 `write-skill` 스킬을 실어 이 팀의 규약(결정/비결정 분리, 실패 대응 표, 종속성 적는 법)을 뼈대에 넣는다. 여기까지는 카탈로그 밖이다 | 권고 |
 
 **② 빌드·테스트.**
 
 | 단계 | 누가 | 무엇을 | 필수/권고 |
 |---|---|---|---|
 | 작성 | 사람 + 에이전트 | SKILL.md 본문. `[영상]` 36:49~37:01 여러 세션의 절차를 증류해 더 나은 SKILL.md로 | 권고 |
-| 스크립트 종속성 | 사람 + 에이전트 | 종속성은 둘로 갈라 적는다. 루프가 기계적으로 거르길 원하면 `metadata.requires-tools`에 공백 구분 목록(예: `"yt-dlp ffmpeg uv"`)을 적는다(팀 규약. 토큰 문법은 `check` 항목 8이 보고 설치 여부는 보지 않는다. `compatibility`는 사람이 읽는 문장). **언어 패키지**는 스크립트 안에서 해결한다. 파이썬이면 `[웹]` PEP 723 인라인 메타데이터(`# /// script` … `dependencies = [...]`)로 종속성을 적고, `[웹]` uv의 `uv run --script <path>`가 첫 실행 때 격리 환경을 만들어 설치한다(둘은 다른 출처다. PEP 723은 형식만, 설치는 uv의 동작). 호출은 `uv run --script scripts/x.py`로 통일해 실행 비트에 기대지 않는다(§3이 실행 비트를 무시하므로 shebang 직접 실행은 쓰지 않는다). 따라서 `uv` 자체가 시스템 도구이며 `compatibility`에 적는다. 첫 실행은 네트워크가 필요하므로 내려받은 스킬의 "오프라인"은 본문과 이미 설치된 환경까지다. 판을 고정하려면 `uv lock --script`의 잠금 파일을 스킬에 함께 두거나 `exclude-newer`를 쓴다(권고). 사내 패키지 인덱스와 프록시는 `uv`의 환경 변수로 사용자 머신에서 정한다. (`[altera-skills]` `plugins/*/skills/*/scripts/*.py` 중 PEP 723 머리를 단 실행 스크립트 10개가 이 형태다.) **시스템 도구**(`yt-dlp`·`ffmpeg`·`node` 등)와 네트워크는 frontmatter `compatibility`에 적고(`[웹]` 스펙의 예: "Requires git, docker, jq, and access to the internet"), 스크립트는 그 도구가 없을 때 종료 코드와 설치 안내로 실패한다. 코드 값은 이 팀의 규약이다. 2 입력 오류, 3 대상 없음, 4 시스템 도구 없음(`[altera-skills]` yt-subs의 실물: exit 4 + `brew install yt-dlp`. 한 사례이며 규약은 여기서 정한다). 카탈로그는 설치하지 않는다. 검색 결과에 `compatibility`를 실어 로드 전에 보이게 할 뿐이다(§3) | 권고 (스펙의 "self-contained or clearly document dependencies"를 채우는 법) |
+| 스크립트 종속성 | 사람 + 에이전트 | 종속성은 둘로 갈라 적는다. 루프가 기계적으로 거르길 원하면 `metadata.requires-tools`에 공백 구분 목록(예: `"yt-dlp ffmpeg uv"`)을 적는다(팀 규약. 토큰 문법은 `check` 항목 8이 보고 설치 여부는 보지 않는다. `compatibility`는 사람이 읽는 문장). **언어 패키지**는 스크립트 안에서 해결한다. 파이썬이면 `[웹]` PEP 723 인라인 메타데이터(`# /// script` … `dependencies = [...]`)로 종속성을 적고, `[웹]` uv의 `uv run --script <path>`가 첫 실행 때 격리 환경을 만들어 설치한다(둘은 다른 출처다. PEP 723은 형식만, 설치는 uv의 동작). 호출은 `uv run --script scripts/x.py`로 통일해 실행 비트에 기대지 않는다(§3이 실행 비트를 무시하므로 shebang 직접 실행은 쓰지 않는다). 따라서 `uv` 자체가 시스템 도구이며 `compatibility`에 적는다. 첫 실행은 네트워크가 필요하므로 내려받은 스킬의 "오프라인"은 본문과 이미 설치된 환경까지다. 판을 고정하려면 `uv lock --script`의 잠금 파일을 스킬에 함께 두거나 `exclude-newer`를 쓴다(권고). 사내 패키지 인덱스와 프록시는 `uv`의 환경 변수로 사용자 머신에서 정한다. (`[altera-skills]` `plugins/*/skills/*/scripts/*.py` 중 PEP 723 머리를 단 실행 스크립트 10개가 이 형태다.) **여러 스킬이 같은 스크립트를 쓸 때**는 크기로 가른다(사용자 결정 2026-09-27, §11). 라이브러리 규모면 카탈로그 저장소의 `packages/<lib>/`(또는 별도 저장소)에 패키지로 두고, 각 스킬의 `scripts/x.py`는 PEP 723 `dependencies`에 `<lib> @ git+<url>@<sha-or-tag>#subdirectory=packages/<lib>`를 적은 얇은 진입점만 남긴다(`[웹]` 인라인 스크립트 메타데이터 스펙: 항목은 dependency specifier라 직접 참조가 된다. 2026-09-27 uv 0.11.8로 `skills-ref @ git+https://github.com/agentskills/agentskills@<sha>#subdirectory=skills-ref`가 `uv run --script`로 그대로 설치·실행됨을 실측). 판은 SHA나 태그로 고정한다. 몇십 줄이면 복사한다 — `[웹]` Anthropic 자체 저장소가 `docx`·`pptx`·`xlsx`에 같은 `scripts/office/` 11개 파일을 내용까지 동일하게 각자 갖는 방식이고(2026-09-27 해시 대조), 스펙의 "self-contained"와 맞는다. 복사본의 드리프트는 `check` 항목 10이 경고한다. 실행 지점이 서버여야 하는 능력만 MCP 도구로 내고 `metadata.requires-tools`에 적는다(§11 toolbox 결정). Claude Code의 `${CLAUDE_PLUGIN_ROOT}`는 쓰지 않는다 — 플러그인 설치에만 존재해 레지스트리 로드·pin·Harbor 주입 경로에서 풀리지 않는다(`[웹]` `${CLAUDE_SKILL_DIR}`는 "the skill's subdirectory within the plugin, not the plugin root"). 스킬 간 호출은 구조가 아니다 — 스펙·Claude Code·Codex 문서에 스킬이 다른 스킬을 부르는 문법이 없고, 있는 것은 사람·에이전트의 `/name` 호출뿐이다(2026-09-27 확인). **시스템 도구**(`yt-dlp`·`ffmpeg`·`node` 등)와 네트워크는 frontmatter `compatibility`에 적고(`[웹]` 스펙의 예: "Requires git, docker, jq, and access to the internet"), 스크립트는 그 도구가 없을 때 종료 코드와 설치 안내로 실패한다. 코드 값은 이 팀의 규약이다. 2 입력 오류, 3 대상 없음, 4 시스템 도구 없음(`[altera-skills]` yt-subs의 실물: exit 4 + `brew install yt-dlp`. 한 사례이며 규약은 여기서 정한다). 카탈로그는 설치하지 않는다. 검색 결과에 `compatibility`를 실어 로드 전에 보이게 할 뿐이다(§3) | 권고 (스펙의 "self-contained or clearly document dependencies"를 채우는 법) |
 | description 검수 | 사람 | `[웹]` UC 문서가 사람의 검수를 결정적이라 적는 자리. 무엇을·언제 쓰는지, 검색될 낱말이 들어 있는지, **핵심 용례와 발동 낱말이 앞에 있는지**(`[웹]` Codex: 호스트가 설명을 자를 수 있으니 "front-load the key use case and trigger words"; `[it]` Liu의 첫머리 편향) | 권고 (기계가 검사하지 않는다) |
 | 로컬 검증 | 기계 | `skills-ref validate` | 권고 (서버가 어차피 다시 한다) |
 | 써 보기 | 사람 | 자기 세션에서 실제 과제에 써 본다 | 권고 |
-| evals(둔다면) | 사람 + 에이전트 | 스킬 디렉토리 안 `evals/<case>/`에 **Harbor 태스크**를 둔다(`[웹]` Harbor: Terminal-Bench 2를 낸 쪽의 오픈소스 평가 러너, Apache-2.0, 2026-09-26 확인. 태스크 = `task.toml` + `instruction.md` + `tests/test.sh` + `environment/Dockerfile`, 검증기가 `/logs/verifier/reward.txt`에 0/1을 쓴다). 써야 하는 과제 하나와 쓰지 말아야 하는 과제 하나(`no-trigger-*`)가 최소다(`[altera-skills]` `gates/eval_coverage.py`의 규약). 스킬 주입은 Harbor의 스킬 원천 문법 `<org>/<catalog>@<sha>`(기본 하위 디렉토리 `skills/`)이 우리 저장소 배치와 그대로 맞아, 같은 데이터셋을 스킬 있이(`skills=[catalog@sha]`)·없이(`skills=[]`) 두 잡으로 돌리면 `passed`·`baseline_passed`가 나온다. 판정자는 검증기가 정한다(코드·pytest·LLM 판정자 무엇이든). 형식·개수는 이 최소 위에 팀이 얹는다. 카탈로그는 이 디렉토리를 읽지도 돌리지도 않는다. **결과는 Langfuse에 남는다** — `harbor run --plugin harbor_langfuse:LangfusePlugin`이 스킬마다 dataset(`<catalog>/<skill>`, item = 케이스), 잡마다 dataset run(메타데이터 `skill`·`sha`·`scenario_sha`·`model`·`harness`·`baseline`), 트라이얼마다 trace와 `passed` score(BOOLEAN, reward ≥ 1)를 만든다. 사람은 자기 머신에서 자기 Langfuse 키로, `main` push의 CI(mini 러너)는 러너 시크릿의 키로. 스킬 있이·없이 두 run을 Langfuse UI의 run 비교로 본다. 다시 돌리는 때 셋: 스킬 본문을 고쳤을 때, 주요 모델이 나왔을 때, 분기마다(`[altera-skills]` `evals/LEDGER.md` 규약. `[영상]` 0qySk1fcf6k: 최신 모델에 대해서도 검증하라). 스킬 없이(baseline) 2회 연속 전 케이스 통과면 폐기 심사 대상(같은 LEDGER). 최소 예시는 아래 | 권고 (게이트 아님, §7) |
+| evals(둔다면) | 사람 + 에이전트 | 스킬 디렉토리 안 `evals/<case>/`에 **Harbor 태스크**를 둔다(`[웹]` Harbor: Terminal-Bench 2를 낸 쪽의 오픈소스 평가 러너, Apache-2.0, 2026-09-26 확인. 태스크 = `task.toml` + `instruction.md` + `tests/test.sh` + `environment/Dockerfile`, 검증기가 `/logs/verifier/reward.txt`에 0/1을 쓴다). 써야 하는 과제 하나와 쓰지 말아야 하는 과제 하나(`no-trigger-*`)가 최소다(`[altera-skills]` `gates/eval_coverage.py`의 규약). 스킬 주입은 Harbor의 스킬 원천 문법 `<org>/<catalog>@<sha>`(기본 하위 디렉토리 `skills/`)이 우리 저장소 배치와 그대로 맞아, 같은 데이터셋을 스킬 있이(`skills=[catalog@sha]`)·없이(`skills=[]`) 두 잡으로 돌리면 `passed`·`baseline_passed`가 나온다. 판정자는 검증기가 정한다(코드·pytest·LLM 판정자 무엇이든). 형식·개수는 이 최소 위에 팀이 얹는다. 카탈로그는 이 디렉토리를 읽지도 돌리지도 않는다. **결과는 Langfuse에 남는다** — `harbor run --plugin harbor_langfuse:LangfusePlugin`이 스킬마다 dataset(`<catalog>/<skill>`, item = 케이스), 잡마다 dataset run(메타데이터 `skill`·`sha`·`scenario_sha`·`model`·`harness`·`baseline`), 트라이얼마다 trace와 `passed` score(BOOLEAN, reward ≥ 1)를 만든다. 사람은 자기 머신에서 자기 Langfuse 키로, `main` push의 CI(mini 러너)는 러너 환경의 키로 — 둘 다 지원하고 CI 쪽은 선택이다(아래 "CI 게이트의 켜고 끄기"). 스킬 있이·없이 두 run을 Langfuse UI의 run 비교로 본다. 다시 돌리는 때 셋: 스킬 본문을 고쳤을 때, 주요 모델이 나왔을 때, 분기마다(`[altera-skills]` `evals/LEDGER.md` 규약. `[영상]` 0qySk1fcf6k: 최신 모델에 대해서도 검증하라). 스킬 없이(baseline) 2회 연속 전 케이스 통과면 폐기 심사 대상(같은 LEDGER). 최소 예시는 아래 | 권고 (게이트 아님, §7) |
 
 evals의 최소 예시. 케이스 하나가 Harbor 태스크 디렉토리 하나다.
 
@@ -575,11 +576,13 @@ skills/yt-subs/
 
 **결과의 자리는 Langfuse다 — 카탈로그가 만들지 않는다.** 사용자 결정(2026-09-27, §11)의 문장은 "직접 발명하는 것은 관측 도구를 이기지 못한다"이고, 팀은 이미 Langfuse Cloud Hobby를 쓴다. v3.3까지 있던 `eval_result` 표·`record_eval` 도구는 뺐다. 대응은 이렇다(`[웹]` Langfuse 데이터 모델·실험 SDK, 2026-09-27 확인). 스킬 하나 = dataset `<catalog>/<skill>`, 케이스 하나 = dataset item(`input` = `instruction.md`, `metadata.case`), `harbor run` 한 번 = dataset run(`metadata`에 `skill`·`sha`·`scenario_sha`·`model`·`harness`·`baseline`), 트라이얼 하나 = trace(입력·출력·토큰·비용, Harbor `result.json`의 `trial_uri`를 메타데이터로) + run item + score `passed`(BOOLEAN). Score는 "exactly one of Trace, Observation, Session, or DatasetRun"에 붙고 run item이 `traceId`를 가지므로 판정에서 궤적으로 간다 — v3.3의 표에는 없던 연결이다. 플러그인은 Harbor `JobPlugin`(`on_job_start`/`on_job_end`) 구현이고 이 저장소의 `packages/harbor-langfuse/`에 둔다(Harbor 자체가 `packages/harbor-langsmith/`로 같은 배치를 쓴다. 그 플러그인은 852줄이고 root run·phase run·usage·feedback을 올리며 ATIF 스텝은 올리지 않는다 — clone 실측. 우리 것은 그것을 본뜨고 상류 기여 후보다). 레지스트리는 Langfuse를 부르지 않고 응답에 평가를 싣지 않는다(§3). 폐기 심사(baseline 2회 연속 통과)와 재실행 판단은 Langfuse의 run 목록(`GET /api/public/datasets/{name}/runs`)이나 UI에서 사람이 한다. Hobby 플랜의 한도는 월 50k units(trace·observation·score 각 1)·데이터 접근 30일·사용자 2명이고, 30일은 분기 단위 폐기 심사에 모자라므로 그 심사가 필요해지는 때가 셀프호스팅(§7)의 조건이다. 궤적에는 프롬프트와 스킬 본문이 실리며 그것이 SaaS로 나가는 것은 사용자가 감수한 것이다(Hobby를 이미 쓴다).
 
-**③ 게시·갱신·은퇴.** 전부 git 호스트에서 브랜치 → 커밋 → PR → 병합이다. 사람의 세션에서는 에이전트가 사람의 git 자격으로 하고(`new-skill` 스킬이 절차를 안내한다), 병합은 사람이 git 호스트에서 한다.
+**CI 게이트의 켜고 끄기 — 파일은 고정, 스위치는 git 호스트에.** Harbor는 사람의 머신에서도 CI에서도 같은 명령이고 둘 다 지원한다. CI 쪽은 선택이며 조건 둘이 다 참일 때만 돈다: git 호스트의 변수 `HARNESS_EVALS`가 `true`이고, 러너 환경에 자격 넷(`CLAUDE_CODE_OAUTH_TOKEN` 또는 `ANTHROPIC_API_KEY`, `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`)이 있을 것. `init`이 놓는 워크플로 파일에 evals 잡은 **항상** 있고, 잡의 조건이 변수를 본다 — GitHub는 `jobs.<id>.if: github.ref == 'refs/heads/main' && vars.HARNESS_EVALS == 'true'`(`[웹]` 컨텍스트 가용성 표: `jobs.<job_id>.if`에 쓸 수 있는 것은 `github, needs, vars, inputs`이고 `secrets`는 없다. 그래서 스위치는 시크릿이 아니라 변수다), GitLab은 `rules: - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $HARNESS_EVALS == "true"`(`[웹]` `rules:if`에 프로젝트 변수 사용 가능, 예 `$CUSTOM_VARIABLE == "true"`). 잡의 첫 단계는 자격 넷이 비어 있으면 그 이름을 적고 실패한다 — 켜 놓고 키를 안 넣은 상태를 조용히 지나가지 않는다. 자격은 mini의 self-hosted 러너가 자기 루트의 `.env` 파일에서 읽어 잡 환경에 넣는다(`[웹]` actions/runner `src/Runner.Listener/Program.cs`: 러너 루트의 `.env`를 읽어 환경으로. 2026-09-27 확인). 그래서 **켜기**는 셋이다: mini 러너 루트 `.env`에 자격 넷을 적고 러너를 재기동, git 호스트에 변수 `HARNESS_EVALS=true`. **끄기**는 변수를 `false`로 하거나 지우는 것 하나이고 파일·러너는 그대로다. 되돌아 켜기는 변수만이다. 이 스위치가 레지스트리 설정이 아닌 이유: 레지스트리는 저장소에 쓰지 않고(읽기 전용 deploy key, §2) `init`은 운영자가 한 번 돌리는 멱등 명령이라, "카탈로그 재기동이 CI 파일을 고친다"는 형태는 그 결정과 부딪힌다. 대신 CI를 돌리는 쪽(git 호스트·러너)이 스위치를 가지므로 카탈로그는 재기동할 필요가 없다. 이 결정 전에 만든 저장소는 `init`이 기존 파일을 건드리지 않으므로 워크플로 파일을 손으로 한 번 갱신한다.
+
+**③ 게시·갱신·은퇴.** 전부 git 호스트에서 브랜치 → 커밋 → PR → 병합이다. 사람의 세션에서는 에이전트가 사람의 git 자격으로 하고(`write-skill` 스킬이 절차를 안내한다), 병합은 사람이 git 호스트에서 한다.
 
 | 단계 | 누가 | 무엇을 | 필수/권고 |
 |---|---|---|---|
-| 게시 | 저자(저장소 write) | `main`에서 브랜치를 따 `skills/<name>/`을 넣고 커밋, PR. pre-commit과 CI의 `check`가 아홉 항목(§5)을 본다. 이름이 살아 있거나 은퇴한 이름이면 `check`가 거부해 저자가 이름을 바꾼다. 병합되면 다음 fetch 주기에 검색된다 | 필수(`check` 통과 — 규율), 권고(리뷰) |
+| 게시 | 저자(저장소 write) | `main`에서 브랜치를 따 `skills/<name>/`을 넣고 커밋, PR. pre-commit과 CI의 `check`가 열 항목(§5)을 본다. 이름이 살아 있거나 은퇴한 이름이면 `check`가 거부해 저자가 이름을 바꾼다. 병합되면 다음 fetch 주기에 검색된다 | 필수(`check` 통과 — 규율), 권고(리뷰) |
 | 갱신 | 저자 | 같은 절차. 브랜치를 `main`에서 따므로 남의 변경 위에 얹게 되고 충돌은 git이 알려 준다. 병합된 판이 새 현재 판이고 이력은 git에 남는다. 소비자는 매 반복 검색하므로 이전 판을 붙들고 있는 곳이 없다 | 필수(`check`) |
 | 인증 | 병합하는 사람(저장소 write·admin) | PR을 보고 병합한다. 리뷰어를 요구하지 않고 셀프 병합도 된다. git 호스트가 PR에 기록하는 병합자가 인증자다 | 권고(리뷰), 필수(병합 없이 소비되는 판은 없다) |
 | 폐기 | 저자 | SKILL.md `metadata.replaced-by: "<name>"`을 적어 PR. `check`가 대상의 존재와 연쇄·순환을 본다. 사유는 커밋 메시지에. 검색·목록 결과에 `replaced-by`가 실리고 대체 대상이 없어지면 "대체 대상 없음"으로 표시된다 | 필수(대상 검사) |
@@ -587,7 +590,7 @@ skills/yt-subs/
 
 **④ 개인 스킬의 승격.** 별도 절차가 없다. ①~③이 그것이다. `[영상]` 37:32~37:36 "재사용 가능하고 개선 가능한 스킬로 승격"이 PR 병합이고, 구판 제거와 갱신은 같은 절차다.
 
-**무엇이 사람의 판단이고 무엇이 기계인가.** 사람은 넷을 판단한다. 만들 가치가 있는가, 설명이 맞는가, 이 PR을 병합하는가, 언제 폐기하는가. 기계는 §5의 아홉을 검사한다. 그 밖의 승인자는 없다.
+**무엇이 사람의 판단이고 무엇이 기계인가.** 사람은 넷을 판단한다. 만들 가치가 있는가, 설명이 맞는가, 이 PR을 병합하는가, 언제 폐기하는가. 기계는 §5의 열을 검사한다. 그 밖의 승인자는 없다.
 
 ---
 
@@ -599,7 +602,7 @@ skills/yt-subs/
 | 이해하기 | 검색 결과의 설명을 읽고 본문을 연다(`load_skill`, 또는 git 호스트 렌더링) | `load_skill`로 같은 본문 |
 | 쓰기 | 고른 스킬을 `load_skill`로 이 세션에 넣는다 | 설명이 과제와 맞으면 그 반복에서 `load_skill`. 다음 반복에는 들고 가지 않는다 |
 | 매일 쓰는 것 곁에 두기 | "내려받아"라고 지시한다. 에이전트가 `pin-skill`의 절차대로 범위를 묻고 디렉토리에 쓴다(§4). 그 뒤 하네스가 스스로 발견한다 | 없음. 루프는 반복마다 검색한다 |
-| 올리기 | 사람이 지시하고 검수한다. 에이전트가 사람의 git 자격으로 브랜치·커밋·PR을 만든다(`new-skill`) | 세션 중 만든 스킬은 사람의 지시 뒤에만 PR. 병합은 사람 |
+| 올리기 | 사람이 지시하고 검수한다. 에이전트가 사람의 git 자격으로 브랜치·커밋·PR을 만든다(`write-skill`) | 세션 중 만든 스킬은 사람의 지시 뒤에만 PR. 병합은 사람 |
 | 인증하기 | PR을 보고 병합한다(git 호스트) | 없음. 루프는 병합하지 않는다 |
 | 믿기 | commit 이력과 author(행위자)·병합자(인증자), PR, SHA, `replaced-by`, `compatibility`, 마지막 fetch 시각, 인덱스에 있다는 사실 자체(= `check` 통과). 평가 결과는 Langfuse에서(카탈로그 응답에 없다, §5.1) | 같은 것. 응답 필드로 받는다. 자기 모델·하네스의 결과로 후보를 거르려면 루프가 Langfuse를 읽는 것이 루프의 정책이고 카탈로그는 관여하지 않는다 |
 
@@ -640,7 +643,7 @@ skills/yt-subs/
 | Helm 차트, 고가용성, 수평 확장, 무중단 배포 | docker compose 한 대, 배포 시 수 초 중단 | 인스턴스 둘 이상이 실제로 필요하거나 관리형 쿠버네티스에 얹는 편이 싸질 때 (§2.1) |
 | OTel → Grafana, managed settings | 없음. 도구 호출 스팬은 이미 OTLP로 Langfuse에 간다(§2). 빠진 것은 메트릭과 대시보드다 | 대시보드가 필요한 결정이 생길 때. 그때도 exporter를 컬렉터로 돌리는 환경 변수 변경이지 코드가 아니다 |
 | CATALOG.md gh-pages | 없음. git 호스트 디렉토리 | 넣지 않는다 |
-| policy.yaml, lint 규칙 엔진, ADR 디렉토리 | 없음. 규칙은 `harness-catalog check`의 아홉 항목(§5) 하나. 결정은 이 문서 | 항목이 코드 한 곳에 안 담기고 팀마다 달라져야 할 때 |
+| policy.yaml, lint 규칙 엔진, ADR 디렉토리 | 없음. 규칙은 `harness-catalog check`의 열 항목(§5) 하나. 결정은 이 문서 | 항목이 코드 한 곳에 안 담기고 팀마다 달라져야 할 때 |
 | semver·CHANGELOG·플러그인 버전 | git SHA, `sha`로 특정 판 로드 | 하위 호환을 약속해야 하는 소비자가 생길 때 git 태그 |
 | Tier 분기 리뷰, 승급 절차 | 없음. PR 병합이 승급이다 | 넣지 않는다 |
 
@@ -652,7 +655,7 @@ skills/yt-subs/
 
 | 변경 | 손대는 곳 |
 |---|---|
-| 스킬 추가·수정 | 브랜치 → 커밋 → PR → 병합(`new-skill`이 안내). 다음 fetch 주기에 반영 |
+| 스킬 추가·수정 | 브랜치 → 커밋 → PR → 병합(`write-skill`이 안내). 다음 fetch 주기에 반영 |
 | 스킬 폐기·은퇴 | SKILL.md `metadata.replaced-by` 한 줄 PR, 30일 뒤 디렉토리 삭제 PR |
 | 잘못 병합한 판 되돌리기 | revert PR |
 | 프로젝트에서 쓰기 시작 | 에이전트 MCP 설정에 URL 한 줄 + 로그인 한 번 |
@@ -679,7 +682,7 @@ skills/yt-subs/
 - 스킬 수가 몇 개를 넘으면 이름순 목록이 안 되는지. 그때가 순위의 시점이다.
 - 내려받기의 실측. `.agents/skills/` + `.claude/skills/` 심볼릭 링크 조합을 파일럿 하네스 셋(Claude Code·Codex·Cursor)이 실제로 한 번만 로드하는지(Cursor는 호환 경로도 읽어 두 번 보일 수 있다). `pin-skill`의 지시만으로 에이전트가 임시 디렉토리 → 대조 → 이름 바꾸기를 지키며 디렉토리 전체를 빠짐없이 쓰는지.
 - 서비스 주체 판별의 표지. Dex 클라이언트 자격 증명 토큰의 `sub`·`azp`·`groups` 실물(§2 가정). 그리고 무인 읽기(루프, Harbor 샌드박스의 라이브 소비 시험)용 정적 클라이언트 등록 절차(클라이언트 자격 증명 그랜트 켜기).
-- `new-skill`의 지시만으로 에이전트(Claude Code·Codex)가 브랜치·커밋·PR을 사람의 git 자격으로 올바르게 만드는지, 그리고 그 세션이 클라우드 샌드박스일 때 어떻게 멈추는지.
+- `write-skill`의 지시만으로 에이전트(Claude Code·Codex)가 브랜치·커밋·PR을 사람의 git 자격으로 올바르게 만드는지, 그리고 그 세션이 클라우드 샌드박스일 때 어떻게 멈추는지.
 
 ---
 
@@ -1049,3 +1052,11 @@ skills/yt-subs/
 |---|---|---|
 | 사용 기록을 카탈로그 DB에 두지 않는다. `usage_record` 표·보존 삭제 작업·설정값 `USAGE_RETENTION_DAYS`·"For recording facts"의 기록 절·DB 단절 시 "기록은 버린다" 규칙을 뺀다. 설정값 여섯(필수 다섯 + `FETCH_INTERVAL_SECONDS`), 표 하나(`skill_index`) + `index_state`, 규칙 다섯, 포트 일곱·노드 열여덟 | 사용 기록은 도구 호출마다 MCP SDK가 기본으로 내는 OpenTelemetry `SERVER` 스팬이고, MCP 어댑터가 `langfuse.user.id`=`sub`, 스킬·`sha`, 검색어·결과 수를 속성으로 더해 표준 `OTEL_EXPORTER_OTLP_*` 환경 변수로 Langfuse에 보낸다. DB는 통째로 파생물이 되어 백업 후보가 없다. 분석(순위·폐기 후보·결과 0 검색어)은 Langfuse 위에서 한다 | 사용자 결정: "langfuse 쪽에 두는 것으로 하라. usage record는 색인하여 탐색하기 위해 쓰는 것이 아니라 쌓인 데이터를 기반으로 추후 분석하여 개선하기 위함". 실측(2026-09-27): MCP Python SDK v2가 이미 같은 사건의 스팬을 내고 있어 `usage_record`는 그것을 우리 형식으로 한 번 더 적는 것이었다; OTel GenAI 규약 `mcp.md`가 그 스팬을 정한다; Langfuse가 OTLP를 받고 사용자·메타데이터를 매핑한다. 대가: v2 metrics API에서 스킬별 집계는 메타데이터 그룹화가 없어 스킬마다 필터 질의(분석이라 문제 아님), 주체·검색어가 Langfuse 프로젝트로(보존은 그쪽 정책), Claude Code가 `_meta`에 `traceparent`를 넣는지 미실측(pilot Q15) |
 | 이 결정이 뒤집는 이전 행 | v3.4 행의 "`usage_record`는 레지스트리 DB에 그대로 둔다(OTel 안 채택 안 함)", "보존 일수는 설정값, 검색어는 저장"(2026-09-26), 4차·5차 리뷰의 `usage_record` 항목 | 위 행이 현행이다 |
+
+### 사용자 결정(2026-09-27): 공유 스크립트 규약, `write-skill`, CI evals 게이트의 켜고 끄기
+
+| 결정 | 내용 | 근거 |
+|---|---|---|
+| 여러 스킬이 쓰는 스크립트: 라이브러리 규모면 `packages/<lib>/` 패키지 + PEP 723 git 직접 참조(SHA 고정), 작으면 복사. `check` 항목 10(복사본 드리프트 경고). 스킬 간 호출·`${CLAUDE_PLUGIN_ROOT}`는 쓰지 않는다 | §5, §5.1 | 사용자 승인("ㅇㅇ"). 실측: uv 0.11.8에서 git 직접 참조 스크립트 실행, Anthropic 저장소의 `scripts/office/` 3중 복사(해시 동일), 스펙·Claude Code·Codex 문서에 스킬 간 호출 문법 없음 |
+| 스킬 이름 `new-skill` → `write-skill` | DESIGN 본문·PLAN 전부. §11 이전 행의 표기는 당시 이름 | 사용자 결정 |
+| Harbor evals는 사람 머신과 CI 둘 다. CI 잡은 워크플로 파일에 항상 있고 git 호스트 변수 `HARNESS_EVALS=true` + 러너 환경의 자격 넷일 때만 돈다. 켜기 = 러너 `.env`에 자격 + 러너 재기동 + 변수 true, 끄기 = 변수 false. 레지스트리 설정·재기동과 무관 | §2.1 init, §5.1 "CI 게이트의 켜고 끄기", distribution D19·D21 | 사용자 요구("CI 게이트는 옵셔널, API KEY를 설정 파일에, 켜고 끄기 양방향"). 카탈로그 재기동이 CI 파일을 고치는 형태는 읽기 전용 레지스트리(§2)와 부딪혀 스위치를 git 호스트 변수로 옮겼다. `[웹]` GitHub `jobs.<id>.if`는 `vars`만 가능(`secrets` 불가), GitLab `rules:if`는 프로젝트 변수 가능, actions/runner는 루트 `.env`를 잡 환경으로 읽는다(소스 실측) |
