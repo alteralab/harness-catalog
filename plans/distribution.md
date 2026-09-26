@@ -1,6 +1,6 @@
 # distribution 계획 — 패키징·배포(이미지·compose·예시 설정·템플릿·문서)
 
-**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/`의 배포·패키징 표면(루트 compose·Dockerfile, `docker/`, `examples/`, `docs/`, `scripts/`)의 정본이다. 우산 `PLAN.md` §1 표의 "distribution" 행이 관할을 정했고, 설계는 `DESIGN.md`(v3.2) §2 신원 제공자 표·§2.1·§8이다. 이 문서는 설계를 복제하지 않고 "어떤 파일을, 어떤 순서로, 언제 끝났다고 하는가"만 적는다.
+**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/`의 배포·패키징 표면(루트 compose·Dockerfile, `docker/`, `examples/`, `docs/`, `scripts/`)의 정본이다. 우산 `PLAN.md` §1 표의 "distribution" 행이 관할을 정했고, 설계는 `DESIGN.md`(v3.3) §2 신원 제공자 표·§2.1·§8이다. 이 문서는 설계를 복제하지 않고 "어떤 파일을, 어떤 순서로, 언제 끝났다고 하는가"만 적는다.
 
 ## 0. 한 장 요약
 
@@ -36,7 +36,7 @@
       github/validate.yml   #     GitHub Actions: skills-ref validate + gitleaks, 보고만
       gitlab/.gitlab-ci.yml #     GitLab CI: 같은 검사
   docs/                     # 설치(빠른 시작·프록시 뒤)·설정값 일곱 참조·운영자 가이드(신설·복구)·LDAP 변형 안내
-  scripts/                  # 운영 셸 스크립트(복구 절차 등). 첫 파일과 함께 lang/bash 선언
+  scripts/                  # 운영 셸 스크립트: dev-token.sh, membership-diff.sh(저장소 read 명단 vs skills-readers 차이), 복구 절차. 첫 파일과 함께 lang/bash 선언
 ```
 
 ## 3. 판정 원장
@@ -97,7 +97,7 @@
 2. 첫 카탈로그 저장소 신설: §5를 처음부터 끝까지 한 번 따른다(`init` 포함). 우산 P4에서 작성·검증된 두 스킬은 첫 PR로 들어간다(skills P2).
 3. V6·V7·V8 통과. 우산 V3(우회 push 수용)·V4(fail-closed)·V5(재기동 복구)의 실행 환경을 제공한다.
 
-완료 조건(우산 §4 P5 행의 distribution 몫): "새 VM에서 `.env`만 채우고 `docker compose up`으로 셋이 뜨고 `/readyz` 200, 템플릿 복사본 저장소의 CI가 예시 스킬로 초록, 브랜치 보호·deploy key 체크리스트 전 항목 확인".
+완료 조건(우산 §4 P5 행의 distribution 몫): "새 VM에서 `.env`만 채우고 `docker compose up`으로 셋이 뜨고 `/readyz` 200, `init`으로 만든 저장소의 첫 PR CI가 두 스킬로 초록, deploy key(읽기 전용)·권한 체크리스트 전 항목 확인".
 
 ## 5. 운영자 체크리스트 (README에 실리는 것)
 
@@ -156,7 +156,7 @@
 | # | 검증 | 방법 | 통과 기준 | 상태 |
 |---|---|---|---|---|
 | V1 | 깨끗한 VM에서 기동 | 새 VM에 저장소를 받고 `.env`만 채운 뒤 `docker compose up -d` | 컨테이너 셋 전부 healthy, `/healthz` 200, `/readyz` 200. 프록시 뒤에서 토큰 없는 호출의 401 챌린지 `resource_metadata`가 공개 URL이다. 실행 중인 `registry` 이미지의 digest가 CI 빌드 출력의 digest와 같다(D11) | 대기 |
-| V2 | 사람 토큰 | LDAP 사용자로 공개 클라이언트(PKCE) 로그인 | 토큰의 `iss`가 issuer, `aud`가 레지스트리 URL, `groups`에 `skills`, `sub`가 사용자 | 대기 |
+| V2 | 사람 토큰 | LDAP 사용자로 공개 클라이언트(PKCE) 로그인 | 토큰의 `iss`가 issuer, `aud`가 레지스트리 URL, `groups`에 `skills-readers`, `sub`가 사용자 | 대기 |
 | V3 | 서비스 주체 토큰 | `ci-eval-runner`로 클라이언트 자격 증명 | 토큰 실물(`sub`·`azp`·`groups` 유무)을 pilot r에 기록했고, service의 인가 정책이 그 표지로 서비스 주체를 가른다 | 대기(pilot P0과 같은 실측) |
 | V4 | 토큰 수명 | V2·V3 토큰의 `exp - iat` | 3600초 이하 | 대기 |
 | V5 | 표지 검사 | `.harness-catalog`가 없는 저장소, `layout = 2`인 저장소, 빈 저장소를 각각 가리켜 기동 | 각각 `/readyz` 503과 사유 `not_a_catalog`·`unsupported_layout`·`no_main_branch` | 대기 |
@@ -165,7 +165,7 @@
 | V8 | 읽기 전용 deploy key와 병합 반영 | 컨테이너 안에서 `git push --dry-run`; 사람이 PR을 병합 | push는 거부되고 fetch는 된다. 병합이 우산 V3의 허용오차(`FETCH_INTERVAL_SECONDS` 두 주기) 안에 `list_skills`에 나온다 | 대기 |
 | V12 | 이미지 보존 규칙 | 커밋 여섯을 연속으로 `main`에 합친 뒤 GHCR 패키지 버전 목록을 본다 | SHA 태그가 정확히 5개, 태그 없는 버전 0개, 마지막 다섯 커밋의 SHA와 일치 | 대기 |
 | V9 | 비밀 없음 | 저장소 전체 gitleaks | `.env` 없음, 검출 0 | 대기 |
-| V10 | 새 VM 복구 | 우산 V5. 기존 카탈로그 저장소를 가리켜 V1을 다시 | fetch만으로 인덱스가 다시 지어지고 은퇴한 이름이 `name_taken`으로 남는다 | 대기 |
+| V10 | 새 VM 복구 | 우산 V5. 기존 카탈로그 저장소를 가리켜 V1을 다시 | fetch만으로 인덱스가 다시 지어지고 은퇴한 이름을 `check` 항목 5가 여전히 거부한다 | 대기 |
 | V11 | 시험용 토큰 절차 | `scripts/dev-token.sh`를 사람·서비스 모드로 각각 한 번 | 각각 토큰 하나가 표준 출력에 나오고, `aud`가 레지스트리 공개 URL이며, 표준 오류·셸 이력·로그 어디에도 토큰·시크릿 문자열이 없다 | 대기 |
 
 ## 9. 개정 규약

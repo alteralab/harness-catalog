@@ -1,6 +1,6 @@
 # service 계획: harness-catalog 레지스트리 서비스
 
-**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/`의 서비스 코드(`src/`·`tests/`·이미지)의 정본이다. 설계의 정본은 상위의 `DESIGN.md`(v3.2)이고 이 문서는 그것을 복제하지 않는다. 관할은 레지스트리 프로세스 하나 — 파이썬 패키지 `harness_catalog/`, 마이그레이션, 시험, 컨테이너 이미지의 빌드 정의 — 이고, 그것이 어디에 어떻게 뜨는가(`plans/distribution.md`), 카탈로그에 실리는 스킬(`plans/skills.md`), 설계의 가정을 재는 일(`plans/pilot.md`)은 관할 밖이다. 상위 `PLAN.md` §3의 공통 규약(기록 규율·식별자·설계와의 관계·교차 검증)을 그대로 따른다.
+**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/`의 서비스 코드(`src/`·`tests/`·이미지)의 정본이다. 설계의 정본은 상위의 `DESIGN.md`(v3.3)이고 이 문서는 그것을 복제하지 않는다. 관할은 레지스트리 프로세스 하나 — 파이썬 패키지 `harness_catalog/`, 마이그레이션, 시험, 컨테이너 이미지의 빌드 정의 — 이고, 그것이 어디에 어떻게 뜨는가(`plans/distribution.md`), 카탈로그에 실리는 스킬(`plans/skills.md`), 설계의 가정을 재는 일(`plans/pilot.md`)은 관할 밖이다. 상위 `PLAN.md` §3의 공통 규약(기록 규율·식별자·설계와의 관계·교차 검증)을 그대로 따른다.
 
 ## 0. 한 장 요약
 
@@ -87,14 +87,14 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | D1 | 패키지·모듈 이름 | 패키지 `harness_catalog`. 하위는 `app/`·`adapters/`·`driving/`·`config.py`·`__main__.py`. DESIGN의 "모듈 넷"에서 `mcp_tools`를 `driving/`으로 넓힌 것은 구동 어댑터가 셋(MCP·운영·스케줄러)이라 한 파일에 넣으면 프로토콜·HTTP·시계가 섞이기 때문이다. 층은 그대로 셋(앱·피구동·구동) | 설계 판단. 그림 2의 노드 대응이 파일 이름으로 즉답된다 |
 | D2 | 메모리 인덱스 사본의 구조와 교체 | 불변 스냅샷 하나(`IndexSnapshot`: 행 튜플 + `commit_sha` + `built_at`)를 카탈로그가 참조 하나로 쥔다. 빌드는 새 스냅샷을 다 만든 뒤 참조를 바꾼다. 읽는 쪽은 호출 시작 때 참조를 한 번 잡고 그것만 본다. 부분 갱신은 없다 | 설계 판단. DESIGN §2.1 "다음 빌드가 통째로 바꾼다"의 구현. 참조 교체는 CPython에서 원자적이고 anyio 단일 스레드 루프에서 경합이 없다(문면) |
 | D3 | 클론 잠금 | 프로세스 안 `anyio.Lock` 하나. 쥐는 구간은 fetch 전체와 인덱스 빌드의 스냅샷 읽기. 레지스트리는 클론에 쓰지 않는다 | 설계 판단. DESIGN §2 "클론 하나에 잠금 하나" |
-| D6 | `load_skill(id, sha)`·`record_eval(sha)`의 과거 판 해석 | `git log --format=%H --all -- skills/<name>`으로 그 경로를 만진 커밋을 최신부터 걸으며 `git rev-parse <commit>:skills/<name>`이 `sha`와 같은 첫 커밋을 쓴다(`--all`이라 fetch된 브랜치의 판도 잡힌다 — PR의 CI가 병합 전 판을 평가한다). 상한은 그 경로의 커밋 수. tree→commit 캐시는 두지 않는다 | 설계 판단. 과거 판 요청은 재현·사고 조사·병합 전 평가용이라 드물다(DESIGN §3). 캐시는 지금 재지 않은 최적화다 |
+| D6 | `load_skill(id, sha)`·`record_eval(sha)`의 과거 판 해석 | `git log --format=%H main -- skills/<name>`으로 그 경로를 만진 `main` 커밋을 최신부터 걸으며 `git rev-parse <commit>:skills/<name>`이 `sha`와 같은 첫 커밋을 쓴다. 브랜치는 fetch하지 않으므로 잡히지 않는다. 상한은 그 경로의 커밋 수. tree→commit 캐시는 두지 않는다 | 설계 판단. 과거 판 요청은 재현·사고 조사용이라 드물다(DESIGN §3). 캐시는 지금 재지 않은 최적화다 |
 | D7 | JWKS·JWT | 기동 시 issuer의 `.well-known/openid-configuration`에서 `jwks_uri`를 읽고 `PyJWKClient(jwks_uri, cache_keys=True, lifespan=3600)`. 검증은 `jwt.decode(algorithms=["RS256","ES256"], audience=<공개 URL>, issuer=<issuer>, leeway=60, options={"require": ["exp","sub"]})` 뒤 `scope` 존재를 따로 확인. SDK `TokenVerifier.verify_token`이 `AccessToken(scopes=…)`을 돌려준다 | 문면(PyJWT·SDK). 모르는 `kid`의 재조회는 `PyJWKClient`의 동작이고 P1 시험이 확인한다 |
 | D8 | 서비스 주체 판별 표지 | **P3 착수 전까지 미정.** 판별은 순수 함수 `principal_kind(claims)` 하나에 가두고, 그 함수의 규칙은 파일럿 P0이 Dex 클라이언트 자격 증명 토큰의 실물(`sub`·`azp`·`groups`)을 기록한 뒤 정한다. DESIGN의 임시 규칙("`sub`가 등록된 client ID 집합에 있으면")은 그 집합의 출처가 필요한데 설정값은 일곱뿐이라 여덟째를 더하는 셈이 된다. 토큰 자체의 표지(`azp` 등)로 갈리면 설정 없이 닫고, 안 갈리면 DESIGN §11에 "설정값 여덟째"를 변경 요청으로 올린다. 이 PLAN이 조용히 정하지 않는다 | 설계 판단 + 미실측. P1·P2는 이 판별이 필요 없다(읽기는 인증된 전부). P3의 `record_eval` 허용과 `publish_skill` 거부만 걸린다 |
 | D9 | 시크릿 스캔 호출 | `check`가 `gitleaks dir <skill-dir> --no-banner --exit-code 2 --report-format json --report-path -`. 종료 0이면 통과, 2면 검출(파일·룰을 출력에), 그 밖(바이너리 없음·크래시)은 검사기 실패(종료 코드 2, fail-closed). 바이너리 파일의 취급은 P3에서 실측해 적는다 | 문면(gitleaks CLI). fail-closed는 DESIGN §5 검사기 운영 |
 | D10 | `body_tokens` 산출 | 토크나이저 의존을 들이지 않는다(DESIGN 표에 없다). 추정식 `ceil(len(utf8 bytes) / 4)`을 쓰고 응답 필드 설명에 "추정"임을 적는다. 정확도는 파일럿에서 하네스가 보고하는 실제 토큰 수와 견준다 | 휴리스틱. 이 값의 소비자는 루프의 예산 판단(DESIGN §4 예산)이고 문턱이 없어 오차가 결정을 뒤집지 않는다 |
 | D11 | 스케줄러 | Starlette lifespan 안에서 anyio 태스크 그룹 하나에 루프 둘. fetch 루프는 `FETCH_INTERVAL_SECONDS`마다 `catalog.refresh()`를 부르고 실패 시 지수 백오프(2배, 상한 = 간격의 16배)로 늘렸다가 성공하면 되돌린다. 보존 루프는 24시간마다 `catalog.purge_usage()`. 시험은 시계 없이 두 함수를 직접 부른다 | 설계 판단. DESIGN §2.1 실패 표 "fetch는 지수 백오프". 상한 16배는 휴리스틱 |
 | D12 | 마이그레이션 시점 | `bootstrap`이 기동 직후 마이그레이션 태스크 하나를 따로 띄운다. 이 태스크는 yoyo 적용을 시도하고 실패하면 자기 백오프(5초에서 2배, 상한 5분)로 다시 한다. fetch 루프와 무관하다. DB 경로(인덱스 트랜잭션·사용 기록·검색 순위·평가 결과)는 마이그레이션이 "적용됨"이 되기 전에는 열리지 않고 그동안은 `degraded: db_unavailable`이다. 기동은 막지 않는다(준비됨 조건이 아니다) | 설계 판단. DESIGN §2.1 "DB 연결은 준비됨의 조건이 아니다"를 마이그레이션에도 적용. fetch 주기와의 결합은 Codex 리뷰(2026-09-26)가 잡아 분리했다. 백오프 수치는 휴리스틱 |
-| D13 | 브레이커와 degraded 신호 | PostgreSQL·push 호출에 시간 초과(문장 5초, push 30초)와 브레이커(연속 실패 3회 → 30초 열림). 브레이커는 순수 상태 기계 하나를 `pg.py`·`git.py`가 각각 든다. 열림·닫힘이 곧 `degraded` 목록(`db_unavailable`·`git_push_unavailable`)이 되고 **`/readyz` 본문에만** 실린다(DESIGN §2.1). 도구 응답에는 DESIGN §3이 정한 필드(마지막 fetch 시각 등)만 있고 `degraded` 필드를 더하지 않는다 | 설계 판단. 수치 셋은 휴리스틱. 라이브러리를 들이지 않는 이유: 상태 기계가 열 줄이고 DESIGN 표에 없다. 도구 응답 필드 추가는 Codex 리뷰(2026-09-26)가 계약 초과로 잡아 뺐다 |
+| D13 | 브레이커와 degraded 신호 | PostgreSQL 호출에 시간 초과(문장 5초)와 브레이커(연속 실패 3회 → 30초 열림), fetch에는 지수 백오프. 브레이커는 순수 상태 기계 하나를 `pg.py`가 든다. 열림·닫힘과 되감기 검출이 `degraded` 목록(`db_unavailable`·`main_rewound`)이 되고 **`/readyz` 본문에만** 실린다(DESIGN §2.1). 도구 응답에는 DESIGN §3이 정한 필드만 있다 | 설계 판단. 수치는 휴리스틱. 라이브러리를 들이지 않는 이유: 상태 기계가 열 줄이고 DESIGN 표에 없다 |
 | D14 | 오류 어휘 | 인가 실패는 HTTP 401/403(SDK 챌린지). 도구 안의 실패는 MCP 도구 오류 결과에 `{code, detail}`이고 **코드 여섯은 DESIGN §3이 소유한다**. `check`의 위반은 도구 오류가 아니라 CLI 출력(항목 번호·경로·사유 한 줄씩)과 종료 코드다 | 설계 판단. 공개 코드는 계약이라 DESIGN 소유(우산 §1 경계 규칙 ⑵) |
 | D15 | DB 접속 | `psycopg_pool.AsyncConnectionPool` 최소 1·최대 4, 문장 시간 초과 5초. 트랜잭션은 인덱스 교체 하나만 명시적이고 나머지는 자동 커밋 | 휴리스틱. 하루 수백 요청(DESIGN 추정)에 연결 넷이면 남는다 |
 | D16 | 시험 구성 | `tests/unit`은 어댑터 전부 가짜(FactStore는 메모리 dict). `tests/adapters/pg`는 testcontainers 실물. `tests/adapters/git`은 임시 bare 저장소 + 클론 둘. `tests/http`는 실제 uvicorn 프로세스 + 개발 compose의 Dex 토큰. 마지막 것만 외부 프로세스가 필요하고 표식으로 갈라 CI에서는 P4 뒤에 켠다 | 설계 판단. DESIGN §2.1 "DB 대역은 실물을 보장하지 않는다", "git·OIDC 어댑터는 가짜로" |
@@ -132,8 +132,8 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 ### P3. 검사 명령·초기화 명령·평가 기록
 
 0. 착수 조건: D8의 표지가 `plans/pilot.md`의 실측 기록으로 정해져 있다. 없으면 `record_eval`의 서비스 주체 허용만 뒤로 두고 나머지를 먼저 한다.
-1. `app/check.py`: DESIGN §5의 검사 아홉을 순수 함수로. 입력은 저장소 루트(작업 트리)와 git 어댑터(삭제 이력·이름 재사용), 출력은 위반 목록(항목 번호·경로·사유). P1의 인덱스 빌드가 이 함수를 부르도록 바꾼다(스킬 실패 → 인덱스 제외, 구조 실패 → 빌드 실패).
-2. `cli.py check [<root>]`: 1을 CLI로. 종료 0 통과 / 1 위반 / 2 검사기 실패(gitleaks 없음 등). pre-commit 훅과 CI 워크플로가 이 명령을 부른다(`examples/catalog-template/`의 훅·워크플로 파일이 그렇게 적혀 있다).
+1. `app/check.py`: DESIGN §5의 검사 아홉을 순수 함수로. 입력은 검사할 트리(작업 트리 또는 커밋)·기준 커밋·git 어댑터(삭제 이력, 기준 커밋의 트리), 출력은 위반 목록(항목 번호·경로·사유). 기준 커밋이 없으면 5·9를 건너뛰고 그 사실을 출력에 적는다. P1의 인덱스 빌드가 이 함수를 부르도록 바꾼다(스킬 실패 → 인덱스 제외, 구조 실패 → 빌드 실패).
+2. `cli.py check [<root>] [--base <commit>]`: 1을 CLI로. `--base`는 항목 5·9의 기준 커밋(DESIGN §2.1: pre-commit은 HEAD, PR CI는 merge-base, main CI는 직전 커밋, 인덱스 빌드는 `index_state.commit_sha`). 얕은 클론이면 항목 5는 종료 2. 종료 0 통과 / 1 위반 / 2 검사기 실패(gitleaks 없음·얕은 클론 등). pre-commit 훅과 CI 워크플로가 이 명령을 부른다(`examples/catalog-template/`의 훅·워크플로 파일이 그렇게 적혀 있다).
 3. `cli.py init <repo-url>`: 운영자 git 자격으로 clone → URL에서 호스트 판별(GitHub·GitLab) → 패키지 데이터 `catalog-template/`에서 `.harness-catalog`·`skills/.gitkeep`·README·pre-commit 설정·그 호스트의 CI 워크플로를 없는 것만 쓰고 → 커밋·push. 표지가 있는데 `layout`이 다르면 멈춘다(종료 1). 두 번 돌리면 변경 0.
 4. `cli.py reindex --accept-rewind`: 규칙 3의 `main_rewound` 뒤 운영자가 명시적으로 인덱스를 새 `main`으로 다시 짓는 명령.
 5. `app/evals.py`의 `record_eval`: `id` 생존·`sha` 판 검증(현재 판 또는 D6 이력, 브랜치 포함)·길이 상한·`scenario_sha` 서버 산출(`git rev-parse <commit>:skills/<id>/evals` 없으면 빈 tree SHA `4b825dc642cb6eb9a060e54bf8d69288fbee4904`)·`run_id` 멱등.
@@ -195,7 +195,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | V13 | 은퇴 이름 | 스킬 디렉토리를 지운 PR 뒤 같은 이름의 디렉토리를 다시 넣은 PR | `check` 항목 5로 거부. 규율 위반으로 병합해도 인덱스 빌드가 그 스킬을 뺀다 | 대기 |
 | V14 | `replaced-by` | 없는 대상·이미 대체된 대상·자기 자신·순환 둘 | `check` 항목 6으로 넷 전부 거부. 유효한 대상은 통과하고 목록에 실린다 | 대기 |
 | V15 | `record_eval` | 없는 `id`·모르는 `sha`·101자 `model`·2001자 `note`·같은 `run_id` 두 번·`evals/` 없는 판 | 앞 넷 거부(`not_found`·`unknown_version`·`input_limit`), 같은 `run_id`는 행 하나 + 성공, `scenario_sha`가 빈 tree SHA | 대기 |
-| V16 | 최근 평가 | 한 판에 `(model, harness)` 둘, 같은 시각 두 행 | `list_skills`에 조합별 한 행, 동률은 `run_id` 큰 쪽. 병합으로 판이 바뀌면 비어 있음. 브랜치의 판(fetch됨)에 `record_eval`이 되고 병합 뒤 그 판의 `evals`로 보인다 | 대기 |
+| V16 | 최근 평가 | 한 판에 `(model, harness)` 둘, 같은 시각 두 행 | `list_skills`에 조합별 한 행, 동률은 `run_id` 큰 쪽. 병합으로 판이 바뀌면 비어 있음. 브랜치의 판으로 `record_eval`하면 `unknown_version`(레지스트리는 `main`만 안다) | 대기 |
 | V17 | 파일 읽기 경계 | `../`, 절대 경로, 심볼릭 링크, 1 MB + 1 바이트 | 넷 전부 `path_rejected` 또는 `input_limit`, 정상 파일과 바이너리(base64)는 통과 | 대기 |
 | V18 | 크기 상한 | 51개, 1 MB + 1 파일, 합계 5 MB + 1, 심볼릭 링크 | `check` 항목 7로 넷 전부 거부. 바이너리(`assets/`)는 통과 | 대기 |
 | V19 | fetch 간격 설정 | `FETCH_INTERVAL_SECONDS=5`로 기동하고 우회 push | 5~10초 안에 인덱스 반영, 기본값 기동은 60~120초 안 | 대기 |
@@ -211,6 +211,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-26 | 설계 개정 반영 | 9차 리뷰: `check --base`, 브랜치 판 `record_eval` 제거(D6·V16), D13에서 push 브레이커 제거 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | v3.3(git 워크플로): 쓰기 도구·인증·역할 계층 제거, `check`·`init`·`reindex` CLI, P3 재작성, V5 15칸, V9~V14·V18·V22 개정, V23~V25 삭제 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 8차 리뷰(publish·certify 모순): 유효 판 인덱스, 인증 ref, fail-closed, 인증 세대, `retire_requires_revoke`. P3-5 재작성, V22 개정, V23~V25 추가 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 역할 3단 계층(reader·editor·admin, 그룹 셋): V5 35칸, `insufficient_role` | DESIGN §11 |
