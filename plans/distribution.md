@@ -49,7 +49,7 @@
 | D2 | 데이터베이스 둘과 역할 둘은 누가 만드는가 | `docker/postgres/init.sql`이 만든다(postgres 이미지의 초기화 훅으로 마운트, 첫 기동에만 실행). 서비스 마이그레이션은 `harness_catalog` 안의 표·확장(`pg_trgm`)만 소유한다 | 설계 판단. 서비스 역할은 자기 데이터베이스의 `CREATE`만 가지고 남의 데이터베이스를 만들 권한이 없어야 한다(§2 "별도 데이터베이스·역할"). 데이터베이스 생성은 인스턴스 소유자의 일이라 서비스 밖이다 |
 | D3 | Dex 저장소 | `postgres`의 `dex` 데이터베이스, 전용 역할 | DESIGN §2 결정. 문면: Dex는 postgres 저장소를 지원한다 |
 | D4 | Dex LDAP 커넥터 구조 | host·bindDN·bindPW는 환경 변수, userSearch는 baseDN·`uid` 필터, groupSearch는 `memberUid` 기반 `userMatchers`로 그룹 이름을 `groups` 클레임에 싣는다. 그룹 `skills-readers` 하나를 조회 필터에 건다. `groups` 스코프를 클라이언트 요청 스코프에 포함 | 문면(Dex LDAP 커넥터 문서, DESIGN §10). Synology Directory Server의 스키마(posixGroup·memberUid인지 groupOfNames·member인지)는 pilot P0의 실측 항목이고, 여기서는 두 형태 중 실측된 것을 쓴다 |
-| D5 | 정적 클라이언트 | 공개 클라이언트 셋: `claude-code`·`codex`·`cursor`(각각 `public: true`, 리다이렉트 URI는 그 제품이 문서에 적은 것). 기밀 클라이언트 하나: `ci-eval-runner`(클라이언트 자격 증명, `record_eval` 전용). 클라이언트 ID 문자열은 제품 이름 그대로 | 설계 판단. DESIGN §2 "에이전트 제품마다 사전 등록", §11 5차 리뷰 "CI 평가 러너용 정적 클라이언트". 하네스 셋의 리다이렉트 URI 실물은 pilot P0이 확인한다 |
+| D5 | 정적 클라이언트 | 공개 클라이언트 셋: `claude-code`·`codex`·`cursor`(각각 `public: true`, 리다이렉트 URI는 그 제품이 문서에 적은 것). 기밀 클라이언트 하나: `ci-runner`(클라이언트 자격 증명. 무인 읽기 — Harbor 샌드박스의 라이브 소비 시험, 루프). 클라이언트 ID 문자열은 제품 이름 그대로 | 설계 판단. DESIGN §2 "에이전트 제품마다 사전 등록", §11 5차 리뷰 "CI 평가 러너용 정적 클라이언트". 하네스 셋의 리다이렉트 URI 실물은 pilot P0이 확인한다 |
 | D6 | PKCE 강제 | Dex `pkce.enforce`(또는 그 판의 동등 설정)를 켠다. 켜졌는지는 V2가 `code_challenge` 없는 요청의 거부로 본다 | 문면(Dex 2.26+ PKCE, DESIGN §2 신원 제공자 표) |
 | D7 | 토큰 수명 | Dex `expiry.idTokens`·액세스 토큰을 1시간으로. 리프레시는 Dex 기본 | DESIGN §2 "1시간 이하를 요구한다". 실제 수명은 V4가 잰다 |
 | D8 | 장치 흐름 | 설정에서 켠다. 공개 클라이언트로 성립하는지는 pilot P0의 실측이고 이 PLAN은 예측하지 않는다 | DESIGN §9, 우산 R1. 문면: 이슈 #3983이 client_secret 요구를 보고했다 |
@@ -62,7 +62,7 @@
 | D15 | 저장소 신설 = `harness-catalog init` + 체크리스트 | 파일 다섯(표지·`skills/.gitkeep`·README·pre-commit 설정·호스트별 CI)은 `init`이 운영자 git 자격으로 쓴다(DESIGN §2.1). git 호스트·Dex 화면에서만 할 수 있는 것(deploy key, 협업자 권한, 리다이렉트 URI)은 §5 체크리스트가 남는다 | DESIGN §2.1 저장소 초기화(v3.3). 템플릿 원본은 `examples/catalog-template/`이고 패키지 데이터로 `init`에 실린다 |
 | D16 | compose를 어디서 돌리는가 | 운영은 `mini.altera.lab`(우산 §6-1 결정, 2026-09-26). 개발·시험은 맥북 로컬에서 같은 compose 파일로 띄운다 — P0·P1의 `docker-compose.dev.yml`이 그 자리이고, 운영 compose(P2)도 로컬에서 먼저 한 번 띄운 뒤 mini로 간다 | 사용자 결정. 같은 파일을 두 곳에서 쓰므로 호스트별 값은 전부 `.env`에 있어야 한다(D10) |
 | D18 | 빠른 시작 compose의 Dex | 루트 `docker-compose.yml`의 Dex는 `docker/dex/config.yaml`의 정적 사용자(`staticPasswords`)와 정적 클라이언트로 뜬다. LDAP 연합은 `examples/synology-ldap/docker-compose.override.yml`이 Dex 설정 파일을 바꿔 끼우는 오버레이다. 서비스 쪽은 issuer URL 하나라 두 경우가 같다 | 설계 판단(우산 §3-8 오픈소스 패키지). 문면: Dex는 `staticPasswords`와 `docker-compose.yaml`을 루트에 둔 자기 빠른 시작을 낸다(2026-09-26 저장소 실측). 정적 사용자는 시험·데모용이고 운영 안내(docs/)는 LDAP 또는 사내 IdP를 가리킨다 |
-| D19 | CI의 evals 단계 | `main` push 워크플로의 선택 단계. mini의 self-hosted runner에서 `harbor run --env docker`로 변경된 스킬의 `evals/`를 스킬 있이·없이 돌리고, `harness_catalog.harbor.plugin`(service P3)이 `on_job_end`에서 `record_eval`을 서비스 주체 토큰으로 부른다. GitHub 호스팅 러너에서는 돌리지 않는다(tailnet의 레지스트리·구독 토큰). 시크릿 둘: `CLAUDE_CODE_OAUTH_TOKEN`(`claude setup-token`), `HC_CI_CLIENT_SECRET`(`ci-eval-runner`) | 사용자 결정(DESIGN §11 evals 형식). `[웹]` Harbor `claude_code.py`의 `CLAUDE_FORCE_OAUTH`(실측). 구독 quota를 대화 세션과 나눠 쓴다 |
+| D19 | CI의 evals 단계 | `main` push 워크플로의 선택 단계. mini의 self-hosted runner에서 `harbor run --env docker --plugin harbor_langfuse:LangfusePlugin`으로 변경된 스킬의 `evals/`를 스킬 있이·없이 돌리고, 플러그인이 Langfuse에 dataset run·trace·score를 남긴다. 레지스트리에는 아무것도 적지 않는다. GitHub 호스팅 러너에서는 돌리지 않는다(구독 토큰·mini의 도커). 시크릿 넷: `CLAUDE_CODE_OAUTH_TOKEN`(`claude setup-token`), `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`(팀 Hobby 프로젝트). 라이브 소비 시험 태스크를 둘 때만 `HC_CI_CLIENT_SECRET`(`ci-runner`)이 더해진다 | 사용자 결정(DESIGN §11 v3.4). `[웹]` Harbor `claude_code.py`의 `CLAUDE_FORCE_OAUTH`(실측). 구독 quota를 대화 세션과 나눠 쓴다. Langfuse Hobby 월 50k units에 trace·observation·score가 각각 1이라 케이스당 수십 units — 스킬 수십에 분기 재실행이면 한도 안(휴리스틱, pilot Q14(e)가 실측) |
 | D17 | 셸 스크립트 | 복구 절차처럼 명령이 넷을 넘는 것만 `scripts/`에 둔다. 첫 파일과 함께 `altera-rules.yml`에 `lang/bash`를 선언하고 `altera-shellcheck` 훅을 건다 | 우산 §3-5 |
 
 ## 4. 단계
@@ -70,7 +70,7 @@
 ### distribution P0. 실측 지원용 개발 compose (우산 P0 안)
 
 1. LDAP 스키마 실측: NAS Directory Server에 `ldapsearch`로 사용자·그룹 항목을 읽어 그룹 객체 클래스와 멤버 속성(`posixGroup`/`memberUid` 또는 `groupOfNames`/`member`)을 pilot r에 원문으로 적는다. Dex 없이 된다.
-2. `docker-compose.dev.yml` 초판: `postgres`(init.sql로 데이터베이스·역할 둘) + `dex`(LDAP 커넥터는 1의 실측값, 정적 클라이언트는 공개 PKCE·공개 장치·`ci-eval-runner` 셋). pilot Q2·Q5가 이것으로 토큰 실물을 잰다.
+2. `docker-compose.dev.yml` 초판: `postgres`(init.sql로 데이터베이스·역할 둘) + `dex`(LDAP 커넥터는 1의 실측값, 정적 클라이언트는 공개 PKCE·공개 장치·`ci-runner` 셋). pilot Q2·Q5가 이것으로 토큰 실물을 잰다.
 3. `.env.example` 초판: Dex·DB 비밀과 LDAP 바인드 값.
 
 완료 조건(우산 §4 P0 행의 distribution 몫): 개발 compose가 뜨고 pilot Q2의 세 그랜트가 실제로 호출됐다(결과는 pilot r에).
@@ -78,11 +78,11 @@
 ### distribution P1. 시험용 토큰 절차와 Dex 확정판 (우산 P1과 함께)
 
 1. `docker-compose.dev.yml`을 P0 실측대로 확정한다(LDAP 스키마 하나, 클라이언트 셋). 서비스는 포함하지 않는다 — service P1·P2가 호스트에서 uvicorn으로 뜨고 이 둘에 붙는다.
-2. `docker/dex/config.yaml` 초판: issuer는 `http://localhost:<port>`, LDAP 커넥터는 Synology 실물(D4, pilot P0의 스키마 실측을 받는다), 정적 클라이언트는 시험용 공개 클라이언트 하나와 `ci-eval-runner`.
+2. `docker/dex/config.yaml` 초판: issuer는 `http://localhost:<port>`, LDAP 커넥터는 Synology 실물(D4, pilot P0의 스키마 실측을 받는다), 정적 클라이언트는 시험용 공개 클라이언트 하나와 `ci-runner`.
 3. `.env.example` 초판: Dex·DB 비밀과 LDAP 바인드 값.
-4. `scripts/dev-token.sh`: 시험용 토큰 취득 절차. (a) 사람 토큰 — PKCE `code_verifier`·`code_challenge`(S256) 생성, `authorize` URL에 `resource=<레지스트리 공개 URL>`·`scope=openid groups skills:read skills:write`, 루프백 콜백(`http://127.0.0.1:<port>/callback`)을 `python3 -m http.server` 대신 스크립트 안의 표준 라이브러리 리스너로 받아 `code`를 교환, 액세스 토큰만 표준 출력. (b) 서비스 토큰 — `ci-eval-runner`의 클라이언트 자격 증명으로 같은 `resource`. 토큰·시크릿은 로그에 남기지 않는다(표준 오류에도 안 찍는다). service의 `tests/http`는 `HC_TEST_TOKEN`·`HC_TEST_SERVICE_TOKEN` 환경 변수로 받는다. 이것이 첫 셸 스크립트이므로 `lang/bash` 선언과 shellcheck 게이트 완주(D17)를 같은 커밋에서 한다.
+4. `scripts/dev-token.sh`: 시험용 토큰 취득 절차. (a) 사람 토큰 — PKCE `code_verifier`·`code_challenge`(S256) 생성, `authorize` URL에 `resource=<레지스트리 공개 URL>`·`scope=openid groups skills:read`, 루프백 콜백(`http://127.0.0.1:<port>/callback`)을 `python3 -m http.server` 대신 스크립트 안의 표준 라이브러리 리스너로 받아 `code`를 교환, 액세스 토큰만 표준 출력. (b) 서비스 토큰 — `ci-runner`의 클라이언트 자격 증명으로 같은 `resource`. 토큰·시크릿은 로그에 남기지 않는다(표준 오류에도 안 찍는다). service의 `tests/http`는 `HC_TEST_TOKEN`·`HC_TEST_SERVICE_TOKEN` 환경 변수로 받는다. 이것이 첫 셸 스크립트이므로 `lang/bash` 선언과 shellcheck 게이트 완주(D17)를 같은 커밋에서 한다.
 
-완료 조건(우산 §4 P1 행의 distribution 몫): "distribution P1은 시험용 토큰 취득 절차(`scripts/dev-token.sh`: PKCE + `resource`, 클라이언트 자격 증명)와 Dex 설정의 LDAP 확정판". 판정은 V2·V3·V11 — LDAP 사용자로 로그인한 사람 토큰에 `groups: [skills]`가 있고, `ci-eval-runner`의 클라이언트 자격 증명 토큰 실물이 기록됐으며, 두 토큰이 스크립트 한 번으로 나온다.
+완료 조건(우산 §4 P1 행의 distribution 몫): "distribution P1은 시험용 토큰 취득 절차(`scripts/dev-token.sh`: PKCE + `resource`, 클라이언트 자격 증명)와 Dex 설정의 LDAP 확정판". 판정은 V2·V3·V11 — LDAP 사용자로 로그인한 사람 토큰에 `groups: [skills]`가 있고, `ci-runner`의 클라이언트 자격 증명 토큰 실물이 기록됐으며, 두 토큰이 스크립트 한 번으로 나온다.
 
 ### distribution P2. 루트 compose와 LDAP 오버레이 (우산 P5 전반)
 
@@ -94,7 +94,7 @@
 
 ### distribution P3. 저장소 템플릿과 첫 카탈로그 저장소 (우산 P5 후반)
 
-1. `examples/catalog-template/` 완성(`init`의 패키지 데이터 원본): `.harness-catalog`(`layout = 1`), `skills/.gitkeep`, README(§5 체크리스트 + 등록 한 줄 + 브랜치 규율 + "검색어에 비밀을 넣지 말라"), `.pre-commit-config.yaml`(`harness-catalog check`), `github/check.yml`, `gitlab/.gitlab-ci.yml`(PR·`main` push마다 `harness-catalog check`; `main` push에는 선택 단계 `harbor run`(변경된 스킬의 `evals/`, `--env docker`, mini 러너에서만) → Harbor 플러그인이 `record_eval`. 모델 자격은 러너 시크릿 `CLAUDE_CODE_OAUTH_TOKEN` + `CLAUDE_FORCE_OAUTH=1`, API 키 없음. Harbor 판은 워크플로에 핀).
+1. `examples/catalog-template/` 완성(`init`의 패키지 데이터 원본): `.harness-catalog`(`layout = 1`), `skills/.gitkeep`, README(§5 체크리스트 + 등록 한 줄 + 브랜치 규율 + "검색어에 비밀을 넣지 말라"), `.pre-commit-config.yaml`(`harness-catalog check`), `github/check.yml`, `gitlab/.gitlab-ci.yml`(PR·`main` push마다 `harness-catalog check`; `main` push에는 선택 단계 `harbor run --plugin harbor_langfuse`(변경된 스킬의 `evals/`, `--env docker`, mini 러너에서만) → Langfuse. 모델 자격은 러너 시크릿 `CLAUDE_CODE_OAUTH_TOKEN` + `CLAUDE_FORCE_OAUTH=1`, API 키 없음. Harbor 판은 워크플로에 핀).
 2. 첫 카탈로그 저장소 신설: §5를 처음부터 끝까지 한 번 따른다(`init` 포함). 우산 P4에서 작성·검증된 두 스킬은 첫 PR로 들어간다(skills P2).
 3. V6·V7·V8 통과. 우산 V3(우회 push 수용)·V4(fail-closed)·V5(재기동 복구)의 실행 환경을 제공한다.
 
@@ -124,7 +124,7 @@
 | 항목 | 기각 근거 (왜 지금 아닌가) |
 |---|---|
 | Helm 차트 | 인스턴스 하나. compose 한 대가 설계의 v3.0이다(우산 §7) |
-| 백업 크론(pg_dumpall·git bundle) | v3.0은 사용 기록을 읽지 않고 평가 결과의 손실을 감수한다(DESIGN §2.1). 동급 셀프호스팅 셋도 compose에 백업이 없다(문면) |
+| 백업 크론(pg_dumpall·git bundle) | v3.0은 사용 기록을 읽지 않고 평가 결과는 Langfuse에 있다(DESIGN §2.1). 동급 셀프호스팅 셋도 compose에 백업이 없다(문면) |
 | 가짜 OIDC 서버(모의 issuer) | 개발 compose에 실제 Dex가 뜬다(P1). 단위 시험은 service가 OIDC 어댑터를 가짜로 바꾼다. 셋째 인가 구현이다 |
 | 레지스트리의 LDAP 직접 바인드 | 레지스트리가 아는 신원 유형은 OIDC 하나다(DESIGN §2). 비밀번호를 받을 자리가 없다 |
 | 동적 클라이언트 등록(RFC 7591) | 스펙이 폐기 예정으로 두었고 Dex 지원을 확인하지 못했다(문면). 정적 클라이언트 넷이면 충분하다 |
@@ -158,7 +158,7 @@
 |---|---|---|---|---|
 | V1 | 깨끗한 VM에서 기동 | 새 VM에 저장소를 받고 `.env`만 채운 뒤 `docker compose up -d` | 컨테이너 셋 전부 healthy, `/healthz` 200, `/readyz` 200. 프록시 뒤에서 토큰 없는 호출의 401 챌린지 `resource_metadata`가 공개 URL이다. 실행 중인 `registry` 이미지의 digest가 CI 빌드 출력의 digest와 같다(D11) | 대기 |
 | V2 | 사람 토큰 | LDAP 사용자로 공개 클라이언트(PKCE) 로그인 | 토큰의 `iss`가 issuer, `aud`가 레지스트리 URL, `groups`에 `skills-readers`, `sub`가 사용자 | 대기 |
-| V3 | 서비스 주체 토큰 | `ci-eval-runner`로 클라이언트 자격 증명 | 토큰 실물(`sub`·`azp`·`groups` 유무)을 pilot r에 기록했고, service의 인가 정책이 그 표지로 서비스 주체를 가른다 | 대기(pilot P0과 같은 실측) |
+| V3 | 서비스 주체 토큰 | `ci-runner`로 클라이언트 자격 증명 | 토큰 실물(`sub`·`azp`·`groups` 유무)을 pilot r에 기록했고, service의 인가 정책이 그 표지로 서비스 주체를 가른다 | 대기(pilot P0과 같은 실측) |
 | V4 | 토큰 수명 | V2·V3 토큰의 `exp - iat` | 3600초 이하 | 대기 |
 | V5 | 표지 검사 | `.harness-catalog`가 없는 저장소, `layout = 2`인 저장소, 빈 저장소를 각각 가리켜 기동 | 각각 `/readyz` 503과 사유 `not_a_catalog`·`unsupported_layout`·`no_main_branch` | 대기 |
 | V6 | `init` → 첫 PR CI 초록 | `init`으로 만든 저장소에 두 스킬의 PR | 워크플로가 `harness-catalog check`를 돌리고 초록. 검사 항목 하나를 일부러 깨면 붉다. 도구 판(패키지·gitleaks)이 service 이미지의 핀과 같다 | 대기 |
@@ -177,6 +177,7 @@
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-27 | 설계 개정 반영 | v3.4: D19를 Langfuse 플러그인·시크릿 넷으로, `ci-eval-runner`→`ci-runner`(무인 읽기), dev-token 스코프 `skills:read`만 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | CI evals 단계(D19): mini 러너 + Harbor + setup-token, 워크플로 템플릿 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | v3.3: 저장소 신설은 `harness-catalog init`(D15), deploy key 읽기 전용(체크리스트 4, V8), CI는 `check`(D14·체크리스트 5·V6·P3-1) | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 8차 리뷰: 카탈로그 저장소 쓰기 자격 제한(v3.3에서 읽기 전용 deploy key로 대체) | DESIGN §11 |
