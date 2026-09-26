@@ -44,7 +44,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
       model.py              # SkillEntry·IndexSnapshot·Principal·오류 코드 열거. 순수 데이터
       authz.py              # 인가 정책. 그림 4의 표: reader(그룹 `skills-readers` 또는 서비스 주체) -> CATALOG_READ
       catalog.py            # 카탈로그: 목록·검색·본문·파일, 인덱스 빌드(트랜잭션+메모리 사본), 구조 검사, 상태
-      check.py              # 검사 아홉(§5): 저장소 구조 + 스킬마다. 인덱스 빌드와 CLI가 같은 함수를 부른다
+      check.py              # 검사 열(§5): 저장소 구조 + 스킬마다 + 스킬 쌍(복사본 드리프트). 인덱스 빌드와 CLI가 같은 함수를 부른다
       app.py                # App = 위 셋 + 어댑터 넷을 묶은 이름 붙은 형태. 제공 포트 = 이 객체의 함수 시그니처
     adapters/               # 피구동 어댑터 넷
       git.py                # 로컬 클론, fetch, 스킬 트리 목록, 판 읽기, 삭제 이력 질의. 쓰기 없음
@@ -130,7 +130,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 ### P3. 검사 명령·초기화 명령·Langfuse 플러그인
 
 0. 착수 조건: D8의 표지가 `plans/pilot.md`의 실측 기록으로 정해져 있다. 없으면 서비스 주체를 reader로 세우는 한 줄만 뒤로 두고 나머지를 먼저 한다.
-1. `app/check.py`: DESIGN §5의 검사 아홉을 순수 함수로. 입력은 검사할 트리(작업 트리 또는 커밋)·기준 커밋·git 어댑터(삭제 이력, 기준 커밋의 트리), 출력은 위반 목록(항목 번호·경로·사유). 기준 커밋이 없으면 5·9를 건너뛰고 그 사실을 출력에 적는다. P1의 인덱스 빌드가 이 함수를 부르도록 바꾼다(스킬 실패 → 인덱스 제외, 구조 실패 → 빌드 실패).
+1. `app/check.py`: DESIGN §5의 검사 열을 순수 함수로. 입력은 검사할 트리(작업 트리 또는 커밋)·기준 커밋·git 어댑터(삭제 이력, 기준 커밋의 트리), 출력은 위반 목록(항목 번호·경로·사유). 기준 커밋이 없으면 5·9를 건너뛰고 그 사실을 출력에 적는다. P1의 인덱스 빌드가 이 함수를 부르도록 바꾼다(스킬 실패 → 인덱스 제외, 구조 실패 → 빌드 실패).
 2. `cli.py check [<root>] [--base <commit>]`: 1을 CLI로. `--base`는 항목 5·9의 기준 커밋(DESIGN §2.1: pre-commit은 HEAD, PR CI는 merge-base, main CI는 직전 커밋, 인덱스 빌드는 `index_state.commit_sha`). 얕은 클론이면 항목 5는 종료 2. 종료 0 통과 / 1 위반 / 2 검사기 실패(gitleaks 없음·얕은 클론 등). pre-commit 훅과 CI 워크플로가 이 명령을 부른다(`examples/catalog-template/`의 훅·워크플로 파일이 그렇게 적혀 있다).
 3. `cli.py init <repo-url>`: 운영자 git 자격으로 clone → URL에서 호스트 판별(GitHub·GitLab) → 패키지 데이터 `catalog-template/`에서 `.harness-catalog`·`skills/.gitkeep`·README·pre-commit 설정·그 호스트의 CI 워크플로를 없는 것만 쓰고 → 커밋·push. 표지가 있는데 `layout`이 다르면 멈춘다(종료 1). 두 번 돌리면 변경 0.
 4. `cli.py reindex --accept-rewind`: 규칙 3의 `main_rewound` 뒤 운영자가 명시적으로 인덱스를 새 `main`으로 다시 짓는 명령.
@@ -138,7 +138,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 7. `packages/harbor-langfuse/`: 별도 배포물(`pyproject.toml`, `src/harbor_langfuse/plugin.py`), 서비스 이미지에 들어가지 않는다. Harbor `BaseJobPlugin` 구현. `on_job_start`에서 잡의 태스크 경로에서 스킬 이름과 `evals/` 케이스를 읽어 Langfuse dataset `<catalog>/<skill>`과 item(케이스, `input` = `instruction.md`)을 있으면 재사용·없으면 생성하고, dataset run(`run_name` = Harbor 잡 이름, `metadata` = `skill`·`sha`(주입한 스킬 원천의 ref)·`scenario_sha`(`evals/` tree)·`model`·`harness`(agent 이름)·`baseline`(스킬 원천 없음))을 연다. `on_job_end`에서 트라이얼마다 trace(입력 instruction, 출력 검증기 stdout 요약, 메타데이터 `trial_uri`·토큰·비용)와 run item, score `passed`(BOOLEAN, reward ≥ 1)를 만든다. 키는 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST` 환경 변수. Harbor의 `packages/harbor-langsmith/src/harbor_langsmith/plugin.py`(852줄, `_create_root_run`·`_create_feedback`·`_request` 재시도)를 본뜨되 ATIF 스텝은 그쪽도 올리지 않으므로 올리지 않는다. Langfuse SDK v3의 저수준 dataset run·score API 이름은 pilot Q14(e)가 실측한 뒤 쓴다.
 8. 시험: unit에서 검사 열 각각의 위반 표본(구조 결손 다섯, 스킬 위반 넷, 스킬 쌍의 복사본 드리프트 하나)과 통과 표본; adapters/git에서 임시 저장소에 `init`을 두 번 돌려 두 번째가 변경 0, GitHub·GitLab URL로 워크플로 파일이 갈리는지; 같은 표본을 CLI·인덱스 빌드 두 경로로 돌려 판정이 같은지; `main`을 되감은 클론으로 fetch해 `main_rewound`; 플러그인은 Harbor `JobResult` 표본으로 Langfuse 호출을 기록하는 가짜 클라이언트에 대해; http에서 403 실물.
 
-**끝:** §5의 검사 아홉 각각을 위반한 표본이 `check`에서 항목 번호와 함께 종료 1로 거부되고 인덱스 빌드에서 같은 스킬이 빠지며, `init`이 빈 저장소를 표지·`skills/`·CI·pre-commit·README가 있는 저장소로 만들고 두 번째 실행에서 변경이 없으며, PR로 병합한 스킬이 `FETCH_INTERVAL_SECONDS` 두 주기 안에 `search_skills`에 나온다.
+**끝:** §5의 검사 열 각각을 위반한 표본이 `check`에서 항목 번호와 함께 종료 1로 거부되고 인덱스 빌드에서 같은 스킬이 빠지며, `init`이 빈 저장소를 표지·`skills/`·CI·pre-commit·README가 있는 저장소로 만들고 두 번째 실행에서 변경이 없으며, PR로 병합한 스킬이 `FETCH_INTERVAL_SECONDS` 두 주기 안에 `search_skills`에 나온다.
 
 ## 5. 불채택 표
 
