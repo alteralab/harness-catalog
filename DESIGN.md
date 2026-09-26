@@ -181,7 +181,7 @@ flowchart LR
 |---|---|---|
 | **v3.0: Synology NAS의 LDAP(Directory Server)** | 둘 중 하나. (a) `[웹]` Synology SSO Server. SAML·OIDC·Synology SSO를 지원하고 NAS가 가입한 디렉터리 사용자를 인증한다. **확인 필요:** 제3자 OIDC 앱 등록, PKCE, 장치 인가, 클라이언트 자격 증명, `groups` 클레임 지원 여부. KB 문서를 이 세션에서 읽지 못했다. (b) `[웹]` Dex. LDAP 커넥터로 사용자 검색·바인드·그룹 검색을 하고 `groups` 스코프로 그룹 클레임을 낸다. 인가 코드·리프레시·장치 코드·토큰 교환을 지원하고 클라이언트 자격 증명은 플래그로 켠다. 컨테이너 하나 | **Dex로 시작한다.** 이유 둘. 이 설계가 요구하는 것 중 인가 코드 + PKCE(`[웹]` Dex 2.26부터, `public: true` 클라이언트와 `pkce.enforce` 설정)·리프레시·클라이언트 자격 증명·그룹 클레임을 문서로 확인했고, compose에 컨테이너 하나를 더하는 것으로 끝나며 저장소는 같은 PostgreSQL 인스턴스의 **별도 데이터베이스**(`dex`, 별도 역할)를 쓴다. **확인 필요:** 장치 흐름. `[웹]` Dex 이슈 #3983은 장치 흐름이 client_secret을 요구해 RFC 8628과 어긋난다고 보고하므로, 브라우저 없는 샌드박스 경로는 파일럿에서 실측하고 안 되면 v3.0 범위에서 뺀다(§9). 클라이언트 자격 증명 토큰의 `sub`가 client ID로 나오는지도 확인. SSO Server가 (a)의 확인 항목을 전부 만족하면 Dex를 빼고 issuer만 바꾼다 |
 | 이후: 사내 IdP(Keycloak·Okta·Entra 등) | 그 IdP가 곧 인가 서버 | issuer URL 교체. 레지스트리 코드 변경 없음. 그룹 `skills-readers` 하나만 그쪽 디렉터리에 만든다 |
-| 대안: git 호스트를 신원으로 | Dex의 GitHub 커넥터가 org 팀을 `groups`로 낸다(문면 확인 필요, §9) | 쓰기가 git 호스트 권한이 된 v3.3에서는 읽기 신원도 같은 곳에 두면 명단이 하나가 된다. 파일럿에서 커넥터를 실측한 뒤 결정 |
+| 대안: git 호스트를 신원으로 | Dex의 GitHub 커넥터가 org 팀을 `groups`로 낸다(문면 미확인) | 쓰기가 git 호스트 권한이 된 v3.3에서는 읽기 신원도 같은 곳에 두면 명단이 하나가 된다. **사용자 결정(2026-09-26): LDAP 유지.** 커넥터 실측은 하지 않는다. 명단 둘은 `scripts/membership-diff.sh`로 같게 유지한다(§8) |
 
 Dex를 두면 v3.0 compose는 서비스 1 + PostgreSQL 1 + Dex 1이 된다. 클라이언트 등록은 Dex의 정적 클라이언트 설정에 에이전트 제품마다 하나씩 사전 등록한다(Client ID Metadata Documents는 Dex 지원을 확인하지 못했다). 이 결정으로 **팀 소속의 정본은 Synology LDAP의 그룹**이 되고, 그룹 가입·탈퇴는 NAS에서 한다.
 
@@ -718,7 +718,6 @@ skills/yt-subs/
 - 스킬 수가 몇 개를 넘으면 이름순 목록이 안 되는지. 그때가 순위의 시점이다.
 - 내려받기의 실측. `.agents/skills/` + `.claude/skills/` 심볼릭 링크 조합을 파일럿 하네스 셋(Claude Code·Codex·Cursor)이 실제로 한 번만 로드하는지(Cursor는 호환 경로도 읽어 두 번 보일 수 있다). `pin-skill`의 지시만으로 에이전트가 임시 디렉토리 → 대조 → 이름 바꾸기를 지키며 디렉토리 전체를 빠짐없이 쓰는지.
 - 서비스 주체 판별의 표지. Dex 클라이언트 자격 증명 토큰의 `sub`·`azp`·`groups` 실물(§2 가정). 그리고 CI 평가 러너용 정적 클라이언트 등록 절차(클라이언트 자격 증명 그랜트 켜기).
-- 읽기 신원을 git 호스트로 합칠 수 있는가. Dex의 GitHub 커넥터가 org 팀을 `groups`로 내는지, 그러면 Synology LDAP 없이 신원이 GitHub 하나가 되는지(§2 신원 제공자 표의 대안 행).
 - `new-skill`의 지시만으로 에이전트(Claude Code·Codex)가 브랜치·커밋·PR을 사람의 git 자격으로 올바르게 만드는지, 그리고 그 세션이 클라우드 샌드박스일 때 어떻게 멈추는지.
 
 ---

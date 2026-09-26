@@ -23,7 +23,9 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
   docs/                           #   설치·설정값 일곱·운영자 가이드·카탈로그 저장소 신설
   scripts/                        #   운영 셸 스크립트. 첫 파일과 함께 lang/bash 선언
   skills/                         # 카탈로그에 실리는 절차 스킬 pin-skill·new-skill — plans/skills.md
-  research/                       # 실측 기록 rN과 측정 도구 tools/ — plans/pilot.md
+  plans/pilot/                    # 실측 기록 rN.md — plans/pilot.md
+  tools/pilot/                    # 측정 도구(계측 stub·질의 러너 등, 추적)
+  research/                       # 원자료(전사본·받아 둔 문서). 비추적(.gitignore)
 ```
 
 ## 1. 구성 요소와 정본 계획
@@ -52,7 +54,7 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
 5. **규칙 게이트.** altera-rules `common`·`lang/python`·`review`가 설치되어 있고 `altera-ruff`(`ruff.toml`이 base를 extend)·`altera-ast-grep` 훅이 걸려 있다(2026-09-26). 파이썬 게이트 둘은 파이썬 소스가 0이라 아직 한 파일도 검사한 적이 없고, `src/`의 첫 파이썬 커밋이 첫 완주다(C-GATE-1). `scripts/`의 첫 셸 스크립트에서 `lang/bash`를, `skills/`의 첫 SKILL.md에서 `purpose/agent-skill`을 선언한다. 선언마다 그 축의 게이트를 한 번 완주시킨다.
 6. **교차 검증.** 판정 원장에 행을 더하거나 단계를 완료로 올리기 전에 Codex 독립 리뷰를 한 번 받는다(DESIGN이 여섯 차례 그렇게 했다). 발견은 반영·기각을 사유와 함께 해당 PLAN 진행 원장에 적는다.
 7. **비밀.** deploy key·클라이언트 시크릿·DB 접속값은 저장소에 없다. compose는 `.env`를 읽고 `.env`는 gitignore다. 예시는 `.env.example`.
-8. **배치는 오픈소스 공통 골격.** 이 저장소는 어디서든 설치되는 패키지로 만든다(사용자 결정 2026-09-26, DESIGN §11). 저장소 자체는 비공개(`alteralab` 다른 저장소와 같다)로 시작하고 공개 여부는 별도 결정이다. 골격을 따르는 이유는 공개가 아니라 설치 가능성이다. 그래서 소스 배치는 설계가 인용한 오픈소스 여섯(Dex·Langfuse·MCP registry·Gitea·DataHub·Polaris, 2026-09-26 `gh api` 실측)의 공통 골격을 따른다 — compose·Dockerfile은 루트, 파이썬 패키지는 `src/`, compose 지원 파일은 `docker/`, 예시 설정은 `examples/`, 문서는 `docs/`, 스크립트는 `scripts/`, Helm은 `helm/`(지금 없음). 계획 문서는 `plans/`에 모아 소스 배치에 종속시키지 않는다(REVIEW.md V-REC-1의 적용 경로 `plans/**`와 같다). 우리 팀의 Synology LDAP 변형은 `examples/synology-ldap/`이고 기본 compose는 Dex 정적 사용자로 어느 머신에서나 뜬다.
+8. **배치는 오픈소스 공통 골격.** 이 저장소는 어디서든 설치되는 패키지로 만든다(사용자 결정 2026-09-26, DESIGN §11). 저장소 자체는 비공개(`alteralab` 다른 저장소와 같다)로 시작하고 공개 여부는 별도 결정이다. 골격을 따르는 이유는 공개가 아니라 설치 가능성이다. 그래서 소스 배치는 설계가 인용한 오픈소스 여섯(Dex·Langfuse·MCP registry·Gitea·DataHub·Polaris, 2026-09-26 `gh api` 실측)의 공통 골격을 따른다 — compose·Dockerfile은 루트, 파이썬 패키지는 `src/`, compose 지원 파일은 `docker/`, 예시 설정은 `examples/`, 문서는 `docs/`, 스크립트는 `scripts/`, Helm은 `helm/`(지금 없음). 계획 문서는 `plans/`에 모아 소스 배치에 종속시키지 않는다(REVIEW.md V-REC-1의 적용 경로 `plans/**`와 같다). 실측 기록 `rN.md`는 `plans/pilot/`에 추적하고, 측정 도구는 `tools/pilot/`에 추적하며, 원자료(전사본·받아 둔 문서)는 `research/`에 두되 추적하지 않는다(사용자 결정 2026-09-26). 우리 팀의 Synology LDAP 변형은 `examples/synology-ldap/`이고 기본 compose는 Dex 정적 사용자로 어느 머신에서나 뜬다.
 
 ## 4. 단계 (순서가 곧 의존이다)
 
@@ -82,7 +84,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | 2 | git 호스트. 카탈로그 저장소와 이 코드 저장소를 GitHub(`alteralab` org, chronicle 선례)에 두는가. CI 워크플로 파일은 그 호스트 것만 먼저 쓴다 | 조직의 저장소 정책 | **결정(2026-09-26)**: GitHub `alteralab`(1번에서 따라옴). 코드 저장소 `alteralab/harness-catalog`, 카탈로그 저장소는 이름 미정. CI는 GitHub Actions 파일을 먼저 돌리고 GitLab 파일은 작성만(distribution D13). 브랜치 흐름은 §6-7 |
 | 3 | 공개 URL과 TLS 종단. 레지스트리 canonical URI(토큰 audience)와 Dex issuer URL이 여기서 정해진다. 리버스 프록시의 "사내 표준"이 무엇인가 | 네트워크·도메인의 사실 | **결정(2026-09-26)**: Tailscale. mini의 `tailscale serve`가 TLS를 끊고 경로로 나눈다. 레지스트리 `https://mini.tail2f9fe3.ts.net/mcp`, Dex issuer `https://mini.tail2f9fe3.ts.net/dex`(tailnet 이름은 2026-09-26 `tailscale status` 실측). 개발 중 로컬은 `http://localhost` 그대로 |
 | 4 | 인가 서버. P0의 SSO Server 실측 결과에 따라 Dex를 유지할지 SSO Server로 바꿀지 | 실측 뒤의 선택 | **결정(2026-09-26)**: Dex. pilot Q1(SSO Server 능력)은 기록용 실측으로만 남고 결정에 걸리지 않는다 |
-| 9 | 읽기 신원을 git 호스트(GitHub)로 합칠 것인가. v3.3에서 쓰기 신원은 git 호스트 계정이라 읽기(LDAP)와 둘이 됐다. Dex GitHub 커넥터가 org 팀을 `groups`로 내면 하나로 합칠 수 있다(pilot Q13-b 실측 뒤). 합치지 않아도 동작한다 — 명단 둘을 같게 유지하는 운영 부담만 있다 | 조직의 신원 정책 | 미결(pilot Q13-b 뒤) |
+| 9 | 읽기 신원을 git 호스트(GitHub)로 합칠 것인가. v3.3에서 쓰기 신원은 git 호스트 계정이라 읽기(LDAP)와 둘이 됐다. 합치지 않아도 동작한다 — 명단 둘을 같게 유지하는 운영 부담만 있다 | 조직의 신원 정책 | **결정(2026-09-26)**: LDAP 유지. Dex GitHub 커넥터 실측은 지금 하지 않는다(pilot Q13에서 뺌). 명단 동기는 `scripts/membership-diff.sh` |
 | 5 | 파일럿 사용자 범위. 사용자 하나로 시작하는가, 역할 그룹에 몇 명을 넣는가 | 팀 구성의 사실 | **결정(2026-09-26)**: 실사용자 한 명. 시험(그룹 가입·탈퇴, 두 주체 동시 갱신 등)에 필요하면 LDAP에 시험 계정을 더한다. 시험 계정의 사용 기록은 Q8 집계에서 주체로 갈라 적는다 |
 | 7 | 브랜치 흐름. 코드 저장소는 `main` 하나에 PR로 합치는가, `dev` 브랜치를 두는가. 카탈로그 저장소는 설계상 `main` 하나(v3.3: 모든 쓰기가 브랜치·PR·병합, 레지스트리는 읽기 전용) | 팀의 작업 방식 | **결정(2026-09-26)**: 코드 저장소는 `main` + PR. CI는 PR에서 테스트·게이트, `main`에서 이미지 빌드·push(distribution D11) |
 | 8 | 브랜치 보호의 자리. `alteralab`은 Free 플랜이라 비공개 저장소에는 브랜치 보호도 룰셋도 걸리지 않는다(2026-09-26 실측: 둘 다 403) | 조직의 비용·공개 정책 | **결정(2026-09-26)**: 보호를 우선하지 않는다. 플랜 업그레이드·공개 전환·로컬 훅 어느 것도 지금 하지 않고, 강제 push 금지와 `main` + PR은 규율로 지킨다. DESIGN §2.1의 "보호된 `main`" 요건은 §11 행으로 뺐다 |
@@ -146,6 +148,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | 2026-09-26 | 설계 개정 | 사용자 결정: 주기 fetch 간격을 설정값 `FETCH_INTERVAL_SECONDS`(기본 60초)로. DESIGN §2·§2.1·§11에 반영(설정값 일곱 = 필수 다섯 + 선택 둘) | DESIGN §11 |
 | 2026-09-26 | 사용자 결정 §6-8 | `main` 보호를 우선하지 않는다. DESIGN §2.1·§8·§11 반영, distribution 체크리스트 3·V7 개정. §6 미결 0 | §6-8 |
 | 2026-09-26 | 브랜치 보호 시도 | `alteralab/harness-catalog`(비공개)에 룰셋과 classic protection을 API로 걸어 봤으나 둘 다 403(Free 플랜 제약). §6-8로 등록. 카탈로그 저장소의 "보호된 main" 요건도 같은 제약이라 distribution 체크리스트 3·V7은 §6-8이 정해져야 통과 가능 | §6-8 |
+| 2026-09-26 | 사용자 결정 §6-9·배치 | 읽기 신원은 LDAP 유지, GitHub 커넥터 실측은 지금 하지 않는다. `research/`는 원자료용 비추적 디렉토리, 실측 기록은 `plans/pilot/rN.md`, 측정 도구는 `tools/pilot/` | §3-8, §6-9 |
 | 2026-09-26 | Codex 교차 검증 3회 | v3.3 검증(이전 20건 중 18건 해소·소멸, 미해결 2건 + 신규 19건). 치명 둘 반영: 브랜치 판 `record_eval` 제거(`main` 병합 뒤 기록), `check --base` 입력 계약. §7 잔재·명단 불변식·되감기 승인·PLAN 잔재 정정 | DESIGN §11 9차 |
 | 2026-09-26 | 사용자 결정: v3.3 | 게시·인증을 레지스트리 도구에서 git 호스트의 트렁크 기반 워크플로로. 레지스트리 읽기 전용, `check`·`init` CLI, 브랜치 보호는 비용 때문에 예외(규율), 클라우드 샌드박스 세션 정의. PLAN 넷 동기(service P3·V, skills new-skill, distribution D14·D15·체크리스트, pilot Q13) | DESIGN §11 |
 | 2026-09-26 | Codex 교차 검증 2회 | publish·certify 모순(20건). 사용자 결정 (A): 인증 판은 레지스트리 소유 ref, editor는 저장소 쓰기 자격 없음. 유효 판 인덱스·fail-closed·인증 세대·`retire_requires_revoke`. DESIGN §11 8차 리뷰 표, service·skills·distribution 동기 | DESIGN §11 |
