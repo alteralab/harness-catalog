@@ -36,6 +36,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
   Dockerfile                # python:3.12-slim + git + gitleaks, 다단계. 아티팩트 하나 (배치·태그는 plans/distribution.md)
   src/harness_catalog/
     __main__.py             # uvicorn 기동. 출력 층(T201 면제 자리)
+    harbor/plugin.py        # Harbor JobPlugin: on_job_end에서 트라이얼마다 record_eval 호출(선택 extra `harness-catalog[harbor]`)
     cli.py                  # `harness-catalog init <repo-url>`(구조·CI·pre-commit·README, 멱등, 호스트별) · `check [<root>]`(종료 0/1/2) · `reindex --accept-rewind`
     config.py               # Settings(pydantic-settings, 일곱) + bootstrap(settings) -> App  [Configurator]
     migrations/             # yoyo SQL 파일, 패키지 데이터로 포함(pip 설치만으로 실행). 0001이 그림 3 DDL 그대로
@@ -138,6 +139,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 5. `app/evals.py`의 `record_eval`: `id` 생존·`sha` 판 검증(현재 판 또는 D6 이력, 브랜치 포함)·길이 상한·`scenario_sha` 서버 산출(`git rev-parse <commit>:skills/<id>/evals` 없으면 빈 tree SHA `4b825dc642cb6eb9a060e54bf8d69288fbee4904`)·`run_id` 멱등.
 6. `app/authz.py` 완성: 주체 셋(reader·그룹 없음·서비스) × 도구 다섯 × 스코프.
 7. `driving/mcp_tools.py`: `record_eval` 등록. 오류 코드 D14.
+7a. `harbor/plugin.py`: Harbor `BaseJobPlugin` 구현. `on_job_end(job_result)`의 트라이얼마다 `(skill id = 태스크 경로의 스킬 이름, sha = 주입한 스킬 원천의 ref, model, harness = agent 이름, passed = reward ≥ 1)`을 `record_eval`로 부른다(MCP 클라이언트, 서비스 주체 토큰은 환경 변수). 스킬 있이·없이 잡을 짝지어 `baseline_passed`를 채우는 것은 CI 워크플로의 몫(두 잡 ID를 넘긴다). 의존 `harbor`는 선택 extra라 서비스 이미지에는 들어가지 않는다.
 8. 시험: unit에서 검사 아홉 각각의 위반 표본(구조 결손 다섯, 스킬 위반 넷)과 통과 표본; adapters/git에서 임시 저장소에 `init`을 두 번 돌려 두 번째가 변경 0, GitHub·GitLab URL로 워크플로 파일이 갈리는지; 같은 표본을 CLI·인덱스 빌드 두 경로로 돌려 판정이 같은지; `main`을 되감은 클론으로 fetch해 `main_rewound`; `record_eval` 검증 넷; http에서 403 실물.
 
 **끝:** §5의 검사 아홉 각각을 위반한 표본이 `check`에서 항목 번호와 함께 종료 1로 거부되고 인덱스 빌드에서 같은 스킬이 빠지며, `init`이 빈 저장소를 표지·`skills/`·CI·pre-commit·README가 있는 저장소로 만들고 두 번째 실행에서 변경이 없으며, PR로 병합한 스킬이 `FETCH_INTERVAL_SECONDS` 두 주기 안에 `search_skills`에 나온다.
@@ -199,6 +201,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | V19 | fetch 간격 설정 | `FETCH_INTERVAL_SECONDS=5`로 기동하고 우회 push | 5~10초 안에 인덱스 반영, 기본값 기동은 60~120초 안 | 대기 |
 | V20 | 규칙 게이트 첫 완주 | P1 첫 커밋에서 `pre-commit run --all-files`와 `selftest.sh --census src/ tests/` | ruff·ast-grep이 파일을 검사하며 돌았고 검출마다 참·거짓 판정이 §9에 있다 | 대기 |
 | V22 | `main` 되감기 | 시험 저장소의 `main`을 이전 커밋으로 강제 push한 뒤 fetch | 인덱스가 갱신되지 않고 `/readyz` 200 + `degraded: ["main_rewound"]`. `reindex --accept-rewind` 뒤 새 `main`으로 인덱스가 지어진다 | 대기 |
+| V26 | Harbor 플러그인 | 시험 카탈로그의 스킬 하나에 Harbor 태스크 둘을 두고 `harbor run --plugin harness_catalog.harbor.plugin:RecordEvalPlugin`을 스킬 있이·없이 | `eval_result`에 `(skill, sha, model, harness)`별 행이 생기고 `passed`가 reward와 같으며 `baseline_passed`가 없이 잡의 reward와 같다. `list_skills(model, harness)`에 그 행이 보인다 | 대기 |
 | V21 | 마이그레이션 패키징 | `uv build`로 wheel·sdist를 만들고 각각 빈 가상 환경에 설치한 뒤 `python -c` 한 줄로 `importlib.resources`에서 `0001_schema.sql`을 열고, testcontainers PostgreSQL에 설치본의 러너로 yoyo를 적용 | wheel·sdist 둘 다에서 파일이 열리고 적용이 성공한다. 작업 트리가 없는 디렉토리에서 실행한다 | 대기 |
 
 ## 8. 개정 규약
@@ -209,6 +212,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-26 | 설계 개정 반영 | Harbor 플러그인 모듈(P3-7a, V26). 서비스 이미지 밖의 선택 extra | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | `list_skills` 필드 최소화: D10·S6 삭제, P1-5·V16 개정(`model`·`harness` 인자) | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 9차 리뷰: `check --base`, 브랜치 판 `record_eval` 제거(D6·V16), D13에서 push 브레이커 제거 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | v3.3(git 워크플로): 쓰기 도구·인증·역할 계층 제거, `check`·`init`·`reindex` CLI, P3 재작성, V5 15칸, V9~V14·V18·V22 개정, V23~V25 삭제 | DESIGN §11 |

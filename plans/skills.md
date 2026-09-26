@@ -10,15 +10,15 @@
 skills/                            # 계획 정본은 plans/skills.md
   pin-skill/
     SKILL.md                     # 내려받기·새 판 확인 절차. 참조 없음, 스크립트 없음
-    evals/
-      pin-project/prompt.txt · expected.md        # 양성: "yt-subs 내려받아줘"
-      no-trigger-load/prompt.txt · expected.md    # 음성: "yt-subs 스킬 이 세션에 넣어줘"(load_skill 이지 pin 아님)
+    evals/                       # Harbor 태스크 둘(DESIGN §5.1)
+      pin-project/               #   양성: instruction.md "yt-subs 내려받아줘" · tests/test.sh가 .agents/skills/yt-subs/PINNED 형식을 검사
+      no-trigger-load/           #   음성: "yt-subs 스킬 이 세션에 넣어줘"(load_skill이지 pin 아님) · 검증기는 PINNED가 생기지 않았는지
   new-skill/
     SKILL.md                     # 뼈대 생성 → 규약 점검표 → evals → record_eval → 게시 인계
     references/conventions.md    # 팀 규약의 단일 소유자(종료 코드·PEP 723·requires-tools·evals 배치)
-    evals/
-      scaffold/prompt.txt · expected.md           # 양성: "유튜브 자막 뽑는 스킬 새로 만들자"
-      no-trigger-edit/prompt.txt · expected.md    # 음성: "yt-subs description 한 줄만 고쳐줘"
+    evals/                       # Harbor 태스크 둘
+      scaffold/                  #   양성: "유튜브 자막 뽑는 스킬 새로 만들자" · 검증기는 브랜치에 skills/<name>/SKILL.md·evals/가 생기고 check가 통과하는지
+      no-trigger-edit/           #   음성: "yt-subs description 한 줄만 고쳐줘" · 검증기는 새 디렉토리가 생기지 않았는지
 ```
 
 ## 1. 관할과 경계
@@ -90,10 +90,10 @@ skills/                            # 계획 정본은 plans/skills.md
 2. 이름을 정한다. `name` 문법(1–64자, 소문자·숫자·하이픈)이고 `list_skills`에 없어야 한다. 은퇴한 이름은 `harness-catalog check`(항목 5)가 거부하니 그때 바꾼다.
 3. 카탈로그 저장소의 로컬 클론(없으면 사용자에게 경로를 묻고 clone)에서 `main`을 최신으로 한 뒤 브랜치 `skill/<name>`을 따고 `skills/<name>/`에 뼈대를 쓴다. 병합 전의 브랜치가 곧 비공개 초안이다(DESIGN §5 비공개). `SKILL.md`(frontmatter + 본문 절: 언제 쓰는가·단계·실패 대응 표), 스크립트가 있으면 `scripts/`, `evals/`.
 4. `references/conventions.md`의 점검표를 하나씩 지난다. 결정적인 일(계산·변환·조회)은 스크립트로, 판단은 본문 지시로 가른다. 파이썬 스크립트는 PEP 723 머리와 `uv run --script scripts/x.py` 호출로 적고 실행 비트에 기대지 않는다. 시스템 도구는 `metadata.requires-tools`(기계용)와 `compatibility`(사람용 문장) 둘 다에. 스크립트의 종료 코드는 2 입력 오류·3 대상 없음·4 시스템 도구 없음(설치 안내 한 줄과 함께).
-5. evals 최소 쌍을 둔다. 써야 하는 과제 하나(`<name>/evals/<case>/prompt.txt`·`expected.md`)와 쓰지 말아야 하는 과제 하나(`no-trigger-*`).
+5. evals 최소 쌍을 Harbor 태스크로 둔다(DESIGN §5.1). 케이스마다 `evals/<case>/{task.toml, instruction.md, environment/Dockerfile, tests/test.sh}`. 써야 하는 과제 하나와 쓰지 말아야 하는 과제 하나(`no-trigger-*`). Dockerfile은 팀 베이스 이미지 한 줄, `task.toml`은 `references/conventions.md`의 템플릿을 복사. 검증기는 결과 파일·상태를 검사하고 `/logs/verifier/reward.txt`에 0/1을 쓴다.
 6. description을 검수한다. 무엇을·언제 쓰는지, 검색될 낱말(사용자가 실제로 말할 표현)이 들었는지, 쓰지 말아야 할 상황이 한 줄 있는지, **핵심 용례와 발동 낱말이 첫 문장에 있는지**(호스트가 설명을 자를 수 있고 모델은 첫머리를 더 잘 쓴다 — DESIGN §5.1).
 7. `harness-catalog check`를 돌린다(pre-commit 훅이 커밋 때 다시 돌리고 CI가 PR에서 또 돌린다). 위반 항목을 고친다.
-8. 두 프롬프트를 스킬 있이·없이 돌려 `expected.md`와 견준다. 결과는 PR 본문에 적는다(리뷰의 재료). 레지스트리에 `record_eval`로 붙이는 것은 병합 뒤다 — 레지스트리는 `main`만 알므로 병합된 판의 `sha`(`list_skills`)로 붙인다. `main` push의 CI가 대신 하도록 팀이 정할 수도 있다.
+8. `harbor run --dataset skills/<name>/evals --agent <하네스> --model <모델> --env docker`를 스킬 있이(`skills` 원천에 이 브랜치)·없이 두 번 돌려 reward를 본다. 결과는 PR 본문에 적는다(리뷰의 재료). 레지스트리에 `record_eval`로 붙이는 것은 병합 뒤다 — 레지스트리는 `main`만 알므로 병합된 판의 `sha`(`list_skills`)로 붙인다. `main` push의 CI가 대신 하도록 팀이 정할 수도 있다. Harbor가 없거나 음성 케이스처럼 검증기가 아직 없으면 사람이 눈으로 판정하고 그렇게 적는다(권고의 하한).
 9. 사용자에게 브랜치·점검표 결과를 보고하고 멈춘다. **사용자가 "올려"라고 할 때만** 커밋하고 push해 `gh pr create`(GitLab이면 `glab mr create`)로 PR을 연다. 병합은 사람이 git 호스트에서 한다. 클라우드 샌드박스 세션(git 자격 없음)이면 여기서 멈추고 로컬 세션에서 하라고 알린다.
 
 **번들 파일.** `references/conventions.md` 하나 — 팀 규약의 단일 소유자(§3 D4). 점검표 형식이고 DESIGN §5.1 ②·③의 규약을 실행 가능한 문장으로 옮긴 것이다. 스크립트는 없다(§3 D3).
@@ -115,7 +115,7 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 | D5 | 본문 언어 | **한국어.** 이 팀의 하네스 세션이 한국어이고 description의 발동 표현이 사용자의 실제 발화여야 한다. `name`·도구 이름·파일 경로는 그대로 영문 | 실측(이 세션과 `~/workspace`의 스킬 전부가 한국어 본문). 어휘 검색이 description을 대상으로 하므로 한국어 낱말이 검색어와 맞아야 한다(설계 판단) |
 | D6 | 레지스트리의 fetch 주기를 에이전트가 알아야 하는가 | **몰라도 된다.** 새 판 판정은 `PINNED`의 sha와 `list_skills`의 sha 비교뿐이다. 주기는 운영 설정(`FETCH_INTERVAL_SECONDS`)이라 스킬 본문에 시간을 적으면 낡는다 | 설계 판단(DESIGN §2 사용자 결정 2026-09-26). C-COMMENT-2와 같은 이유 |
 | D7 | Cursor가 호환 경로를 함께 읽어 같은 스킬이 두 번 보이는 문제 | **현재 규칙은 심볼릭 링크 하나다.** Claude Code·Codex는 문서로 확인됐고 Cursor·Gemini CLI·VS Code는 실측 전이다. 이 PLAN은 그 결과를 예측하지 않는다. 실측은 pilot P0의 항목이고 결과가 갈리면 DESIGN §4의 "링크 대신 사본 하나를 더 둔다"가 그때의 지시다 | 문면(DESIGN §4 하네스 표, **가정:** 표시). 실측은 pilot |
-| D8 | 두 스킬 자신의 evals | **각자 양성 하나·음성 하나.** 자기 규약을 자기가 지킨다. `pin-skill`의 음성은 "세션에 넣어줘"(`load_skill`이지 pin이 아님), `new-skill`의 음성은 "한 줄만 고쳐줘"(갱신이지 뼈대가 아님). 판정은 사람이 눈으로, 결과는 게시 뒤 `record_eval` | 설계 판단(DESIGN §5.1 evals 행, `[altera-skills]` 양성·음성 각 1 규약은 문면) |
+| D8 | 두 스킬 자신의 evals | **각자 양성 하나·음성 하나, Harbor 태스크 형식.** 자기 규약을 자기가 지킨다. `pin-skill`의 음성은 "세션에 넣어줘"(`load_skill`이지 pin이 아님), `new-skill`의 음성은 "한 줄만 고쳐줘"(갱신이지 뼈대가 아님). 검증기는 파일 시스템 상태(PINNED·브랜치의 디렉토리)를 본다 — 두 스킬 다 결과가 파일이라 궤적 없이 판정된다. 결과는 병합 뒤 `record_eval` | 설계 판단(DESIGN §5.1 evals 행, `[altera-skills]` 양성·음성 각 1 규약은 문면) |
 | D9 | 뼈대의 기본 위치 | **현재 저장소 밖 `~/skills-draft/<name>/`, 사용자가 다른 곳을 말하면 그곳.** 카탈로그 밖이 곧 비공개다(DESIGN §5). 현재 저장소 안에 두면 그 저장소에 스킬이 섞여 커밋된다 | 설계 판단. 경로 이름은 휴리스틱 |
 | D10 | 이름 | `pin-skill`·`new-skill` 고정 | 설계 판단(DESIGN §4·§5.1, 3차 리뷰에서 `platform/pin-skill` → `pin-skill`) |
 
@@ -152,7 +152,7 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 | 내려받은 사본의 자동 갱신 | 사본의 뜻이 point-in-time이다(DESIGN §4). 자동 갱신은 사용자가 고친 사본을 덮어쓴다 |
 | 게시 전용 셋째 스킬 | 게시는 브랜치·커밋·PR이고 `new-skill`의 마지막 단계가 그것이다. 절차가 없는 스킬은 이름만 늘린다 |
 | DESIGN 전문을 `references/`로 번들 | 스킬이 필요로 하는 것은 규약 점검표(`conventions.md`)뿐이다. 설계 문서를 실으면 게시 상한(5 MB)과 무관하게 활성화 시 읽을 것이 늘고 설계 개정마다 스킬이 낡는다 |
-| evals 러너·판정자·기록 대장 | DESIGN §5.1이 "팀이 원할 때 그 위에 얹는다"로 두었고 지금 스킬은 둘이다. 눈으로 보는 것이 러너보다 싸다 |
+| 자체 evals 러너·판정자 | 러너는 Harbor(DESIGN §5.1), 판정자는 케이스의 `tests/test.sh`다. 이 저장소는 둘 다 만들지 않는다 |
 | 영어 본문 | 발동 표현이 사용자의 실제 발화(한국어)여야 어휘 검색과 description 매칭이 된다(§3 D5) |
 | `pin-skill`의 무결성 검사(파일별 해시 대조) | `get_skill_file`이 SHA를 돌려주지만 그것은 blob 식별이지 전송 오류 검출이 아니다. 대조는 파일 목록으로 충분하고, 사본이 맞는지는 `PINNED`의 tree sha와 `list_skills`가 답한다 |
 
@@ -177,7 +177,7 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 | V5 | 기존 디렉토리 거부 | 같은 이름의 개인 스킬을 먼저 두고 내려받기 지시 | 쓰지 않고 멈추며 충돌을 알린다 | 대기 |
 | V6 | 두 범위 낡음 감지 | 프로젝트·사용자 범위에 sha가 다른 두 사본을 두고 "새 판 있어?" | 낡은 쪽을 지목하고 합치기를 권한다 | 대기 |
 | V7 | 뼈대의 규약 | `new-skill`로 만든 뼈대가 V1을 통과하고, 생성된 예시 스크립트가 종료 코드 2·3·4를 각각 낸다(입력 없음·대상 없음·`PATH`에서 도구 제거) | 셋 다 관찰 | 대기 |
-| V8 | evals 쌍 | 두 스킬 디렉토리에 양성·음성 각 1 | `evals/*/prompt.txt`·`expected.md` 넷 존재, 음성은 `no-trigger-*` | 대기 |
+| V8 | evals 쌍 | 두 스킬 디렉토리에 양성·음성 각 1의 Harbor 태스크 | `evals/*/{task.toml,instruction.md,environment/Dockerfile,tests/test.sh}` 넷씩, 음성은 `no-trigger-*`. `harbor run --env docker`로 넷이 돌고 양성은 스킬 있이 reward 1·없이 0, 음성은 있이·없이 둘 다 1 | 대기 |
 | V9 | `record_eval` 왕복 | 병합 뒤 사람 토큰으로 두 스킬의 결과를 붙인다(service P3 뒤) | `list_skills`의 `evals`에 `(model, harness)`별 최근 행이 보인다 | 대기 |
 | V10 | 규칙 게이트 | `purpose/agent-skill` 선언 뒤 `pre-commit run --all-files` | 그 축의 게이트가 SKILL.md 둘을 검사하며 한 번 돌았다 | 대기 |
 
@@ -189,6 +189,7 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-26 | 설계 개정 반영 | evals를 Harbor 태스크 형식으로(트리·단계 5·8·D8·V8·불채택). `conventions.md`에 `task.toml`·`Dockerfile`·`test.sh` 템플릿 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | description 검수에 "핵심을 앞에" 추가(단계 6). `list_skills` 필드 최소화는 pin 절차에 영향 없음(`sha`만 본다) | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | v3.3: 게시는 PR — `new-skill` 단계 1·3·7·8·9 재작성(클론·브랜치·`check`·`gh pr create`·샌드박스 멈춤), pin은 현재 판 `sha`로, P2는 첫 PR | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 8차 리뷰: pin·새 판 확인은 유효 판 `sha`, 편집은 `latest_sha`에서, `unavailable`이면 멈춤 | DESIGN §11 |

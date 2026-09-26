@@ -62,6 +62,7 @@
 | D15 | 저장소 신설 = `harness-catalog init` + 체크리스트 | 파일 다섯(표지·`skills/.gitkeep`·README·pre-commit 설정·호스트별 CI)은 `init`이 운영자 git 자격으로 쓴다(DESIGN §2.1). git 호스트·Dex 화면에서만 할 수 있는 것(deploy key, 협업자 권한, 리다이렉트 URI)은 §5 체크리스트가 남는다 | DESIGN §2.1 저장소 초기화(v3.3). 템플릿 원본은 `examples/catalog-template/`이고 패키지 데이터로 `init`에 실린다 |
 | D16 | compose를 어디서 돌리는가 | 운영은 `mini.altera.lab`(우산 §6-1 결정, 2026-09-26). 개발·시험은 맥북 로컬에서 같은 compose 파일로 띄운다 — P0·P1의 `docker-compose.dev.yml`이 그 자리이고, 운영 compose(P2)도 로컬에서 먼저 한 번 띄운 뒤 mini로 간다 | 사용자 결정. 같은 파일을 두 곳에서 쓰므로 호스트별 값은 전부 `.env`에 있어야 한다(D10) |
 | D18 | 빠른 시작 compose의 Dex | 루트 `docker-compose.yml`의 Dex는 `docker/dex/config.yaml`의 정적 사용자(`staticPasswords`)와 정적 클라이언트로 뜬다. LDAP 연합은 `examples/synology-ldap/docker-compose.override.yml`이 Dex 설정 파일을 바꿔 끼우는 오버레이다. 서비스 쪽은 issuer URL 하나라 두 경우가 같다 | 설계 판단(우산 §3-8 오픈소스 패키지). 문면: Dex는 `staticPasswords`와 `docker-compose.yaml`을 루트에 둔 자기 빠른 시작을 낸다(2026-09-26 저장소 실측). 정적 사용자는 시험·데모용이고 운영 안내(docs/)는 LDAP 또는 사내 IdP를 가리킨다 |
+| D19 | CI의 evals 단계 | `main` push 워크플로의 선택 단계. mini의 self-hosted runner에서 `harbor run --env docker`로 변경된 스킬의 `evals/`를 스킬 있이·없이 돌리고, `harness_catalog.harbor.plugin`(service P3)이 `on_job_end`에서 `record_eval`을 서비스 주체 토큰으로 부른다. GitHub 호스팅 러너에서는 돌리지 않는다(tailnet의 레지스트리·구독 토큰). 시크릿 둘: `CLAUDE_CODE_OAUTH_TOKEN`(`claude setup-token`), `HC_CI_CLIENT_SECRET`(`ci-eval-runner`) | 사용자 결정(DESIGN §11 evals 형식). `[웹]` Harbor `claude_code.py`의 `CLAUDE_FORCE_OAUTH`(실측). 구독 quota를 대화 세션과 나눠 쓴다 |
 | D17 | 셸 스크립트 | 복구 절차처럼 명령이 넷을 넘는 것만 `scripts/`에 둔다. 첫 파일과 함께 `altera-rules.yml`에 `lang/bash`를 선언하고 `altera-shellcheck` 훅을 건다 | 우산 §3-5 |
 
 ## 4. 단계
@@ -93,7 +94,7 @@
 
 ### distribution P3. 저장소 템플릿과 첫 카탈로그 저장소 (우산 P5 후반)
 
-1. `examples/catalog-template/` 완성(`init`의 패키지 데이터 원본): `.harness-catalog`(`layout = 1`), `skills/.gitkeep`, README(§5 체크리스트 + 등록 한 줄 + 브랜치 규율 + "검색어에 비밀을 넣지 말라"), `.pre-commit-config.yaml`(`harness-catalog check`), `github/check.yml`, `gitlab/.gitlab-ci.yml`(PR·`main` push마다 `harness-catalog check`, 선택 단계로 evals → `record_eval`).
+1. `examples/catalog-template/` 완성(`init`의 패키지 데이터 원본): `.harness-catalog`(`layout = 1`), `skills/.gitkeep`, README(§5 체크리스트 + 등록 한 줄 + 브랜치 규율 + "검색어에 비밀을 넣지 말라"), `.pre-commit-config.yaml`(`harness-catalog check`), `github/check.yml`, `gitlab/.gitlab-ci.yml`(PR·`main` push마다 `harness-catalog check`; `main` push에는 선택 단계 `harbor run`(변경된 스킬의 `evals/`, `--env docker`, mini 러너에서만) → Harbor 플러그인이 `record_eval`. 모델 자격은 러너 시크릿 `CLAUDE_CODE_OAUTH_TOKEN` + `CLAUDE_FORCE_OAUTH=1`, API 키 없음. Harbor 판은 워크플로에 핀).
 2. 첫 카탈로그 저장소 신설: §5를 처음부터 끝까지 한 번 따른다(`init` 포함). 우산 P4에서 작성·검증된 두 스킬은 첫 PR로 들어간다(skills P2).
 3. V6·V7·V8 통과. 우산 V3(우회 push 수용)·V4(fail-closed)·V5(재기동 복구)의 실행 환경을 제공한다.
 
@@ -176,6 +177,7 @@
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-26 | 설계 개정 반영 | CI evals 단계(D19): mini 러너 + Harbor + setup-token, 워크플로 템플릿 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | v3.3: 저장소 신설은 `harness-catalog init`(D15), deploy key 읽기 전용(체크리스트 4, V8), CI는 `check`(D14·체크리스트 5·V6·P3-1) | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 8차 리뷰: 카탈로그 저장소 쓰기 자격 제한(v3.3에서 읽기 전용 deploy key로 대체) | DESIGN §11 |
 | 2026-09-26 | 사용자 결정: 이미지 저장소 | GHCR 비공개 + 보존 규칙(최근 SHA 태그 5개, 태그 없는 버전 삭제), 빌드 기계 = 실행 기계(mini runner)라 운영 pull 없음. Harbor(컨테이너 아홉, 소비자 없는 LDAP RBAC)·ECR(AWS 계정·전송 요금)·`registry:2`는 지금 아님 — 되돌리기는 `.env` 한 줄과 워크플로 한 단계 | D11, V12 |

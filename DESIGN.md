@@ -204,7 +204,7 @@ Dex를 두면 v3.0 compose는 서비스 1 + PostgreSQL 1 + Dex 1이 된다. 클�
 | 스펙 앞머리(`name`·`description`·`license`·`compatibility`·`metadata`), 그 안의 `metadata.replaced-by` | git (SKILL.md 안) | 정본 | `[웹]` 스펙이 정한 자리. 폐기·대체는 저자 선언이라 git이 유일한 정본이다. DB에 따로 두지 않는다(v3.0의 중복을 뺐다) |
 | 인덱스(식별자·설명·`compatibility`·`metadata`·`replaced-by`·tree SHA·commit, 어휘 검색용. 전부 `main`의 판) | DB | 파생. `main`에서 언제든 재구축 | `[it]` 파생 데이터는 잃어도 원본에서 다시 만든다 |
 | 사용 기록 `(주체, 도구, 스킬 식별자, tree sha, 시각, 검색어·결과 수는 search_skills만)` | DB (추가 전용, 보존 일수(기본 90)를 넘은 행은 하루 한 번 삭제) | 정본이되 **v3.0에서는 잃어도 되는 사실.** git은 읽기를 모르지만 §5대로 v3.0은 이 기록을 읽지 않으므로 복구 약속을 하지 않는다. 순위·폐기 후보가 이것을 읽기 시작할 때 백업 대상으로 승격한다(§7). 검색어는 `search_skills` 행에만 결과 수와 함께 저장한다. 결과 0인 검색어와 바꿔 말한 질의가 검색 개선의 재료다(`[altera-skills]` `evals/search/queries.yml`: 월간 보고의 결과 0 검색어를 골든에 편입). 검색어는 사람의 발화라 개인 데이터일 수 있고 같은 보존 삭제를 받는다 |
-| 평가 결과 `(스킬, tree sha, 시나리오 sha, 모델, 하네스, 통과, baseline 통과, 시각, 주체)` | DB (추가 전용, 보존 삭제 없음) | 정본. `record_eval`이 붙인다. 잃으면 그 시점의 실행 사실은 돌아오지 않지만(모델·하네스가 바뀌었을 수 있다) v3.0은 그 손실을 감수해 백업하지 않는다(§2.1) | `[영상]` 0qySk1fcf6k 14:29 중앙 플랫폼의 구성 요소 "evaluation observability", 11:30~11:43 "최신 모델에 대해서도 검증하지 않으면 품질이 떨어진다". `[it]` 후옌: 모델마다 특이성이 있어 프롬프트는 모델을 알아 가며 고쳐 가는 반복. 결과는 정의(시나리오, git)와 분리된 실행 사실(DataHub assertionRunEvent 판례, `[altera-skills]` `schema/eval-result.yaml`) | `[영상]` 14:36~16:00 파일은 트랜잭션 일관성·복제·백업이 없고, 17:48~18:07 구조화된 것은 DB 같은 구조화된 자리에 두라 |
+| 평가 결과 `(스킬, tree sha, 시나리오 sha, 모델, 하네스, 통과, baseline 통과, 시각, 주체)` | DB (추가 전용, 보존 삭제 없음) | 정본. `record_eval`이 붙인다. 만드는 것은 Harbor의 검증기(샌드박스 안 `tests/test.sh`가 쓰는 reward)이고, 붙이는 주체는 사람(자기 머신에서 돌린 뒤 사람 토큰) 또는 `main` push의 CI(서비스 주체, Harbor 플러그인). 잃으면 그 시점의 실행 사실은 돌아오지 않지만(모델·하네스가 바뀌었을 수 있다) v3.0은 그 손실을 감수해 백업하지 않는다(§2.1) | `[영상]` 0qySk1fcf6k 14:29 중앙 플랫폼의 구성 요소 "evaluation observability", 11:30~11:43 "최신 모델에 대해서도 검증하지 않으면 품질이 떨어진다". `[it]` 후옌: 모델마다 특이성이 있어 프롬프트는 모델을 알아 가며 고쳐 가는 반복. 결과는 정의(시나리오, git)와 분리된 실행 사실(DataHub assertionRunEvent 판례, `[altera-skills]` `schema/eval-result.yaml`). 실행 형식은 `[웹]` Harbor(§5.1) |
 | 게시·인증 사실(누가 언제 무엇을 올리고 누가 병합했는가) | git 이력(커밋 author, PR, 병합 커밋) | 정본. DB의 인덱스 행이 커밋에서 이것을 파생한다 | 커밋과 PR이 곧 기록 |
 
 **SHA는 둘이다.** 이 문서에서 `sha`는 스킬 디렉토리의 **git tree SHA**다. 그 스킬의 내용만으로 정해지고 다른 스킬의 변경에 영향받지 않는다. `load_skill(sha)`, `record_eval(sha)`, `PINNED`, 사용 기록의 `sha`가 전부 이것이다. 저장소의 **commit SHA**는 이력의 위치이고 `load_skill` 응답에만 `commit`으로 실린다(`list_skills`에는 없다 — 식별자 둘이 나란히 있으면 `sha` 자리에 커밋을 넣는 실수를 부른다). 과거 판을 `load_skill(id, sha)`로 받을 때 레지스트리는 인덱스가 기억한 tree→commit 대응이나 `git log`로 그 tree를 찾는다.
@@ -499,7 +499,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 | `search_skills(query, limit=10, model?, harness?)` | 식별자·설명·SKILL.md `metadata` 값의 어휘 검색. 후보 기본 10, 상한 20. 결과 항목은 `list_skills`와 같다. 읽기 권한은 reader 전부라 필터가 없다 | (없음) |
 | `load_skill(id, sha?)` | SKILL.md 본문과 `sha`(tree)·`commit`·`metadata` 전체·파일 목록(`scripts/` 유무 포함)·현재 판의 평가 이력(`(model, harness)`별 최근 행, 주체 포함)을 **돌려준다.** 컨텍스트에 넣고 빼는 것은 호출자다. `sha`를 생략하면 `main`의 현재 판이다 — 사람과 루프에게 같다. `sha`를 주면 그 판을 돌려준다(재현·사고 조사용). 스킬 하나에 대한 호출이라 `list_skills`에서 뺀 무거운 필드가 여기 있다 | `load_skill` |
 | `get_skill_file(id, path, sha?)` | 참조 파일이나 스크립트 하나. 경로 이탈·심볼릭 링크 거부, 파일당 1 MB 상한 | `get_skill_files` |
-| `record_eval(run_id, id, sha, model, harness, passed, baseline_passed?, note?)` | 스킬 `id`의 판 `sha`를 `model`·`harness`로 돌린 결과 하나를 `eval_result`에 붙인다(그림 3). 서버가 검사하는 것: `id`가 살아 있는 스킬일 것, `sha`가 그 스킬의 현재 판이거나 `main` 이력에 있는 판일 것(레지스트리는 `main`만 fetch하므로 브랜치의 판은 받지 않는다. 아니면 `unknown_version`), `model`·`harness` 1~100자, `note` 2000자 이하. `scenario_sha`는 클라이언트가 보내지 않고 서버가 그 판을 담은 커밋에서 `skills/<id>/evals/`의 tree SHA를 읽어 적는다(디렉토리가 없으면 빈 tree SHA. 시나리오가 바뀌면 같은 수치도 다른 사실. `[altera-skills]` `schema/eval-result.yaml`의 revision 고정 규칙). `run_id`는 클라이언트 UUID로 재시도 멱등 키. `baseline_passed`는 스킬 없이 돌린 결과(lift 판정용). 결과의 진위는 검증하지 않고 주체가 기록된다. 응답은 없음 | (없음) |
+| `record_eval(run_id, id, sha, model, harness, passed, baseline_passed?, note?)` | 스킬 `id`의 판 `sha`를 `model`·`harness`로 돌린 결과 하나를 `eval_result`에 붙인다(그림 3). 서버가 검사하는 것: `id`가 살아 있는 스킬일 것, `sha`가 그 스킬의 현재 판이거나 `main` 이력에 있는 판일 것(레지스트리는 `main`만 fetch하므로 브랜치의 판은 받지 않는다. 아니면 `unknown_version`), `model`·`harness` 1~100자, `note` 2000자 이하. `scenario_sha`는 클라이언트가 보내지 않고 서버가 그 판을 담은 커밋에서 `skills/<id>/evals/`의 tree SHA를 읽어 적는다(디렉토리가 없으면 빈 tree SHA. 시나리오가 바뀌면 같은 수치도 다른 사실. `[altera-skills]` `schema/eval-result.yaml`의 revision 고정 규칙). `run_id`는 클라이언트 UUID로 재시도 멱등 키. `baseline_passed`는 스킬 없이 돌린 결과(lift 판정용). `passed`는 Harbor 검증기의 reward가 1일 때 참(이진 reward가 팀 규약, §5.1). 결과의 진위는 검증하지 않고 주체가 기록된다. 응답은 없음 | (없음) |
 
 이것이 인터페이스의 전부다. `[it]` 깊은 모듈의 잣대로, 이 다섯 뒤에 git·검사·인덱스·토큰 계산·인증이 숨는다. UC의 `create_skill`·`update_skill`·`delete_skill`과 `ug skills add`(다운로드)에 대응하는 **서버 도구는 없다.** 쓰기는 git 호스트의 브랜치·PR·병합이고(§5.1), 내려받기는 클라이언트 쪽 쓰기라 MCP 서버가 할 수 없으며 필요한 읽기는 `load_skill`과 `get_skill_file`로 이미 충분하다. 그 절차는 §4의 "내려받기"이고 CLI를 따로 설치하지 않는다. **도구 오류 코드.** 인가 실패는 HTTP 401/403(위 인증·인가 표)이고, 도구 안의 실패는 MCP 도구 오류 결과에 `{code, detail}`로 실린다. 코드는 여섯으로 닫는다. `not_found`(없는 스킬·파일), `unknown_version`(`load_skill`·`get_skill_file`·`record_eval`의 `sha`가 현재 판도 이력의 판도 아님), `unavailable`(DB 단절로 `record_eval` 거부), `not_a_member`(403 본문, 그룹 없음), `input_limit`(길이 상한, 어느 상한인지 동봉), `path_rejected`(경로 이탈·심볼릭 링크·절대 경로). 이 목록 밖의 코드를 내지 않으며 코드를 더하는 것은 이 절의 변경이다. `harness-catalog check`의 위반(형식·시크릿·이름 재사용·대체 연쇄·크기)은 도구 오류가 아니라 그 명령의 출력이다.
 
@@ -574,7 +574,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 - **공유.** 팀(`skills-readers` 그룹)과 서비스 주체가 전부 읽는다. 디렉터리에 있을 뿐 그룹에 없는 사람은 읽지 못한다. **v3에는 스킬 단위 읽기 제한이 없다.** 팀 안에서는 저장소를 읽을 수 있으면 레지스트리로도 읽는다. 읽기 제한이 필요한 스킬이 생기면 git 호스트 권한이 걸린 둘째 저장소가 그 자리이고 레지스트리가 저장소 둘을 읽게 된다(§7).
 - **품질.** 게이트 대신 피드백 루프다. `[it]` 중복·저품질을 인증으로 막지 말고 검색 순위와 넛지로 격하하라. v3.0은 순위를 두지 않는다(이름순). 목록이 한 화면을 넘을 때 DB의 사용 기록으로 순위를 넣는다.
 - **감사.** 쓰기는 git 이력(커밋 author, PR, 병합 커밋). 읽기는 DB의 사용 기록. 필드는 주체·도구·스킬 식별자·SHA·시각이고, `search_skills` 행에는 검색어와 결과 수가 더 있다(검색어는 2000자에서 자르고 제어 문자를 지운다. 어떤 질의가 어떤 스킬로 이어졌는지는 같은 주체의 뒤따르는 `load_skill`로 읽는다. MCP 2026-07-28에 세션이 없어 요청 간 상관 키는 두지 않는다. 검색어에 비밀을 넣지 말라는 안내는 `pin-skill`·`new-skill`과 같은 자리인 카탈로그 README에 둔다). 보존 일수(설정, 기본 90)를 넘은 행을 하루 한 번 지운다(그 밖의 갱신·삭제 문은 없다. 그림 3). 접근은 플랫폼 팀. v3.0은 쌓기만 하고 보지 않으며, 순위와 채택률이 나중에 이 기록에서 나온다.
-- **evals.** 있으면 팀이 자기 스킬 디렉토리 안에 두고 자기가 돌린다. 병합 조건이 아니다. PR의 CI가 돌려 검사 결과로 보이는 것(리뷰의 재료)과 `main` push의 CI가 병합된 판으로 `record_eval`하는 것은 팀의 선택이다.
+- **evals.** 있으면 팀이 자기 스킬 디렉토리 안에 Harbor 태스크 형식으로 두고(§5.1) `harbor run`으로 자기가 돌린다. 병합 조건이 아니다. PR의 CI가 돌려 검사 결과로 보이는 것(리뷰의 재료)과 `main` push의 CI가 병합된 판으로 `record_eval`하는 것은 팀의 선택이다.
 - **검사기 운영.** `check`는 레지스트리 이미지와 CI가 같은 패키지 판을 쓴다(pre-commit은 `rev`로 핀). 검사기 자체가 실패하면 통과로 치지 않는다(종료 코드 2, fail-closed). 시크릿 스캔 오탐은 저자가 해당 파일을 고치는 것이 유일한 길이고 예외 승인 절차는 두지 않는다.
 
 ### 5.1 등록 절차 — 사람이 스킬을 올리는 여정
@@ -598,22 +598,28 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 | description 검수 | 사람 | `[웹]` UC 문서가 사람의 검수를 결정적이라 적는 자리. 무엇을·언제 쓰는지, 검색될 낱말이 들어 있는지, **핵심 용례와 발동 낱말이 앞에 있는지**(`[웹]` Codex: 호스트가 설명을 자를 수 있으니 "front-load the key use case and trigger words"; `[it]` Liu의 첫머리 편향) | 권고 (기계가 검사하지 않는다) |
 | 로컬 검증 | 기계 | `skills-ref validate` | 권고 (서버가 어차피 다시 한다) |
 | 써 보기 | 사람 | 자기 세션에서 실제 과제에 써 본다 | 권고 |
-| evals(둔다면) | 사람 + 에이전트 | 스킬 디렉토리 안에 프롬프트 하나짜리 시나리오를 둔다. 써야 하는 과제 하나와 쓰지 말아야 하는 과제 하나가 최소다(`[altera-skills]` `gates/eval_coverage.py`의 규약). 스킬 없이도 통과하는지 한 번 재 보면 스킬이 하는 일이 드러난다(`[altera-skills]` 정적 감사 점수는 실효를 예측하지 못했다, `evals/LEDGER.md` ρ=0.14). 형식·개수·판정자는 팀이 정한다. 카탈로그는 이 디렉토리를 읽지 않는다. **결과는 `record_eval`로 DB에 붙인다**(실행 ID·판 sha·모델·하네스·통과·baseline 통과. 시나리오 sha는 서버가 적는다). 판이 바뀌면 `list_skills`의 최근 평가가 비므로 본문을 고치면 다시 돌린다. 다시 돌리는 때 셋: 스킬 본문을 고쳤을 때, 주요 모델이 나왔을 때, 분기마다(`[altera-skills]` `evals/LEDGER.md` 규약. `[영상]` 0qySk1fcf6k: 최신 모델에 대해서도 검증하라). 스킬 없이(baseline) 2회 연속 전 케이스 통과면 폐기 심사 대상(같은 LEDGER). 최소 예시는 아래 | 권고 (게이트 아님, §7) |
+| evals(둔다면) | 사람 + 에이전트 | 스킬 디렉토리 안 `evals/<case>/`에 **Harbor 태스크**를 둔다(`[웹]` Harbor: Terminal-Bench 2를 낸 쪽의 오픈소스 평가 러너, Apache-2.0, 2026-09-26 확인. 태스크 = `task.toml` + `instruction.md` + `tests/test.sh` + `environment/Dockerfile`, 검증기가 `/logs/verifier/reward.txt`에 0/1을 쓴다). 써야 하는 과제 하나와 쓰지 말아야 하는 과제 하나(`no-trigger-*`)가 최소다(`[altera-skills]` `gates/eval_coverage.py`의 규약). 스킬 주입은 Harbor의 스킬 원천 문법 `<org>/<catalog>@<sha>`(기본 하위 디렉토리 `skills/`)이 우리 저장소 배치와 그대로 맞아, 같은 데이터셋을 스킬 있이(`skills=[catalog@sha]`)·없이(`skills=[]`) 두 잡으로 돌리면 `passed`·`baseline_passed`가 나온다. 판정자는 검증기가 정한다(코드·pytest·LLM 판정자 무엇이든). 형식·개수는 이 최소 위에 팀이 얹는다. 카탈로그는 이 디렉토리를 읽지 않고(`scenario_sha`만 적는다) 돌리지도 않는다. **결과는 `record_eval`로 DB에 붙인다** — 사람이 자기 머신에서 `harbor run`을 돌린 뒤 사람 토큰으로, 또는 `main` push의 CI(mini 러너, 서비스 주체)가 Harbor 플러그인으로. 다시 돌리는 때 셋: 스킬 본문을 고쳤을 때, 주요 모델이 나왔을 때, 분기마다(`[altera-skills]` `evals/LEDGER.md` 규약. `[영상]` 0qySk1fcf6k: 최신 모델에 대해서도 검증하라). 스킬 없이(baseline) 2회 연속 전 케이스 통과면 폐기 심사 대상(같은 LEDGER). 최소 예시는 아래 | 권고 (게이트 아님, §7) |
 
-evals의 최소 예시. 시나리오 하나는 프롬프트 한 줄과 기대 결과 몇 줄이다.
+evals의 최소 예시. 케이스 하나가 Harbor 태스크 디렉토리 하나다.
 
 ```
 skills/yt-subs/
   SKILL.md
   scripts/yt_subs.py
   evals/
-    fetch-manual/prompt.txt        # 이 유튜브 영상 자막 추출해줘: <URL>
-    fetch-manual/expected.md       # 수동 자막을 고른다, txt를 만든다, 경로·소스·언어를 보고한다
-    no-trigger-format/prompt.txt   # SRT랑 VTT 차이가 뭐야?
-    no-trigger-format/expected.md  # 스킬을 읽지 않고 직접 답한다
+    fetch-manual/
+      task.toml                 # schema_version, [environment] skills_dir = "/skills", timeout
+      instruction.md            # 이 유튜브 영상 자막 추출해줘: <URL>
+      environment/Dockerfile    # FROM <팀 베이스 이미지>  (한 줄. 베이스는 uv·yt-dlp 등 팀 도구를 담는다)
+      tests/test.sh             # 결과 파일 존재·언어·소스(manual)를 검사 → /logs/verifier/reward.txt 에 1 또는 0
+    no-trigger-format/
+      task.toml
+      instruction.md            # SRT랑 VTT 차이가 뭐야?
+      environment/Dockerfile
+      tests/test.sh             # 궤적에 load_skill/스킬 파일 읽기가 없고 답이 직접 나왔는지 검사(궤적은 Harbor가 남긴다)
 ```
 
-두 프롬프트를 자기 세션에서 스킬 있이 한 번, 없이 한 번 돌려 `expected.md`와 맞는지 눈으로 보는 것까지가 권고다. 음성(`no-trigger-*`)은 description이 과잉 발동하는지 잡는다. 있이·없이 둘 다 통과하면 기본 모델이 이미 하는 일이라 스킬이 하는 일이 없는 것이고, 있이만 통과하면 스킬이 값을 한 것이다. 자동 러너·트레이스·판정자·기록 대장은 팀이 원할 때 그 위에 얹는다(`[altera-skills]`의 형식은 §10).
+실행은 `harbor run --dataset ./skills/yt-subs/evals --agent claude-code --model <모델> --env docker`이고, 스킬 있이·없이 두 잡의 reward가 `passed`·`baseline_passed`다. 있이·없이 둘 다 통과하면 기본 모델이 이미 하는 일이라 스킬이 하는 일이 없는 것이고, 있이만 통과하면 스킬이 값을 한 것이다. 음성(`no-trigger-*`)은 description이 과잉 발동하는지 잡는데 답의 내용만으로는 판정이 어려워 궤적을 보는 검증기가 필요하고, 그것을 쓰기 전까지는 사람이 눈으로 판정해 `record_eval`을 손으로 붙여도 된다(권고의 하한). Harbor를 고른 근거는 형식의 채택이다(`[웹]` 2026-09-26 실측: 기존 벤치마크 어댑터 88개, 설치 에이전트 51개 — Claude Code·Codex·Cursor·Gemini CLI 포함, 릴리스 월 1~2회). 우리 형식(`prompt.txt` + `expected.md`)은 이전 저장소의 사설 규약이었다. Harbor는 빠르게 움직이므로(스키마 1.1) 판을 핀한다. 모델 호출의 자격은 사람 머신에서는 구독이고, CI에서는 `CLAUDE_FORCE_OAUTH=1` + `CLAUDE_CODE_OAUTH_TOKEN`(`claude setup-token`)으로 역시 구독이다(`[웹]` Harbor `claude_code.py` 실측). API 키는 쓰지 않는다. 라이브 소비(레지스트리 MCP)를 샌드박스에서 시험하려면 `task.toml`의 `[[environment.mcp_servers]]`에 레지스트리 URL을, `[environment.env]`에 서비스 주체 토큰을 주되 tailnet에 닿는 `--env docker`에서만 된다.
 
 **③ 게시·갱신·은퇴.** 전부 git 호스트에서 브랜치 → 커밋 → PR → 병합이다. 사람의 세션에서는 에이전트가 사람의 git 자격으로 하고(`new-skill` 스킬이 절차를 안내한다), 병합은 사람이 git 호스트에서 한다.
 
@@ -657,7 +663,7 @@ skills/yt-subs/
 | 내려받기 CLI(UC의 `ug`) | 없음. 절차는 스킬 하나(`pin-skill`), 읽기는 도구 둘 | 하네스 밖(CI, 스크립트)에서 내려받아야 할 때. 그때도 레지스트리에 HTTP 아카이브 하나를 더하는 것이 먼저다 |
 | Tier B, `enabledPlugins`, `skillOverrides`, budget-check CI, 40/4k 문턱 | 없음. 예산은 후보 수(`limit`)·필드 최소화·본문 on-demand로 잡는다(§4). 본문 크기는 저자 쪽 규칙 | 노출 과다로 라우팅이 깨진 사례가 나올 때 |
 | PR 게이트 5단, 리드 승인, evals 머지 조건 | PR은 있되 게이트는 `check` 하나(규율)이고 리뷰어·evals는 병합 조건이 아니다(§5) | 게시 사고가 실제로 나고 되돌리기로 부족할 때. 그때도 레지스트리 밖의 git PR이 먼저다 |
-| L1/L2/LLM/Δ evals, 판정자 스냅샷, version-watch, 전량 재실행 | 팀 선택. 게이트 아님 | 넣지 않는다. §5.1의 evals 행은 권고이지 플랫폼 표준이 아니다 |
+| L1/L2/LLM/Δ evals, 판정자 스냅샷, version-watch, 전량 재실행 | 형식은 Harbor 태스크, 러너는 `harbor run`, 판정자는 검증기 스크립트가 정한다. 게이트 아님 | 넣지 않는다. §5.1의 evals 행은 권고이지 플랫폼 표준이 아니다 |
 | 폐기 후보 보고(`[altera-skills]` `usage_report.py`: 직전 3개월 load 0인 스킬을 월 1회 심사 안건으로) | 없음. 사용 기록은 쌓기만 한다 | 목록이 한 화면을 넘을 때(§5 순위와 같은 조건). 넣을 때 셋을 지킨다. 창은 90일 보존 안에서 정하고(3개월 달력 월은 보존과 경계가 안 맞는다), 기록이 없는 달과 0건인 달을 구분해 누락 월은 산정에서 빼며, 후보는 안건이지 자동 폐기가 아니다. 3개월이라는 수치는 설치형 환경의 것이라 파일럿 데이터로 다시 잰다 원시 표는 보존 창(요청률 × 일수, v3.0 가정으로 수만 행)으로 크기가 고정되고 삭제 공간은 autovacuum이 회수한다. 보존 일수보다 긴 추세는 카탈로그가 집계하지 않는다. 필요하면 보존 창 안의 원시 행을 분석 저장소로 내보내고(추가 전용이라 `occurred_at` 증분으로 뽑는다) 분석은 거기서 한다(`[it]` 클레프만: OLTP는 정규화, 분석은 별도 시스템) |
 | 게시 시 유사 스킬 경고(`[altera-skills]` `gates/overlap_check.py`: description 토큰 Jaccard ≥ 0.5) | 없음. 사람이 `search_skills`로 확인(§5.1) | 같은 일을 하는 스킬이 실제로 둘 이상 생겼을 때. 응답에 유사 목록을 싣는 경고로 넣고 차단하지 않는다. 문턱 0.5는 이전 저장소의 소수 정답쌍에 맞춘 값이라 v3의 description 집합으로 다시 잰다 |
 | 읽기 전용 MCP + 마켓플레이스라는 채널 둘 | 읽기는 레지스트리 하나, 쓰기는 git 호스트 하나 | 넣지 않는다 |
@@ -668,7 +674,7 @@ skills/yt-subs/
 | toolbox(팀 MCP 서버의 도구 정의를 검색해 턴마다 골라 넣기) | 없음. 능력은 스킬의 `scripts/`로 카탈로그에 들어가고 실행은 에이전트 머신에서 한다(`[웹]` agentskills.io `scripts/`: "executable code that agents can run") | 스크립트로 쌀 수 없는 능력, 곧 팀이 이미 MCP 서버로 띄워 둔 것이 생길 때(2026-09-26 기준 없음). 그때 지킬 제약은 셋이다. 스킬과 섞지 않는다(`[웹]` 참조 구현, `notebooks/agent_harness/enterprise_data_agent_heavyweight.ipynb` Part 11: "합치면 모든 소비자가 kind로 걸러야 한다"), 레지스트리는 발견까지만 하고 호출을 중계하지 않는다(§2 혼란한 대리인), 단위는 `[웹]` MCP Registry `server.json`으로 시작한다. 그 밖의 형태(도구 이름·검색·등록 절차)는 그때 정한다. 조사 기록은 §10 |
 | 프롬프트 카탈로그(루프의 시스템·요약·판정자 프롬프트를 버전 매겨 공유) | 없음. 루프의 프롬프트는 그 루프 저장소의 파일(`[it]` 후옌: 프롬프트를 코드에서 떼어 파일로, git으로 버전) | `[it]` 후옌의 계기 그대로. 여러 루프가 같은 프롬프트를 공유하는데 한쪽이 옛 판에 머물러야 할 때. 그때 같은 레지스트리의 둘째 단위로 넣되 스킬과 섞지 않는다. 단위는 `prompts/<name>/`(frontmatter에 모델·샘플링·입력/출력 스키마, 본문에 템플릿. `[it]` 후옌이 든 Dotprompt 꼴), 버전은 tree SHA, 도구는 `get_prompt(name, sha?)`, 의존 추적은 사용 기록. SKILL.md와 다른 이유: 스킬은 에이전트가 description으로 고르는 지시이고 프롬프트는 코드가 정해진 자리에 끼우는 템플릿이다 |
 | 백업 크론(PostgreSQL 덤프, git 번들, 복원 훈련) | 없음. compose는 셋. 사용 기록은 잃어도 되는 사실, Dex 상태는 재로그인, git은 호스트의 백업 | 사용 기록을 순위·폐기 후보로 읽기 시작해 RPO·RTO를 약속하기로 할 때, 평가 결과에 복구 약속을 하기로 할 때, 또는 git 호스트가 자체 백업 없는 셀프호스팅일 때. 형태는 §2.1 표 그대로. 관리형 DB면 PostgreSQL 쪽은 넣지 않는다. `[웹]` Langfuse·DataHub·Gitea compose 모두 백업을 넣지 않는다(§10) |
-| Langfuse 등 트레이스·평가 플랫폼 | 없음. 사용 기록과 평가 결과는 카탈로그 DB의 표 둘(그림 3) | 루프가 생겨 실행 트레이스(모델·도구 호출의 상세)가 필요할 때 루프 쪽에 붙인다. 그때도 표 둘은 옮기지 않고 `record_eval`의 `note`에 트레이스 URL을 넣어 링크로만 잇는다. 옮기지 않는 이유 셋: `[웹]` Langfuse 셀프호스팅은 web·worker·Postgres·ClickHouse·Redis·S3 여섯이고 compose는 시험용("without high availability, scaling, or backups"); `list_skills`의 최근 평가가 원격 API 의존이 되어 `[영상]` 20:29~21:13의 다중 저장소 동기화 오버헤드가 생긴다; 하네스 세션(Claude Code 등)의 호출은 카탈로그만 보므로 하네스를 가리지 않는 관측 지점이 사라진다(`[altera-skills]` README) |
+| Langfuse·LangSmith 등 트레이스·평가 플랫폼 | 없음. 사용 기록과 평가 결과는 카탈로그 DB의 표 둘(그림 3). 실행 궤적은 Harbor가 잡 디렉토리에 남긴다 | 루프가 생겨 실행 트레이스(모델·도구 호출의 상세)를 사람이 반복해서 비교해야 할 때. 그때도 표 둘은 옮기지 않고 Harbor의 `--plugin`(예: `harbor-langsmith`)으로 붙이며 `record_eval`의 `note`에 트레이스 URL을 넣어 링크로만 잇는다. 옮기지 않는 이유 셋: `[웹]` Langfuse 셀프호스팅은 web·worker·Postgres·ClickHouse·Redis·S3 여섯이고 compose는 시험용("without high availability, scaling, or backups"), LangSmith 셀프호스팅은 Enterprise 전용이고 SaaS 무료 플랜은 좌석 1·월 5,000 트레이스(2026-09-26 확인); `list_skills`의 최근 평가가 원격 API 의존이 되어 `[영상]` 20:29~21:13의 다중 저장소 동기화 오버헤드가 생긴다; 하네스 세션(Claude Code 등)의 호출은 카탈로그만 보므로 하네스를 가리지 않는 관측 지점이 사라진다(`[altera-skills]` README). 트레이스에는 프롬프트·스킬 본문이 실리므로 SaaS 반출은 §5의 데이터 경계와도 어긋난다 |
 | 벡터·하이브리드 검색 | 없음. `tsvector`+`pg_trgm` 어휘 검색(§2.1) | 파일럿(§9)에서 바꿔 말한 질의의 miss가 실측될 때. 한 후보는 `pgvector`로 설명 임베딩 열 하나를 더하고 어휘 순위와 코사인 순위를 RRF로 융합하는 것(같은 DB 안, 새 의존은 임베딩 모델 호출). 실제 형태는 파일럿의 miss 유형을 보고 정한다. `[웹]` 참조 구현(Oracle 노트북)은 toolbox·skillbox에 벡터만, 지식 메모리에만 하이브리드(RRF k=60)를 쓰며 그 이유를 "순수 벡터는 정확한 토큰을 저평가한다"로 적는다. 우리는 그 반대쪽(토큰)에서 시작한다 |
 | 멀티 팀(팀별 경로·그룹·권한) | 없음. 팀 하나, 읽기 그룹 `skills-readers` 하나, 쓰기는 저장소 권한, 경로 `skills/<name>/` | 둘째 팀이 생겨 "자기 팀 것만 고친다"가 필요할 때. 그때 바뀌는 것은 넷이다. 경로가 `teams/<team>/<name>/`, 읽기 그룹이 `skills-<team>-readers`(그리고 `<team>` 문법·정규화·중첩 그룹 규칙, v3.1 §2에 있던 것), 쓰기 권한은 git 호스트의 CODEOWNERS 또는 팀별 저장소, 응답에 소유 팀 필드. 이행 비용은 생산자·운영자에게 남는다(저장소 경로 이동과 그에 걸린 CI·열린 PR, 인덱스 재구축). **바뀌지 않는 것**은 `name` 전역 유일과 식별자 `<name>`이라, 소비자 쪽(내려받은 사본·`replaced-by`·사용 기록)은 그대로 유효하다(v3.1 §3의 B+ 결정이 이것을 위해 남아 있다) |
 | 서비스 주체의 게시 | 없음. 서비스 주체는 읽기와 `record_eval`뿐이고 게시는 git 호스트의 PR이다 | 무인 루프가 사람 개입 없이 게시해야 할 때. 그때도 레지스트리가 아니라 CI 봇 계정이 PR을 여는 것이 자리다 |
@@ -751,6 +757,7 @@ skills/yt-subs/
 - `[it]` normalization-and-denormalization(3NF, 비정규화는 파생 데이터, OLTP는 정규화), relational-versus-document-model(문서 모델이 맞는 자리), fact-table(팩트 대리 키 비필수, null 외래 키), data-modeling-fundamentals(가장 낮은 grain), designing-objects-for-relational-databases(한 행이 한 객체, 이름은 양쪽에서 같게), acid-transactions(불변식은 제약으로 선언), system-of-record-and-derived-data(추가 전용 로그와 삭제 요구) — 그림 3의 근거
 - `[웹]` Langfuse(2026-09-26 확인) — 개요 https://langfuse.com/docs , 평가 핵심 개념(Score·Dataset·Experiment run) https://langfuse.com/docs/evaluation/core-concepts , 셀프호스팅 구성 https://langfuse.com/self-hosting
 - `[웹]` Snowflake Cortex Code(CoCo) 스킬 카탈로그와 certify(2026-09-26 확인) — https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code-desktop/skills , 프리뷰 해설(certify는 accountadmin, 판 없는 링크는 최근 인증 판으로) https://daily.dev/posts/sharing-and-governing-skills-in-snowflake-coco-bgmos0mbc ; 같은 부류의 오픈소스 — Open SSR https://github.com/cobibean/shared-skills-registry-mcp , skills-mcp https://github.com/jignesh-ponamwar/skills-mcp , skills.sh https://www.skills.sh/
+- `[웹]` Harbor(평가 러너, 2026-09-26) — 문서 https://docs.harborframework.com/ (`llms.txt` 색인: 태스크 = instruction·environment·test script), 저장소 https://github.com/harbor-framework/harbor (clone `d10ac31` 실측: `examples/tasks/hello-skills`·`hello-mcp`, `task.toml` schema 1.1의 `skills_dir`·`[[environment.mcp_servers]]`, `src/harbor/skills.py`의 스킬 원천 `org/name@ref`·기본 하위 디렉토리 `skills/`, `agents/installed/claude_code.py`의 `CLAUDE_FORCE_OAUTH`, `models/job/plugin.py`의 `on_job_start`/`on_job_end`, `adapters/` 88개, `environments/` 30여 개), PyPI `harbor-langsmith`, LangChain 통합 문서 https://docs.langchain.com/langsmith/harbor-integrations ; LangSmith 가격(제3자 정리, 문면) https://inference.net/content/langsmith-pricing/
 - `[웹]` Databricks Unity Gateway Skills — https://docs.databricks.com/aws/en/agents/uc-skills/ , https://docs.databricks.com/aws/en/agents/uc-skills/create-share-uc-skills , https://docs.databricks.com/aws/en/agents/uc-skills/use-uc-skills
 - `[웹]` Codex·Cursor 스킬 디렉토리 — https://developers.openai.com/codex/skills , https://cursor.com/docs/skills
 
@@ -1060,3 +1067,9 @@ skills/yt-subs/
 | 결정 | 내용 | 근거 |
 |---|---|---|
 | `list_skills`·`search_skills` 항목에서 `commit`·`metadata` 전체·본문 토큰 수를 빼고, `evals`는 `model`·`harness` 인자를 줄 때만 그 조합의 한 행. 무거운 것은 `load_skill`로 | 남는 필드는 식별자·설명·`sha`·(있을 때) `replaced-by`·`requires_tools`·`compatibility`. 규칙: 응답 필드마다 "누가 어느 호출에 이 값을 넣는가"를 적을 수 있어야 싣는다. 그림 3에서 `body_tokens` 열 삭제. §4 예산을 주의 예산·후보 수·필드 최소화·on-demand 본문으로 다시 씀 | 사용자 지적(본문 토큰 수는 뺀 게이트의 잔상이고 어느 호스트도 주지 않는다 — 확인 여덟 사례, §10). `[it]` Liu 2024(방해 문서로 20% 넘게 하락, 20개 포화), 후옌(도구 수), `[웹]` Anthropic(주의 예산, 30~50개 넘으면 정확도 하락, "ambiguous decision points"). `commit`은 `sha` 옆의 둘째 식별자라 오용 자리, `metadata` 전체는 선택과 무관한 문자열, 자기 보고 평가를 기본 주입하면 검증 없는 신호를 권위로 읽는다(판단) |
+
+### 사용자 결정(2026-09-26): evals 형식은 Harbor 태스크
+
+| 결정 | 내용 | 근거 |
+|---|---|---|
+| §5.1의 evals 권고 형식을 `prompt.txt`+`expected.md`에서 Harbor 태스크 디렉토리(`task.toml`·`instruction.md`·`environment/Dockerfile`·`tests/test.sh`)로 바꾼다. 러너는 `harbor run`, `passed` = reward 1, baseline은 스킬 없이 돌린 잡 | 카탈로그는 여전히 evals를 읽지도 돌리지도 않는다(`scenario_sha`만). `record_eval`은 그대로이고 붙이는 주체는 사람(자기 머신, 구독) 또는 `main` push의 CI(mini 러너, 서비스 주체, `setup-token` 구독 토큰, Harbor 플러그인). LangSmith·Langfuse는 두지 않되 Harbor `--plugin` 자리를 §7에 적었다 | 사용자 결정. `[웹]` Harbor는 Terminal-Bench 2를 낸 쪽의 러너이고 어댑터 88개·에이전트 51개로 사실상 표준이며, 스킬 원천 문법(`org/name@sha`, `skills/`)이 이 저장소 배치와 그대로 맞고 MCP 서버 선언으로 라이브 소비도 시험된다. 우리 형식은 사설 규약이었다. 대가: 케이스마다 컨테이너 하나, 음성 케이스는 궤적 검증기 필요(그 전까지 사람 판정 허용), Harbor 판 핀 |

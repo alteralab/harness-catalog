@@ -29,9 +29,10 @@
 | Q10 | §9-7 | 스킬 수가 몇 개를 넘으면 이름순 `list_skills` 목록으로 고르기가 안 되는가 | `tools/pilot/synth_catalog.py`로 20·50·100개짜리 합성 카탈로그를 시험 저장소에 게시하고, 사람이 과제 5개에 맞는 스킬을 목록만 보고 고르는 시간과 정답률을 각 규모에서 잰다(같은 사람, 규모 순서는 무작위) | §4 D5에 고정: 정답률 5/5이고 과제당 30초 이내인 가장 큰 규모가 **답: 이름순 한계**. 100에서도 그렇다면 **답: 100 이상**이고 순위의 시점은 아직 아니다 | P1 | service P3, 시험 카탈로그 저장소(distribution P3의 템플릿 복사본 하나 더) | 대기 |
 | Q11 | §9-7 뒷부분 | `pin-skill`의 지시만으로 하네스 셋이 임시 디렉토리 → 파일 목록 대조 → 이름 바꾸기를 지키고 디렉토리 전체를 빠짐없이 쓰는가 | 하네스마다 "pin-skill 내려받아"를 지시하고 세션 기록에서 실행한 명령 순서를 원문으로 적는다. 결과 디렉토리와 `load_skill` 파일 목록의 diff, `PINNED` 한 줄의 형식 검사(이름·sha 40자·ISO 8601 UTC·개행)를 적는다 | 세 하네스 각각 명령 순서에 임시 디렉토리 생성·대조·이름 바꾸기가 있고 diff 0, `PINNED` 형식 일치면 **답**. 어긋난 하네스는 관측을 skills PLAN에 넘긴다 | P1 | skills P2(게시된 `pin-skill`), service P3 | 대기 |
 | Q13 | §9 마지막 | `new-skill`의 지시만으로 하네스 둘(Claude Code·Codex)이 카탈로그 클론에서 브랜치·커밋·`gh pr create`를 사람의 git 자격으로 올바르게 하는가, 클라우드 샌드박스 세션에서는 멈추는가 | 하네스마다 "스킬 새로 만들자"부터 PR까지의 명령 순서를 원문으로 적고, 같은 지시를 샌드박스 세션에서 내려 멈춤 문장을 적는다 | 둘 다 PR이 열리고 `check`가 CI에서 돌면 **답**; 샌드박스에서 브랜치를 만들려 하면 **답: 지시 보강**. Dex GitHub 커넥터 실측은 하지 않는다(우산 §6-9 결정: LDAP 유지) | P1 | skills P2, distribution P3 | 대기 |
+| Q14 | §5.1 evals 형식 | `harbor run`이 이 저장소 배치의 evals를 그대로 돌리는가: (a) `skills/<name>/evals/` 데이터셋 인식 (b) 스킬 원천 `alteralab/<catalog>@<sha>` 주입이 Claude Code·Codex 컨테이너에 스킬을 넣는가 (c) `[[environment.mcp_servers]]`로 tailnet의 레지스트리에 붙어 라이브 소비가 되는가 (d) `CLAUDE_FORCE_OAUTH`로 API 키 없이 도는가 | mini에서 `harbor run --env docker`를 pin-skill·new-skill의 evals 넷에 스킬 있이·없이 돌리고 명령·`result.json`·reward를 원문으로 적는다. (c)는 `hello-mcp` 꼴로 레지스트리 URL과 서비스 주체 토큰을 준 태스크 하나 | (a)(b)(d) 넷 다 돌고 reward가 skills V8의 기대와 같으면 **답**. (c)는 샌드박스에서 `search_skills`가 답하면 **답**, tailnet에 못 닿으면 **범위 제외**(라이브 모드 시험은 로컬 도커뿐) | P1 | skills P2, distribution P3, Harbor 판 핀 | 대기 |
 | Q12 | 우산 V1 | 설치가 URL 한 줄 + 로그인 한 번인가 | 하네스마다 MCP 설정에 레지스트리 URL만 넣고 첫 `search_skills`까지의 사람 동작을 전부 적는다 | 세 하네스 각각 사람 동작이 URL 입력 하나와 로그인 한 번뿐이면 **답**. 추가 동작이 있으면 항목별로 적고 **답: 불통과** | P1 | service P1, distribution P2 공개 URL | 대기 |
 
-Q1~Q5가 우산 P0의 다섯이고, Q6~Q13이 우산 P6이다. Q3는 stub으로 P0에서 먼저 답하고 P1에서 실물로 대조한다.
+Q1~Q5가 우산 P0의 다섯이고, Q6~Q14가 우산 P6이다. Q3는 stub으로 P0에서 먼저 답하고 P1에서 실물로 대조한다.
 
 ## 3. 측정 도구 (`tools/pilot/`)
 
@@ -135,6 +136,7 @@ Q1~Q5가 우산 P0의 다섯이고, Q6~Q13이 우산 P6이다. Q3는 stub으로 
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-26 | 설계 개정 반영 | Q14(Harbor 실행 실측) 추가 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | Q6 토큰 측정을 하네스 토크나이저로(레지스트리 토큰 수 필드 삭제), Q7에 정답 순위 위치 기록 | DESIGN §11 |
 | 2026-09-26 | 사용자 결정 반영 | GitHub 커넥터 실측을 Q13에서 뺌(LDAP 유지). 실측 기록은 `plans/pilot/rN.md`, 도구는 `tools/pilot/`, 원자료는 비추적 `research/` | 우산 §6-9 |
 | 2026-09-26 | 설계 개정 반영 | v3.3: Q13(new-skill PR 흐름·샌드박스 멈춤) 추가, 그룹 하나 | DESIGN §11 |
