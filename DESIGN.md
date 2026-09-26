@@ -341,10 +341,10 @@ flowchart LR
     end
     subgraph L2["② 역할 — 레지스트리가 정한다, 코드 고정"]
         direction TB
-        R0["reader"]
-        R1["author = reader + …"]
-        R3["service = reader + …"]
-        R2["certifier = reader + …"]
+        R0["reader<br/>= CATALOG_READ"]
+        R1["author<br/>= reader + SKILL_PUBLISH + EVAL_RECORD"]
+        R3["service<br/>= reader + EVAL_RECORD"]
+        R2["certifier<br/>= reader + SKILL_CERTIFY"]
     end
     subgraph L3["③ 권한 — 카탈로그 수준 넷"]
         direction TB
