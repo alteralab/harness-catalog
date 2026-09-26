@@ -332,44 +332,64 @@ DELETE FROM usage_record
 
 ```mermaid
 flowchart LR
-    subgraph IDP["신원 제공자 (그룹 = 굵은 인가)"]
-        H0["사람 주체<br/>그룹 없음"]
-        H1["사람 주체<br/>groups ∋ skills"]
-        H2["사람 주체<br/>groups ∋ skills-certifiers"]
-        S0["서비스 주체<br/>클라이언트 자격 증명"]
+    subgraph L1["① 신원 제공자가 주는 것 — 토큰의 sub · groups · scope"]
+        direction TB
+        H0["사람 · 그룹 없음"]
+        H1["사람 · groups ∋ skills"]
+        H2["사람 · groups ∋ skills-certifiers"]
+        S0["서비스 주체 · 클라이언트 자격 증명"]
     end
-    subgraph REG["레지스트리 (역할·권한 = 세밀한 인가, 코드 고정)"]
+    subgraph L2["② 역할 — 레지스트리가 정한다 (코드 고정)"]
+        direction TB
         R0["reader"]
+        R3["service"]
         R1["author"]
         R2["certifier"]
-        R3["service"]
+    end
+    subgraph L3["③ 권한 — 카탈로그 수준 넷"]
+        direction TB
         P0["CATALOG_READ"]
+        P3["EVAL_RECORD"]
         P1["SKILL_PUBLISH"]
         P2["SKILL_CERTIFY"]
-        P3["EVAL_RECORD"]
     end
-    subgraph TOOLS["도구 일곱"]
-        T0["list_skills · search_skills<br/>load_skill · get_skill_file"]
-        T1["publish_skill"]
-        T2["certify_skill"]
-        T3["record_eval"]
+    subgraph L4["④ 도구 일곱 (요청 스코프)"]
+        direction TB
+        T0["list_skills · search_skills<br/>load_skill · get_skill_file<br/><i>skills:read</i>"]
+        T3["record_eval<br/><i>skills:write</i>"]
+        T1["publish_skill<br/><i>skills:write</i>"]
+        T2["certify_skill<br/><i>skills:write</i>"]
     end
     H0 --> R0
     H1 --> R1
     H2 --> R2
-    S0 --> R3
+    S0 -- "주체 종류로 판정" --> R3
     R0 --> P0
-    R1 --> P0
-    R1 --> P1
-    R1 --> P3
-    R2 --> P0
-    R2 --> P2
     R3 --> P0
     R3 --> P3
+    R1 --> P0
+    R1 --> P3
+    R1 --> P1
+    R2 --> P0
+    R2 --> P2
     P0 --> T0
+    P3 --> T3
     P1 --> T1
     P2 --> T2
-    P3 --> T3
+    N1["그룹 둘을 다 가진 사람은 author ∪ certifier<br/>권한을 주고 뺏는 곳은 신원 제공자의 그룹 편집뿐"]
+    N2["스코프 부족 → 401/403 + WWW-Authenticate (재인가로 풀린다)<br/>역할 부족 → 403 본문 not_a_member · not_a_certifier (재인가로 안 풀린다)"]
+    L2 -.-> N1
+    L4 -.-> N2
+    classDef idp fill:#eef3ff,stroke:#3b5bdb,color:#1c2b6b
+    classDef role fill:#fff4e6,stroke:#e8590c,color:#5c2a00
+    classDef priv fill:#e6fcf5,stroke:#0ca678,color:#03392a
+    classDef tool fill:#f8f9fa,stroke:#495057,color:#212529
+    classDef note fill:#fffbe6,stroke:#b08900,color:#4a3a00,stroke-dasharray:4 2
+    class H0,H1,H2,S0 idp
+    class R0,R1,R2,R3 role
+    class P0,P1,P2,P3 priv
+    class T0,T1,T2,T3 tool
+    class N1,N2 note
 ```
 
 | 층 | 내용 | 소유 |
