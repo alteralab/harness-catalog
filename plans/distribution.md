@@ -109,7 +109,7 @@
 4. deploy key(쓰기 허용)를 등록하고 개인 키를 `.env`의 자리에 넣는다. 확인: 레지스트리 컨테이너 안에서 `git push --dry-run`이 성공한다.
 5. 자기 호스트의 CI 워크플로 파일을 활성화한다(GitHub이면 `.github/workflows/`로 옮긴다). 확인: 첫 커밋의 CI가 초록이다(V6).
 6. Dex에 하네스 제품의 정적 클라이언트가 있고 리다이렉트 URI가 그 제품 문서와 같다. 확인: 그 하네스에서 로그인 한 번(우산 V1).
-7. LDAP 그룹 `skills`에 첫 팀원이 있다. 확인: 그 사람의 토큰에 `groups`가 있다(V2).
+7. LDAP 그룹 `skills`에 첫 팀원이 있다. 확인: 그 사람의 토큰에 `groups`가 있다(V2). 카탈로그 저장소의 읽기 권한을 가진 사람 명단이 `skills`·`skills-certifiers` 합집합과 같다(그룹에 없는 사람은 레지스트리에서 `not_a_member`이므로 저장소 쪽만 넓으면 우회가 생긴다).
 8. `.env`의 필수 설정값 다섯이 채워졌고 선택 둘은 비워 두거나 의도한 값이다. 확인: `docker compose config`가 빈 필수 변수를 경고하지 않는다.
 9. `docker compose up -d` 뒤 `/healthz` 200, `/readyz` 200(V1). 503이면 본문의 사유(`not_a_catalog`·`no_main_branch`·`repo_unreachable`·`layout_mismatch`)대로 2·4번을 다시 본다.
 10. 하네스에 레지스트리 URL 한 줄을 등록하고 `list_skills`가 두 스킬을 돌려준다.

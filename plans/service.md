@@ -184,7 +184,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | V2 | 빈 카탈로그 준비됨 | 템플릿 복사본(스킬 0) | `/readyz` 200, `list_skills` 빈 목록, 마지막 fetch 시각 있음 | 대기 |
 | V3 | 401 챌린지 | HTTP로 토큰 없음·서명 불일치·`aud` 다름·만료·`iss` 다름 다섯 | 다섯 전부 401 + `WWW-Authenticate: Bearer resource_metadata=… scope="skills:read"`, RFC 9728 메타데이터 GET이 200 | 대기 |
 | V4 | 403 두 종 | `skills:read`만으로 `publish_skill`; `skills:write`이나 그룹 없음 | 전자 403 + `error="insufficient_scope"` 챌린지, 후자 403 + 챌린지 없음 + 본문 `not_a_member` | 대기 |
-| V5 | 인가 행렬 | 주체 넷(`skills`+`skills-certifiers` 사람·`skills`만인 사람·그룹 없는 사람·서비스) × 도구 일곱 = 28칸을 `authz.decide` 단위 시험으로 | 28칸 전부 DESIGN 그림 4 표(역할→권한→도구)와 일치. `certify_skill`은 첫 주체만 허용, 둘째는 `not_a_certifier`. 그룹 둘 다 있는 사람은 합집합 | 대기(서비스 주체 칸은 D8 뒤) |
+| V5 | 인가 행렬 | 주체 넷(`skills`+`skills-certifiers` 사람·`skills`만인 사람·그룹 없는 사람·서비스) × 도구 일곱 = 28칸을 `authz.decide` 단위 시험으로 | 28칸 전부 DESIGN 그림 4 표(역할→권한→도구)와 일치. 그룹 없는 사람은 일곱 전부 `not_a_member`(읽기 포함). `certify_skill`은 첫 주체만 허용, 둘째는 `not_a_certifier`. 그룹 둘 다 있는 사람은 합집합 | 대기(서비스 주체 칸은 D8 뒤) |
 | V6 | 인덱스 세대 검사 | testcontainers: 커밋 B(자손)로 빌드 뒤 커밋 A(조상)로 빌드 | 두 번째 빌드 뒤 `index_state.commit_sha`가 B이고 행 집합이 B의 것 | 대기 |
 | V7 | 보존 삭제 | 경계 전후 1초의 행 둘을 넣고 `USAGE_RETENTION_DAYS`를 바꿔 두 번 실행 | 경계 밖 행만 지워지고 두 번째 실행이 0행. 설정값 변경이 삭제 경계를 옮긴다 | 대기 |
 | V8 | degraded 읽기 | DB 컨테이너를 멈춘 채 도구 넷 호출과 `/readyz` | 넷 전부 응답(검색은 부분 일치·`evals` 없음), `/readyz` 200 + `degraded: ["db_unavailable"]`, `record_eval`은 `unavailable`. 도구 응답에 `degraded` 필드가 없다 | 대기 |
