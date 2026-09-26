@@ -135,8 +135,8 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 1. `adapters/git.py` 확장: 임시 작업 트리(D5), 파일 쓰기(0644, 심볼릭 링크 거부), tree SHA(D4), 사용자 명의 커밋(`--author`, committer는 레지스트리), deploy key push, `origin/main` 재확인.
 2. `adapters/validate.py` 확장: gitleaks(D9).
 3. `app/publish.py`: 입력 상한(50개·1 MB·5 MB·경로 이탈) → 잠금 밖 검증 둘 → 잠금 안 `name_taken`(현재 `main` + 삭제 이력) → `expected_sha` 비교(신규는 생략, 갱신·은퇴는 필수) → `replaced-by` 대상 존재·연쇄·순환 검사 → 작업 트리 커밋 → push → non-fast-forward면 fetch 후 그 스킬 tree 재확인·재적용 최대 3회 → 인덱스 동기 갱신 → 응답. tree SHA 멱등(D4). `retire=true`는 디렉토리 삭제 커밋. `record_eval`: `id` 생존·`sha` 판 검증(현재 판 또는 D6 이력)·길이 상한·`scenario_sha` 서버 산출(`git rev-parse <commit>:skills/<id>/evals` 없으면 빈 tree SHA `4b825dc642cb6eb9a060e54bf8d69288fbee4904`)·`run_id` 멱등.
-4. `app/authz.py` 완성: 사람·서비스 주체 × 도구 일곱 × 스코프 × 그룹 둘(`skills`, `skills-certifiers`). 403 본문 `not_a_member` vs `insufficient_scope` 챌린지 구분은 SDK가 `required_scopes`로 내는 것과 앱이 내는 것을 가른다 — 스코프 부족은 SDK 층(챌린지 있음), 그룹 부족은 앱 층(챌린지 없음).
-5. `app/publish.py`의 `certify_skill`: 주체(사람 + `skills-certifiers`, 아니면 `not_a_certifier`)·`id` 생존·`sha` 판 검증(현재 판 또는 D6 이력)·`note` 상한 → `certification` 행 추가(같은 스킬·판·행위가 최근 행과 같으면 무행 성공). `app/catalog.py`: `sha` 없는 `load_skill`·`get_skill_file`이 현재 인증 판으로 풀리고 `certified`·`current_sha`를 적는다. `list_skills`·`search_skills` 항목에 `certified_sha`·`certified_at`·`certified_by`(DB 단절 시 null). `adapters/pg.py`: 인증 한 건·현재 인증 판 조회(최근 행 규칙).
+4. `app/authz.py` 완성: 역할 셋의 계층(reader ⊂ editor ⊂ admin, 그룹 `skills-readers`·`skills-editors`·`skills-admins`에서 가장 높은 것, 서비스 주체 = reader) × 도구 일곱 × 스코프. 403 본문 `not_a_member` vs `insufficient_scope` 챌린지 구분은 SDK가 `required_scopes`로 내는 것과 앱이 내는 것을 가른다 — 스코프 부족은 SDK 층(챌린지 있음), 그룹 부족은 앱 층(챌린지 없음).
+5. `app/publish.py`의 `certify_skill`: 주체(admin 역할의 사람, 아니면 `insufficient_role`)·`id` 생존·`sha` 판 검증(현재 판 또는 D6 이력)·`note` 상한 → `certification` 행 추가(같은 스킬·판·행위가 최근 행과 같으면 무행 성공). `app/catalog.py`: `sha` 없는 `load_skill`·`get_skill_file`이 현재 인증 판으로 풀리고 `certified`·`current_sha`를 적는다. `list_skills`·`search_skills` 항목에 `certified_sha`·`certified_at`·`certified_by`(DB 단절 시 null). `adapters/pg.py`: 인증 한 건·현재 인증 판 조회(최근 행 규칙).
 6. `driving/mcp_tools.py`: 쓰기 도구 셋 등록. 오류 코드 D14.
 7. 시험: adapters/git에서 bare 저장소 하나에 클론 둘로 non-fast-forward 재현(다른 스킬 변경 → 재시도 성공, 같은 스킬 변경 → `conflict`). unit에서 검사 다섯 위반 각각, 멱등, `replaced-by` 연쇄·순환, `record_eval` 검증 넷. http에서 403 두 종의 헤더·본문 실물.
 
@@ -184,7 +184,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | V2 | 빈 카탈로그 준비됨 | 템플릿 복사본(스킬 0) | `/readyz` 200, `list_skills` 빈 목록, 마지막 fetch 시각 있음 | 대기 |
 | V3 | 401 챌린지 | HTTP로 토큰 없음·서명 불일치·`aud` 다름·만료·`iss` 다름 다섯 | 다섯 전부 401 + `WWW-Authenticate: Bearer resource_metadata=… scope="skills:read"`, RFC 9728 메타데이터 GET이 200 | 대기 |
 | V4 | 403 두 종 | `skills:read`만으로 `publish_skill`; `skills:write`이나 그룹 없음 | 전자 403 + `error="insufficient_scope"` 챌린지, 후자 403 + 챌린지 없음 + 본문 `not_a_member` | 대기 |
-| V5 | 인가 행렬 | 주체 넷(`skills`+`skills-certifiers` 사람·`skills`만인 사람·그룹 없는 사람·서비스) × 도구 일곱 = 28칸을 `authz.decide` 단위 시험으로 | 28칸 전부 DESIGN 그림 4 표(역할→권한→도구)와 일치. 그룹 없는 사람은 일곱 전부 `not_a_member`(읽기 포함). `certify_skill`은 첫 주체만 허용, 둘째는 `not_a_certifier`. 그룹 둘 다 있는 사람은 합집합 | 대기(서비스 주체 칸은 D8 뒤) |
+| V5 | 인가 행렬 | 주체 다섯(admin·editor·reader·그룹 없는 사람·서비스) × 도구 일곱 = 35칸을 `authz.decide` 단위 시험으로. 그룹 여럿인 사람(readers+admins)은 admin으로 | 35칸 전부 DESIGN 그림 4 표와 일치. 그룹 없음은 일곱 전부 `not_a_member`; reader의 `publish_skill`·editor의 `certify_skill`은 `insufficient_role`; 서비스 주체는 reader와 같은 칸 | 대기(서비스 주체 칸은 D8 뒤) |
 | V6 | 인덱스 세대 검사 | testcontainers: 커밋 B(자손)로 빌드 뒤 커밋 A(조상)로 빌드 | 두 번째 빌드 뒤 `index_state.commit_sha`가 B이고 행 집합이 B의 것 | 대기 |
 | V7 | 보존 삭제 | 경계 전후 1초의 행 둘을 넣고 `USAGE_RETENTION_DAYS`를 바꿔 두 번 실행 | 경계 밖 행만 지워지고 두 번째 실행이 0행. 설정값 변경이 삭제 경계를 옮긴다 | 대기 |
 | V8 | degraded 읽기 | DB 컨테이너를 멈춘 채 도구 넷 호출과 `/readyz` | 넷 전부 응답(검색은 부분 일치·`evals` 없음), `/readyz` 200 + `degraded: ["db_unavailable"]`, `record_eval`은 `unavailable`. 도구 응답에 `degraded` 필드가 없다 | 대기 |
@@ -200,7 +200,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | V18 | 게시 입력 상한 | 51개, 1 MB + 1 파일, 합계 5 MB + 1, 실행 비트 파일, 심볼릭 링크 | 앞 셋과 링크는 `input_limit`/`path_rejected`, 실행 비트 파일은 통과하되 커밋 모드 100644 | 대기 |
 | V19 | fetch 간격 설정 | `FETCH_INTERVAL_SECONDS=5`로 기동하고 우회 push | 5~10초 안에 인덱스 반영, 기본값 기동은 60~120초 안 | 대기 |
 | V20 | 규칙 게이트 첫 완주 | P1 첫 커밋에서 `pre-commit run --all-files`와 `selftest.sh --census src/ tests/` | ruff·ast-grep이 파일을 검사하며 돌았고 검출마다 참·거짓 판정이 §9에 있다 | 대기 |
-| V22 | 인증 판 해석 | 스킬 하나에 판 A·B(B가 현재)를 두고 A를 인증한 뒤 `load_skill(id)`·`get_skill_file(id, path)`·`list_skills`; 그다음 `revoke`; 그다음 A를 두 번 인증 | 인증 뒤 `sha`=A·`certified`=참·`current_sha`=B, 목록의 `certified_sha`=A; 철회 뒤 `sha`=B·`certified`=거짓·`certified_sha`=null; 두 번 인증은 행 하나. 인증자 그룹 없는 사람의 호출은 403 본문 `not_a_certifier`이고 챌린지 헤더가 없다 | 대기 |
+| V22 | 인증 판 해석 | 스킬 하나에 판 A·B(B가 현재)를 두고 A를 인증한 뒤 `load_skill(id)`·`get_skill_file(id, path)`·`list_skills`; 그다음 `revoke`; 그다음 A를 두 번 인증 | 인증 뒤 `sha`=A·`certified`=참·`current_sha`=B, 목록의 `certified_sha`=A; 철회 뒤 `sha`=B·`certified`=거짓·`certified_sha`=null; 두 번 인증은 행 하나. editor·reader의 호출은 403 본문 `insufficient_role`이고 챌린지 헤더가 없다 | 대기 |
 | V21 | 마이그레이션 패키징 | `uv build`로 wheel·sdist를 만들고 각각 빈 가상 환경에 설치한 뒤 `python -c` 한 줄로 `importlib.resources`에서 `0001_schema.sql`을 열고, testcontainers PostgreSQL에 설치본의 러너로 yoyo를 적용 | wheel·sdist 둘 다에서 파일이 열리고 적용이 성공한다. 작업 트리가 없는 디렉토리에서 실행한다 | 대기 |
 
 ## 8. 개정 규약
@@ -211,6 +211,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-26 | 설계 개정 반영 | 역할 3단 계층(reader·editor·admin, 그룹 셋): V5 35칸, `insufficient_role` | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 권한 모델(DESIGN 그림 4): `authz.py`가 표를 그대로 옮기고 V5가 그 표와 대조 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 인증된 판(DESIGN §11, `certify_skill`·`certification`·규칙 7). P3에 5단계, V5를 28칸으로, V22 추가. 표 넷·도구 일곱 | DESIGN §11 |
 | 2026-09-26 | Codex 교차 검증 1회 | 반영: 도구 응답의 `degraded` 필드 삭제(D13, V8), 오류 코드 어휘를 DESIGN §3으로 이관(D14), 마이그레이션 재시도를 fetch 루프에서 분리(D12), 패키지 데이터 포함·`importlib.resources` 로딩과 설치본 검증(P2-5, V21), S4·S6의 미래 조건절 삭제. 기각 없음 | 상위 PLAN §11 |

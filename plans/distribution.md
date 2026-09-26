@@ -48,7 +48,7 @@
 | D1 | compose 서비스 이름·포트·볼륨 | 서비스 이름은 `registry`·`postgres`·`dex`. 밖으로 여는 포트는 `registry`의 HTTP 하나와 `dex`의 HTTP 하나(둘 다 프록시가 받는다). PostgreSQL은 compose 네트워크 안에서만. 볼륨은 `pgdata` 하나와 레지스트리의 로컬 클론용 `clone` 하나 | 설계 판단. DESIGN §2.1 "인가는 레지스트리 안, 프록시는 TLS와 라우팅만"이라 프록시가 볼 종단은 둘뿐이다. 클론 볼륨은 재기동 때 전량 clone을 피하는 편의이며 잃어도 fetch가 다시 만든다(§2.1 준비됨 정의) |
 | D2 | 데이터베이스 둘과 역할 둘은 누가 만드는가 | `docker/postgres/init.sql`이 만든다(postgres 이미지의 초기화 훅으로 마운트, 첫 기동에만 실행). 서비스 마이그레이션은 `harness_catalog` 안의 표·확장(`pg_trgm`)만 소유한다 | 설계 판단. 서비스 역할은 자기 데이터베이스의 `CREATE`만 가지고 남의 데이터베이스를 만들 권한이 없어야 한다(§2 "별도 데이터베이스·역할"). 데이터베이스 생성은 인스턴스 소유자의 일이라 서비스 밖이다 |
 | D3 | Dex 저장소 | `postgres`의 `dex` 데이터베이스, 전용 역할 | DESIGN §2 결정. 문면: Dex는 postgres 저장소를 지원한다 |
-| D4 | Dex LDAP 커넥터 구조 | host·bindDN·bindPW는 환경 변수, userSearch는 baseDN·`uid` 필터, groupSearch는 `memberUid` 기반 `userMatchers`로 그룹 이름을 `groups` 클레임에 싣는다. 그룹 `skills` 하나만 조회 필터에 건다. `groups` 스코프를 클라이언트 요청 스코프에 포함 | 문면(Dex LDAP 커넥터 문서, DESIGN §10). Synology Directory Server의 스키마(posixGroup·memberUid인지 groupOfNames·member인지)는 pilot P0의 실측 항목이고, 여기서는 두 형태 중 실측된 것을 쓴다 |
+| D4 | Dex LDAP 커넥터 구조 | host·bindDN·bindPW는 환경 변수, userSearch는 baseDN·`uid` 필터, groupSearch는 `memberUid` 기반 `userMatchers`로 그룹 이름을 `groups` 클레임에 싣는다. 그룹 셋(`skills-readers`·`skills-editors`·`skills-admins`)을 조회 필터에 건다. `groups` 스코프를 클라이언트 요청 스코프에 포함 | 문면(Dex LDAP 커넥터 문서, DESIGN §10). Synology Directory Server의 스키마(posixGroup·memberUid인지 groupOfNames·member인지)는 pilot P0의 실측 항목이고, 여기서는 두 형태 중 실측된 것을 쓴다 |
 | D5 | 정적 클라이언트 | 공개 클라이언트 셋: `claude-code`·`codex`·`cursor`(각각 `public: true`, 리다이렉트 URI는 그 제품이 문서에 적은 것). 기밀 클라이언트 하나: `ci-eval-runner`(클라이언트 자격 증명, `record_eval` 전용). 클라이언트 ID 문자열은 제품 이름 그대로 | 설계 판단. DESIGN §2 "에이전트 제품마다 사전 등록", §11 5차 리뷰 "CI 평가 러너용 정적 클라이언트". 하네스 셋의 리다이렉트 URI 실물은 pilot P0이 확인한다 |
 | D6 | PKCE 강제 | Dex `pkce.enforce`(또는 그 판의 동등 설정)를 켠다. 켜졌는지는 V2가 `code_challenge` 없는 요청의 거부로 본다 | 문면(Dex 2.26+ PKCE, DESIGN §2 신원 제공자 표) |
 | D7 | 토큰 수명 | Dex `expiry.idTokens`·액세스 토큰을 1시간으로. 리프레시는 Dex 기본 | DESIGN §2 "1시간 이하를 요구한다". 실제 수명은 V4가 잰다 |
@@ -109,7 +109,7 @@
 4. deploy key(쓰기 허용)를 등록하고 개인 키를 `.env`의 자리에 넣는다. 확인: 레지스트리 컨테이너 안에서 `git push --dry-run`이 성공한다.
 5. 자기 호스트의 CI 워크플로 파일을 활성화한다(GitHub이면 `.github/workflows/`로 옮긴다). 확인: 첫 커밋의 CI가 초록이다(V6).
 6. Dex에 하네스 제품의 정적 클라이언트가 있고 리다이렉트 URI가 그 제품 문서와 같다. 확인: 그 하네스에서 로그인 한 번(우산 V1).
-7. LDAP 그룹 `skills`에 첫 팀원이 있다. 확인: 그 사람의 토큰에 `groups`가 있다(V2). 카탈로그 저장소의 읽기 권한을 가진 사람 명단이 `skills`·`skills-certifiers` 합집합과 같다(그룹에 없는 사람은 레지스트리에서 `not_a_member`이므로 저장소 쪽만 넓으면 우회가 생긴다).
+7. LDAP 그룹 `skills-editors`(또는 `skills-admins`)에 첫 팀원이 있다. 확인: 그 사람의 토큰에 `groups`가 있다(V2). 카탈로그 저장소의 읽기 권한을 가진 사람 명단이 세 그룹의 합집합과 같다(그룹에 없는 사람은 레지스트리에서 `not_a_member`이므로 저장소 쪽만 넓으면 우회가 생긴다).
 8. `.env`의 필수 설정값 다섯이 채워졌고 선택 둘은 비워 두거나 의도한 값이다. 확인: `docker compose config`가 빈 필수 변수를 경고하지 않는다.
 9. `docker compose up -d` 뒤 `/healthz` 200, `/readyz` 200(V1). 503이면 본문의 사유(`not_a_catalog`·`no_main_branch`·`repo_unreachable`·`layout_mismatch`)대로 2·4번을 다시 본다.
 10. 하네스에 레지스트리 URL 한 줄을 등록하고 `list_skills`가 두 스킬을 돌려준다.
