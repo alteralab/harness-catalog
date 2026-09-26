@@ -100,7 +100,7 @@ skills/                            # 계획 정본은 plans/skills.md
 
 ### 2.3 README 사용자 안내 절 (examples/catalog-template/README.md 안)
 
-문단 셋. ⑴ 등록 한 줄과 로그인 한 번(레지스트리 URL은 distribution가 채운다). ⑵ 두 스킬의 이름과 한 줄 용도, 새 판 확인은 `list_skills`의 sha. ⑶ 검색어는 저장된다(보존 일수 뒤 삭제) — 검색어에 비밀·개인 정보를 넣지 말 것. 팀 규약의 본문은 여기 다시 쓰지 않고 `new-skill`의 `references/conventions.md`를 가리킨다.
+문단 셋. ⑴ 등록 한 줄과 로그인 한 번(레지스트리 URL은 distribution가 채운다). ⑵ 두 스킬의 이름과 한 줄 용도, 새 판 확인은 `list_skills`의 sha. ⑶ 검색어는 팀 Langfuse의 도구 호출 스팬에 남는다 — 검색어에 비밀·개인 정보를 넣지 말 것. 팀 규약의 본문은 여기 다시 쓰지 않고 `new-skill`의 `references/conventions.md`를 가리킨다.
 
 ## 3. 판정 원장
 
@@ -189,6 +189,7 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-27 | 설계 개정 반영 | v3.5: README 문단 ⑶(검색어는 Langfuse 스팬) | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.4: 결과를 `record_eval`에서 Langfuse 플러그인으로(트리·단계 8·D8·V9·description·부르는 도구) | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | evals를 Harbor 태스크 형식으로(트리·단계 5·8·D8·V8·불채택). `conventions.md`에 `task.toml`·`Dockerfile`·`test.sh` 템플릿 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | description 검수에 "핵심을 앞에" 추가(단계 6). `list_skills` 필드 최소화는 pin 절차에 영향 없음(`sha`만 본다) | DESIGN §11 |

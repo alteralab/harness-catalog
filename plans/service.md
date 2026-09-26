@@ -4,7 +4,7 @@
 
 ## 0. 한 장 요약
 
-만드는 것은 프로세스 하나다. 카탈로그 git 저장소를 fetch해 인덱스를 짓고, OIDC 토큰을 검증해 MCP 도구 넷(`list_skills`·`search_skills`·`load_skill`·`get_skill_file`)을 Streamable HTTP(2026-07-28, 무세션)로 내며, 사용 기록을 PostgreSQL에 적는다. 평가 결과는 이 프로세스가 아니라 Harbor 플러그인 `packages/harbor-langfuse/`가 Langfuse에 남긴다(DESIGN v3.4). 구조는 DESIGN 그림 2의 헥사고날(포트 일곱·어댑터 일곱·Configurator)이고 언어는 Python(DESIGN §2.1 결정), 스택은 DESIGN §2.1의 표 그대로다. 이 PLAN이 더하는 것은 셋이다. 설계가 정하지 않은 구현 선택(§3 판정 원장), 짓는 순서와 단계마다의 끝(§4 — 읽기 경로 → 사실 표 → 검사·초기화·플러그인), 그리고 무엇을 어떻게 재어 끝났다고 할지(§7 검증 원장). 설계가 초안이라 남긴 것 중 이 서비스에 직접 걸리는 것은 서비스 주체의 판별 표지 하나이고(§3 D8), 그것은 파일럿 P0의 실측 뒤에만 닫힌다.
+만드는 것은 프로세스 하나다. 카탈로그 git 저장소를 fetch해 인덱스를 짓고, OIDC 토큰을 검증해 MCP 도구 넷(`list_skills`·`search_skills`·`load_skill`·`get_skill_file`)을 Streamable HTTP(2026-07-28, 무세션)로 내며, 인덱스를 PostgreSQL에 둔다. 사용 기록은 MCP SDK가 도구 호출마다 내는 OpenTelemetry 스팬이고 MCP 어댑터가 속성을 더해 표준 exporter로 Langfuse에 간다(DESIGN v3.5). 평가 결과는 이 프로세스가 아니라 Harbor 플러그인 `packages/harbor-langfuse/`가 Langfuse에 남긴다(DESIGN v3.4). 구조는 DESIGN 그림 2의 헥사고날(포트 일곱·어댑터 일곱·Configurator)이고 언어는 Python(DESIGN §2.1 결정), 스택은 DESIGN §2.1의 표 그대로다. 이 PLAN이 더하는 것은 셋이다. 설계가 정하지 않은 구현 선택(§3 판정 원장), 짓는 순서와 단계마다의 끝(§4 — 읽기 경로 → 인덱스 표·스팬 → 검사·초기화·플러그인), 그리고 무엇을 어떻게 재어 끝났다고 할지(§7 검증 원장). 설계가 초안이라 남긴 것 중 이 서비스에 직접 걸리는 것은 서비스 주체의 판별 표지 하나이고(§3 D8), 그것은 파일럿 P0의 실측 뒤에만 닫힌다.
 
 ## 1. 관할과 경계
 
@@ -15,9 +15,9 @@
 | 계약 | DESIGN 위치 | 요지 |
 |---|---|---|
 | 도구 넷의 시그니처·응답 필드·오류 | §3 도구 표 | 넷 다 `skills:read`. 응답에 `sha`(tree)·`commit`·마지막 fetch 시각. 오류 코드 다섯. 쓰기·기록 도구는 없다 — 게시는 git 호스트(§2, §5), 평가는 Langfuse(§5.1) |
-| 설정값 일곱 | §2 그림 2 해설, §2.1 운영자가 아는 것 | 필수 다섯(저장소 URL·deploy key·issuer·공개 URL·PostgreSQL 접속) + 기본값 있는 둘(`USAGE_RETENTION_DAYS` 90, `FETCH_INTERVAL_SECONDS` 60). 여덟째는 없다 |
+| 설정값 여섯 | §2 그림 2 해설, §2.1 운영자가 아는 것 | 필수 다섯(저장소 URL·deploy key·issuer·공개 URL·PostgreSQL 접속) + 기본값 있는 하나(`FETCH_INTERVAL_SECONDS` 60). 일곱째는 없다. OTel exporter는 표준 `OTEL_EXPORTER_OTLP_*` 환경 변수이고 우리 설정값이 아니다 |
 | 저장소 표지와 기동 검사 넷 | §2.1 저장소 초기화 | `.harness-catalog`의 `layout = 1`, `skills/`, 실패 사유 넷(`repo_unreachable`·`no_main_branch`·`not_a_catalog`·`unsupported_layout`·`layout_mismatch`) |
-| DB 스키마 | 그림 3 + DDL + 규칙 여섯 | 업무 표 둘(`skill_index`·`usage_record`) + `index_state` + 마이그레이션 메타. DDL 문자열이 계약이다 |
+| DB 스키마 | 그림 3 + DDL + 규칙 다섯 | 업무 표 하나(`skill_index`) + `index_state` + 마이그레이션 메타. DDL 문자열이 계약이다 |
 | 게시 = git 워크플로 | §2 게시, §5, §5.1 ③ | 레지스트리는 `main`을 fetch·검사·인덱스만 한다. 검사 아홉(§5)은 `harness-catalog check` 하나이고 pre-commit·CI·인덱스 빌드가 같은 구현을 돈다. 되감기(`main_rewound`)는 규칙 3이 잡는다 |
 | 인증·인가 | §2 인증·인가 표, 그림 4 | JWT 검증 계약(`iss`·`aud`·`exp`·`nbf` 60초·RS256/ES256·`sub`·`scope`), 401/403 챌린지 경계, 스코프↔도구, 역할 reader 하나(그룹 `skills-readers`, 서비스 주체) |
 | 실패 시 동작 | §2.1 실패 시 동작 표 | PostgreSQL·push는 시간 초과+브레이커, fetch는 지수 백오프, JWKS는 캐시, DB 단절 시 메모리 사본으로 읽기 |
@@ -43,18 +43,18 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
       ports.py              # 요구 포트 넷 = typing.Protocol: ContentStore·FactStore·IdentityVerifier·SkillValidator
       model.py              # SkillEntry·IndexSnapshot·Principal·오류 코드 열거. 순수 데이터
       authz.py              # 인가 정책. 그림 4의 표: reader(그룹 `skills-readers` 또는 서비스 주체) -> CATALOG_READ
-      catalog.py            # 카탈로그: 목록·검색·본문·파일, 인덱스 빌드(트랜잭션+메모리 사본), 구조 검사, 보존 삭제, 상태
+      catalog.py            # 카탈로그: 목록·검색·본문·파일, 인덱스 빌드(트랜잭션+메모리 사본), 구조 검사, 상태
       check.py              # 검사 아홉(§5): 저장소 구조 + 스킬마다. 인덱스 빌드와 CLI가 같은 함수를 부른다
       app.py                # App = 위 셋 + 어댑터 넷을 묶은 이름 붙은 형태. 제공 포트 = 이 객체의 함수 시그니처
     adapters/               # 피구동 어댑터 넷
       git.py                # 로컬 클론, fetch, 스킬 트리 목록, 판 읽기, 삭제 이력 질의. 쓰기 없음
-      pg.py                 # psycopg 3 + pool. 인덱스 교체·검색·사용 기록·보존 삭제. 브레이커 상태
+      pg.py                 # psycopg 3 + pool. 인덱스 교체·검색. 브레이커 상태
       oidc.py               # PyJWT + PyJWKClient. SDK TokenVerifier 구현
       validate.py           # skills_ref.validate + gitleaks 서브프로세스 → 판정
     driving/                # 구동 어댑터 셋
-      mcp_tools.py          # MCPServer에 도구 넷 등록, 입력 스키마(pydantic), 오류 코드 → 도구 오류
+      mcp_tools.py          # MCPServer에 도구 넷 등록, 입력 스키마(pydantic), 오류 코드 → 도구 오류, 현재 스팬에 속성(sub·스킬·sha·검색어·결과 수)
       ops.py                # Starlette 라우트 /healthz /readyz
-      scheduler.py          # anyio 태스크 둘: fetch 주기, 보존 삭제 24시간. 기동 1회 검사도 여기서 부른다
+      scheduler.py          # anyio 태스크 하나: 기동 1회 검사 뒤 fetch 주기
   tests/
     unit/                   # 앱 함수 + 가짜 어댑터(git·OIDC·validate 가짜, PG는 메모리 FactStore 가짜)
     adapters/               # pg: testcontainers PostgreSQL. git: 임시 bare 저장소. validate: 표본 스킬 둘
@@ -90,8 +90,8 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | D7 | JWKS·JWT | 기동 시 issuer의 `.well-known/openid-configuration`에서 `jwks_uri`를 읽고 `PyJWKClient(jwks_uri, cache_keys=True, lifespan=3600)`. 검증은 `jwt.decode(algorithms=["RS256","ES256"], audience=<공개 URL>, issuer=<issuer>, leeway=60, options={"require": ["exp","sub"]})` 뒤 `scope` 존재를 따로 확인. SDK `TokenVerifier.verify_token`이 `AccessToken(scopes=…)`을 돌려준다 | 문면(PyJWT·SDK). 모르는 `kid`의 재조회는 `PyJWKClient`의 동작이고 P1 시험이 확인한다 |
 | D8 | 서비스 주체 판별 표지 | **P3 착수 전까지 미정.** 판별은 순수 함수 `principal_kind(claims)` 하나에 가두고, 그 함수의 규칙은 파일럿 P0이 Dex 클라이언트 자격 증명 토큰의 실물(`sub`·`azp`·`groups`)을 기록한 뒤 정한다. DESIGN의 임시 규칙("`sub`가 등록된 client ID 집합에 있으면")은 그 집합의 출처가 필요한데 설정값은 일곱뿐이라 여덟째를 더하는 셈이 된다. 토큰 자체의 표지(`azp` 등)로 갈리면 설정 없이 닫고, 안 갈리면 DESIGN §11에 "설정값 여덟째"를 변경 요청으로 올린다. 이 PLAN이 조용히 정하지 않는다 | 설계 판단 + 미실측. P1·P2는 이 판별이 필요 없다(읽기는 인증된 전부). 걸리는 것은 서비스 주체를 그룹 없이 reader로 세우는 한 줄뿐이다(v3.4에서 서비스 주체는 읽기 전용) |
 | D9 | 시크릿 스캔 호출 | `check`가 `gitleaks dir <skill-dir> --no-banner --exit-code 2 --report-format json --report-path -`. 종료 0이면 통과, 2면 검출(파일·룰을 출력에), 그 밖(바이너리 없음·크래시)은 검사기 실패(종료 코드 2, fail-closed). 바이너리 파일의 취급은 P3에서 실측해 적는다 | 문면(gitleaks CLI). fail-closed는 DESIGN §5 검사기 운영 |
-| D11 | 스케줄러 | Starlette lifespan 안에서 anyio 태스크 그룹 하나에 루프 둘. fetch 루프는 `FETCH_INTERVAL_SECONDS`마다 `catalog.refresh()`를 부르고 실패 시 지수 백오프(2배, 상한 = 간격의 16배)로 늘렸다가 성공하면 되돌린다. 보존 루프는 24시간마다 `catalog.purge_usage()`. 시험은 시계 없이 두 함수를 직접 부른다 | 설계 판단. DESIGN §2.1 실패 표 "fetch는 지수 백오프". 상한 16배는 휴리스틱 |
-| D12 | 마이그레이션 시점 | `bootstrap`이 기동 직후 마이그레이션 태스크 하나를 따로 띄운다. 이 태스크는 yoyo 적용을 시도하고 실패하면 자기 백오프(5초에서 2배, 상한 5분)로 다시 한다. fetch 루프와 무관하다. DB 경로(인덱스 트랜잭션·사용 기록·검색 순위)는 마이그레이션이 "적용됨"이 되기 전에는 열리지 않고 그동안은 `degraded: db_unavailable`이다. 기동은 막지 않는다(준비됨 조건이 아니다) | 설계 판단. DESIGN §2.1 "DB 연결은 준비됨의 조건이 아니다"를 마이그레이션에도 적용. fetch 주기와의 결합은 Codex 리뷰(2026-09-26)가 잡아 분리했다. 백오프 수치는 휴리스틱 |
+| D11 | 스케줄러 | Starlette lifespan 안에서 anyio 태스크 그룹 하나에 루프 하나. fetch 루프는 `FETCH_INTERVAL_SECONDS`마다 `catalog.refresh()`를 부르고 실패 시 지수 백오프(2배, 상한 = 간격의 16배)로 늘렸다가 성공하면 되돌린다. 시험은 시계 없이 함수를 직접 부른다 | 설계 판단. DESIGN §2.1 실패 표 "fetch는 지수 백오프". 상한 16배는 휴리스틱 |
+| D12 | 마이그레이션 시점 | `bootstrap`이 기동 직후 마이그레이션 태스크 하나를 따로 띄운다. 이 태스크는 yoyo 적용을 시도하고 실패하면 자기 백오프(5초에서 2배, 상한 5분)로 다시 한다. fetch 루프와 무관하다. DB 경로(인덱스 트랜잭션·검색 순위)는 마이그레이션이 "적용됨"이 되기 전에는 열리지 않고 그동안은 `degraded: db_unavailable`이다. 기동은 막지 않는다(준비됨 조건이 아니다) | 설계 판단. DESIGN §2.1 "DB 연결은 준비됨의 조건이 아니다"를 마이그레이션에도 적용. fetch 주기와의 결합은 Codex 리뷰(2026-09-26)가 잡아 분리했다. 백오프 수치는 휴리스틱 |
 | D13 | 브레이커와 degraded 신호 | PostgreSQL 호출에 시간 초과(문장 5초)와 브레이커(연속 실패 3회 → 30초 열림), fetch에는 지수 백오프. 브레이커는 순수 상태 기계 하나를 `pg.py`가 든다. 열림·닫힘과 되감기 검출이 `degraded` 목록(`db_unavailable`·`main_rewound`)이 되고 **`/readyz` 본문에만** 실린다(DESIGN §2.1). 도구 응답에는 DESIGN §3이 정한 필드만 있다 | 설계 판단. 수치는 휴리스틱. 라이브러리를 들이지 않는 이유: 상태 기계가 열 줄이고 DESIGN 표에 없다 |
 | D14 | 오류 어휘 | 인가 실패는 HTTP 401/403(SDK 챌린지). 도구 안의 실패는 MCP 도구 오류 결과에 `{code, detail}`이고 **코드 여섯은 DESIGN §3이 소유한다**. `check`의 위반은 도구 오류가 아니라 CLI 출력(항목 번호·경로·사유 한 줄씩)과 종료 코드다 | 설계 판단. 공개 코드는 계약이라 DESIGN 소유(우산 §1 경계 규칙 ⑵) |
 | D15 | DB 접속 | `psycopg_pool.AsyncConnectionPool` 최소 1·최대 4, 문장 시간 초과 5초. 트랜잭션은 인덱스 교체 하나만 명시적이고 나머지는 자동 커밋 | 휴리스틱. 하루 수백 요청(DESIGN 추정)에 연결 넷이면 남는다 |
@@ -108,7 +108,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 2. `app/ports.py`·`app/model.py`: 요구 포트 넷의 Protocol, 스냅샷·주체·오류 코드.
 3. `adapters/git.py`: clone·fetch(`origin/main`)·`skills/*/SKILL.md` 트리 열거(각 디렉토리의 tree SHA와 그 판을 넣은 최근 커밋)·파일 읽기(`git show`)·삭제 이력(`git log --diff-filter=D --name-only -- 'skills/*/SKILL.md'`).
 4. `adapters/validate.py`: `skills_ref` 호출부. 패키지·함수 시그니처를 실측해 R4를 닫는다. 통과·실패 표본 둘.
-5. `app/catalog.py`: 구조 검사 넷 → 인덱스 빌드(메모리 스냅샷만) → 목록·검색(메모리 부분 일치, 순위 없음; 항목은 DESIGN §3의 최소 필드, `model`·`harness` 인자 시 평가 한 행)·본문·파일(경로 이탈·심볼릭 링크·1 MB). 사용 기록은 이 단계에서 버린다(FactStore가 없으면 degraded).
+5. `app/catalog.py`: 구조 검사 넷 → 인덱스 빌드(메모리 스냅샷만) → 목록·검색(메모리 부분 일치, 순위 없음; 항목은 DESIGN §3의 최소 필드)·본문·파일(경로 이탈·심볼릭 링크·1 MB).
 6. `adapters/oidc.py`: D7. `app/authz.py`: 스코프↔도구, 그룹, 주체 종류(D8 미정 부분은 "사람"으로 고정하고 표식 남김 없이 P3에서 함수 본문을 채운다).
 7. `driving/mcp_tools.py`: 읽기 도구 넷 등록, `AuthSettings`(issuer·공개 URL·`required_scopes=["skills:read"]`), `streamable_http_app()`. `driving/ops.py`: `/healthz`·`/readyz`(503 사유 넷, 200 + `degraded`). `driving/scheduler.py`: 기동 1회 + fetch 루프(D11). `config.bootstrap`·`__main__`.
 8. `Dockerfile` 초판(다단계, git·gitleaks 포함) — 이미지가 P1 끝에 빌드된다. 이미지 이름은 `harness-catalog`, 태그는 git 짧은 SHA.
@@ -116,16 +116,16 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 
 **끝:** 템플릿 구조의 시험 저장소를 가리켜 기동하면 `/readyz` 200이고, Dex가 낸 사람 토큰으로 SDK 인메모리 클라이언트가 아닌 **HTTP 경유** 읽기 도구 넷 호출이 전부 성공하며, 토큰 없음·잘못된 aud·만료 셋이 각각 401로 거부된다.
 
-### P2. 사실 표
+### P2. 인덱스 표·스팬
 
 1. `src/harness_catalog/migrations/0001_schema.sql`: 그림 3 DDL 문자열 그대로(확장·함수·표 넷·생성 열·인덱스·CHECK). 러너는 yoyo, 적용 시점은 D12.
-2. `adapters/pg.py`: 인덱스 교체 트랜잭션(`index_state` `FOR UPDATE` → `git merge-base --is-ancestor`는 git 어댑터가 판정한 결과를 인수로 받는다 → `DELETE`+`INSERT`), `tsvector`+`pg_trgm` 검색, 사용 기록 한 건, 보존 삭제(`%(retention_days)s`). 브레이커·시간 초과 D13·D15.
+2. `adapters/pg.py`: 인덱스 교체 트랜잭션(`index_state` `FOR UPDATE` → `git merge-base --is-ancestor`는 git 어댑터가 판정한 결과를 인수로 받는다 → `DELETE`+`INSERT`), `tsvector`+`pg_trgm` 검색. 브레이커·시간 초과 D13·D15.
 3. `app/catalog.py` 확장: 빌드가 DB 트랜잭션과 메모리 스냅샷을 같은 행 집합으로 함께 갱신(순서: DB 커밋 성공 → 참조 교체. DB 실패 → 참조만 교체하고 degraded). 검색은 DB가 살아 있으면 DB 순위, 아니면 메모리 부분 일치. `list_skills`에 최근 평가 결합.
-4. 스케줄러에 보존 루프 24시간 추가. 기동 시 보존 삭제 1회.
+4. `driving/mcp_tools.py`에서 도구 호출마다 `opentelemetry.trace.get_current_span()`에 속성을 더한다(DESIGN §2 데이터 표의 규약: `langfuse.user.id`, `langfuse.observation.metadata.skill`·`.sha`·`.query`·`.result_count`). exporter는 `opentelemetry-sdk`의 환경 변수 자동 구성(`opentelemetry-exporter-otlp-proto-http`)을 의존에 넣고 코드에서 조립하지 않는다.
 5. 패키지 데이터: `pyproject.toml`에 `src/harness_catalog/migrations/*.sql`을 wheel·sdist에 포함하는 규칙을 적고, 러너는 `importlib.resources.files("harness_catalog") / "migrations"`로 경로를 얻는다(작업 트리 상대 경로를 쓰지 않는다). V21이 설치본에서 이를 확인한다.
-6. 시험: adapters/pg(testcontainers)에서 DDL 적용, 세대 검사(낡은 커밋 빌드가 아무것도 바꾸지 않음), 보존 삭제 멱등(두 번 돌려 같은 결과, 경계 일수의 행이 정확히 갈림), 검색 문법. unit에서 DB 단절 시 degraded 읽기.
+6. 시험: adapters/pg(testcontainers)에서 DDL 적용, 세대 검사(낡은 커밋 빌드가 아무것도 바꾸지 않음), 검색 문법. unit에서 DB 단절 시 degraded 읽기; `InMemorySpanExporter`로 도구 넷의 스팬 이름·속성.
 
-**끝:** testcontainers PostgreSQL에서 그림 3 DDL이 그대로 적용되고, 낡은 커밋의 빌드가 최신 인덱스를 되돌리지 않는 시험과 보존 삭제 멱등 시험이 통과하며, DB를 끊어도 `/readyz` 200 + `degraded`이고 읽기 넷이 답한다.
+**끝:** testcontainers PostgreSQL에서 그림 3 DDL이 그대로 적용되고, 낡은 커밋의 빌드가 최신 인덱스를 되돌리지 않는 시험과 스팬 속성 시험이 통과하며, DB를 끊어도 `/readyz` 200 + `degraded`이고 읽기 넷이 답한다.
 
 ### P3. 검사 명령·초기화 명령·Langfuse 플러그인
 
@@ -182,7 +182,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 | V4 | 403 두 종 | `skills:read` 없는 토큰(`openid`만)으로 `list_skills`; `skills:read`는 있으나 그룹 없음 | 전자 403 + `error="insufficient_scope"` 챌린지, 후자 403 + 챌린지 없음 + 본문 `not_a_member` | 대기 |
 | V5 | 인가 행렬 | 주체 셋(`skills-readers` 사람·그룹 없는 사람·서비스) × 도구 넷 = 12칸을 `authz.decide` 단위 시험으로 | 12칸 전부 DESIGN 그림 4 표와 일치. 그룹 없음은 넷 전부 `not_a_member` | 대기(서비스 주체 칸은 D8 뒤) |
 | V6 | 인덱스 세대 검사 | testcontainers: 커밋 B(자손)로 빌드 뒤 커밋 A(조상)로 빌드 | 두 번째 빌드 뒤 `index_state.commit_sha`가 B이고 행 집합이 B의 것 | 대기 |
-| V7 | 보존 삭제 | 경계 전후 1초의 행 둘을 넣고 `USAGE_RETENTION_DAYS`를 바꿔 두 번 실행 | 경계 밖 행만 지워지고 두 번째 실행이 0행. 설정값 변경이 삭제 경계를 옮긴다 | 대기 |
+| V7 | 도구 호출 스팬 | `InMemorySpanExporter`를 꽂고 도구 넷을 사람 토큰으로 호출(`search_skills`는 결과 0인 검색어 하나 포함) | 호출마다 `SERVER` 스팬 하나, 이름 `tools/call <tool>`, `gen_ai.tool.name`=도구, `langfuse.user.id`=토큰 `sub`; `load_skill`·`get_skill_file`에 `metadata.skill`·`.sha`(응답 `sha`와 같음); `search_skills`에 `.query`·`.result_count`(0). DB를 끊어도 스팬은 같다 | 대기 |
 | V8 | degraded 읽기 | DB 컨테이너를 멈춘 채 도구 넷 호출과 `/readyz` | 넷 전부 응답(검색은 부분 일치), `/readyz` 200 + `degraded: ["db_unavailable"]`. 도구 응답에 `degraded` 필드가 없다 | 대기 |
 | V9 | 검사 아홉 | §5의 아홉 항목 각각을 위반한 표본 저장소·스킬 | `check`가 항목 번호와 경로·사유를 출력하며 종료 1. 검사기(gitleaks)를 치우면 종료 2. 통과 표본은 종료 0 | 대기 |
 | V10 | 병합 반영 | 시험 저장소에 PR을 병합 | 우산 V3의 허용오차(`FETCH_INTERVAL_SECONDS` 두 주기) 안에 `search_skills`에 나오고 `sha`가 병합 커밋의 tree와 같다 | 대기 |
@@ -206,6 +206,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-27 | 설계 개정 반영 | v3.5: `usage_record`·보존 삭제·`USAGE_RETENTION_DAYS` 제거(설정값 여섯·표 하나·규칙 다섯), 스팬 속성을 `mcp_tools.py`에(P2-4), 스케줄러 루프 하나(D11), V7을 스팬 시험으로 | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.4: `record_eval`·`eval_result`·`skills:write` 제거(도구 넷·포트 일곱·표 둘·오류 코드 다섯. `evals.py`·V15·V16 삭제, D6·D8·D12·P2-2·P3·V4·V8 개정), 플러그인을 `packages/harbor-langfuse/`로(P3-7, V26) | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | Harbor 플러그인 모듈(P3-7a, V26). 서비스 이미지 밖의 선택 extra — v3.4에서 Langfuse 플러그인으로 대체 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | `list_skills` 필드 최소화: D10·S6 삭제, P1-5·V16 개정(`model`·`harness` 인자) | DESIGN §11 |

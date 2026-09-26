@@ -10,7 +10,7 @@
 
 **소유하는 것.** 루트의 `Dockerfile`(빌드 정의의 내용은 service, 배치와 태그는 여기)·`docker-compose.yml`·`docker-compose.dev.yml`·`.env.example`, `docker/`(빠른 시작용 Dex 설정, PostgreSQL 초기화 SQL), `examples/synology-ldap/`(우리 팀의 LDAP 변형), `examples/catalog-template/` 전부(표지·`skills/.gitkeep`·README·CI 워크플로), `docs/`(설치·설정값 참조·운영자 가이드), `scripts/`. 배치는 우산 §3-8의 오픈소스 공통 골격이다.
 
-**service에서 받는 것.** 컨테이너 이미지 하나(빌드 컨텍스트 저장소 루트, 다단계, git + gitleaks 포함 — DESIGN §2.1 Python 표)와 설정값 일곱의 이름. 필수 다섯은 카탈로그 저장소 URL, git deploy key, OIDC issuer, 레지스트리 공개 URL, PostgreSQL 접속이고, 기본값 있는 선택 둘은 `USAGE_RETENTION_DAYS`(90)와 `FETCH_INTERVAL_SECONDS`(60)다(DESIGN §2 "운영자가 아는 것"). 값의 뜻은 service가 정하고 여기는 환경 변수로 건넨다.
+**service에서 받는 것.** 컨테이너 이미지 하나(빌드 컨텍스트 저장소 루트, 다단계, git + gitleaks 포함 — DESIGN §2.1 Python 표)와 설정값 여섯의 이름. 필수 다섯은 카탈로그 저장소 URL, git deploy key, OIDC issuer, 레지스트리 공개 URL, PostgreSQL 접속이고, 기본값 있는 선택 하나는 `FETCH_INTERVAL_SECONDS`(60)다(DESIGN §2 "운영자가 아는 것"). 값의 뜻은 service가 정하고 여기는 환경 변수로 건넨다. 그 밖에 표준 OTel exporter 변수 셋(`OTEL_EXPORTER_OTLP_ENDPOINT`·`_HEADERS`·`_PROTOCOL`)을 같은 `.env`로 건네며 이것은 설정값이 아니라 관측 배선이다(D20).
 
 **skills·pilot에 주는 것.** 살아 있는 issuer URL과 레지스트리 URL, 그리고 하네스 셋의 client ID. `skills/`의 두 스킬은 템플릿 복사 시점에 카탈로그 저장소의 첫 스킬로 들어가 CI 초록의 예시가 된다.
 
@@ -23,7 +23,7 @@
   Dockerfile                # python:3.12-slim + git + gitleaks, 다단계. 빌드 컨텍스트는 루트. 내용은 plans/service.md
   docker-compose.yml        # 빠른 시작: registry · postgres · dex(정적 사용자). 어느 머신에서나 .env만 채우면 뜬다
   docker-compose.dev.yml    # 개발용: postgres · dex만 (호스트의 uvicorn이 붙는다)
-  .env.example              # 설정값 일곱 + Dex·DB 비밀의 이름과 예시. .env는 gitignore
+  .env.example              # 설정값 여섯 + OTel exporter 변수 셋 + Dex·DB 비밀의 이름과 예시. .env는 gitignore
   docker/
     postgres/init.sql       #   데이터베이스 둘(harness_catalog, dex)과 역할 둘 생성. 표는 만들지 않는다
     dex/config.yaml         #   빠른 시작용 Dex: issuer · 정적 사용자(staticPasswords) · 정적 클라이언트 · 저장소(postgres)
@@ -35,7 +35,7 @@
       README.md             #     등록 한 줄 · 운영자 체크리스트 · 검색어에 비밀 금지
       github/validate.yml   #     GitHub Actions: skills-ref validate + gitleaks, 보고만
       gitlab/.gitlab-ci.yml #     GitLab CI: 같은 검사
-  docs/                     # 설치(빠른 시작·프록시 뒤)·설정값 일곱 참조·운영자 가이드(신설·복구)·LDAP 변형 안내
+  docs/                     # 설치(빠른 시작·프록시 뒤)·설정값 여섯 참조·운영자 가이드(신설·복구)·LDAP 변형 안내
   scripts/                  # 운영 셸 스크립트: dev-token.sh, membership-diff.sh(저장소 read 명단 vs skills-readers 차이), 복구 절차. 첫 파일과 함께 lang/bash 선언
 ```
 
@@ -63,6 +63,7 @@
 | D16 | compose를 어디서 돌리는가 | 운영은 `mini.altera.lab`(우산 §6-1 결정, 2026-09-26). 개발·시험은 맥북 로컬에서 같은 compose 파일로 띄운다 — P0·P1의 `docker-compose.dev.yml`이 그 자리이고, 운영 compose(P2)도 로컬에서 먼저 한 번 띄운 뒤 mini로 간다 | 사용자 결정. 같은 파일을 두 곳에서 쓰므로 호스트별 값은 전부 `.env`에 있어야 한다(D10) |
 | D18 | 빠른 시작 compose의 Dex | 루트 `docker-compose.yml`의 Dex는 `docker/dex/config.yaml`의 정적 사용자(`staticPasswords`)와 정적 클라이언트로 뜬다. LDAP 연합은 `examples/synology-ldap/docker-compose.override.yml`이 Dex 설정 파일을 바꿔 끼우는 오버레이다. 서비스 쪽은 issuer URL 하나라 두 경우가 같다 | 설계 판단(우산 §3-8 오픈소스 패키지). 문면: Dex는 `staticPasswords`와 `docker-compose.yaml`을 루트에 둔 자기 빠른 시작을 낸다(2026-09-26 저장소 실측). 정적 사용자는 시험·데모용이고 운영 안내(docs/)는 LDAP 또는 사내 IdP를 가리킨다 |
 | D19 | CI의 evals 단계 | `main` push 워크플로의 선택 단계. mini의 self-hosted runner에서 `harbor run --env docker --plugin harbor_langfuse:LangfusePlugin`으로 변경된 스킬의 `evals/`를 스킬 있이·없이 돌리고, 플러그인이 Langfuse에 dataset run·trace·score를 남긴다. 레지스트리에는 아무것도 적지 않는다. GitHub 호스팅 러너에서는 돌리지 않는다(구독 토큰·mini의 도커). 시크릿 넷: `CLAUDE_CODE_OAUTH_TOKEN`(`claude setup-token`), `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`(팀 Hobby 프로젝트). 라이브 소비 시험 태스크를 둘 때만 `HC_CI_CLIENT_SECRET`(`ci-runner`)이 더해진다 | 사용자 결정(DESIGN §11 v3.4). `[웹]` Harbor `claude_code.py`의 `CLAUDE_FORCE_OAUTH`(실측). 구독 quota를 대화 세션과 나눠 쓴다. Langfuse Hobby 월 50k units에 trace·observation·score가 각각 1이라 케이스당 수십 units — 스킬 수십에 분기 재실행이면 한도 안(휴리스틱, pilot Q14(e)가 실측) |
+| D20 | 레지스트리 스팬의 OTel 배선 | `.env.example`에 `OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com/api/public/otel`(지역별 호스트는 주석), `OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic <base64(pk:sk)>`, `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`, `OTEL_SERVICE_NAME=harness-catalog`. 비워 두면 스팬은 no-op이라 빠른 시작은 Langfuse 없이 뜬다. 셀프호스팅 Langfuse로 옮기면 ENDPOINT만 바뀐다 | 사용자 결정(DESIGN §11 v3.5). `[웹]` Langfuse OTel 수신은 HTTP/protobuf·JSON, Basic 인증(실측). gRPC 미지원이라 `_PROTOCOL`을 명시한다 |
 | D17 | 셸 스크립트 | 복구 절차처럼 명령이 넷을 넘는 것만 `scripts/`에 둔다. 첫 파일과 함께 `altera-rules.yml`에 `lang/bash`를 선언하고 `altera-shellcheck` 훅을 건다 | 우산 §3-5 |
 
 ## 4. 단계
@@ -86,10 +87,10 @@
 
 ### distribution P2. 루트 compose와 LDAP 오버레이 (우산 P5 전반)
 
-1. `docker-compose.yml`: `registry`(D11 이미지, 설정값 일곱을 `.env`에서) + `postgres` + `dex`(D18 정적 사용자). D1 포트·볼륨, D12 healthcheck·재시작. `examples/synology-ldap/`: 오버레이와 LDAP 커넥터 설정(D4), README.
+1. `docker-compose.yml`: `registry`(D11 이미지, 설정값 여섯을 `.env`에서) + `postgres` + `dex`(D18 정적 사용자). D1 포트·볼륨, D12 healthcheck·재시작. `examples/synology-ldap/`: 오버레이와 LDAP 커넥터 설정(D4), README.
 2. 프록시 배치 메모(D9): 프록시가 두 종단(레지스트리·Dex)을 공개 URL로 넘기는 규칙을 README에 적는다. 프록시 자체 설정은 조직 것이라 이 저장소 밖이다.
 3. Dex 설정을 운영 값으로: issuer = 공개 URL, 클라이언트 셋의 리다이렉트 URI(pilot P0 실측값), PKCE 강제, 수명 1시간.
-4. `docs/`: 설치(빠른 시작·프록시 뒤)·설정값 일곱 참조·LDAP 변형 안내.
+4. `docs/`: 설치(빠른 시작·프록시 뒤)·설정값 여섯 참조·LDAP 변형 안내.
 5. V1·V4·V5 통과.
 
 ### distribution P3. 저장소 템플릿과 첫 카탈로그 저장소 (우산 P5 후반)
@@ -115,7 +116,7 @@
 9. `docker compose up -d` 뒤 `/healthz` 200, `/readyz` 200(V1). 503이면 본문의 사유(`not_a_catalog`·`no_main_branch`·`repo_unreachable`·`layout_mismatch`)대로 2·4번을 다시 본다.
 10. 하네스에 레지스트리 URL 한 줄을 등록하고 `list_skills`가 두 스킬을 돌려준다.
 11. `.env`는 소유자만 읽는다(`0600`). 확인: `stat -f %Lp .env`(macOS) 또는 `stat -c %a .env`가 600이다. 값의 생성·전달·회전·폐기는 D10대로.
-12. 검색어에 비밀을 넣지 않는다 — 사용 기록에 검색어가 보존 일수만큼 남는다(DESIGN §5 감사).
+12. 검색어에 비밀을 넣지 않는다 — 검색어가 Langfuse의 도구 호출 스팬에 남는다(DESIGN §5 감사).
 
 ## 6. 불채택 표
 
@@ -124,7 +125,7 @@
 | 항목 | 기각 근거 (왜 지금 아닌가) |
 |---|---|
 | Helm 차트 | 인스턴스 하나. compose 한 대가 설계의 v3.0이다(우산 §7) |
-| 백업 크론(pg_dumpall·git bundle) | v3.0은 사용 기록을 읽지 않고 평가 결과는 Langfuse에 있다(DESIGN §2.1). 동급 셀프호스팅 셋도 compose에 백업이 없다(문면) |
+| 백업 크론(pg_dumpall·git bundle) | DB는 파생물뿐이고 사용 기록·평가 결과는 Langfuse에 있다(DESIGN §2.1). 동급 셀프호스팅 셋도 compose에 백업이 없다(문면) |
 | 가짜 OIDC 서버(모의 issuer) | 개발 compose에 실제 Dex가 뜬다(P1). 단위 시험은 service가 OIDC 어댑터를 가짜로 바꾼다. 셋째 인가 구현이다 |
 | 레지스트리의 LDAP 직접 바인드 | 레지스트리가 아는 신원 유형은 OIDC 하나다(DESIGN §2). 비밀번호를 받을 자리가 없다 |
 | 동적 클라이언트 등록(RFC 7591) | 스펙이 폐기 예정으로 두었고 Dex 지원을 확인하지 못했다(문면). 정적 클라이언트 넷이면 충분하다 |
@@ -177,6 +178,7 @@
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-27 | 설계 개정 반영 | v3.5: 설정값 여섯, `.env.example`에 OTel exporter 변수(D20), 체크리스트 12 | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.4: D19를 Langfuse 플러그인·시크릿 넷으로, `ci-eval-runner`→`ci-runner`(무인 읽기), dev-token 스코프 `skills:read`만 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | CI evals 단계(D19): mini 러너 + Harbor + setup-token, 워크플로 템플릿 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | v3.3: 저장소 신설은 `harness-catalog init`(D15), deploy key 읽기 전용(체크리스트 4, V8), CI는 `check`(D14·체크리스트 5·V6·P3-1) | DESIGN §11 |
