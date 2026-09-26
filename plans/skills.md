@@ -4,7 +4,7 @@
 
 ## 0. 한 장 요약
 
-카탈로그는 서버 도구 일곱 밖에 CLI도 서버 기능도 더하지 않는다(DESIGN §3). 사람이 매일 쓰는 스킬을 곁에 두는 절차와 새 스킬의 뼈대를 만드는 절차는 **스킬 하나씩**으로 카탈로그에 실린다. 그래서 어느 하네스에서든 같은 지시를 따르게 된다. 이 PLAN이 만드는 것은 SKILL.md 둘, 그 참조 파일, 각자의 evals 최소 쌍이다. 스크립트는 하나도 없다 — 내려받기의 쓰기는 도구 응답을 받은 에이전트가 하고, 뼈대는 파일 넷을 쓰는 일이라 에이전트가 직접 한다(§3 D2·D3). 두 스킬은 이 저장소의 `skills/`에서 저작되고 `publish_skill`로 카탈로그에 게시된 순간부터 카탈로그 저장소의 사본이 정본이다(우산 §7). 게시는 service P3와 distribution P3 뒤이고, 파일럿 하네스 셋에서의 관찰은 pilot의 몫이다.
+카탈로그는 서버 도구 일곱 밖에 CLI도 서버 기능도 더하지 않는다(DESIGN §3). 사람이 매일 쓰는 스킬을 곁에 두는 절차와 새 스킬의 뼈대를 만드는 절차는 **스킬 하나씩**으로 카탈로그에 실린다. 그래서 어느 하네스에서든 같은 지시를 따르게 된다. 이 PLAN이 만드는 것은 SKILL.md 둘, 그 참조 파일, 각자의 evals 최소 쌍이다. 스크립트는 하나도 없다 — 내려받기의 쓰기는 도구 응답을 받은 에이전트가 하고, 뼈대는 파일 넷을 쓰는 일이라 에이전트가 직접 한다(§3 D2·D3). 두 스킬은 이 저장소의 `skills/`에서 저작되고 카탈로그 저장소에 PR로 병합된 순간부터 그쪽이 정본이다(우산 §7). 게시는 service P3와 distribution P3 뒤이고, 파일럿 하네스 셋에서의 관찰은 pilot의 몫이다.
 
 ```
 skills/                            # 계획 정본은 plans/skills.md
@@ -32,7 +32,7 @@ skills/                            # 계획 정본은 plans/skills.md
 | 내려받기 절차와 `PINNED` | 사람이 범위(프로젝트·사용자) 하나만 고른다. `.agents/skills/`에 쓰고 `.claude/skills/`는 심볼릭 링크. 임시 디렉토리 → `load_skill` 파일 목록 대조 → 이름 바꾸기. `PINNED`는 한 줄 `<name> <tree sha 40자> <ISO 8601 UTC>`. 새 판은 `list_skills`의 sha와 견준다. 사본은 그 시점의 판이고 갱신은 사용자가 다시 받는다 | DESIGN §4 "내려받기", 규칙 넷 |
 | 하네스별 스킬 디렉토리 | Claude Code만 `.claude/skills/`, Codex·Cursor·Gemini CLI·VS Code는 `.agents/skills/`. 같은 이름 둘일 때의 우선순위가 하네스마다 다르다 | DESIGN §4 하네스 표 |
 | 팀 규약 | 종속성은 둘로 가른다(`metadata.requires-tools` 공백 구분·`compatibility` 문장). 파이썬은 PEP 723 + `uv run --script`. 종료 코드 2 입력 오류·3 대상 없음·4 시스템 도구 없음. evals는 써야 하는 과제 하나 + 쓰지 말아야 하는 과제 하나가 최소. 결과는 `record_eval`로 | DESIGN §5.1 ②·③ |
-| 부르는 도구 | 읽기 넷·`record_eval`·`publish_skill`. 시그니처·기본값·오류는 DESIGN §3 도구 표가 소유하고 여기 다시 적지 않는다 | DESIGN §3 |
+| 부르는 도구 | 읽기 넷과 `record_eval`. 게시·갱신·은퇴는 도구가 아니라 git 워크플로(브랜치·커밋·PR·병합)이고 `new-skill`이 그 절차를 안내한다 | DESIGN §3, §5.1 ③ |
 
 **소유하지 않는 것.** 도구 일곱의 동작(service), 템플릿 저장소의 구조와 CI(distribution), 파일럿 하네스에서의 관찰(pilot). 설계 계약을 바꿔야 하면 DESIGN §11 행이 먼저다(우산 §1 경계 규칙 ⑶).
 
@@ -56,9 +56,9 @@ skills/                            # 계획 정본은 plans/skills.md
 
 1. 이 세션이 클라우드 샌드박스(홈 디렉토리를 읽지 않는 세션)면 멈추고 "여기서는 라이브(`load_skill`)만 된다"고 알린다.
 2. 사용자에게 **범위 하나만** 묻는다. 프로젝트(저장소에 커밋, 팀원과 공유) 또는 사용자(홈, 나만). 에이전트 종류는 묻지 않는다.
-3. `list_skills()` 또는 `search_skills(이름)`으로 `<name>`과 `sha`(유효 판)·`latest_sha`·`certified_sha`를 확인한다. 기본은 유효 판이고, 사용자가 미인증 최신 판을 원할 때만 `latest_sha`를 `sha`로 준다. `unavailable`이 있으면 멈추고 알린다(인증 판을 읽을 수 없는 상태). `replaced-by`가 있으면 대체 대상을 알리고 어느 쪽을 받을지 묻는다.
+3. `list_skills()` 또는 `search_skills(이름)`으로 `<name>`과 현재 `sha`를 확인한다. `replaced-by`가 있으면 대체 대상을 알리고 어느 쪽을 받을지 묻는다. `replaced-by`가 있으면 대체 대상을 알리고 어느 쪽을 받을지 묻는다.
 4. 대상 디렉토리를 정한다. 프로젝트 범위는 `.agents/skills/<name>/`, 사용자 범위는 `~/.agents/skills/<name>/`. 그 이름의 디렉토리가 **이미 있으면 멈추고 알린다**(카탈로그 밖 개인 스킬과의 충돌은 여기서만 잡힌다). 재다운로드(새 판 받기)는 사용자가 명시했을 때만 덮어쓰고, 고친 사본을 지키려면 이름을 바꿔 두라고 알린다.
-5. `load_skill(<name>)`(기본은 `sha` 없이 → 유효 판)으로 본문·`sha`·`commit`·`certified`·파일 목록을 받는다. 이 목록이 대조의 기준이고, 이후 `get_skill_file`은 같은 `sha`를 명시해 부른다(인증이 도중에 바뀌어도 한 판만 받는다).
+5. `load_skill(<name>)`으로 본문·`sha`·`commit`·파일 목록을 받는다. 이 목록이 대조의 기준이고, 이후 `get_skill_file`은 같은 `sha`를 명시해 부른다(인증이 도중에 바뀌어도 한 판만 받는다).
 6. 같은 범위 디렉토리 아래 임시 디렉토리 `.<name>.pin-tmp/`를 만들고 `SKILL.md`를 쓴다. 목록의 나머지 파일을 `get_skill_file(<name>, path)`로 하나씩 받아 같은 상대 경로에 쓴다. 바이너리는 base64로 받아 그대로 쓴다. 빈 디렉토리는 만들지 않는다(git에 없다).
 7. 임시 디렉토리의 파일 집합과 5의 목록을 대조한다. 하나라도 빠지거나 남으면 임시 디렉토리를 지우고 멈춘다. 기존 사본은 그대로다.
 8. `PINNED` 파일을 임시 디렉토리 안에 쓴다. 한 줄, `<name> <sha 40자> <ISO 8601 UTC 시각>`, UTF-8, 끝에 개행.
@@ -66,35 +66,35 @@ skills/                            # 계획 정본은 plans/skills.md
 10. `.claude/skills/`(또는 `~/.claude/skills/`)가 없으면 만들고, `.claude/skills/<name>`이 `../../.agents/skills/<name>`을 가리키는 심볼릭 링크를 둔다. 이미 실제 디렉토리가 있으면 링크를 만들지 않고 알린다.
 11. 사용자에게 보고한다. 경로, sha, 파일 수, 그리고 "이 사본은 이 시점의 판이고 새 판은 다시 받아야 한다".
 
-**새 판 확인(같은 스킬의 둘째 지시).** "새 판 있어?"·"갱신해줘"에는 프로젝트·사용자 **두 범위의** `PINNED`를 모두 읽고 `list_skills()`의 `sha`(유효 판)와 견준다. 은퇴한 이름은 재사용되지 않으므로 sha가 다르면 새 판이다. 같은 스킬이 두 범위에 다 있으면 낡은 쪽을 알리고 하나로 합치기를 권한다(두 sha가 같으면 어느 쪽이 이겨도 결과가 같다). 새 판을 받기로 하면 4~11을 다시 한다. 판이 새로 나오는 주기는 레지스트리의 fetch 주기(운영 설정)라 이 스킬은 시간을 말하지 않고 sha만 견준다.
+**새 판 확인(같은 스킬의 둘째 지시).** "새 판 있어?"·"갱신해줘"에는 프로젝트·사용자 **두 범위의** `PINNED`를 모두 읽고 `list_skills()`의 `sha`(유효 판)와 견준다. 은퇴한 이름은 재사용되지 않으므로 sha가 다르면 새 판이다. 같은 스킬이 두 범위에 다 있으면 낡은 쪽을 알리고 하나로 합치기를 권한다(두 sha가 같으면 어느 쪽이 이겨도 결과가 같다). 새 판을 받기로 하면 4~11을 다시 한다. 병합이 반영되는 주기는 레지스트리의 fetch 주기(운영 설정)라 이 스킬은 시간을 말하지 않고 sha만 견준다.
 
 **번들 파일.** 없다. 하네스 디렉토리 표는 본문에 표 하나로 넣는다(§3 D1). 스크립트는 없다(§3 D2).
 
 ### 2.2 `new-skill`
 
-**목적.** 새 스킬의 뼈대를 카탈로그 **밖**의 개인 디렉토리에 만들고, 팀 규약을 점검표로 통과시키고, evals 최소 쌍을 두고, 결과를 `record_eval`로 붙이는 데까지의 절차. 게시 자체는 사람의 지시 뒤에만 `publish_skill`로 인계한다. Anthropic `skill-creator`·Codex `$skill-creator`와 같은 일을 하되 이 팀의 규약을 뼈대에 넣는다.
+**목적.** 새 스킬의 뼈대를 카탈로그 **밖**의 개인 디렉토리에 만들고, 팀 규약을 점검표로 통과시키고, evals 최소 쌍을 두고, 결과를 `record_eval`로 붙이는 데까지의 절차. PR은 사람의 지시 뒤에만 만들고 병합은 사람이 한다. Anthropic `skill-creator`·Codex `$skill-creator`와 같은 일을 하되 이 팀의 규약을 뼈대에 넣는다.
 
 **frontmatter.**
 
 - `name: new-skill`
 - `description`(초안):
 
-  > 팀 카탈로그(harness-catalog)에 올릴 새 스킬의 뼈대를 만들고 팀 규약대로 채운다. 사용자가 "스킬 새로 만들자", "이 절차를 스킬로 만들어", "SKILL.md 뼈대 잡아줘", "스킬 만들어서 카탈로그에 올리자"라고 할 때 쓴다. 먼저 search_skills로 같은 일을 하는 스킬이 있는지 확인하고, 개인 디렉토리에 SKILL.md·scripts/·evals/를 만들며, 종속성(metadata.requires-tools와 compatibility), PEP 723 + uv run --script, 종료 코드 2/3/4, 양성·음성 evals 한 쌍, record_eval 기록, description 검수를 점검표로 지난다. 게시(publish_skill)는 사용자가 지시할 때만 한다. 기존 스킬의 한 줄 수정은 이 스킬이 아니다.
+  > 팀 카탈로그(harness-catalog)에 올릴 새 스킬의 뼈대를 만들고 팀 규약대로 채운다. 사용자가 "스킬 새로 만들자", "이 절차를 스킬로 만들어", "SKILL.md 뼈대 잡아줘", "스킬 만들어서 카탈로그에 올리자"라고 할 때 쓴다. 먼저 search_skills로 같은 일을 하는 스킬이 있는지 확인하고, 개인 디렉토리에 SKILL.md·scripts/·evals/를 만들며, 종속성(metadata.requires-tools와 compatibility), PEP 723 + uv run --script, 종료 코드 2/3/4, 양성·음성 evals 한 쌍, record_eval 기록, description 검수를 점검표로 지난다. 브랜치·커밋·PR은 사용자가 지시할 때만 만들고 병합은 사람이 git 호스트에서 한다. 기존 스킬의 한 줄 수정은 이 스킬이 아니다.
 
-- `compatibility: "스크립트가 있는 스킬을 만들 때 uv가 필요하다(uv run --script). 검증에 skills-ref validate를 쓴다"`
-- `metadata.requires-tools: "uv skills-ref"`(공백 구분, 토큰 문법 `[a-z0-9._+-]+`).
+- `compatibility: "카탈로그 저장소의 로컬 클론과 git·gh(PR 생성), 스크립트가 있는 스킬이면 uv(uv run --script)가 필요하다"`
+- `metadata.requires-tools: "uv git gh"`(공백 구분, 토큰 문법 `[a-z0-9._+-]+`). 검사는 `harness-catalog check`(pre-commit 훅이 부른다)라 별도 도구가 아니다.
 
 **본문 — 에이전트가 따르는 단계.**
 
-1. 사용자의 한 문장에서 스킬이 하는 일과 발동 상황을 받아 적는다. `search_skills`로 같은 일을 하는 스킬이 있는지 확인하고, 있으면 갱신 경로(`list_skills`의 `latest_sha` → `load_skill(id, sha=latest_sha)` → 고치기 → `publish_skill(expected_sha=latest_sha)`. 유효 판이 아니라 latest에서 시작한다)를 안내하고 멈춘다.
+1. 사용자의 한 문장에서 스킬이 하는 일과 발동 상황을 받아 적는다. `search_skills`로 같은 일을 하는 스킬이 있는지 확인하고, 있으면 갱신 경로(카탈로그 클론에서 `main` 기준 브랜치 → `skills/<name>/` 수정 → 커밋 → PR)를 안내하고 멈춘다.
 2. 이름을 정한다. `name` 문법(1–64자, 소문자·숫자·하이픈)이고 `list_skills`에 없어야 한다. 은퇴한 이름은 게시 시 `name_taken`으로 거부되니 그때 바꾼다.
-3. 카탈로그 밖의 개인 디렉토리(사용자가 지정, 기본은 현재 저장소 밖의 `~/skills-draft/<name>/`)에 뼈대를 쓴다. `SKILL.md`(frontmatter + 본문 절: 언제 쓰는가·단계·실패 대응 표), 스크립트가 있으면 `scripts/`, `evals/`.
+3. 카탈로그 저장소의 로컬 클론(없으면 사용자에게 경로를 묻고 clone)에서 `main`을 최신으로 한 뒤 브랜치 `skill/<name>`을 따고 `skills/<name>/`에 뼈대를 쓴다. 병합 전의 브랜치가 곧 비공개 초안이다(DESIGN §5 비공개). `SKILL.md`(frontmatter + 본문 절: 언제 쓰는가·단계·실패 대응 표), 스크립트가 있으면 `scripts/`, `evals/`.
 4. `references/conventions.md`의 점검표를 하나씩 지난다. 결정적인 일(계산·변환·조회)은 스크립트로, 판단은 본문 지시로 가른다. 파이썬 스크립트는 PEP 723 머리와 `uv run --script scripts/x.py` 호출로 적고 실행 비트에 기대지 않는다. 시스템 도구는 `metadata.requires-tools`(기계용)와 `compatibility`(사람용 문장) 둘 다에. 스크립트의 종료 코드는 2 입력 오류·3 대상 없음·4 시스템 도구 없음(설치 안내 한 줄과 함께).
 5. evals 최소 쌍을 둔다. 써야 하는 과제 하나(`<name>/evals/<case>/prompt.txt`·`expected.md`)와 쓰지 말아야 하는 과제 하나(`no-trigger-*`).
 6. description을 검수한다. 무엇을·언제 쓰는지, 검색될 낱말(사용자가 실제로 말할 표현)이 들었는지, 쓰지 말아야 할 상황이 한 줄 있는지.
-7. `skills-ref validate <dir>`를 돌린다(권고. 서버가 어차피 다시 한다).
-8. 두 프롬프트를 스킬 있이·없이 돌려 `expected.md`와 견준다. 결과를 `record_eval(run_id=새 UUID, id, sha, model, harness, passed, baseline_passed)`로 붙인다 — 단, sha는 게시 뒤에야 생기므로 이 단계는 게시 뒤에 한 번 더 안내한다.
-9. 사용자에게 뼈대의 경로와 점검표 결과를 보고하고 멈춘다. **게시는 사용자가 "올려"라고 할 때만** `publish_skill(name, files)`를 부른다.
+7. `harness-catalog check`를 돌린다(pre-commit 훅이 커밋 때 다시 돌리고 CI가 PR에서 또 돌린다). 위반 항목을 고친다.
+8. 두 프롬프트를 스킬 있이·없이 돌려 `expected.md`와 견준다. 커밋 뒤에는 브랜치의 tree SHA(`git rev-parse HEAD:skills/<name>`)로 `record_eval(run_id=새 UUID, id, sha, model, harness, passed, baseline_passed)`을 붙일 수 있다(레지스트리가 그 브랜치를 fetch한 뒤). 병합되면 같은 판이라 결과가 그대로 `evals`에 보인다.
+9. 사용자에게 브랜치·점검표 결과를 보고하고 멈춘다. **사용자가 "올려"라고 할 때만** 커밋하고 push해 `gh pr create`(GitLab이면 `glab mr create`)로 PR을 연다. 병합은 사람이 git 호스트에서 한다. 클라우드 샌드박스 세션(git 자격 없음)이면 여기서 멈추고 로컬 세션에서 하라고 알린다.
 
 **번들 파일.** `references/conventions.md` 하나 — 팀 규약의 단일 소유자(§3 D4). 점검표 형식이고 DESIGN §5.1 ②·③의 규약을 실행 가능한 문장으로 옮긴 것이다. 스크립트는 없다(§3 D3).
 
@@ -131,14 +131,14 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 6. Codex 독립 리뷰 한 번(우산 §3-6). 발견의 반영·기각을 §9에.
 7. README 사용자 안내 절 문장을 distribution에 넘긴다(§2.3). 파일은 distribution가 쓴다.
 
-**skills P2 게시.** (우산 P5. service P3와 distribution P3 완료 뒤 — distribution P3의 첫 카탈로그 저장소가 P1의 두 스킬을 첫 커밋에 넣고, 이 단계는 그 뒤 `publish_skill`로 같은 내용을 게시한다. 내용이 같으면 tree SHA 멱등으로 커밋이 생기지 않는다)
+**skills P2 게시.** (우산 P5. distribution P3의 첫 카탈로그 저장소가 생긴 뒤. 게시는 PR이고 이 두 스킬이 그 저장소의 첫 PR이다)
 
-1. 사람의 세션에서 `publish_skill("pin-skill", files)`, `publish_skill("new-skill", files)`. 응답의 sha를 §9에 적는다.
+1. 첫 카탈로그 저장소(distribution P3)에 두 스킬을 PR로 올려 병합한다. 병합 커밋과 tree SHA를 §9에 적는다.
 2. `list_skills()`에 둘이 보이고 `search_skills("내려받아")`·`search_skills("스킬 만들자")`가 각각을 첫 후보로 낸다.
-3. 두 스킬의 evals를 스킬 있이·없이 돌려 `record_eval`로 붙인다. `list_skills`의 `evals`에 나온다.
+3. 두 스킬의 evals를 스킬 있이·없이 돌려 `record_eval`로 붙인다(사람 토큰). `list_skills`의 `evals`에 나온다.
 4. 파일럿 하네스 셋에서의 `pin-skill` 관찰은 pilot의 몫이다(우산 §9 V6 "내려받기 왕복").
 
-**완료 조건.** skills P1은 우산 §4 P4 그대로: "두 스킬이 `skills-ref validate`를 통과하고 각자 양성·음성 evals 한 쌍이 있으며 `purpose/agent-skill` 게이트가 SKILL.md 둘을 검사하며 한 번 돌았다". skills P2는 우산 §4 P5의 게시 몫: "두 스킬을 `publish_skill`로 게시해 `list_skills`에 보이게 한다". 하네스 셋에서의 `pin-skill` 관찰은 우산 P6(pilot Q11)의 완료 조건이다.
+**완료 조건.** skills P1은 우산 §4 P4 그대로: "두 스킬이 `skills-ref validate`를 통과하고 각자 양성·음성 evals 한 쌍이 있으며 `purpose/agent-skill` 게이트가 SKILL.md 둘을 검사하며 한 번 돌았다". skills P2는 우산 §4 P5의 게시 몫: "두 스킬을 PR로 올려 병합하고 `list_skills`에 보이게 한다". 하네스 셋에서의 `pin-skill` 관찰은 우산 P6(pilot Q11)의 완료 조건이다.
 
 ## 5. 불채택 표
 
@@ -150,7 +150,7 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 | 서버 쪽 pin 도구 | 내려받기는 클라이언트 쪽 쓰기라 MCP 서버가 할 수 없다(DESIGN §3) |
 | 에이전트 종류를 묻는 선택지 | `.agents/skills/` + `.claude/skills/` 링크로 파일럿 하네스 셋이 덮인다(문면). 물을 것이 늘면 인터페이스가 얕아진다 |
 | 내려받은 사본의 자동 갱신 | 사본의 뜻이 point-in-time이다(DESIGN §4). 자동 갱신은 사용자가 고친 사본을 덮어쓴다 |
-| 게시 전용 셋째 스킬 | 게시는 `publish_skill` 한 번이고 `new-skill`의 마지막 단계가 그 인계다. 절차가 없는 스킬은 이름만 늘린다 |
+| 게시 전용 셋째 스킬 | 게시는 브랜치·커밋·PR이고 `new-skill`의 마지막 단계가 그것이다. 절차가 없는 스킬은 이름만 늘린다 |
 | DESIGN 전문을 `references/`로 번들 | 스킬이 필요로 하는 것은 규약 점검표(`conventions.md`)뿐이다. 설계 문서를 실으면 게시 상한(5 MB)과 무관하게 활성화 시 읽을 것이 늘고 설계 개정마다 스킬이 낡는다 |
 | evals 러너·판정자·기록 대장 | DESIGN §5.1이 "팀이 원할 때 그 위에 얹는다"로 두었고 지금 스킬은 둘이다. 눈으로 보는 것이 러너보다 싸다 |
 | 영어 본문 | 발동 표현이 사용자의 실제 발화(한국어)여야 어휘 검색과 description 매칭이 된다(§3 D5) |
@@ -178,17 +178,18 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 | V6 | 두 범위 낡음 감지 | 프로젝트·사용자 범위에 sha가 다른 두 사본을 두고 "새 판 있어?" | 낡은 쪽을 지목하고 합치기를 권한다 | 대기 |
 | V7 | 뼈대의 규약 | `new-skill`로 만든 뼈대가 V1을 통과하고, 생성된 예시 스크립트가 종료 코드 2·3·4를 각각 낸다(입력 없음·대상 없음·`PATH`에서 도구 제거) | 셋 다 관찰 | 대기 |
 | V8 | evals 쌍 | 두 스킬 디렉토리에 양성·음성 각 1 | `evals/*/prompt.txt`·`expected.md` 넷 존재, 음성은 `no-trigger-*` | 대기 |
-| V9 | `record_eval` 왕복 | 게시 뒤 사람 토큰으로 두 스킬의 결과를 붙인다(service P3 뒤) | `list_skills`의 `evals`에 `(model, harness)`별 최근 행이 보인다 | 대기 |
+| V9 | `record_eval` 왕복 | 병합 뒤 사람 토큰으로 두 스킬의 결과를 붙인다(service P3 뒤) | `list_skills`의 `evals`에 `(model, harness)`별 최근 행이 보인다 | 대기 |
 | V10 | 규칙 게이트 | `purpose/agent-skill` 선언 뒤 `pre-commit run --all-files` | 그 축의 게이트가 SKILL.md 둘을 검사하며 한 번 돌았다 | 대기 |
 
 ## 8. 개정 규약
 
-판정 변경은 §3에 행 추가(기존 행 유지, 후속 행이 우선). 설계 계약(`PINNED` 형식·하네스 표·팀 규약)의 변경은 DESIGN §11이 먼저. 게시된 뒤의 스킬 수정은 카탈로그 저장소가 정본이므로 `publish_skill(expected_sha)`로 하고, 이 저장소의 `skills/`는 같은 내용을 따라 적어 이력만 남긴다. 기록은 현재 상태만(REVIEW.md V-REC-1).
+판정 변경은 §3에 행 추가(기존 행 유지, 후속 행이 우선). 설계 계약(`PINNED` 형식·하네스 표·팀 규약)의 변경은 DESIGN §11이 먼저. 게시된 뒤의 스킬 수정은 카탈로그 저장소가 정본이므로 그 저장소에 PR로 하고, 이 저장소의 `skills/`는 같은 내용을 따라 적어 이력만 남긴다. 기록은 현재 상태만(REVIEW.md V-REC-1).
 
 ## 9. 진행 원장
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-09-26 | 설계 개정 반영 | v3.3: 게시는 PR — `new-skill` 단계 1·3·7·8·9 재작성(클론·브랜치·`check`·`gh pr create`·샌드박스 멈춤), pin은 현재 판 `sha`로, P2는 첫 PR | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 8차 리뷰: pin·새 판 확인은 유효 판 `sha`, 편집은 `latest_sha`에서, `unavailable`이면 멈춤 | DESIGN §11 |
 | 2026-09-26 | 설계 개정 반영 | 인증된 판: `pin-skill`의 기본은 인증 판(단계 3·5), 새 판 확인은 `certified_sha` 기준, 받는 동안 `sha`를 고정 | DESIGN §11 |
 | 2026-09-26 | Codex 교차 검증 1회 | 반영: 재다운로드 절차를 백업 이름 바꾸기로(단계 9, V4 세 지점), 도구 시그니처 사본 삭제(§1 표), 단계 번호를 우산 P4(작성)·P5(게시)로, R1·R5의 미래 조건절 삭제, 배치 그림의 PLAN.md 제거. 기각 없음 | 우산 §11 |
