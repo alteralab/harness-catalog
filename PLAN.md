@@ -14,9 +14,12 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
   plans/                          # 구성 요소 계획 넷: service.md · distribution.md · skills.md · pilot.md
   REVIEW.md, altera-rules.yml, ruff.toml   # 규약 설치 (2026-09-26, common·lang/python·review)
   pyproject.toml  uv.lock  Dockerfile      # 파이썬 패키지(pip 설치)와 이미지 하나 — plans/service.md
-  src/harness_catalog/            #   app · adapters · driving(mcp_tools·ops·scheduler) · config · migrations(패키지 데이터)
+  packages/                       #   uv 워크스페이스, 배포물 넷 lockstep — plans/service.md §2
+    core/                         #     harness-catalog-core: 설정·모델·검사·git 읽기·validate. 서버 의존 없음
+    cli/                          #     harness-catalog-cli: 명령 harness-catalog(init·check·config), 템플릿 패키지 데이터
+    server/                       #     harness-catalog-server: MCP 서버·스케줄러·pg·oidc·migrations, 이미지의 진입점
   tests/
-  packages/harbor-langfuse/       #   Harbor JobPlugin → Langfuse(dataset run·trace·score). 서비스 이미지 밖의 별도 배포물 — plans/service.md P3
+    harbor-langfuse/              #     Harbor JobPlugin → Langfuse. 위 셋과 무관
   docker-compose.yml  docker-compose.dev.yml  .env.example   # 빠른 시작: registry + postgres + dex — plans/distribution.md
   docker/                         #   compose 지원 파일: dex/config.yaml(정적 사용자), postgres/init.sql
   examples/synology-ldap/         #   우리 팀 변형: Dex LDAP 커넥터 설정과 compose 오버레이

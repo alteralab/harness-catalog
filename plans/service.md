@@ -4,7 +4,7 @@
 
 ## 0. 한 장 요약
 
-만드는 것은 프로세스 하나다. 카탈로그 git 저장소를 fetch해 인덱스를 짓고, OIDC 토큰을 검증해 MCP 도구 넷(`list_skills`·`search_skills`·`load_skill`·`get_skill_file`)을 Streamable HTTP(2026-07-28, 무세션)로 내며, 인덱스를 PostgreSQL에 둔다. 사용 기록은 MCP SDK가 도구 호출마다 내는 OpenTelemetry 스팬이고 MCP 어댑터가 속성을 더해 표준 exporter로 Langfuse에 간다(DESIGN v3.5). 평가 결과는 이 프로세스가 아니라 Harbor 플러그인 `packages/harbor-langfuse/`가 Langfuse에 남긴다(DESIGN v3.4). 구조는 DESIGN 그림 2의 헥사고날(포트 일곱·어댑터 일곱·Configurator)이고 언어는 Python(DESIGN §2.1 결정), 스택은 DESIGN §2.1의 표 그대로다. 이 PLAN이 더하는 것은 셋이다. 설계가 정하지 않은 구현 선택(§3 판정 원장), 짓는 순서와 단계마다의 끝(§4 — 읽기 경로 → 인덱스 표·스팬 → 검사·초기화·플러그인), 그리고 무엇을 어떻게 재어 끝났다고 할지(§7 검증 원장). 설계가 초안이라 남긴 것 중 이 서비스에 직접 걸리는 것은 서비스 주체의 판별 표지 하나이고(§3 D8), 그것은 파일럿 P0의 실측 뒤에만 닫힌다.
+만드는 것은 배포물 넷(§2)이고 그중 상시 도는 프로세스는 하나(`harness-catalog-server`)다. 카탈로그 git 저장소를 fetch해 인덱스를 짓고, OIDC 토큰을 검증해 MCP 도구 넷(`list_skills`·`search_skills`·`load_skill`·`get_skill_file`)을 Streamable HTTP(2026-07-28, 무세션)로 내며, 인덱스를 PostgreSQL에 둔다. 사용 기록은 MCP SDK가 도구 호출마다 내는 OpenTelemetry 스팬이고 MCP 어댑터가 속성을 더해 표준 exporter로 Langfuse에 간다(DESIGN v3.5). 평가 결과는 이 프로세스가 아니라 Harbor 플러그인 `packages/harbor-langfuse/`가 Langfuse에 남긴다(DESIGN v3.4). 구조는 DESIGN 그림 2의 헥사고날(포트 일곱·어댑터 일곱·Configurator)이고 언어는 Python(DESIGN §2.1 결정), 스택은 DESIGN §2.1의 표 그대로다. 이 PLAN이 더하는 것은 셋이다. 설계가 정하지 않은 구현 선택(§3 판정 원장), 짓는 순서와 단계마다의 끝(§4 — 읽기 경로 → 인덱스 표·스팬 → 검사·초기화·플러그인), 그리고 무엇을 어떻게 재어 끝났다고 할지(§7 검증 원장). 설계가 초안이라 남긴 것 중 이 서비스에 직접 걸리는 것은 서비스 주체의 판별 표지 하나이고(§3 D8), 그것은 파일럿 P0의 실측 뒤에만 닫힌다.
 
 ## 1. 관할과 경계
 
@@ -27,55 +27,70 @@
 
 ## 2. 코드 배치
 
-DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 그림 2의 노드 열아홉에 대응시킨 것이다. 구동 어댑터 셋을 `driving/`에 모은 것은 이름 정리이지 층 추가가 아니다(§3 D1).
+배포물 넷의 uv 워크스페이스다(사용자 결정 2026-09-27: 배포물을 소비자 단위로 가른다). 의존 방향은 `cli → core`, `server → core`이고 `cli`와 `server`는 서로 import하지 못한다(별도 패키지라 관례가 아니라 강제다). 판은 lockstep — 태그 하나에 넷이 같은 판으로 빌드되고 `cli`·`server`는 `harness-catalog-core == <같은 판>`을 핀한다. 선례는 Airflow(`apache-airflow-core`·`apache-airflow-ctl`, uv 워크스페이스)와 Polaris(`polaris-core`·`runtime/server`·`runtime/admin`)이고, 우리 규모에서 판을 따로 굴릴 이유가 아직 없어 lockstep이다. DESIGN 그림 2의 헥사고날은 그대로이고, 층(앱·피구동·구동)이 패키지 경계와 겹친다: 앱과 읽기 어댑터가 `core`, 구동 어댑터와 DB·OIDC 어댑터가 `server`, 사람이 부르는 진입점이 `cli`.
 
 ```
 (저장소 루트)
-  pyproject.toml            # uv 프로젝트. 패키지 이름 harness-catalog, src 레이아웃. ruff·pyright strict·pytest 설정
-  uv.lock                   # 판 고정. P1 첫 커밋에서 생성
-  Dockerfile                # python:3.12-slim + git + gitleaks, 다단계. 아티팩트 하나 (배치·태그는 plans/distribution.md)
-  src/harness_catalog/
-    __main__.py             # uvicorn 기동. 출력 층(T201 면제 자리)
-    cli.py                  # `harness-catalog init <repo-url>`(구조·CI·pre-commit·README, 멱등, 호스트별) · `check [<root>]`(종료 0/1/2) · `reindex --accept-rewind`
-    config.py               # Settings(pydantic-settings, 일곱) + bootstrap(settings) -> App  [Configurator]
-    migrations/             # yoyo SQL 파일, 패키지 데이터로 포함(pip 설치만으로 실행). 0001이 그림 3 DDL 그대로
-    app/
-      ports.py              # 요구 포트 넷 = typing.Protocol: ContentStore·FactStore·IdentityVerifier·SkillValidator
-      model.py              # SkillEntry·IndexSnapshot·Principal·오류 코드 열거. 순수 데이터
-      authz.py              # 인가 정책. 그림 4의 표: reader(그룹 `skills-readers` 또는 서비스 주체) -> CATALOG_READ
-      catalog.py            # 카탈로그: 목록·검색·본문·파일, 인덱스 빌드(트랜잭션+메모리 사본), 구조 검사, 상태
-      check.py              # 검사 열(§5): 저장소 구조 + 스킬마다 + 스킬 쌍(복사본 드리프트). 인덱스 빌드와 CLI가 같은 함수를 부른다
-      app.py                # App = 위 셋 + 어댑터 넷을 묶은 이름 붙은 형태. 제공 포트 = 이 객체의 함수 시그니처
-    adapters/               # 피구동 어댑터 넷
-      git.py                # 로컬 클론, fetch, 스킬 트리 목록, 판 읽기, 삭제 이력 질의. 쓰기 없음
-      pg.py                 # psycopg 3 + pool. 인덱스 교체·검색. 브레이커 상태
-      oidc.py               # PyJWT + PyJWKClient. SDK TokenVerifier 구현
-      validate.py           # skills_ref.validate + gitleaks 서브프로세스 → 판정
-    driving/                # 구동 어댑터 셋
-      mcp_tools.py          # MCPServer에 도구 넷 등록, 입력 스키마(pydantic), 오류 코드 → 도구 오류, 현재 스팬에 속성(sub·스킬·sha·검색어·결과 수)
-      ops.py                # Starlette 라우트 /healthz /readyz
-      scheduler.py          # anyio 태스크 하나: 기동 1회 검사 뒤 fetch 주기
+  pyproject.toml            # [tool.uv.workspace] members = packages/*. 루트는 배포물이 아니다(ruff·pyright·pytest 설정만)
+  uv.lock                   # 워크스페이스 하나의 잠금. P1 첫 커밋에서 생성
+  Dockerfile                # python:3.12-slim + git + gitleaks, 다단계. `pip install packages/core packages/server` → 진입점 harness-catalog-server
+  packages/
+    core/                   # 배포물 harness-catalog-core — 서버·CLI가 공유하는 것. 서버 의존 없음
+      pyproject.toml        #   deps: pydantic, pydantic-settings, skills-ref, anyio
+      src/harness_catalog_core/
+        settings.py         #   Settings(pydantic-settings, env_prefix HC__, 구분자 __, 여섯, 필드마다 description·기본값·_FILE 허용) — 설정 정의의 유일한 자리
+        catalog_file.py     #   harness-catalog.toml 파서·허용 키(layout, [evals] enabled·agents). check 항목 1과 CI gate가 같은 파서를 쓴다
+        model.py            #   SkillEntry·IndexSnapshot·Principal·오류 코드 열거. 순수 데이터
+        ports.py            #   요구 포트 넷 = typing.Protocol: ContentStore·FactStore·IdentityVerifier·SkillValidator
+        authz.py            #   인가 정책(그림 4): reader(그룹 skills-readers 또는 서비스 주체) -> CATALOG_READ
+        catalog.py          #   카탈로그: 목록·검색·본문·파일, 인덱스 빌드(메모리 스냅샷), 구조 검사, 상태. FactStore는 포트로만
+        check.py            #   검사 열(§5): 저장소 구조 + 스킬마다 + 스킬 쌍. 인덱스 빌드(server)와 CLI(cli)가 같은 함수를 부른다
+        adapters/
+          git.py            #   로컬 클론, fetch, 스킬 트리 목록, 판 읽기, 삭제 이력 질의. 쓰기 없음(init의 push는 cli가 자기 git 호출로)
+          validate.py       #   skills_ref.validate + gitleaks 서브프로세스 → 판정
+    cli/                    # 배포물 harness-catalog-cli — 명령 `harness-catalog`. 운영자·저자 머신, 소비 조직 CI의 check
+      pyproject.toml        #   deps: harness-catalog-core==<판>, typer. [project.scripts] harness-catalog
+      src/harness_catalog_cli/
+        __main__.py         #   출력 층(T201 면제 자리)
+        init.py             #   `init <repo-url>`: clone(운영자 git 자격) → 호스트 판별 → 템플릿을 없는 것만 쓰고 → 커밋·push. 멱등
+        check.py            #   `check [<root>] [--base <commit>]`: core.check → 항목 번호·경로·사유 출력, 종료 0/1/2
+        config.py           #   `config list`(실효값·출처 env/file/default) · `config docs`(docs/configuration.md·.env.example 생성)
+        templates/          #   catalog-template 패키지 데이터(harness-catalog.toml, skills/.gitkeep, README, .pre-commit-config.yaml, github/)
+    server/                 # 배포물 harness-catalog-server — 레지스트리 프로세스(MCP 서버 + 스케줄러 태스크). 컨테이너 이미지
+      pyproject.toml        #   deps: harness-catalog-core==<판>, mcp, starlette, uvicorn, PyJWT[crypto], psycopg[binary,pool], yoyo-migrations, opentelemetry-sdk, opentelemetry-exporter-otlp-proto-http. [project.scripts] harness-catalog-server
+      src/harness_catalog_server/
+        __main__.py         #   `serve`(uvicorn 기동) · `reindex --accept-rewind`(DB를 만지므로 cli가 아니라 여기)
+        bootstrap.py        #   bootstrap(settings) -> App  [Configurator]. 어댑터 넷을 만들어 core.catalog에 꽂는다
+        migrations/         #   yoyo SQL 파일, 패키지 데이터. 0001이 그림 3 DDL 그대로
+        adapters/
+          pg.py             #   psycopg 3 + pool. 인덱스 교체·검색. 브레이커 상태. FactStore 구현
+          oidc.py           #   PyJWT + PyJWKClient. SDK TokenVerifier 구현
+        driving/
+          mcp_tools.py      #   MCPServer에 도구 넷 등록, 입력 스키마, 오류 코드 → 도구 오류, 현재 스팬에 속성(sub·스킬·sha·검색어·결과 수)
+          ops.py            #   Starlette 라우트 /healthz /readyz
+          scheduler.py      #   anyio 태스크 하나: 기동 1회 검사 뒤 fetch 주기
+    harbor-langfuse/        # 배포물 harbor-langfuse — Harbor JobPlugin → Langfuse. 위 셋과 무관(core도 안 본다)
+      pyproject.toml        #   deps: harbor, langfuse
+      src/harbor_langfuse/plugin.py
   tests/
-    unit/                   # 앱 함수 + 가짜 어댑터(git·OIDC·validate 가짜, PG는 메모리 FactStore 가짜)
-    adapters/               # pg: testcontainers PostgreSQL. git: 임시 bare 저장소. validate: 표본 스킬 둘
-    http/                   # 실제 uvicorn + Dex 토큰(개발 compose)으로 401/403·도구 호출
+    core/                   # 앱 함수 + 가짜 어댑터(git·validate 가짜, FactStore 메모리 가짜), check 표본, settings·catalog_file
+    cli/                    # init(임시 bare 저장소, 두 번 실행), check 종료 코드, config docs 생성물 diff
+    server/
+      adapters/             # pg: testcontainers PostgreSQL. oidc: 가짜 JWKS
+      http/                 # 실제 uvicorn + Dex 토큰(개발 compose)으로 401/403·도구 호출
     fixtures/               # 템플릿 구조의 시험 카탈로그, 통과·실패 스킬 표본, 시크릿 든 스킬 표본
 ```
 
-의존 목록(이름만. 판은 `uv.lock`이 잡고 첫 고정값을 §9 진행 원장에 적는다):
+배포물마다 의존 목록(이름만. 판은 `uv.lock`이 잡고 첫 고정값을 §9 진행 원장에 적는다):
 
-| 이름 | 자리 | 이유(DESIGN §2.1 표) |
+| 배포물 | 의존 | 이유(DESIGN §2.1 표) |
 |---|---|---|
-| `mcp` (v2) | 서버·전송·인가 골격 | 2026-07-28과 2025년 세대 동시 서빙, RFC 9728·챌린지 내장(문면) |
-| `uvicorn`, `starlette` | HTTP | SDK가 Starlette 앱을 돌려준다(문면). 라우트는 둘뿐 |
-| `pydantic`, `pydantic-settings` | 설정·입력 스키마·응답 모델 | SDK가 이미 의존. 우리가 직접 쓰면 중복 |
-| `PyJWT[crypto]` | JWT 서명 검증 | `PyJWKClient`가 JWKS 캐시·`kid` 재조회(문면) |
-| `psycopg[binary,pool]` | DB | ORM 없음. SQL 직접 |
-| `yoyo-migrations` | 마이그레이션 | SQL 파일 + 가벼운 러너 |
-| `skills-ref` | 스펙 검증 | 참조 구현 한 곳(DRY). 패키지명·API는 P1에서 실측(R4) |
-| `anyio` | 동시성 | SDK가 쓰는 것. 블로킹 호출은 `to_thread` |
+| `harness-catalog-core` | `pydantic`, `pydantic-settings`, `skills-ref`, `anyio` | 설정·모델·검사가 전부. 서버도 CLI도 이 위에 선다. `skills-ref`는 참조 구현 한 곳(DRY), 패키지명·API는 P1에서 실측(R4) |
+| `harness-catalog-cli` | `core`, `typer` | 저자 머신에 서버 의존(mcp·psycopg·PyJWT)이 깔리지 않게 하는 것이 이 배포물의 존재 이유 |
+| `harness-catalog-server` | `core`, `mcp`(v2), `uvicorn`·`starlette`, `PyJWT[crypto]`, `psycopg[binary,pool]`, `yoyo-migrations`, `opentelemetry-sdk`·`opentelemetry-exporter-otlp-proto-http` | SDK 골격(2026-07-28, RFC 9728 내장), `PyJWKClient`의 JWKS 캐시, ORM 없이 SQL, OTel exporter는 환경 변수 자동 구성 |
+| `harbor-langfuse` | `harbor`, `langfuse` | Harbor 플러그인 계약. 레지스트리 이미지에 들어가지 않는다 |
 | 이미지 안 `git`, `gitleaks` | 서브프로세스 | 런타임이 아니라 바이너리. "런타임 하나" 유지 |
-| 개발: `pytest`, `pytest-anyio`, `testcontainers[postgres]`, `ruff`, `pyright` | 시험·도구 | DB 대역은 실물을 보장하지 않는다 |
+| 개발(루트) | `pytest`, `pytest-anyio`, `testcontainers[postgres]`, `ruff`, `pyright` | DB 대역은 실물을 보장하지 않는다 |
 
 ## 3. 판정 원장
 
@@ -83,7 +98,7 @@ DESIGN §2.1이 말한 "대략 모듈 넷(app, adapters, mcp_tools, config)"을 
 
 | # | 물음 | 판정 | 근거(등급) |
 |---|---|---|---|
-| D1 | 패키지·모듈 이름 | 패키지 `harness_catalog`. 하위는 `app/`·`adapters/`·`driving/`·`config.py`·`__main__.py`. DESIGN의 "모듈 넷"에서 `mcp_tools`를 `driving/`으로 넓힌 것은 구동 어댑터가 셋(MCP·운영·스케줄러)이라 한 파일에 넣으면 프로토콜·HTTP·시계가 섞이기 때문이다. 층은 그대로 셋(앱·피구동·구동) | 설계 판단. 그림 2의 노드 대응이 파일 이름으로 즉답된다 |
+| D1 | 배포물과 패키지 경계 | 배포물 넷 `harness-catalog-core`·`harness-catalog-cli`·`harness-catalog-server`·`harbor-langfuse`, 파이썬 패키지 `harness_catalog_core`·`harness_catalog_cli`·`harness_catalog_server`·`harbor_langfuse`. 경계 규칙 셋: ① `core`는 서버 의존(mcp·starlette·psycopg·PyJWT·uvicorn·otel)을 갖지 않는다 — 저자 머신의 `check`가 그것을 끌고 오면 안 된다. ② `cli`와 `server`는 서로 import하지 않는다. DB를 만지는 `reindex`는 `server`의 부명령이고 `init`의 push는 `cli`의 git 호출이다. ③ 판은 lockstep이고 `cli`·`server`가 `core`를 정확한 판으로 핀한다. 헥사고날의 층은 유지되고 패키지 경계와 겹친다: 앱·읽기 어댑터 = core, DB·OIDC 어댑터와 구동 어댑터 = server. extras(`harness-catalog[server]`)로 한 wheel에 두는 안은 관례로만 경계를 지키므로 채택하지 않았다 | 사용자 결정(2026-09-27) + 설계 판단. 선례 Airflow `airflow-core`·`airflow-ctl`, Polaris `polaris-core`·`runtime/admin`(clone 실측). 소비 조직에서 CLI는 서버 없이 쓰인다(운영자 `init`, 저자·CI `check`) |
 | D2 | 메모리 인덱스 사본의 구조와 교체 | 불변 스냅샷 하나(`IndexSnapshot`: 행 튜플 + `commit_sha` + `built_at`)를 카탈로그가 참조 하나로 쥔다. 빌드는 새 스냅샷을 다 만든 뒤 참조를 바꾼다. 읽는 쪽은 호출 시작 때 참조를 한 번 잡고 그것만 본다. 부분 갱신은 없다 | 설계 판단. DESIGN §2.1 "다음 빌드가 통째로 바꾼다"의 구현. 참조 교체는 CPython에서 원자적이고 anyio 단일 스레드 루프에서 경합이 없다(문면) |
 | D3 | 클론 잠금 | 프로세스 안 `anyio.Lock` 하나. 쥐는 구간은 fetch 전체와 인덱스 빌드의 스냅샷 읽기. 레지스트리는 클론에 쓰지 않는다 | 설계 판단. DESIGN §2 "클론 하나에 잠금 하나" |
 | D6 | `load_skill(id, sha)`·`get_skill_file(id, sha)`의 과거 판 해석 | `git log --format=%H main -- skills/<name>`으로 그 경로를 만진 `main` 커밋을 최신부터 걸으며 `git rev-parse <commit>:skills/<name>`이 `sha`와 같은 첫 커밋을 쓴다. 브랜치는 fetch하지 않으므로 잡히지 않는다. 상한은 그 경로의 커밋 수. tree→commit 캐시는 두지 않는다 | 설계 판단. 과거 판 요청은 재현·사고 조사용이라 드물다(DESIGN §3). 캐시는 지금 재지 않은 최적화다 |
