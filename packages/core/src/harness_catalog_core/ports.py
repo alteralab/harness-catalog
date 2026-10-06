@@ -71,3 +71,7 @@ class FactStore(Protocol):
     def search(self, query: str, limit: int, /) -> tuple[str, ...] | None:
         """순위 있는 이름 목록. 닿지 않으면 None(메모리 사본으로 깎아서 답한다)."""
         ...
+
+    def current_commit(self) -> str | None:
+        """저장된 index_state의 커밋. 없거나 닿지 않으면 None."""
+        ...

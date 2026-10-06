@@ -132,3 +132,28 @@ def test_same_commit_skips_rebuild(tmp_path: Path) -> None:
     cat.rebuild()
     cat.rebuild()
     assert store.fetch_calls == 2 and len(facts.snapshots) == 1
+
+
+def test_db_unavailable_then_resync_on_same_commit(tmp_path: Path) -> None:
+    """DB가 죽었다 살아나면 같은 커밋이어도 다음 주기에 다시 반영한다."""
+    store = FakeStore({"alpha": SKILL_A})
+    facts = MemoryFacts(available=False)
+    cat = Catalog(store, FakeValidator(), facts, workdir=tmp_path)
+    assert "db_unavailable" in cat.rebuild().degraded and facts.snapshots == []
+    facts.available = True
+    status = cat.rebuild()
+    assert "db_unavailable" not in status.degraded and len(facts.snapshots) == 1 and facts.snapshots[0].commit_sha == store.commit
+
+
+def test_first_start_uses_db_commit_as_base(tmp_path: Path) -> None:
+    """재기동: 메모리는 비었지만 DB에 커밋이 있으면 그것이 세대·이력 검사의 기준이다. 되감기면 base 세대를 git에서 지어 읽기를 잇는다."""
+    store = FakeStore({"alpha": SKILL_A})
+    facts = MemoryFacts()
+    Catalog(store, FakeValidator(), facts, workdir=tmp_path).rebuild()  # 이전 프로세스가 DB에 c…c를 남겼다
+    assert facts.current_commit() == store.commit
+    fresh = Catalog(store, FakeValidator(), facts, workdir=tmp_path)
+    old = store.commit
+    store.commit = "r" * 40  # 자손 아님 = 되감기
+    status = fresh.rebuild()
+    assert status.ready and "main_rewound" in status.degraded and status.commit_sha == old
+    assert [s.name for s in fresh.list_skills().skills] == ["alpha"] and len(facts.snapshots) == 1

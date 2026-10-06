@@ -1,0 +1,115 @@
+"""`init <repo-url>`: 카탈로그 저장소를 한 번 세운다. 운영자 git 자격으로 clone → 호스트 판별 → 템플릿을 없는 것만 쓰고 → 커밋·push. 멱등."""
+
+from __future__ import annotations
+
+import subprocess
+import tempfile
+from importlib.metadata import version
+from importlib.resources import as_file, files
+from pathlib import Path
+from typing import NamedTuple
+from urllib.parse import urlsplit
+
+from harness_catalog_core.catalog_file import MARKER_PATH, MarkerError, parse_marker
+from harness_catalog_core.model import SUPPORTED_LAYOUT
+
+CODE_REPO_URL = "https://github.com/alteralab/harness-catalog"
+VERSION_PLACEHOLDER = "<판>"
+
+
+class InitError(Exception):
+    """멈춰야 하는 사유(종료 1)."""
+
+
+class InitResult(NamedTuple):
+    written: tuple[str, ...]  # 새로 쓴 파일(저장소 기준 상대 경로)
+    pin: str  # 템플릿에 박은 판 참조(v<판> 또는 --pin)
+    host: str
+
+
+def detect_host(repo_url: str) -> str:
+    """URL에서 git 호스트 종류: github | gitlab. 그 밖이면 InitError."""
+    u = repo_url.strip()
+    hostname = urlsplit(u).hostname if "://" in u else u.split("@", 1)[-1].split(":", 1)[0]
+    name = (hostname or "").lower()
+    if "github" in name:
+        return "github"
+    if "gitlab" in name:
+        return "gitlab"
+    raise InitError(f"unsupported git host in {repo_url!r} (github·gitlab only)")
+
+
+def resolve_pin(pin: str | None, *, code_repo_url: str = CODE_REPO_URL) -> str:
+    """템플릿의 판 참조. --pin이 없으면 cli 자기 판이고 그 태그가 코드 저장소에 있어야 한다(오핀 방지)."""
+    if pin:
+        return pin
+    tag = f"v{version('harness-catalog-cli')}"
+    proc = subprocess.run(["git", "ls-remote", "--tags", "--exit-code", code_repo_url, tag], capture_output=True, text=True, check=False, timeout=60)
+    if proc.returncode != 0:
+        raise InitError(f"tag {tag} not found in {code_repo_url} (development build?) — pass --pin <ref> to use an explicit ref")
+    return tag
+
+
+def template_files(host: str) -> dict[str, str]:
+    """상대 경로 → 내용. 호스트의 워크플로만 싣는다."""
+    base = files("harness_catalog_cli") / "templates"
+    out: dict[str, str] = {}
+    with as_file(base) as root:
+        out[MARKER_PATH] = (root / ".harness-catalog").read_text()
+        out["skills/.gitkeep"] = ""
+        out["README.md"] = (root / "README.md").read_text()
+        out[".pre-commit-config.yaml"] = (root / ".pre-commit-config.yaml").read_text()
+        if host == "github":
+            out[".github/workflows/check.yml"] = (root / "github" / "check.yml").read_text()
+        else:
+            out[".gitlab-ci.yml"] = (root / "gitlab" / ".gitlab-ci.yml").read_text()
+    return out
+
+
+def _git(repo: Path, *args: str) -> str:
+    proc = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, check=False, timeout=600)
+    if proc.returncode != 0:
+        raise InitError(f"git {' '.join(args)}: {proc.stderr.strip()}")
+    return proc.stdout
+
+
+def write_missing(repo: Path, contents: dict[str, str], pin: str) -> tuple[str, ...]:
+    """없는 파일만 쓴다. 표지가 있는데 layout이 다르면 멈춘다."""
+    marker = repo / MARKER_PATH
+    if marker.exists():
+        try:
+            layout = parse_marker(marker.read_text()).layout
+        except MarkerError as e:
+            raise InitError(f"{MARKER_PATH} unreadable: {e}") from e
+        if layout != SUPPORTED_LAYOUT:
+            raise InitError(f"{MARKER_PATH} declares layout {layout}, this cli supports {SUPPORTED_LAYOUT}")
+    written: list[str] = []
+    for rel, text in contents.items():
+        target = repo / rel
+        if target.exists():
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text.replace(VERSION_PLACEHOLDER, pin.removeprefix("v")))
+        written.append(rel)
+    return tuple(written)
+
+
+def init_repository(repo_url: str, *, pin: str | None = None, host: str | None = None, author: str = "harness-catalog init") -> InitResult:
+    host = host or detect_host(repo_url)
+    if host not in ("github", "gitlab"):
+        raise InitError(f"unknown host {host!r} (github·gitlab only)")
+    ref = resolve_pin(pin)
+    with tempfile.TemporaryDirectory(prefix="hc-init.") as tmp:
+        repo = Path(tmp) / "repo"
+        proc = subprocess.run(["git", "clone", "-q", repo_url, str(repo)], capture_output=True, text=True, check=False, timeout=600)
+        if proc.returncode != 0:
+            raise InitError(f"clone failed: {proc.stderr.strip()}")
+        unborn = subprocess.run(["git", "-C", str(repo), "rev-parse", "--verify", "HEAD"], capture_output=True, check=False).returncode != 0
+        if unborn:
+            _git(repo, "checkout", "-q", "-b", "main")
+        written = write_missing(repo, template_files(host), ref)
+        if written:
+            _git(repo, "add", "-A")
+            _git(repo, "-c", "user.name=harness-catalog", "-c", f"user.email={author}@localhost", "commit", "-q", "-m", f"harness-catalog init (cli {ref})")
+            _git(repo, "push", "-q", "origin", "HEAD:main")
+    return InitResult(written, ref, host)

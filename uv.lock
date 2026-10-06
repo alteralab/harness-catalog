@@ -933,6 +933,7 @@ source = { virtual = "." }
 [package.dev-dependencies]
 dev = [
     { name = "anyio", extra = ["trio"] },
+    { name = "harbor-langfuse" },
     { name = "harness-catalog-cli" },
     { name = "harness-catalog-core" },
     { name = "harness-catalog-server" },
@@ -948,6 +949,7 @@ dev = [
 [package.metadata.requires-dev]
 dev = [
     { name = "anyio", extras = ["trio"], specifier = ">=4" },
+    { name = "harbor-langfuse", editable = "packages/harbor-langfuse" },
     { name = "harness-catalog-cli", editable = "packages/cli" },
     { name = "harness-catalog-core", editable = "packages/core" },
     { name = "harness-catalog-server", editable = "packages/server" },

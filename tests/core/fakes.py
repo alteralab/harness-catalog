@@ -120,3 +120,6 @@ class MemoryFacts:
 
     def search(self, query: str, limit: int) -> tuple[str, ...] | None:
         return None
+
+    def current_commit(self) -> str | None:
+        return self.snapshots[-1].commit_sha if self.snapshots else None

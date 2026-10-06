@@ -1,8 +1,9 @@
-"""스케줄러 어댑터: 기동 1회 + fetch 주기. 실패는 지수 백오프(상한 10 주기)."""
+"""스케줄러 어댑터: 기동 1회 + fetch 주기. 실패는 지수 백오프(2배, 상한 16 주기)."""
 
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 
 import anyio
 
@@ -14,19 +15,25 @@ from ..migrate import migrate
 log = logging.getLogger(__name__)
 
 
-async def run_migrations(database_url: str, stop: anyio.Event) -> None:
-    """기동 직후 마이그레이션. 실패하면 백오프로 재시도한다 — fetch 루프와 독립이라 DB가 늦게 떠도 서빙은 계속된다."""
-    delay = 2.0
+MIGRATION_BACKOFF_START = 5.0
+MIGRATION_BACKOFF_MAX = 300.0
+
+
+async def run_migrations(database_url: str, stop: anyio.Event, on_done: Callable[[], None]) -> None:
+    """기동 직후 마이그레이션. 실패하면 백오프(5초→5분)로 재시도한다 — fetch 루프와 독립이라 DB가 늦게 떠도 서빙은 계속된다.
+    끝나면 on_done()으로 DB 경로를 연다(그 전에는 db_unavailable)."""
+    delay = MIGRATION_BACKOFF_START
     while not stop.is_set():
         try:
             await anyio.to_thread.run_sync(migrate, database_url)
+            on_done()
             return
         # ast-grep-ignore: handler-swallows-failure — 장기 실행 재시도 루프: 실패는 백오프로 전파되고 DB 없이도 서빙은 계속된다(설계의 실패 표)
         except Exception as e:  # noqa: BLE001 — DB 드라이버·yoyo의 예외 종류를 전부 알 수 없고, 어느 것이든 재시도가 답이다
             log.warning("migration failed, retrying in %.0fs: %s", delay, e)
         with anyio.move_on_after(delay):
             await stop.wait()
-        delay = min(delay * 2, 60.0)
+        delay = min(delay * 2, MIGRATION_BACKOFF_MAX)
 
 
 MAX_BACKOFF_FACTOR = 16

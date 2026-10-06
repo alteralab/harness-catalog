@@ -14,7 +14,12 @@ from harness_catalog_core.adapters.validate import SkillsRefValidator
 from harness_catalog_core.check import check_commit
 from harness_catalog_core.model import ContentError
 
+from .config import effective_values, render_docs, render_env_example
+from .init import InitError, init_repository
+
 app = typer.Typer(add_completion=False, help="harness-catalog: 카탈로그 저장소의 검사와 초기화")
+config_app = typer.Typer(help="설정값: 실효값 보기, 참조 문서 생성")
+app.add_typer(config_app, name="config")
 
 
 def _version(flag: bool) -> None:
@@ -53,6 +58,39 @@ def check(
         print(f"{kind}: item {f.item}: {where}: {f.reason}")
     if report.errors:
         raise typer.Exit(1)
+
+
+@app.command()
+def init(
+    repo_url: str = typer.Argument(..., help="빈(또는 이미 있는) 카탈로그 저장소의 URL. 운영자의 git 자격으로 clone·push한다"),
+    pin: str | None = typer.Option(None, "--pin", help="템플릿에 박을 코드 저장소 ref(개발용). 없으면 cli 자기 판의 태그이고 그 태그가 있어야 한다"),
+    host: str | None = typer.Option(None, "--host", help="github | gitlab. 없으면 URL에서 판별한다"),
+) -> None:
+    """표지·skills/·README·pre-commit·호스트별 CI를 없는 것만 써서 커밋·push한다. 두 번 돌리면 변경 0."""
+    try:
+        result = init_repository(repo_url, pin=pin, host=host)
+    except InitError as e:
+        print(f"init stopped: {e}", file=sys.stderr)
+        raise typer.Exit(1)
+    if result.written:
+        print(f"wrote {len(result.written)} file(s) ({result.host}, pin {result.pin}): " + ", ".join(result.written))
+    else:
+        print("nothing to do — repository already initialized")
+
+
+@config_app.command("list")
+def config_list() -> None:
+    """설정값마다 실효값과 출처(env·file·default·missing)."""
+    for v in effective_values():
+        print(f"{v.name:32} {v.source:8} {v.value}")
+
+
+@config_app.command("docs")
+def config_docs(out_dir: Path = typer.Option(Path("docs"), "--out-dir", help="configuration.md를 쓸 디렉토리")) -> None:
+    """docs/configuration.md를 설정 정의에서 생성하고 .env.example용 절을 표준 출력에 낸다."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "configuration.md").write_text(render_docs())
+    print(render_env_example(), end="")
 
 
 def main() -> None:

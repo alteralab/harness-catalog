@@ -22,6 +22,7 @@ dev = [
   "harness-catalog-core",
   "harness-catalog-cli",
   "harness-catalog-server",
+  "harbor-langfuse",
   "pytest>=8",
   "anyio[trio]>=4",
   "pyright>=1.1",

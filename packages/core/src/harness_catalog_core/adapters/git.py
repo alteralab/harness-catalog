@@ -172,8 +172,11 @@ class GitStore:
     def is_ancestor(self, ancestor: str, descendant: str) -> bool:
         if ancestor == descendant:
             return True
-        proc = subprocess.run(["git", "-C", str(self._dir), "merge-base", "--is-ancestor", ancestor, descendant], capture_output=True, env=self._env(), check=False, timeout=60)
-        return proc.returncode == 0
+        proc = subprocess.run(["git", "-C", str(self._dir), "merge-base", "--is-ancestor", "--end-of-options", ancestor, descendant], capture_output=True, env=self._env(), check=False, timeout=60)
+        if proc.returncode in (0, 1):
+            return proc.returncode == 0
+        # 1 = 자손 아님. 그 밖(객체 없음·손상)은 되감기로 오인하지 않고 fail-closed
+        raise ContentError(ReadyReason.REPO_UNREACHABLE, f"merge-base failed: {proc.stderr.decode(errors='replace').strip()}")
 
     def export_tree(self, tree_sha: str, dest: Path) -> None:
         with self._lock:

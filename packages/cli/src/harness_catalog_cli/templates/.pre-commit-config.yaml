@@ -1,0 +1,14 @@
+# harness-catalog check를 커밋 전에 돌린다. 판은 코드 저장소의 태그로 핀한다 — 판을 올리려면 아래 두 줄의 @v<판>을 바꾼다.
+# pip로 설치되므로 core와 cli를 둘 다 적는다(cli 하나만 주면 core를 못 찾는다).
+repos:
+  - repo: local
+    hooks:
+      - id: harness-catalog-check
+        name: harness-catalog check
+        language: python
+        entry: harness-catalog check --rev INDEX --base HEAD
+        pass_filenames: false
+        always_run: true
+        additional_dependencies:
+          - "harness-catalog-core @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/core"
+          - "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli"

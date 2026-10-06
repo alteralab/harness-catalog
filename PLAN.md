@@ -151,6 +151,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | P3 구현 + P2 리뷰 반영 | `init`·`config`·템플릿 패키지 데이터·Langfuse 플러그인(가짜로 시험), P2 Codex 리뷰 10건 전부 반영(치명 1: 빈 index_state 레이스). 시험 63, pyright 0, 게이트 0. P3 끝 조건 중 "PR 병합 스킬이 두 주기 안에 search_skills"는 P5(첫 카탈로그 저장소)에서 실측 | plans/service.md §9 |
 | 2026-10-07 | P2 구현 + P1 리뷰 반영 | service P2 1~6(마이그레이션·pg 어댑터·세대 검사·reindex·스팬) 완료, P1 Codex 리뷰 16건 전부 반영(치명 1: 항목 5 fail-open). 시험 50, pyright 0, 게이트 0. P2 끝 조건 전부 통과(DDL 그대로, 낡은 커밋 빌드가 되돌리지 않음, 스팬 속성, DB 단절 시 200+degraded). 남은 P1 미달 하나(Dex 토큰 HTTP 호출)는 §6-11·12 | plans/service.md §9 |
 | 2026-10-07 | P1 구현 | service P1 0~9 코드·시험 39·이미지. 규칙 게이트 첫 완주(C-GATE-1): 첫 파이썬 커밋에서 altera-ruff·altera-ast-grep이 파일을 검사하며 돌았고 검출(dict 반환 C-PY-1, 정규식 C-BRANCH-2, 미사용 인자 ARG)을 전부 참으로 판정해 고쳤다(V7 python 완주). P1 끝 조건 중 Dex 토큰 HTTP 호출은 §6-11·12 대기 | plans/service.md §9 |
 | 2026-10-07 | Codex 리뷰(aedbff8) 반영 | 치명 셋: init.sql 이중 실행(수정), §6-11 권고(client ID 허용 목록)가 RFC 8707 대체가 아님 → 권고를 (다) PRM `scopes_supported`의 교차 클라이언트 스코프로, DESIGN §2 표의 Dex 문면(client credentials 플래그·pkce.enforce)에 실측 정정 표지. §6-10 권고를 (라) 무인 읽기 v3.0 제외로, §6-12는 `scope` 클레임 부재까지 반영. distribution·r1·도구도 정정 | Codex 리뷰, plans/pilot/r1.md |

@@ -40,10 +40,16 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     if a.command == "reindex":
         migrate(settings.database_url.get_secret_value())
-        catalog, facts = make_catalog(settings, a.workdir)
-        if isinstance(facts, PgFactStore):
-            facts.open()
-        status = catalog.rebuild(accept_rewind=a.accept_rewind)
+        catalog, facts, store = make_catalog(settings, a.workdir)
+        try:
+            if isinstance(facts, PgFactStore):
+                facts.open()
+                facts.enable()
+            status = catalog.rebuild(accept_rewind=a.accept_rewind)
+        finally:
+            if isinstance(facts, PgFactStore):
+                facts.close()
+            store.close()
         print(f"ready={status.ready} commit={status.commit_sha} reasons={[str(r) for r in status.reasons]} degraded={list(status.degraded)} rejected={list(status.rejected)}")
         return 0 if status.ready and "main_rewound" not in status.degraded else 1
     app = bootstrap(settings, a.workdir)

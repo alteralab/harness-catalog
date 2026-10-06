@@ -33,6 +33,9 @@ class NoFactStore:
     def search(self, _query: str, _limit: int, /) -> tuple[str, ...] | None:
         return None
 
+    def current_commit(self) -> str | None:
+        return None
+
 
 class App(NamedTuple):
     asgi: Starlette
@@ -40,16 +43,22 @@ class App(NamedTuple):
     facts: PgFactStore | NoFactStore
 
 
-def make_catalog(settings: Settings, workdir: Path, *, use_db: bool = True) -> tuple[Catalog, PgFactStore | NoFactStore]:
+class Wiring(NamedTuple):
+    catalog: Catalog
+    facts: PgFactStore | NoFactStore
+    store: GitStore
+
+
+def make_catalog(settings: Settings, workdir: Path, *, use_db: bool = True) -> Wiring:
     workdir.mkdir(parents=True, exist_ok=True)
     (workdir / "tmp").mkdir(exist_ok=True)
     store = GitStore(workdir / "clone", settings.catalog_repo_url, settings.git_deploy_key.get_secret_value())
     facts: PgFactStore | NoFactStore = PgFactStore(settings.database_url.get_secret_value()) if use_db else NoFactStore()
-    return Catalog(store, SkillsRefValidator(), facts, workdir=workdir / "tmp"), facts
+    return Wiring(Catalog(store, SkillsRefValidator(), facts, workdir=workdir / "tmp"), facts, store)
 
 
 def bootstrap(settings: Settings, workdir: Path, *, jwks_uri: str | None = None, use_db: bool = True) -> App:
-    catalog, facts = make_catalog(settings, workdir, use_db=use_db)
+    catalog, facts, store = make_catalog(settings, workdir, use_db=use_db)
     issuer = str(settings.oidc_issuer).rstrip("/")
     public_url = str(settings.public_url).rstrip("/")
     verifier = JwtTokenVerifier(issuer, public_url, jwks_uri or discover_jwks_uri(issuer), DEFAULT_SERVICE_CLIENT_IDS)
@@ -61,16 +70,20 @@ def bootstrap(settings: Settings, workdir: Path, *, jwks_uri: str | None = None,
         stop = anyio.Event()
         if isinstance(facts, PgFactStore):
             facts.open()
-        async with mcp_app.router.lifespan_context(mcp_app), anyio.create_task_group() as tg:
+        try:
+            async with mcp_app.router.lifespan_context(mcp_app):
+                async with anyio.create_task_group() as tg:
+                    if isinstance(facts, PgFactStore):
+                        tg.start_soon(run_migrations, settings.database_url.get_secret_value(), stop, facts.enable)
+                    tg.start_soon(run_scheduler, catalog, settings.fetch_interval_seconds, stop)
+                    try:
+                        yield
+                    finally:
+                        stop.set()  # 태스크 그룹이 스케줄러 종료를 기다린 뒤에야 아래로 내려온다
+        finally:
             if isinstance(facts, PgFactStore):
-                tg.start_soon(run_migrations, settings.database_url.get_secret_value(), stop)
-            tg.start_soon(run_scheduler, catalog, settings.fetch_interval_seconds, stop)
-            try:
-                yield
-            finally:
-                stop.set()
-                if isinstance(facts, PgFactStore):
-                    facts.close()
+                facts.close()
+            store.close()
 
     asgi = Starlette(
         routes=[Route("/healthz", healthz), Route("/readyz", make_readyz(catalog)), Mount("/", app=mcp_app)],

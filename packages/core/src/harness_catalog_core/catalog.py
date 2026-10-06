@@ -61,6 +61,7 @@ class Catalog:
         self._limits = limits
         self._snapshot: IndexSnapshot | None = None
         self._status = Status(ready=False)
+        self._db_synced = False  # 마지막 스냅샷이 사실 저장소에도 반영됐는가
         self._lock = threading.Lock()
 
     # ---- For operating ----
@@ -88,23 +89,45 @@ class Catalog:
                 self._status = Status(ready=False, reasons=reasons, degraded=details, commit_sha=commit, fetched_at=fetched_at)
                 return self._status
             if self._snapshot is not None and self._snapshot.commit_sha == commit:
-                self._status = Status(ready=True, degraded=self._status.degraded, commit_sha=commit, fetched_at=fetched_at,
-                                      built_at=self._snapshot.built_at, rejected=self._snapshot.rejected)
-                return self._status
-            base = self._snapshot.commit_sha if self._snapshot else None
+                return self._resync(commit, fetched_at, accept_rewind)
+            base = self._snapshot.commit_sha if self._snapshot else self._facts.current_commit()
             if base is not None and not accept_rewind and not self._store.is_ancestor(base, commit):
-                self._status = Status(ready=True, degraded=("main_rewound",), commit_sha=base, fetched_at=fetched_at, built_at=self._snapshot.built_at if self._snapshot else None,
-                                      rejected=self._snapshot.rejected if self._snapshot else ())
-                return self._status
+                return self._rewound(base, fetched_at)
             try:
-                return self._build(commit, base, fetched_at, accept_rewind)
+                return self._build(commit, base, fetched_at, accept_rewind, write_facts=True)
             except Exception as e:  # noqa: BLE001 — 장기 실행 루프: 어느 예외든 인덱스는 이전 판으로 남고 다음 주기에 다시 시도한다(상태에 기록)
                 # 빌드 실패: 인덱스는 이전 판으로 남고 다음 주기에 다시 시도한다
                 self._status = Status(ready=self._snapshot is not None, degraded=(f"rebuild_failed:{e}",),
                                       commit_sha=self._status.commit_sha, fetched_at=fetched_at, built_at=self._status.built_at)
                 return self._status
 
-    def _build(self, commit: str, base: str | None, fetched_at: datetime, accept_rewind: bool) -> Status:
+    def _resync(self, commit: str, fetched_at: datetime, accept_rewind: bool) -> Status:
+        """같은 커밋: 빌드는 건너뛰되, 지난번 DB 반영이 실패했으면 그 스냅샷으로 다시 시도한다."""
+        snap = self._snapshot
+        assert snap is not None
+        degraded = tuple(d for d in self._status.degraded if d != "db_unavailable")
+        if not self._db_synced:
+            outcome = self._facts.replace_index(snap, lambda stored: accept_rewind or self._store.is_ancestor(stored, commit))
+            self._db_synced = outcome is IndexOutcome.REPLACED
+            if outcome is IndexOutcome.UNAVAILABLE:
+                degraded += ("db_unavailable",)
+        self._status = Status(ready=True, degraded=degraded, commit_sha=commit, fetched_at=fetched_at, built_at=snap.built_at, rejected=snap.rejected)
+        return self._status
+
+    def _rewound(self, base: str, fetched_at: datetime) -> Status:
+        """main이 base의 자손이 아니다: 아무것도 앞으로 가지 않는다. 메모리가 비어 있으면(재기동) base 세대를 git에서 다시 지어 읽기를 잇는다."""
+        if self._snapshot is None:
+            try:
+                self._build(base, None, fetched_at, accept_rewind=True, write_facts=False)  # DB에는 이미 base 세대가 있다
+            except Exception as e:  # noqa: BLE001 — base 세대를 못 지으면 unready로 남고 사유만 적는다
+                self._status = Status(ready=False, degraded=("main_rewound", f"rebuild_failed:{e}"), commit_sha=None, fetched_at=fetched_at)
+                return self._status
+        snap = self._snapshot
+        self._status = Status(ready=snap is not None, degraded=("main_rewound",), commit_sha=base, fetched_at=fetched_at,
+                              built_at=snap.built_at if snap else None, rejected=snap.rejected if snap else ())
+        return self._status
+
+    def _build(self, commit: str, base: str | None, fetched_at: datetime, accept_rewind: bool, *, write_facts: bool) -> Status:
         report = check_commit(self._store, self._validator, commit, base=base, workdir=self._workdir)
         if report.checker_failed:
             self._status = Status(ready=self._snapshot is not None, degraded=(f"checker_failed:{report.checker_failed}",),
@@ -125,13 +148,14 @@ class Catalog:
         def is_descendant(stored: str) -> bool:
             return accept_rewind or self._store.is_ancestor(stored, commit)
 
-        outcome = self._facts.replace_index(snapshot, is_descendant)
+        outcome = self._facts.replace_index(snapshot, is_descendant) if write_facts else IndexOutcome.REPLACED
         if outcome is IndexOutcome.STALE:
             # DB가 더 앞서 있거나 되감겼다: 메모리도 바꾸지 않는다(뒤로 가지 않는다)
             self._status = Status(ready=self._snapshot is not None, degraded=repo_findings + ("main_rewound",), commit_sha=self._status.commit_sha,
                                   fetched_at=fetched_at, built_at=self._status.built_at, rejected=self._status.rejected)
             return self._status
         self._snapshot = snapshot
+        self._db_synced = outcome is IndexOutcome.REPLACED
         degraded = repo_findings + (("db_unavailable",) if outcome is IndexOutcome.UNAVAILABLE else ())
         self._status = Status(ready=True, degraded=degraded, commit_sha=commit, fetched_at=fetched_at, built_at=snapshot.built_at, rejected=rejected)
         return self._status

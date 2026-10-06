@@ -1,1 +1,5 @@
-"""Harbor job plugin → Langfuse. 구현은 평가 결과 기록 단계에서 채운다."""
+"""Harbor job plugin → Langfuse: 평가 결과의 정본은 Langfuse다."""
+
+from .plugin import LangfusePlugin
+
+__all__ = ["LangfusePlugin"]

@@ -1,0 +1,27 @@
+# GitLab 판 — 문면대로 작성만 되었고 아직 실제로 돌린 적이 없다(README 참조). GitHub Actions 판이 먼저다.
+stages: [check, evals]
+
+check:
+  stage: check
+  image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+  variables:
+    GIT_DEPTH: 0
+  script:
+    - curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz" | tar -xz -C /usr/local/bin gitleaks
+    - BASE=$( [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ] && echo "$CI_MERGE_REQUEST_DIFF_BASE_SHA" || git rev-parse HEAD~1 )
+    - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog check . --rev HEAD --base "$BASE"
+
+evals:
+  stage: evals
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $HARNESS_EVALS == "true"
+  tags: [harness-catalog]
+  parallel:
+    matrix:
+      - AGENT: [claude-code, codex]
+  script:
+    - '[ -n "$LANGFUSE_PUBLIC_KEY" ] && [ -n "$LANGFUSE_SECRET_KEY" ] && [ -n "$LANGFUSE_HOST" ] || { echo "Langfuse keys missing"; exit 1; }'
+    - for d in $(git diff --name-only HEAD~1 HEAD -- skills | cut -d/ -f1-2 | sort -u); do [ -d "$d/evals" ] && uvx --from "harbor==0.24.0" --with "harbor-langfuse @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/harbor-langfuse" harbor run --dataset "$d/evals" --agent "$AGENT" --env docker --plugin harbor_langfuse:LangfusePlugin; done
