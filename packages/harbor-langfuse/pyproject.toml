@@ -5,8 +5,8 @@ description = "Harbor job plugin that records eval runs in Langfuse (installed o
 requires-python = ">=3.12"
 license = "Apache-2.0"
 dependencies = [
-  "harbor>=0.24",
-  "langfuse>=3",
+  "harbor==0.24.0",
+  "langfuse==4.17.0",
 ]
 
 [build-system]

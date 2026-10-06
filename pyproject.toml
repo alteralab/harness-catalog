@@ -23,12 +23,12 @@ dev = [
   "harness-catalog-cli",
   "harness-catalog-server",
   "harbor-langfuse",
-  "pytest>=8",
-  "anyio[trio]>=4",
-  "pyright>=1.1",
-  "httpx>=0.27",
-  "testcontainers[postgres]>=4",
-  "opentelemetry-sdk>=1.27",
+  "pytest==9.1.1",
+  "anyio[trio]==4.15.1",
+  "pyright==1.1.414",
+  "httpx==0.28.1",
+  "testcontainers[postgres]==4.15.0",
+  "opentelemetry-sdk==1.45.0",
 ]
 
 [tool.pytest.ini_options]

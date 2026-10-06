@@ -6,14 +6,14 @@ requires-python = ">=3.12"
 license = "Apache-2.0"
 dependencies = [
   "harness-catalog-core==0.1.0",
-  "mcp>=2.3,<3",
-  "starlette>=0.40",
-  "uvicorn>=0.30",
-  "PyJWT[crypto]>=2.9",
-  "psycopg[binary,pool]>=3.2",
-  "yoyo-migrations>=9",
-  "opentelemetry-sdk>=1.27",
-  "opentelemetry-exporter-otlp-proto-http>=1.27",
+  "mcp==2.3.0",
+  "starlette==1.7.0",
+  "uvicorn==0.54.0",
+  "PyJWT[crypto]==2.15.1",
+  "psycopg[binary,pool]==3.3.6",
+  "yoyo-migrations==9.0.0",
+  "opentelemetry-sdk==1.45.0",
+  "opentelemetry-exporter-otlp-proto-http==1.45.0",
 ]
 
 [project.scripts]

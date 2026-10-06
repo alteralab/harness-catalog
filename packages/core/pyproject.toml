@@ -5,10 +5,10 @@ description = "harness-catalog: settings, model, checks, git reading, validation
 requires-python = ">=3.12"
 license = "Apache-2.0"
 dependencies = [
-  "pydantic>=2.9",
-  "pydantic-settings>=2.6",
-  "skills-ref>=0.1.1",
-  "anyio>=4",
+  "pydantic==2.13.5",
+  "pydantic-settings==2.15.0",
+  "skills-ref==0.1.1",
+  "anyio==4.15.1",
 ]
 
 [build-system]
