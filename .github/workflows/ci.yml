@@ -8,6 +8,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest   # 러너의 docker 데몬을 testcontainers가 그대로 쓴다
+    env:
+      ALTERALAB_READ_TOKEN: ${{ secrets.ALTERALAB_READ_TOKEN }}   # if:에서는 secrets 컨텍스트를 못 쓴다 — env로 옮긴다
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,9 +22,9 @@ jobs:
       - name: sync
         run: uv sync --frozen -p 3.12
       - name: "altera-rules checkout (비공개 저장소 — 시크릿 ALTERALAB_READ_TOKEN, Contents read)"
-        if: ${{ secrets.ALTERALAB_READ_TOKEN != '' }}
+        if: ${{ env.ALTERALAB_READ_TOKEN != '' }}
         run: |
-          git clone -q --branch rules-v0.10.0 "https://x-access-token:${{ secrets.ALTERALAB_READ_TOKEN }}@github.com/alteralab/altera-rules" ../altera-rules
+          git clone -q --branch rules-v0.10.0 "https://x-access-token:${ALTERALAB_READ_TOKEN}@github.com/alteralab/altera-rules" ../altera-rules
           echo "RULES_OK=1" >> "$GITHUB_ENV"
       - name: gates (ruff · ast-grep · shellcheck · declared)
         if: ${{ env.RULES_OK == '1' }}
