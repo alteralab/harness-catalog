@@ -24,7 +24,7 @@ metadata:
 5. evals 최소 쌍을 Harbor 태스크로 둔다. 케이스마다 `evals/<case>/{task.toml, instruction.md, environment/Dockerfile, tests/test.sh}`. 써야 하는 과제 하나와 쓰지 말아야 하는 과제 하나(`no-trigger-*`). 템플릿은 `references/conventions.md`의 evals 절에 있다.
 6. description을 검수한다: 무엇을·언제 쓰는지, 사용자가 실제로 말할 낱말이 들었는지, 쓰지 말아야 할 상황이 한 줄 있는지, **핵심 용례와 발동 낱말이 첫 문장에 있는지**(호스트가 설명을 자를 수 있고 모델은 첫머리를 더 잘 쓴다).
 7. `harness-catalog check`를 돌린다(pre-commit 훅이 커밋 때 다시 돌리고 CI가 PR에서 또 돌린다). 위반 항목을 고친다.
-8. `harbor run --dataset skills/<name>/evals --agent <하네스> --model <모델> --env docker --plugin harbor_langfuse:LangfusePlugin`을 스킬 있이(스킬 원천에 이 브랜치)·없이 두 번 돌린다. 결과는 Langfuse에 run 둘로 남고 PR 본문에 그 run 링크를 적는다. Harbor가 없거나 음성 케이스처럼 검증기가 아직 없으면 사람이 눈으로 판정해 Langfuse annotation으로 남긴다.
+8. `harbor run --path skills/<name>/evals --agent <하네스> --model <모델> --env docker --skill ./skills/<name> --plugin harbor_langfuse:LangfusePlugin`을 스킬 있이(`--skill`)·없이 두 번 돌린다. 결과는 Langfuse에 run 둘로 남고 PR 본문에 그 run 링크를 적는다. Harbor가 없거나 음성 케이스처럼 검증기가 아직 없으면 사람이 눈으로 판정해 Langfuse annotation으로 남긴다.
 9. 사용자에게 브랜치·점검표 결과를 보고하고 **멈춘다**. 사용자가 "올려"라고 할 때만 커밋하고 push해 `gh pr create`(GitLab이면 `glab mr create`)로 PR을 연다. 병합은 사람이 git 호스트에서 한다. 클라우드 샌드박스 세션(git 자격 없음)이면 여기서 멈추고 로컬 세션에서 하라고 알린다.
 
 ## 실패 대응
