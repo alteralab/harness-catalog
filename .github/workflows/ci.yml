@@ -19,11 +19,19 @@ jobs:
         run: curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz" | tar -xz -C /usr/local/bin gitleaks
       - name: sync
         run: uv sync --frozen -p 3.12
-      - name: gates (ruff · ast-grep · shellcheck · declared)
+      - name: altera-rules checkout (비공개 저장소 — 조직/저장소 시크릿 ALTERALAB_READ_TOKEN: Contents read)
+        if: ${{ secrets.ALTERALAB_READ_TOKEN != '' }}
         run: |
-          git clone -q --branch rules-v0.10.0 https://github.com/alteralab/altera-rules ../altera-rules
+          git clone -q --branch rules-v0.10.0 "https://x-access-token:${{ secrets.ALTERALAB_READ_TOKEN }}@github.com/alteralab/altera-rules" ../altera-rules
+          echo "RULES_OK=1" >> "$GITHUB_ENV"
+      - name: gates (ruff · ast-grep · shellcheck · declared)
+        if: ${{ env.RULES_OK == '1' }}
+        run: |
           ../altera-rules/scripts/install_surfaces.py
           uvx pre-commit run --all-files
+      - name: gates skipped
+        if: ${{ env.RULES_OK != '1' }}
+        run: echo "::warning::altera-rules를 받을 토큰(ALTERALAB_READ_TOKEN)이 없어 규칙 게이트를 건너뛴다 — 로컬 pre-commit이 유일한 게이트다"
       - name: pyright
         run: uv run pyright packages tests tools
       - name: pytest
