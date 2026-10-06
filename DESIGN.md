@@ -528,7 +528,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 - **품질.** 게이트 대신 피드백 루프다. `[it]` 중복·저품질을 인증으로 막지 말고 검색 순위와 넛지로 격하하라. v3.0은 순위를 두지 않는다(이름순). 목록이 한 화면을 넘을 때 Langfuse의 사용 기록(도구 호출 스팬)에서 순위를 계산해 인덱스 열로 넣는다.
 - **감사.** 쓰기는 git 이력(커밋 author, PR, 병합 커밋). 읽기는 Langfuse의 도구 호출 스팬(§2 데이터 표). 속성은 주체(`langfuse.user.id`=`sub`)·도구(`gen_ai.tool.name`)·스킬 식별자·SHA·시각이고, `search_skills` 스팬에는 검색어와 결과 수가 더 있다(검색어는 2000자에서 자르고 제어 문자를 지운다. 어떤 질의가 어떤 스킬로 이어졌는지는 같은 주체의 뒤따르는 `load_skill`로 읽는다. MCP 2026-07-28에 세션이 없어 요청 간 상관 키는 두지 않는다. 검색어에 비밀을 넣지 말라는 안내는 `pin-skill`·`write-skill`과 같은 자리인 카탈로그 README에 둔다). 보존과 접근은 Langfuse 프로젝트의 것이다. v3.0은 쌓기만 하고 보지 않으며, 순위와 채택률이 나중에 이 기록에서 나온다.
 - **evals.** 있으면 팀이 자기 스킬 디렉토리 안에 Harbor 태스크 형식으로 두고(§5.1) `harbor run`으로 자기가 돌린다. 결과는 Langfuse에 남는다(플러그인). 병합 조건이 아니다. PR의 CI가 돌려 검사 결과로 보이는 것과 `main` push의 CI가 병합된 판으로 돌려 Langfuse에 남기는 것은 팀의 선택이다.
-- **검사기 운영.** `check`는 레지스트리 이미지와 CI가 같은 패키지 판을 쓴다(pre-commit은 `rev`로 핀). 검사기 자체가 실패하면 통과로 치지 않는다(종료 코드 2, fail-closed). 시크릿 스캔 오탐은 저자가 해당 파일을 고치는 것이 유일한 길이고 예외 승인 절차는 두지 않는다.
+- **검사기 운영.** `check`는 레지스트리 이미지와 CI가 같은 패키지 판을 쓴다(pre-commit 훅과 CI는 코드 저장소의 판 태그로 핀한다. 설치 명세는 PLAN distribution D22). 검사기 자체가 실패하면 통과로 치지 않는다(종료 코드 2, fail-closed). 시크릿 스캔 오탐은 저자가 해당 파일을 고치는 것이 유일한 길이고 예외 승인 절차는 두지 않는다.
 
 ### 5.1 등록 절차 — 사람이 스킬을 올리는 여정
 
@@ -1060,3 +1060,9 @@ skills/yt-subs/
 | 여러 스킬이 쓰는 스크립트: 라이브러리 규모면 `packages/<lib>/` 패키지 + PEP 723 git 직접 참조(SHA 고정), 작으면 복사. `check` 항목 10(복사본 드리프트 경고). 스킬 간 호출·`${CLAUDE_PLUGIN_ROOT}`는 쓰지 않는다 | §5, §5.1 | 사용자 승인("ㅇㅇ"). 실측: uv 0.11.8에서 git 직접 참조 스크립트 실행, Anthropic 저장소의 `scripts/office/` 3중 복사(해시 동일), 스펙·Claude Code·Codex 문서에 스킬 간 호출 문법 없음 |
 | 스킬 이름 `new-skill` → `write-skill` | DESIGN 본문·PLAN 전부. §11 이전 행의 표기는 당시 이름 | 사용자 결정 |
 | Harbor evals는 사람 머신과 CI 둘 다. CI 잡은 워크플로 파일에 항상 있고 git 호스트 변수 `HARNESS_EVALS=true` + 러너 환경에 `HARNESS_EVALS_AGENTS`(기본 `claude-code codex`)의 하네스마다 자격 + Langfuse 키가 있을 때만 돈다. 자격 이름은 Harbor 에이전트 구현이 읽는 것 그대로(Claude 전용이 아니다). 켜기 = 러너 `.env`에 자격 + 러너 재기동 + 변수 true, 끄기 = 변수 false. 레지스트리 설정·재기동과 무관 | §2.1 init, §5.1 "CI 게이트의 켜고 끄기", distribution D19·D21 | 사용자 요구("CI 게이트는 옵셔널, API KEY를 설정 파일에, 켜고 끄기 양방향"). 카탈로그 재기동이 CI 파일을 고치는 형태는 읽기 전용 레지스트리(§2)와 부딪혀 스위치를 git 호스트 변수로 옮겼다. `[웹]` GitHub `jobs.<id>.if`는 `vars`만 가능(`secrets` 불가), GitLab `rules:if`는 프로젝트 변수 가능, actions/runner는 루트 `.env`를 잡 환경으로 읽는다(소스 실측) |
+
+### 사용자 결정(2026-09-27): 코드 배치는 배포물 넷의 uv 워크스페이스
+
+| 결정 | 내용 | 근거 |
+|---|---|---|
+| 파이썬 코드를 배포물 넷(`harness-catalog-core`·`harness-catalog-cli`·`harness-catalog-server`·`harbor-langfuse`)의 uv 워크스페이스 `packages/`로 가른다. 위 2026-09-26 행의 `src/harness_catalog/` 단일 패키지는 이 행이 대체한다 | 서버는 여전히 컨테이너 이미지 하나(§2.1 "아티팩트 하나"). 이미지 밖에서 쓰는 `cli`(저자·운영자·CI의 `check`·`init`)와 `harbor-langfuse`(evals 러너)는 같은 판 태그를 박은 git 하위 디렉토리 명세로 설치한다(PLAN distribution D22). 판은 lockstep, 경계 규칙 셋은 PLAN service D1 | 사용자 결정(배포물을 소비자 단위로. 저자 머신의 `check`가 서버 의존을 끌고 오면 안 된다). 선례 Airflow·Polaris. 이 행은 2026-10-07에 기록했다(당시 PLAN에만 적혀 있었다) |

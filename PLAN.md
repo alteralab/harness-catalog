@@ -13,7 +13,7 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
   PLAN.md                         # 이 문서 — 경계·순서·공통 규약·시스템 검증
   plans/                          # 구성 요소 계획 넷: service.md · distribution.md · skills.md · pilot.md
   REVIEW.md, altera-rules.yml, ruff.toml   # 규약 설치 (2026-09-26, common·lang/python·review)
-  pyproject.toml  uv.lock  Dockerfile      # 파이썬 패키지(pip 설치)와 이미지 하나 — plans/service.md
+  pyproject.toml  uv.lock  Dockerfile      # 루트 pyproject는 워크스페이스 선언(배포물 아님), 잠금 하나, 이미지 하나 — plans/service.md
   packages/                       #   uv 워크스페이스, 배포물 넷 lockstep — plans/service.md §2
     core/                         #     harness-catalog-core: 설정·모델·검사·git 읽기·validate. 서버 의존 없음
     cli/                          #     harness-catalog-cli: 명령 harness-catalog(init·check·config), 템플릿 패키지 데이터
@@ -92,7 +92,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | 5 | 파일럿 사용자 범위. 사용자 하나로 시작하는가, 역할 그룹에 몇 명을 넣는가 | 팀 구성의 사실 | **결정(2026-09-26)**: 실사용자 한 명. 시험(그룹 가입·탈퇴, 두 주체 동시 갱신 등)에 필요하면 LDAP에 시험 계정을 더한다. 시험 계정의 사용 기록은 Q8 집계에서 주체로 갈라 적는다 |
 | 7 | 브랜치 흐름. 코드 저장소는 `main` 하나에 PR로 합치는가, `dev` 브랜치를 두는가. 카탈로그 저장소는 설계상 `main` 하나(v3.3: 모든 쓰기가 브랜치·PR·병합, 레지스트리는 읽기 전용) | 팀의 작업 방식 | **결정(2026-09-26)**: 코드 저장소는 `main` + PR. CI는 PR에서 테스트·게이트, `main`에서 이미지 빌드·push(distribution D11) |
 | 8 | 브랜치 보호의 자리. `alteralab`은 Free 플랜이라 비공개 저장소에는 브랜치 보호도 룰셋도 걸리지 않는다(2026-09-26 실측: 둘 다 403) | 조직의 비용·공개 정책 | **결정(2026-09-26)**: 보호를 우선하지 않는다. 플랜 업그레이드·공개 전환·로컬 훅 어느 것도 지금 하지 않고, 강제 push 금지와 `main` + PR은 규율로 지킨다. DESIGN §2.1의 "보호된 `main`" 요건은 §11 행으로 뺐다 |
-| 6 | 라이선스와 배포 이름. 오픈소스로 내기로 했으니 LICENSE 파일, PyPI 패키지 이름(`harness-catalog`), 이미지 이름(예: `ghcr.io/alteralab/harness-catalog`) | 조직의 법·공개 정책 | **결정(2026-09-26)**: Apache-2.0. 이미지는 `ghcr.io/alteralab/harness-catalog`(비공개) + 보존 규칙(최근 SHA 태그 5개, 태그 없는 버전 삭제 — distribution D11). 빌드 기계 = 실행 기계(mini runner)라 운영 pull이 없다. PyPI에는 올리지 않는다(§7) — 패키지 이름 `harness-catalog`는 `pyproject.toml`에만 있고 설치는 이미지 또는 git 경로다. 저장소와 이미지는 비공개. GHCR의 컨테이너 저장·전송은 문서상 "currently free"(2026-09-26 확인, 비공개 포함)이고 Actions가 `GITHUB_TOKEN`으로 받는 전송은 계량 밖이다. org 플랜은 Free(좌석 1, 2026-09-26 `gh api` 실측)이며 지금 이미지 비용은 0이다 |
+| 6 | 라이선스와 배포 이름. 오픈소스로 내기로 했으니 LICENSE 파일, PyPI 패키지 이름(`harness-catalog`), 이미지 이름(예: `ghcr.io/alteralab/harness-catalog`) | 조직의 법·공개 정책 | **결정(2026-09-26)**: Apache-2.0. 이미지는 `ghcr.io/alteralab/harness-catalog`(비공개) + 보존 규칙(최근 SHA 태그 5개, 태그 없는 버전 삭제 — distribution D11). 빌드 기계 = 실행 기계(mini runner)라 운영 pull이 없다. PyPI에는 올리지 않는다(§7) — 배포물 이름 넷(`harness-catalog-core`·`-cli`·`-server`·`harbor-langfuse`, service D1)은 각자의 `pyproject.toml`에만 있고 설치는 이미지 또는 git 하위 디렉토리 명세다(distribution D22). 저장소와 이미지는 비공개. GHCR의 컨테이너 저장·전송은 문서상 "currently free"(2026-09-26 확인, 비공개 포함)이고 Actions가 `GITHUB_TOKEN`으로 받는 전송은 계량 밖이다. org 플랜은 Free(좌석 1, 2026-09-26 `gh api` 실측)이며 지금 이미지 비용은 0이다 |
 
 ## 7. 불채택 표
 
@@ -110,7 +110,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | 서비스 주체의 게시 | 무인 게시 수요가 없다. 게시는 사람의 지시 뒤에만이다(§6) |
 | 관측 스택(OTel·Grafana) | 도구 호출 스팬은 이미 OTLP로 Langfuse에 가고, 대시보드를 요구하는 결정이 아직 없다 |
 | 프레임워크(FastAPI·ORM·DI·태스크 큐) | SDK가 Starlette 앱을 주고 HTTP 라우트는 둘, 표는 셋+1이라 감출 것이 없다(§2.1 Python 표). 표에 없는 것은 넣지 않는다 |
-| PyPI 게시 | 설치 단위는 컨테이너 이미지 하나다(DESIGN §2.1 "아티팩트 하나"). 이미지 없이 돌릴 사람은 `uv pip install git+https://github.com/alteralab/harness-catalog`로 같은 패키지를 받는다. PyPI는 이름 등록·릴리스 절차·토큰을 더하는데 그것을 요구하는 소비자가 없다 |
+| PyPI 게시 | 서버의 설치 단위는 컨테이너 이미지 하나다(DESIGN §2.1 "아티팩트 하나"). 이미지 밖에서 쓰는 것(저자·운영자 머신과 CI의 `harness-catalog-cli`, evals 러너의 `harbor-langfuse`)은 판 태그를 박은 git 하위 디렉토리 명세로 받는다 — 사람 머신은 `uv tool install "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli"`(uv는 체크아웃의 워크스페이스 소스로 `core`를 같은 판에서 푼다. uv 0.11.8 실측 2026-10-07), pre-commit·CI·러너의 명세는 distribution D22. PyPI는 이름 등록·릴리스 절차·토큰을 더하는데 그것을 요구하는 소비자가 없다 |
 | 카탈로그 스킬을 별도 저장소로 | 소비자 둘(`pin-skill`은 파일럿, `write-skill`은 저자)이고 저자가 한 사람이다. 이 저장소의 `skills/`에서 저작해 카탈로그 저장소에 PR로 올린다. 카탈로그 저장소의 사본이 정본이 되는 시점은 게시 순간이고, 그 뒤 `skills/`는 이력만 남는다 |
 
 ## 8. 리스크 대응표
@@ -148,6 +148,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | 잔재 정정: 워크스페이스 설치 경로 | 07ea482(배포물 넷)가 남긴 둘을 닫았다. ① service §0·§1·P2-1·P2-5의 `src/harness_catalog/` → `packages/`. ② 단일 패키지 git 설치 명령(§6-6·§7)을 하위 디렉토리 명세로, pre-commit·CI·evals 러너의 설치와 판 핀을 distribution D22·V13으로. 실측(uv 0.11.8, pre-commit 4.3.0, 대역 워크스페이스): uv는 cli 명세 하나로 core를 워크스페이스 소스에서 풀고, pre-commit(pip)은 core·cli 둘 다 명시해야 한다. DESIGN §5 "rev로 핀" 문구와 §11 행 보정 | service §9, distribution §10, DESIGN §11 |
 | 2026-09-26 | 저장소 신설 | `git init`, altera-rules rules-v0.10.0 설치(common·lang/python·review, 훅 declared·ruff·ast-grep). 게이트 완주: `--check` 일치, selftest 통과, census 0(파이썬 없음), `pre-commit run --all-files` 통과. lang/python은 사용자 결정으로 소스 0인 시점에 미리 선언했다 | §3-5, V7 |
 | 2026-09-26 | 설계 개정 | 사용자 결정: 주기 fetch 간격을 설정값 `FETCH_INTERVAL_SECONDS`(기본 60초)로. DESIGN §2·§2.1·§11에 반영(설정값 여섯 = 필수 다섯 + 선택 둘) | DESIGN §11 |
 | 2026-09-26 | 사용자 결정 §6-8 | `main` 보호를 우선하지 않는다. DESIGN §2.1·§8·§11 반영, distribution 체크리스트 3·V7 개정. §6 미결 0 | §6-8 |

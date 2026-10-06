@@ -1,6 +1,6 @@
 # service 계획: harness-catalog 레지스트리 서비스
 
-**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/`의 서비스 코드(`src/`·`tests/`·이미지)의 정본이다. 설계의 정본은 상위의 `DESIGN.md`(v3.3)이고 이 문서는 그것을 복제하지 않는다. 관할은 레지스트리 프로세스 하나 — 파이썬 패키지 `harness_catalog/`, 마이그레이션, 시험, 컨테이너 이미지의 빌드 정의 — 이고, 그것이 어디에 어떻게 뜨는가(`plans/distribution.md`), 카탈로그에 실리는 스킬(`plans/skills.md`), 설계의 가정을 재는 일(`plans/pilot.md`)은 관할 밖이다. 상위 `PLAN.md` §3의 공통 규약(기록 규율·식별자·설계와의 관계·교차 검증)을 그대로 따른다.
+**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/`의 서비스 코드(`packages/`·`tests/`·이미지)의 정본이다. 설계의 정본은 상위의 `DESIGN.md`(v3.3)이고 이 문서는 그것을 복제하지 않는다. 관할은 레지스트리 프로세스 하나 — 파이썬 패키지 `harness_catalog/`, 마이그레이션, 시험, 컨테이너 이미지의 빌드 정의 — 이고, 그것이 어디에 어떻게 뜨는가(`plans/distribution.md`), 카탈로그에 실리는 스킬(`plans/skills.md`), 설계의 가정을 재는 일(`plans/pilot.md`)은 관할 밖이다. 상위 `PLAN.md` §3의 공통 규약(기록 규율·식별자·설계와의 관계·교차 검증)을 그대로 따른다.
 
 ## 0. 한 장 요약
 
@@ -8,7 +8,7 @@
 
 ## 1. 관할과 경계
 
-**이 PLAN이 소유하는 것.** 저장소 루트의 `src/harness_catalog/`(마이그레이션 포함)·`tests/`·`pyproject.toml`·`uv.lock`, 그리고 `Dockerfile`의 내용. 배치는 우산 §3-8의 오픈소스 공통 골격(src 레이아웃, pip 설치 가능한 패키지)이다. 이미지 태그를 어디에 올리고 compose에 어떻게 꽂는지는 `plans/distribution.md`다.
+**이 PLAN이 소유하는 것.** `packages/` 아래 배포물 넷(§2, D1. 마이그레이션은 `server`의 패키지 데이터)·`tests/`·루트 `pyproject.toml`(워크스페이스 선언, 배포물 아님)·`uv.lock`, 그리고 `Dockerfile`의 내용. 배치는 우산 §3-8의 오픈소스 공통 골격(배포물마다 src 레이아웃, pip 설치 가능한 패키지)이다. 이미지 태그를 어디에 올리고 compose에 어떻게 꽂는지는 `plans/distribution.md`다.
 
 **DESIGN에서 가져와 그대로 지키는 계약.** 여기 다시 적지 않는다. 절 번호와 한 줄 요지만이다.
 
@@ -133,11 +133,11 @@
 
 ### P2. 인덱스 표·스팬
 
-1. `src/harness_catalog/migrations/0001_schema.sql`: 그림 3 DDL 문자열 그대로(확장·함수·표 넷·생성 열·인덱스·CHECK). 러너는 yoyo, 적용 시점은 D12.
+1. `packages/server/src/harness_catalog_server/migrations/0001_schema.sql`: 그림 3 DDL 문자열 그대로(확장·함수·표 넷·생성 열·인덱스·CHECK). 러너는 yoyo, 적용 시점은 D12.
 2. `adapters/pg.py`: 인덱스 교체 트랜잭션(`index_state` `FOR UPDATE` → `git merge-base --is-ancestor`는 git 어댑터가 판정한 결과를 인수로 받는다 → `DELETE`+`INSERT`), `tsvector`+`pg_trgm` 검색. 브레이커·시간 초과 D13·D15.
 3. `app/catalog.py` 확장: 빌드가 DB 트랜잭션과 메모리 스냅샷을 같은 행 집합으로 함께 갱신(순서: DB 커밋 성공 → 참조 교체. DB 실패 → 참조만 교체하고 degraded). 검색은 DB가 살아 있으면 DB 순위, 아니면 메모리 부분 일치. `list_skills`에 최근 평가 결합.
 4. `driving/mcp_tools.py`에서 도구 호출마다 `opentelemetry.trace.get_current_span()`에 속성을 더한다(DESIGN §2 데이터 표의 규약: `langfuse.user.id`, `langfuse.observation.metadata.skill`·`.sha`·`.query`·`.result_count`). exporter는 `opentelemetry-sdk`의 환경 변수 자동 구성(`opentelemetry-exporter-otlp-proto-http`)을 의존에 넣고 코드에서 조립하지 않는다.
-5. 패키지 데이터: `pyproject.toml`에 `src/harness_catalog/migrations/*.sql`을 wheel·sdist에 포함하는 규칙을 적고, 러너는 `importlib.resources.files("harness_catalog") / "migrations"`로 경로를 얻는다(작업 트리 상대 경로를 쓰지 않는다). V21이 설치본에서 이를 확인한다.
+5. 패키지 데이터: `packages/server/pyproject.toml`에 `migrations/*.sql`을 wheel·sdist에 포함하는 규칙을 적고, 러너는 `importlib.resources.files("harness_catalog_server") / "migrations"`로 경로를 얻는다(작업 트리 상대 경로를 쓰지 않는다). V21이 설치본에서 이를 확인한다.
 6. 시험: adapters/pg(testcontainers)에서 DDL 적용, 세대 검사(낡은 커밋 빌드가 아무것도 바꾸지 않음), 검색 문법. unit에서 DB 단절 시 degraded 읽기; `InMemorySpanExporter`로 도구 넷의 스팬 이름·속성.
 
 **끝:** testcontainers PostgreSQL에서 그림 3 DDL이 그대로 적용되고, 낡은 커밋의 빌드가 최신 인덱스를 되돌리지 않는 시험과 스팬 속성 시험이 통과하며, DB를 끊어도 `/readyz` 200 + `degraded`이고 읽기 넷이 답한다.
@@ -147,7 +147,7 @@
 0. 착수 조건: D8의 표지가 `plans/pilot.md`의 실측 기록으로 정해져 있다. 없으면 서비스 주체를 reader로 세우는 한 줄만 뒤로 두고 나머지를 먼저 한다.
 1. `app/check.py`: DESIGN §5의 검사 열을 순수 함수로. 입력은 검사할 트리(작업 트리 또는 커밋)·기준 커밋·git 어댑터(삭제 이력, 기준 커밋의 트리), 출력은 위반 목록(항목 번호·경로·사유). 기준 커밋이 없으면 5·9를 건너뛰고 그 사실을 출력에 적는다. P1의 인덱스 빌드가 이 함수를 부르도록 바꾼다(스킬 실패 → 인덱스 제외, 구조 실패 → 빌드 실패).
 2. `cli.py check [<root>] [--base <commit>]`: 1을 CLI로. `--base`는 항목 5·9의 기준 커밋(DESIGN §2.1: pre-commit은 HEAD, PR CI는 merge-base, main CI는 직전 커밋, 인덱스 빌드는 `index_state.commit_sha`). 얕은 클론이면 항목 5는 종료 2. 종료 0 통과 / 1 위반 / 2 검사기 실패(gitleaks 없음·얕은 클론 등). pre-commit 훅과 CI 워크플로가 이 명령을 부른다(`examples/catalog-template/`의 훅·워크플로 파일이 그렇게 적혀 있다).
-3. `cli.py init <repo-url>`: 운영자 git 자격으로 clone → URL에서 호스트 판별(GitHub·GitLab) → 패키지 데이터 `catalog-template/`에서 `.harness-catalog`·`skills/.gitkeep`·README·pre-commit 설정·그 호스트의 CI 워크플로를 없는 것만 쓰고 → 커밋·push. 표지가 있는데 `layout`이 다르면 멈춘다(종료 1). 두 번 돌리면 변경 0.
+3. `cli.py init <repo-url>`: 운영자 git 자격으로 clone → URL에서 호스트 판별(GitHub·GitLab) → 패키지 데이터 `catalog-template/`에서 `.harness-catalog`·`skills/.gitkeep`·README·pre-commit 설정·그 호스트의 CI 워크플로를 없는 것만 쓰고(템플릿의 판 자리표 `<판>`은 cli 자기 판 `importlib.metadata.version("harness-catalog-cli")`로 채운다 — distribution D22) → 커밋·push. 표지가 있는데 `layout`이 다르면 멈춘다(종료 1). 두 번 돌리면 변경 0.
 4. `cli.py reindex --accept-rewind`: 규칙 3의 `main_rewound` 뒤 운영자가 명시적으로 인덱스를 새 `main`으로 다시 짓는 명령.
 6. `app/authz.py` 완성: 주체 셋(reader·그룹 없음·서비스) × 도구 넷 × 스코프.
 7. `packages/harbor-langfuse/`: 별도 배포물(`pyproject.toml`, `src/harbor_langfuse/plugin.py`), 서비스 이미지에 들어가지 않는다. Harbor `BaseJobPlugin` 구현. `on_job_start`에서 잡의 태스크 경로에서 스킬 이름과 `evals/` 케이스를 읽어 Langfuse dataset `<catalog>/<skill>`과 item(케이스, `input` = `instruction.md`)을 있으면 재사용·없으면 생성하고, dataset run(`run_name` = Harbor 잡 이름, `metadata` = `skill`·`sha`(주입한 스킬 원천의 ref)·`scenario_sha`(`evals/` tree)·`model`·`harness`(agent 이름)·`baseline`(스킬 원천 없음))을 연다. `on_job_end`에서 트라이얼마다 trace(입력 instruction, 출력 검증기 stdout 요약, 메타데이터 `trial_uri`·토큰·비용)와 run item, score `passed`(BOOLEAN, reward ≥ 1)를 만든다. 키는 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST` 환경 변수. Harbor의 `packages/harbor-langsmith/src/harbor_langsmith/plugin.py`(852줄, `_create_root_run`·`_create_feedback`·`_request` 재시도)를 본뜨되 ATIF 스텝은 그쪽도 올리지 않으므로 올리지 않는다. Langfuse SDK v3의 저수준 dataset run·score API 이름은 pilot Q14(e)가 실측한 뒤 쓴다.
@@ -221,6 +221,7 @@
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | 잔재 정정 | 워크스페이스 전환(2026-09-27) 뒤 남은 단일 패키지 경로 `src/harness_catalog/`를 §0·§1·P2-1·P2-5에서 `packages/`로. `init`이 템플릿의 판 자리표를 자기 판으로 채운다(P3-3, distribution D22) | D1, 우산 §11 |
 | 2026-09-27 | 설계 개정 반영 | `check` 항목 10(복사본 드리프트 경고): §1 표, P3-8 표본, V9 | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.5: `usage_record`·보존 삭제·`USAGE_RETENTION_DAYS` 제거(설정값 여섯·표 하나·규칙 다섯), 스팬 속성을 `mcp_tools.py`에(P2-4), 스케줄러 루프 하나(D11), V7을 스팬 시험으로 | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.4: `record_eval`·`eval_result`·`skills:write` 제거(도구 넷·포트 일곱·표 둘·오류 코드 다섯. `evals.py`·V15·V16 삭제, D6·D8·D12·P2-2·P3·V4·V8 개정), 플러그인을 `packages/harbor-langfuse/`로(P3-7, V26) | DESIGN §11 |

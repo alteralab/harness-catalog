@@ -31,9 +31,10 @@
     synology-ldap/          #   우리 팀 변형 — README, docker-compose.override.yml, dex/config.yaml(LDAP 커넥터, 그룹 skills)
     catalog-template/       #   카탈로그 저장소를 세울 때 한 번 복사한다
       .harness-catalog      #     layout = 1
-      skills/.gitkeep       #     빈 디렉토리 보존. 첫 스킬 둘은 복사 시 ../../skills/에서 가져온다
+      skills/.gitkeep       #     빈 디렉토리 보존. 첫 스킬 둘은 첫 PR로 들어온다(D14)
       README.md             #     등록 한 줄 · 운영자 체크리스트 · 검색어에 비밀 금지
-      github/validate.yml   #     GitHub Actions: skills-ref validate + gitleaks, 보고만
+      .pre-commit-config.yaml #   local 훅 `harness-catalog check`, 설치 명세·판 핀은 D22
+      github/check.yml      #     GitHub Actions: PR·main push마다 `harness-catalog check`(D22 명세로 설치) + 선택 잡 evals(D19)
       gitlab/.gitlab-ci.yml #     GitLab CI: 같은 검사
   docs/                     # 설치(빠른 시작·프록시 뒤)·설정값 여섯 참조·운영자 가이드(신설·복구)·LDAP 변형 안내
   scripts/                  # 운영 셸 스크립트: dev-token.sh, membership-diff.sh(저장소 read 명단 vs skills-readers 차이), 복구 절차. 첫 파일과 함께 lang/bash 선언
@@ -48,7 +49,7 @@
 | D1 | compose 서비스 이름·포트·볼륨 | 서비스 이름은 `registry`·`postgres`·`dex`. 밖으로 여는 포트는 `registry`의 HTTP 하나와 `dex`의 HTTP 하나(둘 다 프록시가 받는다). PostgreSQL은 compose 네트워크 안에서만. 볼륨은 `pgdata` 하나와 레지스트리의 로컬 클론용 `clone` 하나 | 설계 판단. DESIGN §2.1 "인가는 레지스트리 안, 프록시는 TLS와 라우팅만"이라 프록시가 볼 종단은 둘뿐이다. 클론 볼륨은 재기동 때 전량 clone을 피하는 편의이며 잃어도 fetch가 다시 만든다(§2.1 준비됨 정의) |
 | D2 | 데이터베이스 둘과 역할 둘은 누가 만드는가 | `docker/postgres/init.sql`이 만든다(postgres 이미지의 초기화 훅으로 마운트, 첫 기동에만 실행). 서비스 마이그레이션은 `harness_catalog` 안의 표·확장(`pg_trgm`)만 소유한다 | 설계 판단. 서비스 역할은 자기 데이터베이스의 `CREATE`만 가지고 남의 데이터베이스를 만들 권한이 없어야 한다(§2 "별도 데이터베이스·역할"). 데이터베이스 생성은 인스턴스 소유자의 일이라 서비스 밖이다 |
 | D3 | Dex 저장소 | `postgres`의 `dex` 데이터베이스, 전용 역할 | DESIGN §2 결정. 문면: Dex는 postgres 저장소를 지원한다 |
-| D4 | Dex LDAP 커넥터 구조 | host·bindDN·bindPW는 환경 변수, userSearch는 baseDN·`uid` 필터, groupSearch는 `memberUid` 기반 `userMatchers`로 그룹 이름을 `groups` 클레임에 싣는다. 그룹 `skills-readers` 하나를 조회 필터에 건다. `groups` 스코프를 클라이언트 요청 스코프에 포함 | 문면(Dex LDAP 커넥터 문서, DESIGN §10). Synology Directory Server의 스키마(posixGroup·memberUid인지 groupOfNames·member인지)는 pilot P0의 실측 항목이고, 여기서는 두 형태 중 실측된 것을 쓴다 |
+| D4 | Dex LDAP 커넥터 구조 | 선례를 그대로 쓴다: `~/workspace/dp-charts/argocd/values-override.yaml`의 `dex.config` LDAP 커넥터(Argo CD 내장 Dex가 같은 NAS LDAP에 붙어 운영 중). host `192.168.3.95:389`, `insecureNoSSL: true`(tailnet·사내망 안), `bindDN: uid=admin,cn=users,dc=gyojunan,dc=synology,dc=me`, userSearch `baseDN: cn=users,dc=gyojunan,dc=synology,dc=me`·`username: uid`·`idAttr: dn`·`emailAttr: mail`·`nameAttr: cn`, groupSearch `baseDN: cn=groups,dc=gyojunan,dc=synology,dc=me`·`userMatchers: [{userAttr: dn, groupAttr: member}]`·`nameAttr: cn`. 곧 그룹은 `member`에 사용자 DN을 담는 형태이고 `memberUid`가 아니다. bindPW만 환경 변수(`.env`)로 빼고 나머지는 `examples/synology-ldap/dex/config.yaml`에 적는다. groupSearch `filter`는 비워 두고(선례와 같음. 그룹 하나만 거르면 `(cn=skills-readers)`) `groups` 클레임에 실린 전체 목록에서 레지스트리가 `skills-readers`를 본다. `groups` 스코프를 클라이언트 요청 스코프에 포함 | 선례(2026-10-07 확인): dp-charts argocd(운영 중, `g, devops, role:admin` RBAC가 `groups`로 동작), 같은 값이 dp-eks-charts argocd `values-live.yaml`에 주석으로, grafana·airflow·hue·kyuubi·jupyterhub도 같은 host·DN(사용자 쪽은 `memberOf`도 쓴다 — Synology LDAP이 양방향 속성을 둘 다 낸다). 실측 등급은 "다른 소비자의 운영 설정"이라 P0-1의 `ldapsearch`는 `member`·`memberOf` 둘의 원문 확인으로 좁힌다. 선례 파일에는 bindPW·GitHub App 키가 평문으로 있다 — 복사하지 말고 `.env`로 |
 | D5 | 정적 클라이언트 | 공개 클라이언트 셋: `claude-code`·`codex`·`cursor`(각각 `public: true`, 리다이렉트 URI는 그 제품이 문서에 적은 것). 기밀 클라이언트 하나: `ci-runner`(클라이언트 자격 증명. 무인 읽기 — Harbor 샌드박스의 라이브 소비 시험, 루프). 클라이언트 ID 문자열은 제품 이름 그대로 | 설계 판단. DESIGN §2 "에이전트 제품마다 사전 등록", §11 5차 리뷰 "CI 평가 러너용 정적 클라이언트". 하네스 셋의 리다이렉트 URI 실물은 pilot P0이 확인한다 |
 | D6 | PKCE 강제 | Dex `pkce.enforce`(또는 그 판의 동등 설정)를 켠다. 켜졌는지는 V2가 `code_challenge` 없는 요청의 거부로 본다 | 문면(Dex 2.26+ PKCE, DESIGN §2 신원 제공자 표) |
 | D7 | 토큰 수명 | Dex `expiry.idTokens`·액세스 토큰을 1시간으로. 리프레시는 Dex 기본 | DESIGN §2 "1시간 이하를 요구한다". 실제 수명은 V4가 잰다 |
@@ -65,13 +66,14 @@
 | D19 | CI의 evals 잡 | `main` push 워크플로의 선택 잡. 파일에 항상 있고 `if: github.ref == 'refs/heads/main' && vars.HARNESS_EVALS == 'true'`(GitLab은 `rules:if` + `$HARNESS_EVALS == "true"`), `runs-on: [self-hosted, harness-catalog]`(GitLab `tags: [harness-catalog]`). `strategy.matrix.agent`는 `${{ vars.HARNESS_EVALS_AGENTS || 'claude-code codex' }}`를 쪼갠 것(변수가 없으면 기본. `HARNESS_EVALS`도 없으면 빈 문자열이라 잡이 안 생긴다 — 저장소 생성 시 변수는 필요 없다). 첫 단계가 그 하네스의 모델 자격(`claude-code`: `CLAUDE_CODE_OAUTH_TOKEN`+`CLAUDE_FORCE_OAUTH=1` 또는 `ANTHROPIC_API_KEY`; `codex`: `OPENAI_API_KEY` 또는 `CODEX_FORCE_AUTH_JSON=1`+`~/.codex/auth.json`; `cursor-cli`: `CURSOR_API_KEY`; `gemini-cli`: `GEMINI_API_KEY`/`GEMINI_FORCE_OAUTH` — Harbor `agents/installed/*.py` 실측)과 Langfuse 키 셋의 존재를 검사해 비면 이름을 적고 실패. 본 단계는 `harbor run --env docker --plugin harbor_langfuse:LangfusePlugin`으로 변경된 스킬의 `evals/`를 스킬 있이·없이 돌리고 Langfuse에 남긴다. 레지스트리에는 아무것도 적지 않는다. 자격은 mini 러너 루트의 `.env`(D21)에서 온다. 라이브 소비 시험 태스크를 둘 때만 `HC_CI_CLIENT_SECRET`(`ci-runner`)이 더해진다 | 사용자 결정(DESIGN §11 CI 게이트). `[웹]` GitHub `jobs.<id>.if`에 `secrets` 불가·`vars` 가능, GitLab `rules:if`에 프로젝트 변수 가능(실측). Harbor `claude_code.py`의 `CLAUDE_FORCE_OAUTH`(실측). 구독 quota를 대화 세션과 나눠 쓴다. Langfuse Hobby units 한도는 pilot Q14(e)가 실측 |
 | D20 | 레지스트리 스팬의 OTel 배선 | `.env.example`에 `OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com/api/public/otel`(지역별 호스트는 주석), `OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic <base64(pk:sk)>`, `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`, `OTEL_SERVICE_NAME=harness-catalog`. 비워 두면 스팬은 no-op이라 빠른 시작은 Langfuse 없이 뜬다. 셀프호스팅 Langfuse로 옮기면 ENDPOINT만 바뀐다 | 사용자 결정(DESIGN §11 v3.5). `[웹]` Langfuse OTel 수신은 HTTP/protobuf·JSON, Basic 인증(실측). gRPC 미지원이라 `_PROTOCOL`을 명시한다 |
 | D21 | 러너의 자격 파일과 켜고 끄기 | mini self-hosted 러너 루트의 `.env`에 돌릴 하네스마다의 모델 자격과 Langfuse 키 셋을 적는다(Codex를 구독으로 돌리면 `.env` 대신 러너 사용자의 `~/.codex/auth.json` + `CODEX_FORCE_AUTH_JSON=1`)(`[웹]` actions/runner `Program.cs`가 루트 `.env`를 읽어 잡 환경으로. 실측). 파일의 본은 `docs/`의 운영자 가이드에 `runner.env.example`로 둔다(저장소에는 예시만, `.env`는 러너 머신에만). **켜기**: `.env` 채우고 러너 재기동(`svc.sh restart`), `gh variable set HARNESS_EVALS --body true`(하네스 목록을 바꿀 때만 `HARNESS_EVALS_AGENTS`). `init`은 변수를 만들지 않고 README에 이 절차를 적는다. **끄기**: `gh variable set HARNESS_EVALS --body false`(러너·파일 그대로). 카탈로그 서비스의 `.env`·재기동과 무관하다 — 레지스트리는 저장소에 쓰지 않는다(DESIGN §2) | 사용자 요구(켜고 끄기 양방향, 자격은 설정 파일에). 스위치가 시크릿이 아니라 변수인 이유는 D19의 GitHub 제약 |
+| D22 | 이미지 밖 배포물의 설치 명세와 판 핀 | 코드 저장소의 릴리스는 git 태그 `v<판>` 하나이고(service D1 lockstep) 이미지도 그 커밋에서 빌드된다(D11). 이미지 밖에서 설치하는 자리는 셋이고 전부 같은 태그를 박은 git 하위 디렉토리 명세를 쓴다. **(a) 저자의 pre-commit 훅** — 템플릿 `.pre-commit-config.yaml`은 `repo: local` + `language: python` + `entry: harness-catalog check` + `additional_dependencies`에 `harness-catalog-core @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/core`와 `harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli` **둘 다**(pre-commit은 pip로 설치하고 pip는 `tool.uv.sources`를 모르므로 cli 하나만 주면 `core`를 못 찾는다 — 실측). `rev` 키는 local 훅에 없고 핀은 명세 안의 `@v<판>`이다(DESIGN §5 "rev로 핀"의 실체). **(b) CI의 check 잡** — `uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog check --base <merge-base|직전 커밋>`. uv는 체크아웃의 워크스페이스 소스로 `core`를 같은 판에서 푼다(실측). **(c) evals 러너(D19)** — `uvx --from harbor==<Harbor 판> --with "harbor-langfuse @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/harbor-langfuse" harbor run … --plugin harbor_langfuse:LangfusePlugin`. 플러그인은 서비스 이미지에 없다(service P3-7). `init`이 템플릿을 쓸 때 `<판>` 자리표를 cli 자기 판으로 채워 세 자리와 이미지가 같은 판을 가리킨다(service P3-3). 판 올리기 = 카탈로그 저장소에서 명세의 태그를 바꾸는 PR 하나 | 2026-10-07 실측(uv 0.11.8, pre-commit 4.3.0, 대역 워크스페이스 core+cli, 태그 `v0.1.0`): uv `pip install`·`uvx`는 cli 명세 하나로 두 패키지를 설치·실행했고, pre-commit local 훅은 둘 다 명시하면 통과, cli만이면 `No matching distribution found for hc-core==0.1.0`. 실물 저장소에서의 재확인은 V13 |
 | D17 | 셸 스크립트 | 복구 절차처럼 명령이 넷을 넘는 것만 `scripts/`에 둔다. 첫 파일과 함께 `altera-rules.yml`에 `lang/bash`를 선언하고 `altera-shellcheck` 훅을 건다 | 우산 §3-5 |
 
 ## 4. 단계
 
 ### distribution P0. 실측 지원용 개발 compose (우산 P0 안)
 
-1. LDAP 스키마 실측: NAS Directory Server에 `ldapsearch`로 사용자·그룹 항목을 읽어 그룹 객체 클래스와 멤버 속성(`posixGroup`/`memberUid` 또는 `groupOfNames`/`member`)을 pilot r에 원문으로 적는다. Dex 없이 된다.
+1. LDAP 스키마 실측: NAS Directory Server에 `ldapsearch`로 사용자 하나·그룹 하나의 항목을 읽어 객체 클래스와 `member`(그룹 쪽)·`memberOf`(사용자 쪽) 원문을 pilot r에 적는다. D4의 선례(dp-charts argocd)가 `member`에 DN을 담는 형태로 이미 운영 중이라 이 단계는 발견이 아니라 확인이고, `skills-readers` 그룹을 NAS에서 만들고 시험 사용자를 넣은 뒤의 항목을 같이 적는다. Dex 없이 된다.
 2. `docker-compose.dev.yml` 초판: `postgres`(init.sql로 데이터베이스·역할 둘) + `dex`(LDAP 커넥터는 1의 실측값, 정적 클라이언트는 공개 PKCE·공개 장치·`ci-runner` 셋). pilot Q2·Q5가 이것으로 토큰 실물을 잰다.
 3. `.env.example` 초판: Dex·DB 비밀과 LDAP 바인드 값.
 
@@ -96,7 +98,7 @@
 
 ### distribution P3. 저장소 템플릿과 첫 카탈로그 저장소 (우산 P5 후반)
 
-1. `examples/catalog-template/` 완성(`init`의 패키지 데이터 원본): `.harness-catalog`(`layout = 1`), `skills/.gitkeep`, README(§5 체크리스트 + 등록 한 줄 + 브랜치 규율 + "검색어에 비밀을 넣지 말라"), `.pre-commit-config.yaml`(`harness-catalog check`), `github/check.yml`, `gitlab/.gitlab-ci.yml`(PR·`main` push마다 `harness-catalog check`; `main` push에는 선택 잡 `evals`(D19: 항상 파일에 있고 `HARNESS_EVALS` 변수로 켜고 끈다, 자격 존재 검사 → `harbor run --plugin harbor_langfuse` → Langfuse, 러너 라벨 `harness-catalog`). 모델 자격은 하네스마다 러너 환경에서(D19의 목록; Claude는 `CLAUDE_CODE_OAUTH_TOKEN`+`CLAUDE_FORCE_OAUTH=1`, Codex는 `OPENAI_API_KEY` 또는 auth.json). Harbor 판은 워크플로에 핀).
+1. `examples/catalog-template/` 완성(`init`의 패키지 데이터 원본): `.harness-catalog`(`layout = 1`), `skills/.gitkeep`, README(§5 체크리스트 + 등록 한 줄 + 브랜치 규율 + "검색어에 비밀을 넣지 말라"), `.pre-commit-config.yaml`(`harness-catalog check`, 설치 명세·판 핀은 D22), `github/check.yml`, `gitlab/.gitlab-ci.yml`(PR·`main` push마다 `harness-catalog check`(D22 (b)); `main` push에는 선택 잡 `evals`(D19: 항상 파일에 있고 `HARNESS_EVALS` 변수로 켜고 끈다, 자격 존재 검사 → `harbor run --plugin harbor_langfuse` → Langfuse, 러너 라벨 `harness-catalog`). 모델 자격은 하네스마다 러너 환경에서(D19의 목록; Claude는 `CLAUDE_CODE_OAUTH_TOKEN`+`CLAUDE_FORCE_OAUTH=1`, Codex는 `OPENAI_API_KEY` 또는 auth.json). Harbor 판은 워크플로에 핀).
 2. 첫 카탈로그 저장소 신설: §5를 처음부터 끝까지 한 번 따른다(`init` 포함). 우산 P4에서 작성·검증된 두 스킬은 첫 PR로 들어간다(skills P2).
 3. V6·V7·V8 통과. 우산 V3(우회 push 수용)·V4(fail-closed)·V5(재기동 복구)의 실행 환경을 제공한다.
 
@@ -169,6 +171,7 @@
 | V12 | 이미지 보존 규칙 | 커밋 여섯을 연속으로 `main`에 합친 뒤 GHCR 패키지 버전 목록을 본다 | SHA 태그가 정확히 5개, 태그 없는 버전 0개, 마지막 다섯 커밋의 SHA와 일치 | 대기 |
 | V9 | 비밀 없음 | 저장소 전체 gitleaks | `.env` 없음, 검출 0 | 대기 |
 | V10 | 새 VM 복구 | 우산 V5. 기존 카탈로그 저장소를 가리켜 V1을 다시 | fetch만으로 인덱스가 다시 지어지고 은퇴한 이름을 `check` 항목 5가 여전히 거부한다 | 대기 |
+| V13 | 이미지 밖 설치 명세 | 실물 코드 저장소에 태그 `v<판>`을 단 뒤 (a) 빈 카탈로그에서 `pre-commit run --all-files` (b) `uvx --from "<D22 cli 명세>" harness-catalog --version` (c) `uvx --from harbor==<판> --with "<D22 플러그인 명세>" python -c "import harbor_langfuse"` | 셋 다 성공하고 (a)·(b)가 보고하는 cli 판이 태그와 같으며, 템플릿에 `<판>` 자리표가 남아 있지 않다 | 대기(대역 실측 2026-10-07 통과, D22) |
 | V11 | 시험용 토큰 절차 | `scripts/dev-token.sh`를 사람·서비스 모드로 각각 한 번 | 각각 토큰 하나가 표준 출력에 나오고, `aud`가 레지스트리 공개 URL이며, 표준 오류·셸 이력·로그 어디에도 토큰·시크릿 문자열이 없다 | 대기 |
 
 ## 9. 개정 규약
@@ -179,6 +182,8 @@
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | D4를 선례로 확정 | Dex LDAP 커넥터를 추정(`memberUid`)에서 dp-charts argocd의 운영 설정(`member`에 DN, 사용자·그룹 baseDN, 속성 이름)으로. P0-1은 발견에서 확인으로 좁힘 | `~/workspace/dp-charts/argocd/values-override.yaml` |
+| 2026-10-07 | 잔재 정정: 설치 명세 | 워크스페이스 전환 뒤 비어 있던 이미지 밖 설치 경로를 D22로(pre-commit·CI·evals 러너, 태그 핀), V13 추가. §2 템플릿 배치의 v3.3 이전 잔재(`validate.yml` 보고만, 스킬 복사)를 `check.yml`·첫 PR로 정정 | 우산 §11, 실측 |
 | 2026-09-27 | 설계 개정 반영 | CI evals 게이트(D19 재작성, D21 신설, 템플릿·docs), `new-skill`→`write-skill` | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.5: 설정값 여섯, `.env.example`에 OTel exporter 변수(D20), 체크리스트 12 | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.4: D19를 Langfuse 플러그인·시크릿 넷으로, `ci-eval-runner`→`ci-runner`(무인 읽기), dev-token 스코프 `skills:read`만 | DESIGN §11 |
