@@ -1,0 +1,40 @@
+# 루트는 배포물이 아니다 — uv 워크스페이스 선언과 개발 도구 설정만.
+[project]
+name = "harness-catalog-workspace"
+version = "0.1.0"
+requires-python = ">=3.12"
+description = "workspace root (not a distributable)"
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+harness-catalog-core = { workspace = true }
+harness-catalog-cli = { workspace = true }
+harness-catalog-server = { workspace = true }
+harbor-langfuse = { workspace = true }
+
+[dependency-groups]
+dev = [
+  "harness-catalog-core",
+  "harness-catalog-cli",
+  "harness-catalog-server",
+  "pytest>=8",
+  "anyio[trio]>=4",
+  "pyright>=1.1",
+  "httpx>=0.27",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "http: 실제 uvicorn 프로세스와 개발 compose의 Dex가 필요하다(HC_TEST_TOKEN)",
+]
+
+[tool.pyright]
+include = ["packages", "tests", "tools"]
+typeCheckingMode = "strict"
+pythonVersion = "3.12"

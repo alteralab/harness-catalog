@@ -49,7 +49,7 @@ staticClients:
     secretEnv: DEX_CI_RUNNER_SECRET
   - id: "{{ getenv "HC_PUBLIC_URL" }}"
     name: harness-catalog registry (audience)
-    secretEnv: DEX_CI_RUNNER_SECRET
+    public: true    # 스스로 인증하지 않는다 — 다른 클라이언트의 토큰 aud에 실리기 위한 등록. 시크릿을 두지 않는다
     trustedPeers: [claude-code, codex, cursor, ci-runner]
 
 connectors:
@@ -58,7 +58,10 @@ connectors:
     name: Synology LDAP
     config:
       host: "{{ getenv "LDAP_HOST" }}"
-      insecureNoSSL: true          # tailnet·사내망 안. 선례와 같음
+      # 기본은 LDAPS(636). 선례(dp-charts argocd)는 389 평문이었으나 바인드 비밀번호와 사용자 비밀번호가 평문으로 흐른다(Codex 리뷰).
+      # NAS 인증서가 자체 서명이면 LDAP_INSECURE_SKIP_VERIFY=true, 평문으로 되돌리려면 LDAP_INSECURE_NO_SSL=true (r2에서 실측).
+      insecureNoSSL: {{ getenv "LDAP_INSECURE_NO_SSL" "false" }}
+      insecureSkipVerify: {{ getenv "LDAP_INSECURE_SKIP_VERIFY" "true" }}
       bindDN: "{{ getenv "LDAP_BIND_DN" }}"
       bindPW: "{{ getenv "LDAP_BIND_PW" }}"
       usernamePrompt: LDAP Username

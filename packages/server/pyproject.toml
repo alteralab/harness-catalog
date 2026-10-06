@@ -1,0 +1,30 @@
+[project]
+name = "harness-catalog-server"
+version = "0.1.0"
+description = "harness-catalog registry process: MCP server + scheduler (container image entry point)"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+  "harness-catalog-core==0.1.0",
+  "mcp>=2.3,<3",
+  "starlette>=0.40",
+  "uvicorn>=0.30",
+  "PyJWT[crypto]>=2.9",
+  "psycopg[binary,pool]>=3.2",
+  "yoyo-migrations>=9",
+  "opentelemetry-sdk>=1.27",
+  "opentelemetry-exporter-otlp-proto-http>=1.27",
+]
+
+[project.scripts]
+harness-catalog-server = "harness_catalog_server.__main__:main"
+
+[tool.uv.sources]
+harness-catalog-core = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/harness_catalog_server"]

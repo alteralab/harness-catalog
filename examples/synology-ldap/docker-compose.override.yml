@@ -3,7 +3,9 @@
 services:
   dex:
     environment:
-      LDAP_HOST: ${LDAP_HOST:-192.168.3.95:389}
+      LDAP_HOST: ${LDAP_HOST:-192.168.3.95:636}
+      LDAP_INSECURE_NO_SSL: ${LDAP_INSECURE_NO_SSL:-false}
+      LDAP_INSECURE_SKIP_VERIFY: ${LDAP_INSECURE_SKIP_VERIFY:-true}
       LDAP_BIND_DN: ${LDAP_BIND_DN:-uid=admin,cn=users,dc=gyojunan,dc=synology,dc=me}
       LDAP_BIND_PW: ${LDAP_BIND_PW:?.env의 LDAP_BIND_PW}
       LDAP_USER_BASE_DN: ${LDAP_USER_BASE_DN:-cn=users,dc=gyojunan,dc=synology,dc=me}

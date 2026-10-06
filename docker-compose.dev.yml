@@ -1,5 +1,7 @@
-# 개발용 compose — postgres + dex만 (plans/distribution.md P0·P1, D1·D2·D3·D12·D18).
+# 개발용 compose — postgres + dex만 (plans/distribution.md P0·P1, D2·D3·D12).
 # 레지스트리는 포함하지 않는다: service P1·P2가 호스트에서 uvicorn으로 뜨고 이 둘에 붙는다.
+# D1의 예외 둘(개발 전용): PostgreSQL을 호스트 127.0.0.1에 연다(호스트의 서비스·시험이 붙는다), 비밀은 환경 변수로 넘긴다.
+# 정적 사용자(docker/dex/config.yaml)의 비밀번호는 공개된 값이다 — 이 파일을 127.0.0.1 밖에 노출하지 않는다.
 # 쓰는 법: cp .env.example .env && docker compose -f docker-compose.dev.yml up -d
 # LDAP 연합(우리 팀): -f docker-compose.dev.yml -f examples/synology-ldap/docker-compose.override.yml
 services:
@@ -12,12 +14,14 @@ services:
       DEX_DB_PASSWORD: ${DEX_DB_PASSWORD:?.env의 DEX_DB_PASSWORD}
     volumes:
       - pgdata-dev:/var/lib/postgresql/data
+      # init.sql은 initdb.d 밖에 둔다 — 안에 두면 entrypoint가 .sql을 한 번 더 돌린다(실측: 두 번째 실행이 psql 변수 없이 실패)
       - ./docker/postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./docker/postgres/init.sql:/opt/harness-catalog/init.sql:ro
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      # 초기화 결과까지 본다: 데이터베이스 둘과 확장이 있어야 healthy
+      test: ["CMD-SHELL", "psql -U postgres -d harness_catalog -tAc \"select 1 from pg_extension where extname='pg_trgm'\" | grep -q 1 && psql -U postgres -d dex -tAc 'select 1' | grep -q 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -30,6 +34,7 @@ services:
       DEX_ISSUER: ${DEX_ISSUER:-http://localhost:5556/dex}
       DEX_DB_PASSWORD: ${DEX_DB_PASSWORD}
       DEX_CI_RUNNER_SECRET: ${DEX_CI_RUNNER_SECRET:?.env의 DEX_CI_RUNNER_SECRET}
+      DEX_EXPAND_ENV: "true"
       HC_PUBLIC_URL: ${HC_PUBLIC_URL:-http://localhost:8000/mcp}
     volumes:
       - ./docker/dex/config.yaml:/etc/dex/config.yaml:ro

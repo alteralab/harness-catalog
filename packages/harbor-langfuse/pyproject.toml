@@ -1,0 +1,17 @@
+[project]
+name = "harbor-langfuse"
+version = "0.1.0"
+description = "Harbor job plugin that records eval runs in Langfuse (installed on the evals runner, not in the registry image)"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+  "harbor>=0.24",
+  "langfuse>=3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/harbor_langfuse"]
