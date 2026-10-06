@@ -114,7 +114,7 @@
 4. deploy key(**읽기 전용**)를 등록하고 개인 키를 `.env`의 자리에 넣는다. 확인: 레지스트리 컨테이너 안에서 `git fetch`가 성공하고 `git push --dry-run`이 거부된다. 저자에게는 저장소 write(브랜치·PR), 병합·설정을 할 사람에게는 admin을 준다. `skills-readers` 그룹 명단과 저장소 read 이상 명단이 같다.
 5. `init`이 놓은 CI 워크플로가 도는지 본다. 확인: 첫 PR(두 스킬)의 CI가 `harness-catalog check`를 돌려 초록이다(V6). pre-commit 훅은 저자마다 `pre-commit install`.
 6. Dex에 하네스 제품의 정적 클라이언트가 있고 리다이렉트 URI가 그 제품 문서와 같다. 확인: 그 하네스에서 로그인 한 번(우산 V1).
-7. DSM의 LDAP Server 패키지(구 Directory Server) → 그룹 관리에서 `skills-readers`를 만들고(r2: 아직 없다) 첫 팀원을 넣는다. 제어판 → 보안 → 인증서 → 설정에서 LDAP Server 서비스의 인증서를 갱신된 것으로 바꾼다(r2: 636이 만료된 인증서를 낸다). LDAP 그룹 `skills-readers`에 첫 팀원이 있다. 확인: 그 사람의 토큰에 `groups`가 있다(V2). 카탈로그 저장소의 read 이상 권한을 가진 사람 명단이 이 그룹과 같다(그룹에 없는 사람은 레지스트리에서 `not_a_member`이므로 저장소 쪽만 넓으면 우회가 생긴다).
+7. DSM의 LDAP Server 패키지(구 Directory Server) → 그룹 관리에서 `skills-readers`를 만들고(r2: 아직 없다) 첫 팀원을 넣는다. LDAP Server 패키지를 재시작해 데몬이 갱신된 인증서(배정은 이미 되어 있다)를 읽게 하고 636이 내는 인증서의 만료일을 확인한다(r2: 636이 만료된 인증서를 낸다). LDAP 그룹 `skills-readers`에 첫 팀원이 있다. 확인: 그 사람의 토큰에 `groups`가 있다(V2). 카탈로그 저장소의 read 이상 권한을 가진 사람 명단이 이 그룹과 같다(그룹에 없는 사람은 레지스트리에서 `not_a_member`이므로 저장소 쪽만 넓으면 우회가 생긴다).
 8. `.env`의 필수 설정값 다섯이 채워졌고 선택 둘은 비워 두거나 의도한 값이다. 확인: `docker compose config`가 빈 필수 변수를 경고하지 않는다.
 9. `docker compose up -d` 뒤 `/healthz` 200, `/readyz` 200(V1). 503이면 본문의 사유(`not_a_catalog`·`no_main_branch`·`repo_unreachable`·`layout_mismatch`)대로 2·4번을 다시 본다.
 10. 하네스에 레지스트리 URL 한 줄을 등록하고 `list_skills`가 두 스킬을 돌려준다.
