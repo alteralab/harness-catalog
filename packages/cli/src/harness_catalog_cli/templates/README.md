@@ -4,7 +4,7 @@
 
 ## 사용자 안내
 
-1. **등록 한 줄, 로그인 한 번.** 하네스(Claude Code·Codex·Cursor)의 MCP 설정에 레지스트리 URL `<REGISTRY_URL>` 한 줄을 넣습니다. 첫 호출에서 로그인 창이 열리고, 팀 LDAP 계정으로 한 번 로그인하면 됩니다.
+1. **등록 두 줄, 로그인 한 번.** 하네스의 MCP 설정에 레지스트리 URL과 사전 등록된 클라이언트 ID를 넣습니다. 첫 호출에서 로그인 창이 열리고, 팀 LDAP 계정으로 한 번 로그인하면 됩니다. Claude Code는 `claude mcp add --transport http harness-catalog <REGISTRY_URL>` 뒤 `.mcp.json`의 그 항목에 `"oauth": {"clientId": "claude-code"}`를 더합니다(동적 등록을 쓰지 않으므로 ID가 필요합니다). Codex는 `codex`, Cursor는 `cursor`가 클라이언트 ID입니다.
 2. **스킬 둘을 먼저 보세요.** `pin-skill`은 매일 쓰는 스킬을 내 하네스 옆에 내려받아 두는 절차이고, `write-skill`은 새 스킬의 뼈대와 팀 규약입니다. 내려받은 사본이 낡았는지는 `list_skills`의 `sha`와 사본의 `PINNED`를 견주면 압니다.
 3. **검색어에 비밀을 넣지 마세요.** `search_skills`의 검색어는 팀 Langfuse의 도구 호출 기록에 남습니다. 토큰·비밀번호·개인 정보를 검색어에 적지 않습니다.
 
