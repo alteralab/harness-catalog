@@ -182,6 +182,7 @@
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | 첫 카탈로그 저장소 + PR #1 + CI 실패 1건 | `gh repo create alteralab/catalog --private`, 코드 저장소 태그 `v0.1.0` push, `harness-catalog init https://github.com/alteralab/catalog.git`(파일 다섯, GitHub 워크플로, pin v0.1.0; 두 번째 실행 변경 0 — V11 통과), 브랜치 `skill/first-two`로 두 스킬 PR #1(로컬 `check --base main` 종료 0). PR의 CI `check` 잡은 **비공개 코드 저장소**를 `uvx --from git+https://…`가 받지 못해 실패(`could not read Username`) → 템플릿에 읽기 토큰 단계(`HARNESS_CATALOG_READ_TOKEN`, 있을 때만)를 더하고 PR 브랜치에 반영. 토큰을 넣거나 코드 저장소를 공개하는 것은 사용자 결정(우산 §3-8) | gh 실측 |
 | 2026-10-07 | 결정 §6-10·11·12 반영 | Dex 설정 둘에 `passwordConnector`(개발 `local`, LDAP `ldap`), D5 문구, `scripts/dev-token.sh`(기계 계정 비밀번호 그랜트, PRM 스코프). P1-4의 사람 모드는 `tools/pilot/dex_grants.py`의 PKCE 흐름으로 갈음 | DESIGN §11 |
 | 2026-10-07 | 사용자 결정: 읽기 그룹 `harness-readers` | DESIGN §11. NAS에 그룹과 첫 사용자 `gyojunan`이 생겼고 그 토큰의 `groups`에 실림을 실측(r2). D4 `emailAttr: uid` | DESIGN §11, r2 |
 | 2026-10-07 | r2: LDAP 실물·Dex 연합 토큰 | P0-1 완료. D4 확정(member DN), 체크리스트 7에 그룹 생성·인증서 재배정. 이 맥의 Docker 컨테이너는 LAN에 닿지 않아 Dex를 소스 빌드로 호스트에서 띄워 쟀다 | plans/pilot/r2.md |

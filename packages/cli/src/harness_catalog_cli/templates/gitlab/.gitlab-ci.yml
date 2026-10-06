@@ -10,6 +10,7 @@ check:
   variables:
     GIT_DEPTH: 0
   script:
+    - '[ -z "${HARNESS_CATALOG_READ_TOKEN:-}" ] || git config --global url."https://x-access-token:${HARNESS_CATALOG_READ_TOKEN}@github.com/".insteadOf "https://github.com/"'
     - curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz" | tar -xz -C /usr/local/bin gitleaks
     - BASE=$( [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ] && echo "$CI_MERGE_REQUEST_DIFF_BASE_SHA" || { [ -n "$CI_COMMIT_BEFORE_SHA" ] && [ "$CI_COMMIT_BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && echo "$CI_COMMIT_BEFORE_SHA"; } || git rev-parse HEAD~1 )
     - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog check . --rev HEAD --base "$BASE"
