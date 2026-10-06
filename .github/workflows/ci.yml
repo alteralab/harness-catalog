@@ -63,6 +63,7 @@ jobs:
       # 이 저장소가 GHCR 패키지의 Actions access에서 Admin이어야 GITHUB_TOKEN으로 삭제할 수 있다(패키지 설정, 한 번).
       - name: untagged
         uses: actions/delete-package-versions@v5
+        continue-on-error: true   # 지울 것이 없으면 액션이 TypeError로 죽는다(2026-10-07 실측) — 보존은 best-effort, 빌드·push는 이미 끝났다
         with:
           package-name: harness-catalog
           package-type: container
@@ -70,6 +71,7 @@ jobs:
           delete-only-untagged-versions: true
       - name: retention (SHA 태그 최근 5개)
         uses: actions/delete-package-versions@v5
+        continue-on-error: true
         with:
           package-name: harness-catalog
           package-type: container
