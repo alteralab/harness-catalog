@@ -1,0 +1,69 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from harness_catalog_core.adapters.git import GitStore
+from harness_catalog_core.model import ContentError, ReadyReason
+from tests.conftest import CatalogRepo, commit_all, git, write_skill
+
+
+def test_fetch_list_read_export(tmp_path: Path, catalog_repo: CatalogRepo) -> None:
+    store = GitStore(tmp_path / "work" / "clone", str(catalog_repo.path))
+    head = store.fetch()
+    assert head == catalog_repo.head and store.head() == head
+    trees = store.list_skill_trees(head)
+    assert [t.name for t in trees] == ["pin-skill", "yt-subs"]
+    yt = trees[1]
+    assert yt.commit_sha == head and len(yt.tree_sha) == 40
+    files = store.list_tree(yt.tree_sha)
+    assert {f.path for f in files if f.kind == "blob"} == {"SKILL.md", "scripts/fetch.py", "references/notes.md"}
+    assert {f.path for f in files if f.kind == "tree"} == {"scripts", "references"}
+    assert store.read_blob(yt.tree_sha, "scripts/fetch.py") == b"print('hi')\n"
+    assert store.read_blob(head, ".harness-catalog") == b"layout = 1\n"
+    assert store.read_blob(head, "nope") is None
+    dest = tmp_path / "export"
+    dest.mkdir()
+    store.export_tree(yt.tree_sha, dest)
+    assert (dest / "SKILL.md").exists() and (dest / "scripts" / "fetch.py").read_bytes() == b"print('hi')\n"
+
+
+def test_history_and_versions(tmp_path: Path, catalog_repo: CatalogRepo) -> None:
+    repo = catalog_repo.path
+    store = GitStore(tmp_path / "work" / "clone", str(repo))
+    first = store.fetch()
+    old_tree = next(t for t in store.list_skill_trees(first) if t.name == "yt-subs").tree_sha
+    write_skill(repo, "yt-subs", "Extract YouTube subtitles, v2.")
+    (repo / "skills" / "pin-skill" / "SKILL.md").unlink()
+    (repo / "skills" / "pin-skill").rmdir()
+    second = commit_all(repo, "update yt-subs, retire pin-skill")
+    assert store.fetch() == second
+    assert store.deleted_skill_names(second) == frozenset({"pin-skill"})
+    assert store.resolve_version("yt-subs", old_tree, second) == first
+    assert store.resolve_version("yt-subs", "f" * 40, second) is None
+
+
+def test_no_main_branch_and_unreachable(tmp_path: Path) -> None:
+    repo = tmp_path / "nomain"
+    repo.mkdir()
+    git(tmp_path, "init", "-q", "-b", "develop", str(repo))
+    (repo / "x").write_text("x")
+    commit_all(repo, "x")
+    store = GitStore(tmp_path / "w1" / "clone", str(repo))
+    with pytest.raises(ContentError) as e:
+        store.fetch()
+    assert e.value.reason is ReadyReason.NO_MAIN_BRANCH
+    bad = GitStore(tmp_path / "w2" / "clone", str(tmp_path / "does-not-exist"))
+    with pytest.raises(ContentError) as e2:
+        bad.fetch()
+    assert e2.value.reason is ReadyReason.REPO_UNREACHABLE
+
+
+def test_local_mode_resolves_index(catalog_repo: CatalogRepo) -> None:
+    store = GitStore.local(catalog_repo.path)
+    assert store.resolve("HEAD") == catalog_repo.head
+    write_skill(catalog_repo.path, "staged", "staged only")
+    git(catalog_repo.path, "add", "-A")
+    tree = store.resolve("INDEX")
+    assert tree != catalog_repo.head and any(t.name == "staged" for t in store.list_skill_trees(tree))

@@ -19,10 +19,10 @@ class Decision(NamedTuple):
 def principal_from_claims(claims: Mapping[str, Any], service_client_ids: frozenset[str]) -> Principal:
     """검증된 토큰 클레임 → 주체. 서비스 주체 표지: sub가 등록된 서비스 client ID 집합에 있다."""
     sub = str(claims.get("sub", ""))
-    groups_raw = claims.get("groups")
-    groups = frozenset(str(g) for g in groups_raw) if isinstance(groups_raw, list) else frozenset()
-    scope_raw = claims.get("scope")
-    scopes = frozenset(str(scope_raw).split()) if isinstance(scope_raw, str) else frozenset()
+    groups_raw: object = claims.get("groups")
+    groups: frozenset[str] = frozenset(str(g) for g in groups_raw) if isinstance(groups_raw, list) else frozenset()  # pyright: ignore[reportUnknownVariableType, reportUnknownArgumentType]
+    scope_raw: object = claims.get("scope")
+    scopes: frozenset[str] = frozenset(scope_raw.split()) if isinstance(scope_raw, str) else frozenset()
     aud = claims.get("aud")
     client_id = str(claims.get("azp") or (aud if isinstance(aud, str) else ""))
     kind = PrincipalKind.SERVICE if sub in service_client_ids else PrincipalKind.HUMAN

@@ -36,5 +36,8 @@ markers = [
 
 [tool.pyright]
 include = ["packages", "tests", "tools"]
+venvPath = "."
+venv = ".venv"
+reportMissingTypeStubs = false  # skills_ref에 py.typed가 없다
 typeCheckingMode = "strict"
 pythonVersion = "3.12"

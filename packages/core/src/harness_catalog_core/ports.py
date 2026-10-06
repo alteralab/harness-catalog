@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Protocol
 
-from .model import IndexSnapshot, SkillTree, TreeEntry
+from .model import IndexSnapshot, SkillReport, SkillTree, TreeEntry
 
 
 class ContentStore(Protocol):
@@ -47,8 +47,8 @@ class ContentStore(Protocol):
 class SkillValidator(Protocol):
     """For validating a skill: 스펙 준수와 시크릿 스캔. 검사기 실패는 ValidatorFailure."""
 
-    def validate_skill(self, skill_dir: Path) -> tuple[str, ...]:
-        """스펙 위반 메시지들. 비면 통과."""
+    def inspect(self, skill_dir: Path) -> SkillReport:
+        """스펙 준수 판정과, 통과했으면 frontmatter 속성."""
         ...
 
     def scan_secrets(self, skill_dir: Path) -> tuple[str, ...]:
@@ -59,10 +59,10 @@ class SkillValidator(Protocol):
 class FactStore(Protocol):
     """For recording facts: 인덱스를 커밋 단위로 바꾸고 검색한다."""
 
-    def replace_index(self, snapshot: IndexSnapshot) -> bool:
+    def replace_index(self, snapshot: IndexSnapshot, /) -> bool:
         """스냅샷으로 통째로 바꾼다. 더 오래된 커밋이면 False(거부)."""
         ...
 
-    def search(self, query: str, limit: int) -> tuple[str, ...] | None:
+    def search(self, query: str, limit: int, /) -> tuple[str, ...] | None:
         """순위 있는 이름 목록. 닿지 않으면 None(메모리 사본으로 깎아서 답한다)."""
         ...

@@ -157,10 +157,12 @@ class Verifier:
 
 def parse_json(body: bytes) -> Mapping[str, Any] | None:
     try:
-        data = json.loads(body)
+        data: object = json.loads(body)
     except ValueError:
         return None
-    return data if isinstance(data, dict) else None
+    if isinstance(data, dict):
+        return {str(k): v for k, v in data.items()}  # pyright: ignore[reportUnknownVariableType, reportUnknownArgumentType]
+    return None
 
 
 def emit(case: str, **kw: Any) -> None:

@@ -56,9 +56,34 @@ class PrincipalKind(StrEnum):
     SERVICE = "service"
 
 
+def _freeze(m: Mapping[str, str]) -> Mapping[str, str]:
+    return MappingProxyType(dict(m))
+
+
 SKILLS_READERS = "skills-readers"
 REQUIRED_SCOPE = "skills:read"
 SUPPORTED_LAYOUT = 1
+
+
+@dataclass(frozen=True)
+class SkillProps:
+    """SKILL.md frontmatter에서 읽은 것."""
+
+    name: str
+    description: str
+    compatibility: str | None
+    metadata: Mapping[str, str]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "metadata", _freeze(self.metadata))
+
+
+@dataclass(frozen=True)
+class SkillReport:
+    """검증기의 판정: 스펙 위반 메시지들과(비면) 읽은 속성."""
+
+    errors: tuple[str, ...]
+    properties: SkillProps | None
 
 
 @dataclass(frozen=True)
@@ -87,10 +112,6 @@ class SkillTree:
     name: str
     tree_sha: str
     commit_sha: str
-
-
-def _freeze(m: Mapping[str, str]) -> Mapping[str, str]:
-    return MappingProxyType(dict(m))
 
 
 @dataclass(frozen=True)

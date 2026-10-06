@@ -1,0 +1,11 @@
+.git
+.venv
+.env
+research/
+plans/
+tests/
+tools/
+docker/
+examples/
+*.md
+__pycache__/

@@ -182,6 +182,7 @@
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | Dockerfile 초판 | 다단계(builder: uv 0.11.8 `uv sync --frozen --no-dev --package harness-catalog-server`; runtime: python:3.12-slim + git + gitleaks v8.30.1 바이너리, 비루트 uid 10001, `/var/lib/harness-catalog`). 로컬 빌드·`--help`·import 확인. 태그는 로컬 `dev`(D11) | service P1-8 |
 | 2026-10-07 | Codex 리뷰(aedbff8) 반영 | init.sql을 initdb.d 밖으로(이중 실행 실측), 역할·DB 생성 멱등(\gexec), healthcheck가 초기화 결과를 본다, audience 클라이언트는 public(시크릿 공유 제거), LDAP 오버레이 기본 LDAPS 636(평문은 변수로), D1·D10 개발 예외 명시, P1-4 스코프 문구, 측정 도구 재작성(종료 코드·interval·state·JWKS 검증·`/token` 장치 그랜트) | Codex 리뷰 |
 | 2026-10-07 | P0 2·3 완료, r1 반영 | 개발 compose·DB 초기화·Dex 설정(gomplate)·LDAP 오버레이·`.env.example`. D2(init.sh)·D5(redirectURIs·audience 클라이언트·gomplate)·D6(PKCE 강제 불가)·D8(장치 흐름 답) 개정 | plans/pilot/r1.md |
 | 2026-10-07 | Codex 리뷰 반영 | 커밋 6586e9f 리뷰(중요 5·경미 3). D22에 태그↔이미지 매핑(`REGISTRY_IMAGE` = 태그 커밋의 SHA)과 `init`의 태그 존재 확인(`--pin`), V13 (d), R1 잔재 | Codex 01a111e5 |

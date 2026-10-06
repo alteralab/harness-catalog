@@ -141,7 +141,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | V4 | 검사 fail-closed | `check`에 걸리는 스킬(validate 실패, 시크릿)을 규율을 어기고 직접 push | 인덱스에서 빠지고 `/readyz`의 `degraded`에 적히며, 같은 변경을 PR로 올리면 CI가 붉다 | 대기 |
 | V5 | 재기동 복구 | 새 VM에 compose를 올리고 기존 카탈로그 저장소를 가리킨다 | fetch만으로 인덱스가 다시 지어지고 `/readyz` 200. 은퇴한 이름을 `check` 항목 5가 여전히 거부한다(이력에서 읽으므로) | 대기 |
 | V6 | 내려받기 왕복 | `pin-skill`로 프로젝트·사용자 범위에 각각 내려받고 새 판 확인 | `PINNED` 형식 일치, 두 범위의 낡은 쪽 안내, 하네스 셋에서 한 번만 로드 | 대기 |
-| V7 | 규칙 게이트 완주 | 네 축(common·python·bash·agent-skill)과 review가 선언되고 `pre-commit run --all-files` 통과 | 선언한 표면마다 그 게이트가 한 번 이상 실제로 **파일을 검사하며** 돌았다 | common·review 통과(2026-09-26). python은 선언·훅 설치까지(파일 0이라 미완주). bash·agent-skill 대기 |
+| V7 | 규칙 게이트 완주 | 네 축(common·python·bash·agent-skill)과 review가 선언되고 `pre-commit run --all-files` 통과 | 선언한 표면마다 그 게이트가 한 번 이상 실제로 **파일을 검사하며** 돌았다 | common·review 통과(2026-09-26). **python 완주(2026-10-07)**: 첫 파이썬 커밋에서 ruff·ast-grep이 검출 넷을 냈고 전부 참. bash·agent-skill 대기 |
 
 ## 10. 개정 규약
 
@@ -151,6 +151,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | P1 구현 | service P1 0~9 코드·시험 39·이미지. 규칙 게이트 첫 완주(C-GATE-1): 첫 파이썬 커밋에서 altera-ruff·altera-ast-grep이 파일을 검사하며 돌았고 검출(dict 반환 C-PY-1, 정규식 C-BRANCH-2, 미사용 인자 ARG)을 전부 참으로 판정해 고쳤다(V7 python 완주). P1 끝 조건 중 Dex 토큰 HTTP 호출은 §6-11·12 대기 | plans/service.md §9 |
 | 2026-10-07 | Codex 리뷰(aedbff8) 반영 | 치명 셋: init.sql 이중 실행(수정), §6-11 권고(client ID 허용 목록)가 RFC 8707 대체가 아님 → 권고를 (다) PRM `scopes_supported`의 교차 클라이언트 스코프로, DESIGN §2 표의 Dex 문면(client credentials 플래그·pkce.enforce)에 실측 정정 표지. §6-10 권고를 (라) 무인 읽기 v3.0 제외로, §6-12는 `scope` 클레임 부재까지 반영. distribution·r1·도구도 정정 | Codex 리뷰, plans/pilot/r1.md |
 | 2026-10-07 | P0 착수: distribution P0 + pilot r1 | 개발 compose(postgres 17 + Dex v2.45.1, `docker/postgres/init.sh+sql`, `docker/dex/config.yaml` gomplate, `examples/synology-ldap/` 오버레이, `.env.example`)가 뜨고 `tools/pilot/dex_grants.py`로 Q2(a)(b)·Q5·Q2(c) 정적 사용자를 쟀다(plans/pilot/r1.md). 장치 흐름 공개 클라이언트 OK, client_credentials 미지원, `resource` 무시, `skills:read` invalid_scope, PKCE 서버 강제 불가, 리프레시는 사용자·클라이언트당 하나. §6-10·11·12 사용자 결정 대기. LDAP 판(r2)은 NAS 접속 가능할 때 | plans/pilot/r1.md |
 | 2026-10-07 | Codex 리뷰 반영 | 6586e9f 리뷰 8건 전부 반영: 태그↔이미지 매핑·`init` 태그 확인(distribution D22·V13), R1, DESIGN §2 "같은 패키지"·§11 2026-09-26 행 대체 표지, ruff.toml·altera-rules.yml·§3-5의 `src/` 경로 | Codex 01a111e5 |
