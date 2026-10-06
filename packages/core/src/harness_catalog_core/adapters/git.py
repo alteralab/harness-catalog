@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import os
+import shlex
 import shutil
 import subprocess
 import tarfile
@@ -32,9 +33,21 @@ class GitStore:
     def __init__(self, git_dir: Path, remote_url: str | None = None, deploy_key: str = "") -> None:
         self._url = remote_url
         self._dir = git_dir
-        self._key_path = git_dir.parent / "deploy_key"
-        self._deploy_key = deploy_key
+        self._key_path: Path | None = None
+        if deploy_key:
+            keydir = git_dir.parent / "ssh"
+            keydir.mkdir(parents=True, exist_ok=True, mode=0o700)
+            keydir.chmod(0o700)
+            self._key_path = keydir / "deploy_key"
+            self._key_path.touch(mode=0o600, exist_ok=True)
+            self._key_path.chmod(0o600)
+            self._key_path.write_text(deploy_key.rstrip("\n") + "\n")
         self._lock = threading.Lock()
+
+    def close(self) -> None:
+        """deploy key 파일을 지운다(프로세스 종료 시)."""
+        if self._key_path is not None and self._key_path.exists():
+            self._key_path.unlink()
 
     @classmethod
     def local(cls, repo_root: Path) -> GitStore:
@@ -45,7 +58,7 @@ class GitStore:
         if revision == "INDEX":
             return self._text("write-tree").strip()
         try:
-            return self._text("rev-parse", "--verify", f"{revision}^{{commit}}").strip()
+            return self._text("rev-parse", "--verify", "--end-of-options", f"{revision}^{{commit}}").strip()
         except GitError as e:
             raise ContentError(ReadyReason.NO_MAIN_BRANCH, f"{revision}: {e.stderr.strip()}") from e
 
@@ -53,11 +66,8 @@ class GitStore:
     def _env(self) -> dict[str, str]:
         env = {k: v for k, v in os.environ.items() if k not in ("GIT_DIR", "GIT_WORK_TREE")}
         env["GIT_TERMINAL_PROMPT"] = "0"
-        if self._deploy_key:
-            self._key_path.parent.mkdir(parents=True, exist_ok=True)
-            self._key_path.write_text(self._deploy_key.rstrip("\n") + "\n")
-            self._key_path.chmod(0o600)
-            env["GIT_SSH_COMMAND"] = f"ssh -i {self._key_path} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+        if self._key_path is not None:
+            env["GIT_SSH_COMMAND"] = f"ssh -i {shlex.quote(str(self._key_path))} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
         return env
 
     def _git(self, *args: str, binary: bool = False) -> bytes:
@@ -141,10 +151,10 @@ class GitStore:
         return tuple(trees)
 
     def deleted_skill_names(self, commit: str) -> frozenset[str]:
-        try:
-            out = self._text("log", "--diff-filter=D", "--name-only", "--format=", commit, "--", "skills/*/SKILL.md")
-        except GitError:
-            return frozenset()
+        """전체 이력이 필요하다: 얕은 클론이거나 log가 실패하면 빈 집합이 아니라 ContentError(fail-closed)."""
+        if self._text("rev-parse", "--is-shallow-repository").strip() == "true":
+            raise ContentError(ReadyReason.REPO_UNREACHABLE, "shallow clone: full history required for retired-name check")
+        out = self._text("log", "--diff-filter=D", "--name-only", "--format=", "--end-of-options", commit, "--", "skills/*/SKILL.md")
         names = {line.split("/")[1] for line in out.splitlines() if line.startswith("skills/") and line.count("/") >= 2}
         return frozenset(names)
 
@@ -158,6 +168,12 @@ class GitStore:
             if sha == tree_sha:
                 return c
         return None
+
+    def is_ancestor(self, ancestor: str, descendant: str) -> bool:
+        if ancestor == descendant:
+            return True
+        proc = subprocess.run(["git", "-C", str(self._dir), "merge-base", "--is-ancestor", ancestor, descendant], capture_output=True, env=self._env(), check=False, timeout=60)
+        return proc.returncode == 0
 
     def export_tree(self, tree_sha: str, dest: Path) -> None:
         with self._lock:

@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Protocol
 
-from .model import IndexSnapshot, SkillReport, SkillTree, TreeEntry
+from .model import IndexOutcome, IndexSnapshot, SkillReport, SkillTree, TreeEntry
 
 
 class ContentStore(Protocol):
@@ -43,6 +44,10 @@ class ContentStore(Protocol):
         """tree를 디렉토리로 풀어 놓는다(검증기가 파일 시스템을 읽으므로)."""
         ...
 
+    def is_ancestor(self, ancestor: str, descendant: str) -> bool:
+        """ancestor 커밋이 descendant의 조상(또는 같은 커밋)인가. 세대 검사의 재료."""
+        ...
+
 
 class SkillValidator(Protocol):
     """For validating a skill: 스펙 준수와 시크릿 스캔. 검사기 실패는 ValidatorFailure."""
@@ -59,8 +64,8 @@ class SkillValidator(Protocol):
 class FactStore(Protocol):
     """For recording facts: 인덱스를 커밋 단위로 바꾸고 검색한다."""
 
-    def replace_index(self, snapshot: IndexSnapshot, /) -> bool:
-        """스냅샷으로 통째로 바꾼다. 더 오래된 커밋이면 False(거부)."""
+    def replace_index(self, snapshot: IndexSnapshot, is_descendant: Callable[[str], bool], /) -> IndexOutcome:
+        """스냅샷으로 통째로 바꾼다. 저장된 커밋 c에 대해 is_descendant(c)가 거짓이면 STALE(아무것도 안 한다)."""
         ...
 
     def search(self, query: str, limit: int, /) -> tuple[str, ...] | None:

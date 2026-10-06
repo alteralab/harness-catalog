@@ -12,13 +12,14 @@ from types import MappingProxyType
 from typing import NamedTuple
 
 from .catalog_file import MARKER_PATH, MarkerError, parse_marker
-from .check import check_commit
+from .check import check_commit, structure_findings
 from .model import (
     SUPPORTED_LAYOUT,
     CatalogError,
     ContentError,
     ErrorCode,
     FileContent,
+    IndexOutcome,
     IndexSnapshot,
     ListResult,
     ReadyReason,
@@ -67,8 +68,12 @@ class Catalog:
         return self._status
 
     # ---- For maintaining the catalog ----
-    def rebuild(self) -> Status:
-        """fetch → 구조 검사 → 검사 열 → 스냅샷 교체. 구조가 깨지면 이전 스냅샷을 유지하고 unready."""
+    def rebuild(self, *, accept_rewind: bool = False) -> Status:
+        """fetch → 구조 검사 → 세대 검사 → 검사 열 → 스냅샷 교체. 구조가 깨지면 이전 스냅샷을 유지하고 unready.
+
+        뒤로 가지 않는다: 새 커밋이 이전 커밋의 자손이 아니면(main 되감기) 아무것도 바꾸지 않고 degraded에 main_rewound.
+        accept_rewind=True(운영 명령)면 그 검사를 건너뛴다.
+        """
         with self._lock:
             try:
                 commit = self._store.fetch()
@@ -77,24 +82,29 @@ class Catalog:
                                       commit_sha=self._status.commit_sha, fetched_at=self._status.fetched_at, built_at=self._status.built_at)
                 return self._status
             fetched_at = _now()
-            reasons = self._structure_reasons(commit)
+            reasons, details = self._structure_reasons(commit)
             if reasons:
-                self._status = Status(ready=False, reasons=reasons, commit_sha=commit, fetched_at=fetched_at)
+                # 저장소 구조가 깨졌다: 빌드 전체가 실패하고 /readyz는 503 (이전 스냅샷은 들고 있되 준비됨은 아니다)
+                self._status = Status(ready=False, reasons=reasons, degraded=details, commit_sha=commit, fetched_at=fetched_at)
                 return self._status
             if self._snapshot is not None and self._snapshot.commit_sha == commit:
                 self._status = Status(ready=True, degraded=self._status.degraded, commit_sha=commit, fetched_at=fetched_at,
                                       built_at=self._snapshot.built_at, rejected=self._snapshot.rejected)
                 return self._status
             base = self._snapshot.commit_sha if self._snapshot else None
+            if base is not None and not accept_rewind and not self._store.is_ancestor(base, commit):
+                self._status = Status(ready=True, degraded=("main_rewound",), commit_sha=base, fetched_at=fetched_at, built_at=self._snapshot.built_at if self._snapshot else None,
+                                      rejected=self._snapshot.rejected if self._snapshot else ())
+                return self._status
             try:
-                return self._build(commit, base, fetched_at)
-            except (ContentError, OSError) as e:
+                return self._build(commit, base, fetched_at, accept_rewind)
+            except Exception as e:  # noqa: BLE001 — 장기 실행 루프: 어느 예외든 인덱스는 이전 판으로 남고 다음 주기에 다시 시도한다(상태에 기록)
                 # 빌드 실패: 인덱스는 이전 판으로 남고 다음 주기에 다시 시도한다
                 self._status = Status(ready=self._snapshot is not None, degraded=(f"rebuild_failed:{e}",),
                                       commit_sha=self._status.commit_sha, fetched_at=fetched_at, built_at=self._status.built_at)
                 return self._status
 
-    def _build(self, commit: str, base: str | None, fetched_at: datetime) -> Status:
+    def _build(self, commit: str, base: str | None, fetched_at: datetime, accept_rewind: bool) -> Status:
         report = check_commit(self._store, self._validator, commit, base=base, workdir=self._workdir)
         if report.checker_failed:
             self._status = Status(ready=self._snapshot is not None, degraded=(f"checker_failed:{report.checker_failed}",),
@@ -110,26 +120,37 @@ class Catalog:
                 continue
             entries.append(SkillEntry(tree.name, props.description, props.compatibility, props.metadata, tree.tree_sha, tree.commit_sha))
         rejected = tuple(sorted({(f.skill, f"{f.item}: {f.reason}") for f in report.errors if f.skill}))
-        repo_findings = tuple(f"check:{f.item}:{f.reason}" for f in report.errors if not f.skill)
+        repo_findings: tuple[str, ...] = ()  # 저장소 수준 위반은 _structure_reasons가 먼저 잡아 빌드를 막는다
         snapshot = IndexSnapshot(tuple(sorted(entries, key=lambda e: e.name)), commit, _now(), fetched_at, rejected)
+        def is_descendant(stored: str) -> bool:
+            return accept_rewind or self._store.is_ancestor(stored, commit)
+
+        outcome = self._facts.replace_index(snapshot, is_descendant)
+        if outcome is IndexOutcome.STALE:
+            # DB가 더 앞서 있거나 되감겼다: 메모리도 바꾸지 않는다(뒤로 가지 않는다)
+            self._status = Status(ready=self._snapshot is not None, degraded=repo_findings + ("main_rewound",), commit_sha=self._status.commit_sha,
+                                  fetched_at=fetched_at, built_at=self._status.built_at, rejected=self._status.rejected)
+            return self._status
         self._snapshot = snapshot
-        degraded = repo_findings + (() if self._facts.replace_index(snapshot) else ("db_unavailable",))
+        degraded = repo_findings + (("db_unavailable",) if outcome is IndexOutcome.UNAVAILABLE else ())
         self._status = Status(ready=True, degraded=degraded, commit_sha=commit, fetched_at=fetched_at, built_at=snapshot.built_at, rejected=rejected)
         return self._status
 
-    def _structure_reasons(self, commit: str) -> tuple[ReadyReason, ...]:
+    def _structure_reasons(self, commit: str) -> tuple[tuple[ReadyReason, ...], tuple[str, ...]]:
+        """표지 → 배치. 표지가 없거나 깨졌으면 not_a_catalog, layout 값이 다르면 unsupported_layout, 항목 1·2 위반은 layout_mismatch."""
         marker = self._store.read_blob(commit, MARKER_PATH)
         if marker is None:
-            return (ReadyReason.NOT_A_CATALOG,)
+            return (ReadyReason.NOT_A_CATALOG,), ()
         try:
             layout = parse_marker(marker.decode("utf-8", errors="replace")).layout
-        except MarkerError:
-            return (ReadyReason.NOT_A_CATALOG,)
+        except MarkerError as e:
+            return (ReadyReason.NOT_A_CATALOG,), (f"marker: {e}",)
         if layout != SUPPORTED_LAYOUT:
-            return (ReadyReason.UNSUPPORTED_LAYOUT,)
-        if not any(e.path == "skills" and e.kind == "tree" for e in self._store.list_tree(commit)):
-            return (ReadyReason.LAYOUT_MISMATCH,)
-        return ()
+            return (ReadyReason.UNSUPPORTED_LAYOUT,), ()
+        violations = tuple(f"check:{f.item}:{f.reason}" for f in structure_findings(self._store, commit) if not f.warning)
+        if violations:
+            return (ReadyReason.LAYOUT_MISMATCH,), violations
+        return (), ()
 
     def _inspect_tree(self, tree_sha: str, name: str) -> SkillReport:
         with tempfile.TemporaryDirectory(dir=self._workdir, prefix="read.") as tmp:
@@ -206,9 +227,9 @@ class Catalog:
         if data is None:
             raise CatalogError(ErrorCode.NOT_FOUND, f"{name!r}: file {path!r} not found")
         try:
-            return FileContent(path, entry.size, entry.sha, data.decode("utf-8"), None)
+            return FileContent(path, entry.size, tree, entry.sha, data.decode("utf-8"), None)
         except UnicodeDecodeError:
-            return FileContent(path, entry.size, entry.sha, None, base64.b64encode(data).decode("ascii"))
+            return FileContent(path, entry.size, tree, entry.sha, None, base64.b64encode(data).decode("ascii"))
 
     @staticmethod
     def _check_path(path: str) -> None:

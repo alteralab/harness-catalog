@@ -103,8 +103,8 @@ class ToolBindings:
             f = await anyio.to_thread.run_sync(self._catalog.get_skill_file, id, path, sha)
         except CatalogError as e:
             return _error(e.code, e.detail)
-        trace.get_current_span().set_attributes({ATTR_SKILL: id, ATTR_SHA: sha or ""})
-        return _ok({"id": id, "path": f.path, "size": f.size, "sha": f.sha, "text": f.text, "base64": f.base64})
+        trace.get_current_span().set_attributes({ATTR_SKILL: id, ATTR_SHA: f.sha})
+        return _ok({"id": id, "path": f.path, "size": f.size, "sha": f.sha, "blob": f.blob, "text": f.text, "base64": f.base64})
 
 
 def build_server(catalog: Catalog, *, issuer: str, public_url: str, verifier: TokenVerifier, service_client_ids: frozenset[str]) -> MCPServer[None]:

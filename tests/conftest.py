@@ -8,6 +8,12 @@ from typing import NamedTuple
 
 import pytest
 
+
+@pytest.fixture
+def anyio_backend() -> str:
+    """anyio 시험은 asyncio 백엔드만."""
+    return "asyncio"
+
 SKILL_MD = """---
 name: {name}
 description: {description}

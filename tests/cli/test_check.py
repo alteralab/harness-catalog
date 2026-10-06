@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from typer.testing import CliRunner
 
 from harness_catalog_cli.__main__ import app

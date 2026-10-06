@@ -51,6 +51,14 @@ class ValidatorFailure(Exception):
     """검사기 자체가 실패했다(바이너리 없음·크래시). 통과로 치지 않는다 — fail-closed."""
 
 
+class IndexOutcome(StrEnum):
+    """사실 저장소에 인덱스를 바꿔 달라고 한 결과."""
+
+    REPLACED = "replaced"
+    STALE = "stale"  # 저장된 커밋의 자손이 아니라 아무것도 하지 않았다
+    UNAVAILABLE = "unavailable"  # DB가 닿지 않는다
+
+
 class PrincipalKind(StrEnum):
     HUMAN = "human"
     SERVICE = "service"
@@ -209,7 +217,8 @@ class SkillBody:
 class FileContent:
     path: str
     size: int
-    sha: str
+    sha: str  # 판 = 스킬 디렉토리의 tree SHA (load_skill·list_skills의 sha와 같은 것)
+    blob: str  # 이 파일의 blob SHA
     text: str | None  # UTF-8로 읽히면 본문
     base64: str | None  # 아니면 base64
 

@@ -28,3 +28,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/harness_catalog_server"]
+# 마이그레이션 SQL은 패키지 데이터다(importlib.resources로 읽는다)
+[tool.hatch.build.targets.sdist]
+include = ["src/harness_catalog_server/**", "pyproject.toml"]

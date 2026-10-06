@@ -8,6 +8,12 @@ from typing import Any, NamedTuple
 from .model import SKILLS_READERS, ErrorCode, Principal, PrincipalKind
 
 READ_TOOLS = frozenset({"list_skills", "search_skills", "load_skill", "get_skill_file"})
+# 서비스 주체 표지(확인 전 규칙): sub가 이 집합에 있다. 실측 뒤 정해지는 값이라 한 자리에만 둔다.
+DEFAULT_SERVICE_CLIENT_IDS: frozenset[str] = frozenset({"ci-runner"})
+
+
+def is_service_subject(sub: str, service_client_ids: frozenset[str]) -> bool:
+    return sub in service_client_ids
 
 
 class Decision(NamedTuple):
@@ -25,7 +31,7 @@ def principal_from_claims(claims: Mapping[str, Any], service_client_ids: frozens
     scopes: frozenset[str] = frozenset(scope_raw.split()) if isinstance(scope_raw, str) else frozenset()
     aud = claims.get("aud")
     client_id = str(claims.get("azp") or (aud if isinstance(aud, str) else ""))
-    kind = PrincipalKind.SERVICE if sub in service_client_ids else PrincipalKind.HUMAN
+    kind = PrincipalKind.SERVICE if is_service_subject(sub, service_client_ids) else PrincipalKind.HUMAN
     return Principal(sub, kind, groups, scopes, client_id)
 
 

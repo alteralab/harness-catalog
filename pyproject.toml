@@ -26,12 +26,15 @@ dev = [
   "anyio[trio]>=4",
   "pyright>=1.1",
   "httpx>=0.27",
+  "testcontainers[postgres]>=4",
+  "opentelemetry-sdk>=1.27",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
   "http: 실제 uvicorn 프로세스와 개발 compose의 Dex가 필요하다(HC_TEST_TOKEN)",
+  "pg: docker가 필요하다(testcontainers PostgreSQL)",
 ]
 
 [tool.pyright]

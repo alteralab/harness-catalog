@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from harness_catalog_core.model import IndexSnapshot, SkillProps, SkillReport, SkillTree, TreeEntry
+from collections.abc import Callable
+
+from harness_catalog_core.model import IndexOutcome, IndexSnapshot, SkillProps, SkillReport, SkillTree, TreeEntry
 
 
 class FakeStore:
@@ -18,6 +20,7 @@ class FakeStore:
         self.fetch_calls = 0
         self.deleted: frozenset[str] = frozenset()
         self.history: dict[tuple[str, str], str] = {}  # (name, tree) -> commit
+        self.ancestors: set[tuple[str, str]] = set()  # (ancestor, descendant)
 
     def tree_of(self, name: str) -> str:
         return (name + "0" * 40)[:40]
@@ -48,7 +51,9 @@ class FakeStore:
             top += [TreeEntry(p, "blob", "x" * 40, 1) for p in self.extra_top]
             if self.skills:
                 top.append(TreeEntry("skills", "tree", "s" * 40, 0))
-                top += [TreeEntry(f"skills/{n}", "tree", self.tree_of(n), 0) for n in self.skills]
+                for n, files in self.skills.items():  # 실물 ls-tree -r -t처럼 재귀로 낸다
+                    top.append(TreeEntry(f"skills/{n}", "tree", self.tree_of(n), 0))
+                    top += [TreeEntry(f"skills/{n}/{p}", "link" if p.endswith(".lnk") else "blob", ("b" + p)[:40].ljust(40, "0"), len(d)) for p, d in files.items()]
             return tuple(top)
         for name, files in self.skills.items():
             if self.tree_of(name) == tree_sha:
@@ -63,6 +68,9 @@ class FakeStore:
 
     def resolve_version(self, name: str, tree_sha: str, head: str) -> str | None:
         return self.history.get((name, tree_sha))
+
+    def is_ancestor(self, ancestor: str, descendant: str) -> bool:
+        return ancestor == descendant or (ancestor, descendant) in self.ancestors
 
     def export_tree(self, tree_sha: str, dest: Path) -> None:
         for name, files in self.skills.items():
@@ -102,11 +110,13 @@ class MemoryFacts:
         self.available = available
         self.snapshots: list[IndexSnapshot] = []
 
-    def replace_index(self, snapshot: IndexSnapshot) -> bool:
+    def replace_index(self, snapshot: IndexSnapshot, is_descendant: Callable[[str], bool], /) -> IndexOutcome:
         if not self.available:
-            return False
+            return IndexOutcome.UNAVAILABLE
+        if self.snapshots and not is_descendant(self.snapshots[-1].commit_sha):
+            return IndexOutcome.STALE
         self.snapshots.append(snapshot)
-        return True
+        return IndexOutcome.REPLACED
 
     def search(self, query: str, limit: int) -> tuple[str, ...] | None:
         return None

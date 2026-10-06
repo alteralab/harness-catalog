@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from .catalog_file import MARKER_PATH, MarkerError, parse_marker
-from .model import SUPPORTED_LAYOUT, SkillTree, TreeEntry, ValidatorFailure
+from .model import SUPPORTED_LAYOUT, ContentError, SkillTree, TreeEntry, ValidatorFailure
 from .ports import ContentStore, SkillValidator
 
 MAX_FILES = 50
@@ -37,32 +37,54 @@ class CheckReport(NamedTuple):
         return frozenset(f.skill for f in self.errors if f.skill)
 
 
-def _structure_findings(store: ContentStore, commit: str, top: tuple[TreeEntry, ...]) -> list[Finding]:
-    """항목 1·2: 표지, skills/, CI 워크플로, pre-commit 설정, README."""
-    out: list[Finding] = []
-    paths = {e.path for e in top}
+def _marker_findings(store: ContentStore, commit: str) -> list[Finding]:
+    """항목 1의 표지: 있고, TOML이고, layout이 지원하는 값이다."""
     marker = store.read_blob(commit, MARKER_PATH)
     if marker is None:
-        out.append(Finding(1, "", f"{MARKER_PATH} missing"))
-    else:
-        try:
-            layout = parse_marker(marker.decode("utf-8", errors="replace")).layout
-            if layout != SUPPORTED_LAYOUT:
-                out.append(Finding(1, "", f"layout {layout} unsupported (expected {SUPPORTED_LAYOUT})"))
-        except MarkerError as e:
-            out.append(Finding(1, "", f"{MARKER_PATH}: {e}"))
-    if not any(p == "skills" or p.startswith("skills/") for p in paths):
-        out.append(Finding(1, "", "skills/ missing"))
-    if not any(p.startswith(CI_WORKFLOW_HINTS[0]) or p == CI_WORKFLOW_HINTS[1] for p in paths):
-        out.append(Finding(1, "", "CI workflow missing (.github/workflows/ or .gitlab-ci.yml)"))
-    if ".pre-commit-config.yaml" not in paths:
-        out.append(Finding(1, "", ".pre-commit-config.yaml missing"))
-    if "README.md" not in paths:
-        out.append(Finding(1, "", "README.md missing"))
+        return [Finding(1, "", f"{MARKER_PATH} missing")]
+    try:
+        layout = parse_marker(marker.decode("utf-8", errors="replace")).layout
+    except MarkerError as e:
+        return [Finding(1, "", f"{MARKER_PATH}: {e}")]
+    if layout != SUPPORTED_LAYOUT:
+        return [Finding(1, "", f"layout {layout} unsupported (expected {SUPPORTED_LAYOUT})")]
+    return []
+
+
+def _required_files_findings(paths: set[str]) -> list[Finding]:
+    """항목 1의 파일들: skills/, CI 워크플로, pre-commit 설정, README."""
+    required: list[tuple[bool, str]] = [
+        (any(p == "skills" or p.startswith("skills/") for p in paths), "skills/ missing"),
+        (any(p.startswith(CI_WORKFLOW_HINTS[0]) or p == CI_WORKFLOW_HINTS[1] for p in paths), "CI workflow missing (.github/workflows/ or .gitlab-ci.yml)"),
+        (".pre-commit-config.yaml" in paths, ".pre-commit-config.yaml missing"),
+        ("README.md" in paths, "README.md missing"),
+    ]
+    return [Finding(1, "", reason) for present, reason in required if not present]
+
+
+def _skills_entries_findings(top: tuple[TreeEntry, ...], paths: set[str]) -> list[Finding]:
+    """항목 2: skills/ 바로 아래는 디렉토리(와 .gitkeep)뿐이고 각 디렉토리에 SKILL.md가 있다."""
+    out: list[Finding] = []
     for e in top:
-        if e.path.startswith("skills/") and e.path.count("/") == 1 and e.kind != "tree" and e.path != "skills/.gitkeep":
+        if not e.path.startswith("skills/") or e.path.count("/") != 1:
+            continue
+        if e.kind == "tree":
+            if f"{e.path}/SKILL.md" not in paths:
+                out.append(Finding(2, e.path.removeprefix("skills/"), f"{e.path}/SKILL.md missing"))
+        elif e.path != "skills/.gitkeep":
             out.append(Finding(2, "", f"{e.path}: only directories (and .gitkeep) allowed directly under skills/"))
     return out
+
+
+def _structure_findings(store: ContentStore, commit: str, top: tuple[TreeEntry, ...]) -> list[Finding]:
+    """항목 1·2."""
+    paths = {e.path for e in top}
+    return _marker_findings(store, commit) + _required_files_findings(paths) + _skills_entries_findings(top, paths)
+
+
+def structure_findings(store: ContentStore, commit: str) -> list[Finding]:
+    """항목 1·2만(기동 검사와 CLI가 같이 쓴다)."""
+    return _structure_findings(store, commit, store.list_tree(commit))
 
 
 def _skill_files(store: ContentStore, tree: SkillTree) -> tuple[TreeEntry, ...]:
@@ -151,7 +173,7 @@ def check_commit(store: ContentStore, validator: SkillValidator, commit: str, *,
     try:
         top = store.list_tree(commit)
         findings = _structure_findings(store, commit, top)
-        trees = store.list_skill_trees(commit)
+        trees = tuple(t for t in store.list_skill_trees(commit) if f"skills/{t.name}/SKILL.md" in {e.path for e in top})
         replaced: dict[str, str | None] = {}
         scripts: dict[str, dict[str, str]] = {}
         for tree in trees:
@@ -164,23 +186,29 @@ def check_commit(store: ContentStore, validator: SkillValidator, commit: str, *,
         findings.extend(replaced_by_findings(replaced))
         findings.extend(drift_findings(scripts))
         if base is not None:
-            findings.extend(_history_findings(store, base, trees))
+            findings.extend(_history_findings(store, validator, base, trees, workdir))
     except ValidatorFailure as e:
         return CheckReport((), f"validator failed: {e}")
+    except ContentError as e:
+        return CheckReport((), f"repository read failed: {e.detail}")
     return CheckReport(tuple(findings), "")
 
 
-def _history_findings(store: ContentStore, base: str, trees: tuple[SkillTree, ...]) -> list[Finding]:
-    """항목 5·9: 기준 커밋 대비 새로 생긴 이름의 재사용, 지워진 스킬의 replaced-by 권고."""
+def _history_findings(store: ContentStore, validator: SkillValidator, base: str, trees: tuple[SkillTree, ...], workdir: Path) -> list[Finding]:
+    """항목 5·9: 기준 커밋 대비 새로 생긴 이름의 재사용, 지워진 스킬의 replaced-by 권고(기준판 frontmatter를 파서로 읽는다)."""
     out: list[Finding] = []
     now = {t.name for t in trees}
-    before = {t.name for t in store.list_skill_trees(base)}
+    base_trees = {t.name: t for t in store.list_skill_trees(base)}
     retired = store.deleted_skill_names(base)
-    for name in sorted(now - before):
+    for name in sorted(now - set(base_trees)):
         if name in retired:
             out.append(Finding(5, name, "name was retired before (deleted in history) and must not be reused"))
-    for name in sorted(before - now):
-        blob = store.read_blob(base, f"skills/{name}/SKILL.md") or b""
-        if b"replaced-by" not in blob:
+    for name in sorted(set(base_trees) - now):
+        with tempfile.TemporaryDirectory(dir=workdir, prefix="base.") as tmp:
+            dest = Path(tmp) / name
+            dest.mkdir()
+            store.export_tree(base_trees[name].tree_sha, dest)
+            props = validator.inspect(dest).properties
+        if props is None or not props.metadata.get("replaced-by"):
             out.append(Finding(9, name, "retired without replaced-by in the base version", warning=True))
     return out

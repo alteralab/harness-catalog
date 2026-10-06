@@ -114,6 +114,19 @@ def test_db_unavailable_is_degraded_not_unready(tmp_path: Path) -> None:
     assert [s.name for s in cat.search_skills("youtube").skills] == ["alpha"]
 
 
+def test_rewind_is_refused_unless_accepted(tmp_path: Path) -> None:
+    cat, store, facts = make(tmp_path)
+    cat.rebuild()
+    first = store.commit
+    store.commit = "d" * 40  # 자손 관계를 등록하지 않았다 = 되감기
+    status = cat.rebuild()
+    assert status.ready and "main_rewound" in status.degraded and status.commit_sha == first and len(facts.snapshots) == 1
+    store.ancestors.add((first, "d" * 40))
+    assert cat.rebuild().commit_sha == "d" * 40
+    store.commit = "e" * 40
+    assert cat.rebuild(accept_rewind=True).commit_sha == "e" * 40 and len(facts.snapshots) == 3
+
+
 def test_same_commit_skips_rebuild(tmp_path: Path) -> None:
     cat, store, facts = make(tmp_path)
     cat.rebuild()

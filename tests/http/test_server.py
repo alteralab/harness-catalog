@@ -8,7 +8,7 @@ import socket
 import subprocess
 import sys
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -73,7 +73,7 @@ def call_tool(base: str, token: str | None, name: str, arguments: dict[str, Any]
     return httpx.post(base + PUBLIC_PATH, headers=headers, json=body, timeout=10)
 
 
-def result_of(resp: httpx.Response) -> dict[str, Any]:
+def result_of(resp: httpx.Response) -> Mapping[str, Any]:
     data = resp.json()
     assert "result" in data, data
     return data["result"]
@@ -111,7 +111,7 @@ def test_reader_calls_all_four_tools(server: tuple[str, FakeIssuer]) -> None:
     body = result_of(call_tool(base, token, "load_skill", {"id": "yt-subs"}))["structuredContent"]
     assert body["has_scripts"] and body["metadata"] == {"requires-tools": "yt-dlp uv"} and len(body["sha"]) == 40
     f = result_of(call_tool(base, token, "get_skill_file", {"id": "yt-subs", "path": "scripts/fetch.py"}))["structuredContent"]
-    assert f["text"] == "print('hi')\n"
+    assert f["text"] == "print('hi')\n" and f["sha"] == body["sha"] and len(f["blob"]) == 40 and f["blob"] != body["sha"]
     err = result_of(call_tool(base, token, "get_skill_file", {"id": "yt-subs", "path": "../x"}))
     assert err["isError"] is True and err["structuredContent"]["code"] == "path_rejected"
 
@@ -130,9 +130,9 @@ def test_wrong_audience_expired_and_not_a_member(server: tuple[str, FakeIssuer])
     assert res["isError"] is True and res["structuredContent"]["code"] == "not_a_member"
 
 
-def test_service_principal_reads_without_group(server: tuple[str, FakeIssuer]) -> None:
+def test_service_principal_reads_without_group_or_scope(server: tuple[str, FakeIssuer]) -> None:
     base, issuer = server
-    svc = issuer.token(sub="ci-runner", aud=base + PUBLIC_PATH, scope="skills:read")
+    svc = issuer.token(sub="ci-runner", aud=base + PUBLIC_PATH)  # 그룹도 스코프도 없다
     res = result_of(call_tool(base, svc, "list_skills", {}))
     assert "structuredContent" in res and not res.get("isError")
     assert json.loads(res["content"][0]["text"])["skills"]
