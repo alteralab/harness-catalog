@@ -151,6 +151,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | 마지막 리뷰 반영 + 운영 compose 로컬 연기 시험 | Codex 리뷰(00542b6) 치명 1·중요 3·경미 3 전부 반영. 운영 compose를 파일 비밀·bare 저장소로 실 기동해 준비됨·DB 동기·병합 반영·되감기·reindex를 확인(distribution §10). 남은 것: 사용자 결정 §6-10·11·12, origin push(로컬 main이 10 커밋 앞섬), 첫 카탈로그 저장소·GHCR·mini 러너(사용자 자격), r2(NAS LDAP)·r3(하네스 실측) | plans/distribution.md §10 |
 | 2026-10-07 | P3 리뷰 반영 + P5 초판 | P3 Codex 리뷰 9건 전부 반영(CI 템플릿·init·플러그인 실물 모델·기동 경합). 운영 compose(파일 비밀)·코드 CI 워크플로·설정 문서 초판. P5의 git 호스트 쪽(첫 카탈로그 저장소 `init`, GHCR push, mini 러너 등록)과 push는 사용자 자격·결정이 필요해 남겼다 | plans/service.md §9, plans/distribution.md §10 |
 | 2026-10-07 | P4 스킬 작성 | skills P1 1~5 완료(두 스킬·규약·evals 넷, validate·check 통과). 규칙 게이트: `lang/bash` 완주(shellcheck, 스크립트 5), `purpose/agent-skill` 선언(훅 없음 — 표면 텍스트만). V7의 bash 완주 | plans/skills.md §9 |
 | 2026-10-07 | P3 구현 + P2 리뷰 반영 | `init`·`config`·템플릿 패키지 데이터·Langfuse 플러그인(가짜로 시험), P2 Codex 리뷰 10건 전부 반영(치명 1: 빈 index_state 레이스). 시험 63, pyright 0, 게이트 0. P3 끝 조건 중 "PR 병합 스킬이 두 주기 안에 search_skills"는 P5(첫 카탈로그 저장소)에서 실측 | plans/service.md §9 |

@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from harness_catalog_core.catalog import Catalog
-from harness_catalog_core.model import CatalogError, ErrorCode, ReadyReason
+from harness_catalog_core.model import CatalogError, ContentError, ErrorCode, ReadyReason
 
 from .fakes import FakeStore, FakeValidator, MemoryFacts
 
@@ -132,6 +132,23 @@ def test_same_commit_skips_rebuild(tmp_path: Path) -> None:
     cat.rebuild()
     cat.rebuild()
     assert store.fetch_calls == 2 and len(facts.snapshots) == 1
+
+
+def test_accept_rewind_drops_missing_base(tmp_path: Path) -> None:
+    """되감기 수용: 옛 기준 커밋이 이력에 없어도(deleted_skill_names가 실패해도) 빌드된다."""
+    store = FakeStore({"alpha": SKILL_A})
+    facts = MemoryFacts()
+    Catalog(store, FakeValidator(), facts, workdir=tmp_path).rebuild()
+    gone = store.commit
+    store.commit = "g" * 40
+
+    def boom(_commit: str) -> frozenset[str]:
+        raise ContentError(ReadyReason.REPO_UNREACHABLE, f"bad object {gone}")
+
+    store.deleted_skill_names = boom  # type: ignore[method-assign]
+    fresh = Catalog(store, FakeValidator(), facts, workdir=tmp_path)
+    status = fresh.rebuild(accept_rewind=True)
+    assert status.ready and status.commit_sha == "g" * 40 and not status.degraded and facts.current_commit() == "g" * 40
 
 
 def test_db_unavailable_then_resync_on_same_commit(tmp_path: Path) -> None:

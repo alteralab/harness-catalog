@@ -25,6 +25,7 @@ evals:
   variables:
     HARNESS_SKILL_REF: $CI_COMMIT_SHA
     HARNESS_CATALOG_NAME: $CI_PROJECT_NAME
+    GIT_DEPTH: 0
   script:
     - |
       case "$AGENT" in
@@ -35,7 +36,8 @@ evals:
       [ -n "$LANGFUSE_PUBLIC_KEY" ] && [ -n "$LANGFUSE_SECRET_KEY" ] && [ -n "$LANGFUSE_HOST" ] || { echo "Langfuse keys missing"; exit 1; }
     - |
       harbor_run() { uvx --from "harbor==0.24.0" --with "harbor-langfuse @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/harbor-langfuse" harbor run "$@"; }
-      for d in $(git diff --name-only HEAD~1 HEAD -- skills | cut -d/ -f1-2 | sort -u); do
+      BASE=$( { [ -n "$CI_COMMIT_BEFORE_SHA" ] && [ "$CI_COMMIT_BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && echo "$CI_COMMIT_BEFORE_SHA"; } || git rev-parse HEAD~1 )
+      for d in $(git diff --name-only "$BASE" HEAD -- skills | cut -d/ -f1-2 | sort -u); do
         [ -d "$d/evals" ] || continue
         harbor_run --path "$d/evals" --agent "$AGENT" --env docker --skill "./$d" --plugin harbor_langfuse:LangfusePlugin
         harbor_run --path "$d/evals" --agent "$AGENT" --env docker --plugin harbor_langfuse:LangfusePlugin

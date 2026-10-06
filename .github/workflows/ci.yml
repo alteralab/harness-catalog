@@ -7,11 +7,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    services:
-      docker:
-        image: docker:dind
-        options: --privileged
+    runs-on: ubuntu-latest   # 러너의 docker 데몬을 testcontainers가 그대로 쓴다
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,13 +49,8 @@ jobs:
           docker build -t "$IMG" .
           docker push "$IMG"
           docker image inspect "$IMG" --format 'digest={{index .RepoDigests 0}}' | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: retention (SHA 태그 최근 5개, 태그 없는 버전 삭제)
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: harness-catalog
-          package-type: container
-          min-versions-to-keep: 5
-          delete-only-untagged-versions: false
+      # 보존: 먼저 태그 없는 버전을 지우고, 그다음 최신 5개(= SHA 태그 5개)만 남긴다. 순서가 바뀌면 SHA 태그가 5개 미만이 된다.
+      # 이 저장소가 GHCR 패키지의 Actions access에서 Admin이어야 GITHUB_TOKEN으로 삭제할 수 있다(패키지 설정, 한 번).
       - name: untagged
         uses: actions/delete-package-versions@v5
         with:
@@ -67,3 +58,10 @@ jobs:
           package-type: container
           min-versions-to-keep: 0
           delete-only-untagged-versions: true
+      - name: retention (SHA 태그 최근 5개)
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: harness-catalog
+          package-type: container
+          min-versions-to-keep: 5
+          delete-only-untagged-versions: false

@@ -27,7 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     serve.add_argument("--port", type=int, default=8000)
     serve.add_argument("--workdir", type=Path, default=Path(DEFAULT_WORKDIR))
     serve.add_argument("--log-level", default="info")
-    reindex = sub.add_parser("reindex", help="main을 받아 인덱스를 다시 짓는다(운영 명령)")
+    reindex = sub.add_parser("reindex", help="main을 받아 인덱스를 다시 짓는다(운영 명령). 되감기를 받아들인 뒤에는 서빙 중인 레지스트리를 재기동해 메모리 사본도 새 main으로 바꾼다")
     reindex.add_argument("--accept-rewind", action="store_true", help="main 되감기를 받아들여 세대 검사를 건너뛴다")
     reindex.add_argument("--workdir", type=Path, default=Path(DEFAULT_WORKDIR))
     reindex.add_argument("--log-level", default="info")

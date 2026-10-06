@@ -8,6 +8,8 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    outputs:
+      base: ${{ steps.base.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,7 +42,9 @@ jobs:
       - id: split
         env:
           AGENTS: ${{ vars.HARNESS_EVALS_AGENTS || 'claude-code codex' }}
-        run: echo "list=$(printf '%s\n' $AGENTS | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+        run: |
+          read -r -a agents <<< "$AGENTS"   # 공백 분할만(glob 확장 없음)
+          echo "list=$(printf '%s\n' "${agents[@]}" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
 
   evals:
     needs: [check, agents]
@@ -52,7 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - name: credentials present (Harbor 에이전트 구현이 읽는 변수 그대로)
         env:
           AGENT: ${{ matrix.agent }}
@@ -67,7 +71,7 @@ jobs:
           [ -n "$LANGFUSE_PUBLIC_KEY" ] && [ -n "$LANGFUSE_SECRET_KEY" ] && [ -n "$LANGFUSE_HOST" ] || { echo "Langfuse keys missing"; exit 1; }
       - name: changed skills
         id: changed
-        run: echo "dirs=$(git diff --name-only HEAD~1 HEAD -- skills | cut -d/ -f1-2 | sort -u | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+        run: echo "dirs=$(git diff --name-only "${{ needs.check.outputs.base }}" HEAD -- skills | cut -d/ -f1-2 | sort -u | tr '\n' ' ')" >> "$GITHUB_OUTPUT"   # check와 같은 기준(push 전체)
       - name: harbor run — 스킬 있이·없이
         if: steps.changed.outputs.dirs != ''
         env:

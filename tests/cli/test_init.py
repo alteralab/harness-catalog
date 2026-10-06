@@ -29,7 +29,7 @@ def test_detect_host() -> None:
     assert detect_host("https://github.com/alteralab/catalog.git") == "github"
     assert detect_host("git@github.com:alteralab/catalog.git") == "github"
     assert detect_host("https://gitlab.example.com/team/catalog") == "gitlab"
-    for bad in ("https://bitbucket.org/x/y", "https://evilgithub.example/x/y", "https://notgitlab.example/x/y"):
+    for bad in ("https://bitbucket.org/x/y", "https://evilgithub.example/x/y", "https://notgitlab.example/x/y", "https://github.evil.com/x/y"):
         with pytest.raises(InitError):
             detect_host(bad)
 

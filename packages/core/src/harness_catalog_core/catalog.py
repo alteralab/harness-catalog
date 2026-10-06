@@ -79,7 +79,9 @@ class Catalog:
             try:
                 commit = self._store.fetch()
             except ContentError as e:
-                self._status = Status(ready=self._snapshot is not None, reasons=(e.reason,), degraded=self._status.degraded,
+                # 사유의 원문은 degraded에 남긴다(운영자가 /readyz만 보고도 git 오류를 읽게)
+                detail = (f"{e.reason}:{e.detail[:300]}",)
+                self._status = Status(ready=self._snapshot is not None, reasons=(e.reason,), degraded=detail + tuple(d for d in self._status.degraded if not d.startswith(("repo_unreachable:", "no_main_branch:"))),
                                       commit_sha=self._status.commit_sha, fetched_at=self._status.fetched_at, built_at=self._status.built_at)
                 return self._status
             fetched_at = _now()
@@ -93,6 +95,8 @@ class Catalog:
             base = self._snapshot.commit_sha if self._snapshot else self._facts.current_commit()
             if base is not None and not accept_rewind and not self._store.is_ancestor(base, commit):
                 return self._rewound(base, fetched_at)
+            if accept_rewind:
+                base = None  # 되감기를 받아들이면 옛 기준 커밋은 이력에 없을 수 있다 — 항목 5·9는 이번 빌드에서 건너뛴다
             try:
                 return self._build(commit, base, fetched_at, accept_rewind, write_facts=True)
             except Exception as e:  # noqa: BLE001 — 장기 실행 루프: 어느 예외든 인덱스는 이전 판으로 남고 다음 주기에 다시 시도한다(상태에 기록)

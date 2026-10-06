@@ -67,6 +67,8 @@ class GitStore:
     def _env(self) -> Mapping[str, str]:
         env = {k: v for k, v in os.environ.items() if k not in ("GIT_DIR", "GIT_WORK_TREE")}
         env["GIT_TERMINAL_PROMPT"] = "0"
+        # 로컬 경로(file://)의 저장소가 다른 uid 소유여도 읽는다(컨테이너의 bind mount). 레지스트리는 설정된 저장소만 읽는다
+        env.update({"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "safe.directory", "GIT_CONFIG_VALUE_0": "*"})
         if self._key_path is not None:
             env["GIT_SSH_COMMAND"] = f"ssh -i {shlex.quote(str(self._key_path))} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
         return env

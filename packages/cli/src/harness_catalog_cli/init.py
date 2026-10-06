@@ -33,11 +33,11 @@ def detect_host(repo_url: str) -> str:
     u = repo_url.strip()
     hostname = urlsplit(u).hostname if "://" in u else u.split("@", 1)[-1].split(":", 1)[0]
     labels = (hostname or "").lower().split(".")
-    if labels[-2:] == ["github", "com"] or "github" in labels[:-2]:
-        return "github"
+    if labels[-2:] == ["github", "com"]:
+        return "github"  # github.com과 *.github.com만(GHES 사설 도메인은 --host github로 명시)
     if labels[-2:] == ["gitlab", "com"] or "gitlab" in labels[:-2]:
         return "gitlab"
-    raise InitError(f"unsupported git host in {repo_url!r} (github.com·*.github.com·gitlab.com·gitlab.<domain> only)")
+    raise InitError(f"unsupported git host in {repo_url!r} (github.com·*.github.com·gitlab.com·gitlab.<domain> only — otherwise pass --host)")
 
 
 def resolve_pin(pin: str | None, *, code_repo_url: str = CODE_REPO_URL) -> str:
