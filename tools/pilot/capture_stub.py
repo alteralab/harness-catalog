@@ -95,8 +95,8 @@ class CaptureHandler(BaseHTTPRequestHandler):
         else:
             self._json(400, {"error": "invalid_grant", "error_description": "capture_stub issues no tokens"})
 
-    def log_message(self, *_args: object) -> None:
-        return
+    def log_message(self, format: str, *args: Any) -> None:  # noqa: A002 — 기반 클래스의 시그니처
+        _ = (format, args)  # 표준 오류 로그를 끈다(기록은 _record가 한다)
 
 
 def make_handler(issuer: str, jwk: dict[str, Any], log_path: str, *, offer_dcr: bool, oidc_only: bool) -> type[BaseHTTPRequestHandler]:
