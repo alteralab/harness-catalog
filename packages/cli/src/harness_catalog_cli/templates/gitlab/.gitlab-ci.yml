@@ -10,7 +10,16 @@ check:
   variables:
     GIT_DEPTH: 0
   script:
-    - '[ -z "${HARNESS_CATALOG_READ_TOKEN:-}" ] || git config --global url."https://x-access-token:${HARNESS_CATALOG_READ_TOKEN}@github.com/".insteadOf "https://github.com/"'
+    - |
+      # 코드 저장소가 비공개면 읽기 자격: HARNESS_CATALOG_READ_TOKEN(PAT) 또는 HARNESS_CATALOG_DEPLOY_KEY(읽기 전용 deploy key 개인 키). 잡 환경으로만 건넨다
+      if [ -n "${HARNESS_CATALOG_READ_TOKEN:-}" ]; then
+        export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="url.https://x-access-token:${HARNESS_CATALOG_READ_TOKEN}@github.com/alteralab/harness-catalog.insteadOf" GIT_CONFIG_VALUE_0="https://github.com/alteralab/harness-catalog"
+      elif [ -n "${HARNESS_CATALOG_DEPLOY_KEY:-}" ]; then
+        printf '%s\n' "$HARNESS_CATALOG_DEPLOY_KEY" > /tmp/hc-key && chmod 600 /tmp/hc-key
+        echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" > /tmp/hc-known-hosts
+        export GIT_SSH_COMMAND="ssh -i /tmp/hc-key -o IdentitiesOnly=yes -o UserKnownHostsFile=/tmp/hc-known-hosts"
+        export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="url.git@github.com:alteralab/harness-catalog.insteadOf" GIT_CONFIG_VALUE_0="https://github.com/alteralab/harness-catalog"
+      fi
     - curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz" | tar -xz -C /usr/local/bin gitleaks
     - BASE=$( [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ] && echo "$CI_MERGE_REQUEST_DIFF_BASE_SHA" || { [ -n "$CI_COMMIT_BEFORE_SHA" ] && [ "$CI_COMMIT_BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && echo "$CI_COMMIT_BEFORE_SHA"; } || git rev-parse HEAD~1 )
     - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog check . --rev HEAD --base "$BASE"
