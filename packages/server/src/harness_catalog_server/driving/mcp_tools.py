@@ -18,7 +18,7 @@ from pydantic import AnyHttpUrl
 
 from harness_catalog_core.authz import authorize, principal_from_claims
 from harness_catalog_core.catalog import Catalog
-from harness_catalog_core.model import REQUIRED_SCOPE, CatalogError, ErrorCode, ListResult, Principal
+from harness_catalog_core.model import CatalogError, ErrorCode, ListResult, Principal, required_scopes
 
 ATTR_USER = "langfuse.user.id"
 ATTR_SKILL = "harness_catalog.skill"
@@ -43,14 +43,13 @@ def _listing(result: ListResult) -> Mapping[str, Any]:
 class ToolBindings:
     """인가 → 앱 호출 → 응답. 도구마다 메서드 하나."""
 
-    def __init__(self, catalog: Catalog, service_client_ids: frozenset[str]) -> None:
+    def __init__(self, catalog: Catalog) -> None:
         self._catalog = catalog
-        self._service_ids = service_client_ids
 
     def _principal(self, tool: str) -> Principal | CallToolResult:
         token = get_access_token()
         claims: Mapping[str, Any] = token.claims if token is not None and token.claims is not None else {}
-        principal = principal_from_claims(claims, self._service_ids)
+        principal = principal_from_claims(claims)
         trace.get_current_span().set_attribute(ATTR_USER, principal.subject)
         decision = authorize(principal, tool)
         if not decision.allowed:
@@ -107,11 +106,11 @@ class ToolBindings:
         return _ok({"id": id, "path": f.path, "size": f.size, "sha": f.sha, "blob": f.blob, "text": f.text, "base64": f.base64})
 
 
-def build_server(catalog: Catalog, *, issuer: str, public_url: str, verifier: TokenVerifier, service_client_ids: frozenset[str]) -> MCPServer[None]:
-    """도구 넷을 등록한 MCPServer. 인가 설정은 SDK가 RFC 9728·챌린지로 낸다."""
-    auth = AuthSettings(issuer_url=AnyHttpUrl(issuer), resource_server_url=AnyHttpUrl(public_url), required_scopes=[REQUIRED_SCOPE], validate_token_resource=True)
+def build_server(catalog: Catalog, *, issuer: str, public_url: str, verifier: TokenVerifier) -> MCPServer[None]:
+    """도구 넷을 등록한 MCPServer. 인가 설정은 SDK가 RFC 9728·챌린지로 낸다(scopes_supported = required_scopes)."""
+    auth = AuthSettings(issuer_url=AnyHttpUrl(issuer), resource_server_url=AnyHttpUrl(public_url), required_scopes=list(required_scopes(public_url)), validate_token_resource=True)
     server: MCPServer[None] = MCPServer(name="harness-catalog", instructions="Skill catalog: list, search, load skills and their files.", auth=auth, token_verifier=verifier)
-    b = ToolBindings(catalog, service_client_ids)
+    b = ToolBindings(catalog)
     server.tool(name="list_skills", description="List every skill: id, description, sha (tree), replaced_by, requires_tools, compatibility.")(b.list_skills)
     server.tool(name="search_skills", description="Lexical search over id, description and metadata values. limit 1..20 (default 10).")(b.search_skills)
     server.tool(name="load_skill", description="SKILL.md body with sha, commit, metadata and file list. sha optional (default: current main).")(b.load_skill)

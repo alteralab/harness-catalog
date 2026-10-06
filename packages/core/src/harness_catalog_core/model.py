@@ -59,18 +59,23 @@ class IndexOutcome(StrEnum):
     UNAVAILABLE = "unavailable"  # DB가 닿지 않는다
 
 
-class PrincipalKind(StrEnum):
-    HUMAN = "human"
-    SERVICE = "service"
-
-
 def _freeze(m: Mapping[str, str]) -> Mapping[str, str]:
     return MappingProxyType(dict(m))
 
 
-SKILLS_READERS = "harness-readers"
-REQUIRED_SCOPE = "skills:read"
+HARNESS_READERS = "harness-readers"
 SUPPORTED_LAYOUT = 1
+BASE_SCOPES = ("openid", "groups")
+
+
+def audience_scope(public_url: str) -> str:
+    """Dex 교차 클라이언트 스코프: 요청하면 토큰 aud에 레지스트리 URL이 실린다."""
+    return f"audience:server:client_id:{public_url.rstrip('/')}"
+
+
+def required_scopes(public_url: str) -> tuple[str, ...]:
+    """RFC 9728 문서에 광고하는 스코프 = 검증기가 유효한 토큰에 부여하는 스코프. 토큰에서 검사하지는 않는다."""
+    return (*BASE_SCOPES, audience_scope(public_url))
 
 
 @dataclass(frozen=True)
@@ -97,9 +102,7 @@ class SkillReport:
 @dataclass(frozen=True)
 class Principal:
     subject: str
-    kind: PrincipalKind
     groups: frozenset[str]
-    scopes: frozenset[str]
     client_id: str
 
 

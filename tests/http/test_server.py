@@ -97,12 +97,12 @@ def test_protected_resource_metadata_and_401(server: tuple[str, FakeIssuer]) -> 
         meta = httpx.get(base + "/.well-known/oauth-protected-resource")
     doc = meta.json()
     assert doc["resource"].rstrip("/") == base + PUBLIC_PATH
-    assert "skills:read" in doc.get("scopes_supported", [])
+    assert doc["scopes_supported"] == ["openid", "groups", f"audience:server:client_id:{base}{PUBLIC_PATH}"]
 
 
 def test_reader_calls_all_four_tools(server: tuple[str, FakeIssuer]) -> None:
     base, issuer = server
-    token = issuer.token(sub="user-1", aud=base + PUBLIC_PATH, groups=["harness-readers"], scope="skills:read")
+    token = issuer.token(sub="user-1", aud=base + PUBLIC_PATH, groups=["harness-readers"])  # Dex처럼 scope 클레임 없음
     listing = result_of(call_tool(base, token, "list_skills", {}))
     names = [s["name"] for s in listing["structuredContent"]["skills"]]
     assert names == ["pin-skill", "yt-subs"]
@@ -118,21 +118,22 @@ def test_reader_calls_all_four_tools(server: tuple[str, FakeIssuer]) -> None:
 
 def test_wrong_audience_expired_and_not_a_member(server: tuple[str, FakeIssuer]) -> None:
     base, issuer = server
-    wrong_aud = issuer.token(sub="u", aud="claude-code", groups=["harness-readers"], scope="skills:read")
+    wrong_aud = issuer.token(sub="u", aud="claude-code", groups=["harness-readers"])  # 교차 클라이언트 스코프 없이 받은 Dex 토큰 꼴
     assert call_tool(base, wrong_aud, "list_skills", {}).status_code == 401
-    expired = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["harness-readers"], scope="skills:read", exp_in=-120)
+    multi_aud = issuer.token(sub="u", aud=[base + PUBLIC_PATH, "claude-code"], groups=["harness-readers"], azp="claude-code")  # 교차 클라이언트 스코프로 받은 꼴
+    assert "structuredContent" in result_of(call_tool(base, multi_aud, "list_skills", {}))
+    expired = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["harness-readers"], exp_in=-120)
     assert call_tool(base, expired, "list_skills", {}).status_code == 401
-    no_scope = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["harness-readers"])
-    r = call_tool(base, no_scope, "list_skills", {})
-    assert r.status_code == 403 and "insufficient_scope" in r.headers.get("www-authenticate", "")
-    outsider = issuer.token(sub="u", aud=base + PUBLIC_PATH, scope="skills:read")
-    res = result_of(call_tool(base, outsider, "list_skills", {}))
+    outsider = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["users"])
+    r = call_tool(base, outsider, "list_skills", {})
+    assert r.status_code == 200 and "www-authenticate" not in {k.lower() for k in r.headers}
+    res = result_of(r)
     assert res["isError"] is True and res["structuredContent"]["code"] == "not_a_member"
 
 
-def test_service_principal_reads_without_group_or_scope(server: tuple[str, FakeIssuer]) -> None:
+def test_machine_account_reads_by_group(server: tuple[str, FakeIssuer]) -> None:
     base, issuer = server
-    svc = issuer.token(sub="ci-runner", aud=base + PUBLIC_PATH)  # 그룹도 스코프도 없다
+    svc = issuer.token(sub="svc-harness", aud=base + PUBLIC_PATH, groups=["harness-readers"])  # 기계 계정 = 그룹으로 reader
     res = result_of(call_tool(base, svc, "list_skills", {}))
     assert "structuredContent" in res and not res.get("isError")
     assert json.loads(res["content"][0]["text"])["skills"]

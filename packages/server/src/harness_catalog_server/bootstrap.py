@@ -12,7 +12,6 @@ from starlette.applications import Starlette
 from starlette.routing import Mount, Route
 
 from harness_catalog_core.adapters.git import GitStore
-from harness_catalog_core.authz import DEFAULT_SERVICE_CLIENT_IDS
 from harness_catalog_core.adapters.validate import SkillsRefValidator
 from harness_catalog_core.catalog import Catalog
 from harness_catalog_core.model import IndexOutcome, IndexSnapshot
@@ -69,8 +68,8 @@ def bootstrap(settings: Settings, workdir: Path, *, jwks_uri: str | None = None,
     catalog, facts, store = make_catalog(settings, workdir, use_db=use_db)
     issuer = str(settings.oidc_issuer).rstrip("/")
     public_url = str(settings.public_url).rstrip("/")
-    verifier = JwtTokenVerifier(issuer, public_url, jwks_uri or discover_jwks_uri(issuer), DEFAULT_SERVICE_CLIENT_IDS)
-    server = build_server(catalog, issuer=issuer, public_url=public_url, verifier=verifier, service_client_ids=DEFAULT_SERVICE_CLIENT_IDS)
+    verifier = JwtTokenVerifier(issuer, public_url, jwks_uri or discover_jwks_uri(issuer))
+    server = build_server(catalog, issuer=issuer, public_url=public_url, verifier=verifier)
     mcp_app = server.streamable_http_app(streamable_http_path="/mcp", stateless_http=True, json_response=True, host="0.0.0.0")  # noqa: S104
 
     @contextlib.asynccontextmanager

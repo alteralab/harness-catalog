@@ -29,6 +29,7 @@ logger:
 oauth2:
   responseTypes: ["code"]
   skipApprovalScreen: true
+  passwordConnector: local   # 무인 주체(기계 계정)의 비밀번호 그랜트. 공개 클라이언트에도 열린다는 것을 안다
   # grantTypes는 적지 않는다 = Dex가 지원하는 전부(authorization_code·refresh_token·device_code·token-exchange).
   # client_credentials는 v2.45.1 서버 코드에 없다(pilot r1).
 

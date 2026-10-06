@@ -27,6 +27,7 @@ logger:
 oauth2:
   responseTypes: ["code"]
   skipApprovalScreen: true
+  passwordConnector: ldap   # 무인 주체(기계 계정)의 비밀번호 그랜트. 공개 클라이언트에도 열린다는 것을 안다
 
 expiry:
   idTokens: "1h"

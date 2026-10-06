@@ -12,8 +12,7 @@ import jwt
 from jwt import PyJWKClient
 from mcp.server.auth.provider import AccessToken
 
-from harness_catalog_core.authz import is_service_subject
-from harness_catalog_core.model import REQUIRED_SCOPE
+from harness_catalog_core.model import required_scopes
 
 ALGORITHMS = ("RS256", "ES256")
 LEEWAY_SECONDS = 60
@@ -32,10 +31,10 @@ def discover_jwks_uri(issuer: str, timeout: float = 10.0) -> str:
 class JwtTokenVerifier:
     """SDK TokenVerifier 구현. 바깥 통신은 JWKS 가져오기뿐(캐시 1시간, 모르는 kid는 즉시 재조회)."""
 
-    def __init__(self, issuer: str, audience: str, jwks_uri: str, service_client_ids: frozenset[str] = frozenset()) -> None:
+    def __init__(self, issuer: str, audience: str, jwks_uri: str) -> None:
         self._issuer = issuer
         self._audience = audience
-        self._service_ids = service_client_ids
+        self._scopes = list(required_scopes(audience))
         self._jwks = PyJWKClient(jwks_uri, cache_keys=True, lifespan=3600)
 
     def decode(self, token: str) -> Mapping[str, Any] | None:
@@ -53,12 +52,9 @@ class JwtTokenVerifier:
         if claims is None:
             return None
         aud = claims.get("aud")
-        scope = claims.get("scope")
-        scopes = str(scope).split() if isinstance(scope, str) else []
-        if is_service_subject(str(claims["sub"]), self._service_ids) and REQUIRED_SCOPE not in scopes:
-            scopes.append(REQUIRED_SCOPE)  # 서비스 주체는 스코프와 무관하게 읽는다 — 전송층의 required_scopes를 통과시킨다
         client_id = str(claims.get("azp") or (aud if isinstance(aud, str) else ""))
+        # 스코프는 토큰에서 보지 않는다(Dex 토큰에 scope 클레임이 없다): 유효한 토큰에 요구 스코프를 그대로 부여한다
         return AccessToken(
-            token=token, client_id=client_id, scopes=scopes, expires_at=int(claims["exp"]),
+            token=token, client_id=client_id, scopes=list(self._scopes), expires_at=int(claims["exp"]),
             resource=self._audience, subject=str(claims["sub"]), claims=dict(claims),
         )
