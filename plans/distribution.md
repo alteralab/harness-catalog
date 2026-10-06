@@ -167,7 +167,7 @@
 | V5 | 표지 검사 | `.harness-catalog`가 없는 저장소, `layout = 2`인 저장소, 빈 저장소를 각각 가리켜 기동 | 각각 `/readyz` 503과 사유 `not_a_catalog`·`unsupported_layout`·`no_main_branch` | 대기 |
 | V6 | `init` → 첫 PR CI 초록 | `init`으로 만든 저장소에 두 스킬의 PR | 워크플로가 `harness-catalog check`를 돌리고 초록. 검사 항목 하나를 일부러 깨면 붉다. 도구 판(패키지·gitleaks)이 service 이미지의 핀과 같다 | **초록 부분 통과(2026-10-07)**: `alteralab/catalog` PR #1 run 37538600605 — deploy key 시크릿으로 비공개 코드 저장소에서 cli 설치, `check` 통과 12초. 일부러 깨기는 미실측 |
 | V7 | 브랜치 보호 | 걸지 않기로 했다(우산 §6-8, DESIGN §11 사용자 결정 2026-09-26). Free 플랜 비공개 저장소에 설정이 없다 | 해당 없음 | 불채택 |
-| V8 | 읽기 전용 deploy key와 병합 반영 | 컨테이너 안에서 `git push --dry-run`; 사람이 PR을 병합 | push는 거부되고 fetch는 된다. 병합이 우산 V3의 허용오차(`FETCH_INTERVAL_SECONDS` 두 주기) 안에 `list_skills`에 나온다 | 대기 |
+| V8 | 읽기 전용 deploy key와 병합 반영 | 컨테이너 안에서 `git push --dry-run`; 사람이 PR을 병합 | push는 거부되고 fetch는 된다. 병합이 우산 V3의 허용오차(`FETCH_INTERVAL_SECONDS` 두 주기) 안에 `list_skills`에 나온다 | **병합 반영 통과(2026-10-07)**: 사용자가 PR #1 병합(87bec19) → mini `/readyz` `commit`=87bec19, `rejected` 없음(fetched 22:13:18Z), 기계 계정 토큰으로 `list_skills` → `pin-skill`·`write-skill` 둘. main push CI도 초록(run 37539123231). `push --dry-run` 거부는 미실측 |
 | V12 | 이미지 보존 규칙 | 커밋 여섯을 연속으로 `main`에 합친 뒤 GHCR 패키지 버전 목록을 본다 | SHA 태그가 정확히 5개, 태그 없는 버전 0개, 마지막 다섯 커밋의 SHA와 일치 | 대기 |
 | V9 | 비밀 없음 | 저장소 전체 gitleaks | `.env` 없음, 검출 0 | 대기 |
 | V10 | 새 VM 복구 | 우산 V5. 기존 카탈로그 저장소를 가리켜 V1을 다시 | fetch만으로 인덱스가 다시 지어지고 은퇴한 이름을 `check` 항목 5가 여전히 거부한다 | 대기 |
