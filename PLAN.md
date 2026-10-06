@@ -151,6 +151,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | 첫 팀원 로그인(우산 V1) | 사용자가 Claude Code에 사용자 범위로 등록(URL + `oauth.clientId`)하고 `/mcp`로 브라우저 로그인(LDAP `gyojunan`) → `list_skills`에 `pin-skill`·`write-skill`. PR #1 병합은 mini가 한 주기 안에 색인. 카탈로그 CI는 코드 저장소 읽기 전용 deploy key(`HARNESS_CATALOG_DEPLOY_KEY`)로 초록. 코드 저장소 README 추가 | plans/pilot/r3.md, plans/distribution.md V2·V6·V8 |
 | 2026-10-07 | P5 실행: mini 배포·러너·r3 | 레지스트리가 mini에서 tailnet HTTPS(`https://alteraui-macmini.tail2f9fe3.ts.net/mcp`)로 산다. 러너 `mini-hc` 온라인. r3: Claude Code는 PRM 스코프 그대로 요청·OIDC 발견 폴백·사전 등록은 `.mcp.json` `oauth.clientId`. 남은 사용자 몫: PR #1 병합, 시크릿 둘(`HARNESS_CATALOG_READ_TOKEN`·`ALTERALAB_READ_TOKEN`) 또는 저장소 공개, 대화형 로그인 확인 | plans/distribution.md §10, plans/pilot/r3.md |
 | 2026-10-07 | P1 끝 조건 실물 충족 | NAS LDAP의 `gyojunan`·`svc-harness` 실물 토큰으로 HTTP 경유 도구 호출 200, aud 불일치 401, 비가입자 not_a_member(r2). 남은 P1 미달 없음 | plans/pilot/r2.md |
 | 2026-10-07 | 사용자 결정 §6-10·11·12 ("셋 다") | (바) 기계 계정 + 비밀번호 그랜트, (다) PRM 교차 클라이언트 스코프, (가) 토큰 스코프 검사 없음. DESIGN §2·§3·§9·§11, 코드(서비스 주체 제거, 요구 스코프, 검증기), Dex 설정(`passwordConnector`), 시험 반영. §6 미결 0 | DESIGN §11 |
