@@ -165,7 +165,7 @@
 | V3 | 서비스 주체 토큰 | `ci-runner`로 클라이언트 자격 증명 | 토큰 실물(`sub`·`azp`·`groups` 유무)을 pilot r에 기록했고, service의 인가 정책이 그 표지로 서비스 주체를 가른다 | 대기(pilot P0과 같은 실측) |
 | V4 | 토큰 수명 | V2·V3 토큰의 `exp - iat` | 3600초 이하 | 대기 |
 | V5 | 표지 검사 | `.harness-catalog`가 없는 저장소, `layout = 2`인 저장소, 빈 저장소를 각각 가리켜 기동 | 각각 `/readyz` 503과 사유 `not_a_catalog`·`unsupported_layout`·`no_main_branch` | 대기 |
-| V6 | `init` → 첫 PR CI 초록 | `init`으로 만든 저장소에 두 스킬의 PR | 워크플로가 `harness-catalog check`를 돌리고 초록. 검사 항목 하나를 일부러 깨면 붉다. 도구 판(패키지·gitleaks)이 service 이미지의 핀과 같다 | 대기 |
+| V6 | `init` → 첫 PR CI 초록 | `init`으로 만든 저장소에 두 스킬의 PR | 워크플로가 `harness-catalog check`를 돌리고 초록. 검사 항목 하나를 일부러 깨면 붉다. 도구 판(패키지·gitleaks)이 service 이미지의 핀과 같다 | **초록 부분 통과(2026-10-07)**: `alteralab/catalog` PR #1 run 37538600605 — deploy key 시크릿으로 비공개 코드 저장소에서 cli 설치, `check` 통과 12초. 일부러 깨기는 미실측 |
 | V7 | 브랜치 보호 | 걸지 않기로 했다(우산 §6-8, DESIGN §11 사용자 결정 2026-09-26). Free 플랜 비공개 저장소에 설정이 없다 | 해당 없음 | 불채택 |
 | V8 | 읽기 전용 deploy key와 병합 반영 | 컨테이너 안에서 `git push --dry-run`; 사람이 PR을 병합 | push는 거부되고 fetch는 된다. 병합이 우산 V3의 허용오차(`FETCH_INTERVAL_SECONDS` 두 주기) 안에 `list_skills`에 나온다 | 대기 |
 | V12 | 이미지 보존 규칙 | 커밋 여섯을 연속으로 `main`에 합친 뒤 GHCR 패키지 버전 목록을 본다 | SHA 태그가 정확히 5개, 태그 없는 버전 0개, 마지막 다섯 커밋의 SHA와 일치 | 대기 |
