@@ -70,11 +70,11 @@ connectors:
         filter: ""
         username: uid
         idAttr: dn
-        emailAttr: mail
+        emailAttr: uid        # 실측(r2): 사용자에 mail이 없을 수 있다(admin·gyojunan). Dex는 emailAttr가 비면 로그인을 거부하므로 uid를 쓴다
         nameAttr: cn
       groupSearch:
         baseDN: "{{ getenv "LDAP_GROUP_BASE_DN" }}"
-        filter: ""                 # 비워 둔다(선례). 그룹 하나만 거르려면 "(cn=skills-readers)"
+        filter: ""                 # 비워 둔다(선례). 그룹 하나만 거르려면 "(cn=harness-readers)"
         userMatchers:
           - userAttr: dn
             groupAttr: member

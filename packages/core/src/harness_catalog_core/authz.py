@@ -36,7 +36,7 @@ def principal_from_claims(claims: Mapping[str, Any], service_client_ids: frozens
 
 
 def authorize(principal: Principal, tool: str) -> Decision:
-    """reader = 그룹 skills-readers 또는 서비스 주체. 스코프는 전송층(SDK)이 먼저 본다."""
+    """reader = 그룹 harness-readers 또는 서비스 주체. 스코프는 전송층(SDK)이 먼저 본다."""
     if tool not in READ_TOOLS:
         return Decision(False, ErrorCode.NOT_FOUND, f"unknown tool {tool}")
     if principal.kind is PrincipalKind.SERVICE or SKILLS_READERS in principal.groups:

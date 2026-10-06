@@ -19,8 +19,8 @@
 
 1. git 호스트에 빈 저장소를 만들고 `harness-catalog init <repo-url>`을 돌립니다(이 파일들이 그 결과입니다). 두 번 돌려도 변경이 없습니다.
 2. 읽기 전용 deploy key를 등록하고 레지스트리 `.env`에 개인 키를 넣습니다. 확인: 레지스트리 컨테이너에서 `git fetch`는 되고 `git push --dry-run`은 거부됩니다.
-3. 저자에게 저장소 write, 병합·설정을 할 사람에게 admin을 줍니다. 저장소 read 이상 명단과 LDAP 그룹 `skills-readers`를 같게 유지합니다.
-4. Dex에 하네스 제품의 정적 클라이언트가 있는지, 첫 팀원이 `skills-readers`에 있는지 확인합니다(로그인 한 번으로 확인).
+3. 저자에게 저장소 write, 병합·설정을 할 사람에게 admin을 줍니다. 저장소 read 이상 명단과 LDAP 그룹 `harness-readers`를 같게 유지합니다.
+4. Dex에 하네스 제품의 정적 클라이언트가 있는지, 첫 팀원이 `harness-readers`에 있는지 확인합니다(로그인 한 번으로 확인).
 5. 레지스트리를 띄우고 `/readyz`가 200인지 봅니다. 503이면 본문의 사유(`not_a_catalog`·`no_main_branch`·`repo_unreachable`·`layout_mismatch`)대로 1·2를 다시 봅니다.
 6. CI evals(선택): git 호스트 변수 `HARNESS_EVALS=true`와 러너 `.env`의 자격으로 켜고, `false`로 끕니다. 하네스 목록은 `HARNESS_EVALS_AGENTS`(기본 `claude-code codex`).
 

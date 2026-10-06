@@ -53,7 +53,7 @@ async def call(c: httpx.AsyncClient, token: str, name: str, arguments: dict[str,
 async def test_tool_spans_carry_subject_skill_and_query(client: tuple[httpx.AsyncClient, FakeIssuer]) -> None:
     c, issuer = client
     _exporter.clear()
-    token = issuer.token(sub="user-7", aud=PUBLIC, groups=["skills-readers"], scope="skills:read")
+    token = issuer.token(sub="user-7", aud=PUBLIC, groups=["harness-readers"], scope="skills:read")
     r = await call(c, token, "load_skill", {"id": "yt-subs"})
     sha = r.json()["result"]["structuredContent"]["sha"]
     await call(c, token, "search_skills", {"query": "nothing-at-all"})

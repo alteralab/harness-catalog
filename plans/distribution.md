@@ -37,7 +37,7 @@
       github/check.yml      #     GitHub Actions: PR·main push마다 `harness-catalog check`(D22 명세로 설치) + 선택 잡 evals(D19)
       gitlab/.gitlab-ci.yml #     GitLab CI: 같은 검사
   docs/                     # 설치(빠른 시작·프록시 뒤)·설정값 여섯 참조·운영자 가이드(신설·복구)·LDAP 변형 안내
-  scripts/                  # 운영 셸 스크립트: dev-token.sh, membership-diff.sh(저장소 read 명단 vs skills-readers 차이), 복구 절차. 첫 파일과 함께 lang/bash 선언
+  scripts/                  # 운영 셸 스크립트: dev-token.sh, membership-diff.sh(저장소 read 명단 vs harness-readers 차이), 복구 절차. 첫 파일과 함께 lang/bash 선언
 ```
 
 ## 3. 판정 원장
@@ -49,7 +49,7 @@
 | D1 | compose 서비스 이름·포트·볼륨 | 서비스 이름은 `registry`·`postgres`·`dex`. 밖으로 여는 포트는 `registry`의 HTTP 하나와 `dex`의 HTTP 하나(둘 다 프록시가 받는다). PostgreSQL은 compose 네트워크 안에서만 — **개발 compose(`docker-compose.dev.yml`)만 예외로 호스트 127.0.0.1에 연다**(호스트의 서비스·시험이 붙는다). 볼륨은 `pgdata` 하나와 레지스트리의 로컬 클론용 `clone` 하나 | 설계 판단. DESIGN §2.1 "인가는 레지스트리 안, 프록시는 TLS와 라우팅만"이라 프록시가 볼 종단은 둘뿐이다. 클론 볼륨은 재기동 때 전량 clone을 피하는 편의이며 잃어도 fetch가 다시 만든다(§2.1 준비됨 정의) |
 | D2 | 데이터베이스 둘과 역할 둘은 누가 만드는가 | `docker/postgres/init.sql`이 만든다(postgres 이미지의 초기화 훅으로 마운트, 첫 기동에만 실행. 비밀번호는 환경 변수를 읽을 수 없는 `.sql` 대신 `init.sh`가 psql 변수 `:'hc_password'`로 넘긴다 — 2026-10-07 실측. `pg_trgm`도 슈퍼유저만 만들 수 있어 여기서 만든다). 서비스 마이그레이션은 `harness_catalog` 안의 표·확장(`pg_trgm`)만 소유한다 | 설계 판단. 서비스 역할은 자기 데이터베이스의 `CREATE`만 가지고 남의 데이터베이스를 만들 권한이 없어야 한다(§2 "별도 데이터베이스·역할"). 데이터베이스 생성은 인스턴스 소유자의 일이라 서비스 밖이다 |
 | D3 | Dex 저장소 | `postgres`의 `dex` 데이터베이스, 전용 역할 | DESIGN §2 결정. 문면: Dex는 postgres 저장소를 지원한다 |
-| D4 | Dex LDAP 커넥터 구조 | 선례를 그대로 쓴다: `~/workspace/dp-charts/argocd/values-override.yaml`의 `dex.config` LDAP 커넥터(Argo CD 내장 Dex가 같은 NAS LDAP에 붙어 운영 중). host `192.168.3.95:389`, `insecureNoSSL: true`(tailnet·사내망 안), `bindDN: uid=admin,cn=users,dc=gyojunan,dc=synology,dc=me`, userSearch `baseDN: cn=users,dc=gyojunan,dc=synology,dc=me`·`username: uid`·`idAttr: dn`·`emailAttr: mail`·`nameAttr: cn`, groupSearch `baseDN: cn=groups,dc=gyojunan,dc=synology,dc=me`·`userMatchers: [{userAttr: dn, groupAttr: member}]`·`nameAttr: cn`. 곧 그룹은 `member`에 사용자 DN을 담는 형태이고 `memberUid`가 아니다. bindPW만 환경 변수(`.env`)로 빼고 나머지는 `examples/synology-ldap/dex/config.yaml`에 적는다. groupSearch `filter`는 비워 두고(선례와 같음. 그룹 하나만 거르면 `(cn=skills-readers)`) `groups` 클레임에 실린 전체 목록에서 레지스트리가 `skills-readers`를 본다. `groups` 스코프를 클라이언트 요청 스코프에 포함 | 선례(2026-10-07 확인): dp-charts argocd(운영 중, `g, devops, role:admin` RBAC가 `groups`로 동작), 같은 값이 dp-eks-charts argocd `values-live.yaml`에 주석으로, grafana·airflow·hue·kyuubi·jupyterhub도 같은 host·DN(사용자 쪽은 `memberOf`도 쓴다 — Synology LDAP이 양방향 속성을 둘 다 낸다). **r2(2026-10-07) 실측 확인**: 그룹은 `posixGroup`이고 `member`(DN)·`memberUid` 둘 다, 사용자에 `memberOf`. Dex(LDAPS 636, `insecureSkipVerify`)가 낸 토큰의 `groups`에 그룹 `cn`이 평탄하게 실린다. 636의 인증서는 만료된 옛 것(DSM 웹은 갱신됨)이라 검증은 운영자가 Directory Server 인증서를 재배정한 뒤에 켠다. 선례 파일에는 bindPW·GitHub App 키가 평문으로 있다 — 복사하지 말고 `.env`로 |
+| D4 | Dex LDAP 커넥터 구조 | 선례를 그대로 쓴다: `~/workspace/dp-charts/argocd/values-override.yaml`의 `dex.config` LDAP 커넥터(Argo CD 내장 Dex가 같은 NAS LDAP에 붙어 운영 중). host `192.168.3.95:389`, `insecureNoSSL: true`(tailnet·사내망 안), `bindDN: uid=admin,cn=users,dc=gyojunan,dc=synology,dc=me`, userSearch `baseDN: cn=users,dc=gyojunan,dc=synology,dc=me`·`username: uid`·`idAttr: dn`·`emailAttr: mail`·`nameAttr: cn`, groupSearch `baseDN: cn=groups,dc=gyojunan,dc=synology,dc=me`·`userMatchers: [{userAttr: dn, groupAttr: member}]`·`nameAttr: cn`. 곧 그룹은 `member`에 사용자 DN을 담는 형태이고 `memberUid`가 아니다. bindPW만 환경 변수(`.env`)로 빼고 나머지는 `examples/synology-ldap/dex/config.yaml`에 적는다. `emailAttr`는 `uid`다(r2: admin·gyojunan에 `mail`이 없고 Dex는 emailAttr가 빈 항목의 로그인을 거부한다 — 선례의 `mail`과 다른 유일한 값). groupSearch `filter`는 비워 두고(선례와 같음. 그룹 하나만 거르면 `(cn=harness-readers)`) `groups` 클레임에 실린 전체 목록에서 레지스트리가 `harness-readers`를 본다. `groups` 스코프를 클라이언트 요청 스코프에 포함 | 선례(2026-10-07 확인): dp-charts argocd(운영 중, `g, devops, role:admin` RBAC가 `groups`로 동작), 같은 값이 dp-eks-charts argocd `values-live.yaml`에 주석으로, grafana·airflow·hue·kyuubi·jupyterhub도 같은 host·DN(사용자 쪽은 `memberOf`도 쓴다 — Synology LDAP이 양방향 속성을 둘 다 낸다). **r2(2026-10-07) 실측 확인**: 그룹은 `posixGroup`이고 `member`(DN)·`memberUid` 둘 다, 사용자에 `memberOf`. Dex(LDAPS 636, `insecureSkipVerify`)가 낸 토큰의 `groups`에 그룹 `cn`이 평탄하게 실린다. 636의 인증서는 만료된 옛 것(DSM 웹은 갱신됨)이라 검증은 운영자가 Directory Server 인증서를 재배정한 뒤에 켠다. 선례 파일에는 bindPW·GitHub App 키가 평문으로 있다 — 복사하지 말고 `.env`로 |
 | D5 | 정적 클라이언트 | 공개 클라이언트 셋: `claude-code`·`codex`·`cursor`(각각 `public: true`, `redirectURIs` 비움 — Dex는 공개 클라이언트에 `127.0.0.1:<any>`·`localhost` 루프백과 oob·장치 콜백을 허용한다(`validateRedirectURI` 실측). 제품이 고정 URI를 문서에 적으면 그때 적는다). 기밀 클라이언트 하나: `ci-runner`(`secretEnv: DEX_CI_RUNNER_SECRET`. 무인 읽기 — 그랜트는 우산 §6-10 결정이 정한다; Dex에 클라이언트 자격 증명은 없다, r1). 그리고 audience 실험·대안용 클라이언트 하나: id = 레지스트리 공개 URL(`HC_PUBLIC_URL`), `trustedPeers` 넷. 클라이언트 ID 문자열은 제품 이름 그대로. 파일은 `docker/dex/config.yaml`(gomplate: 이미지 entrypoint가 `.yaml`을 렌더링하므로 환경 변수는 `{{ getenv "X" }}`; Dex 자체의 `$X` 치환은 storage·connector·signer config에만 돈다) | 설계 판단 + r1 실측(2026-10-07). DESIGN §2 "에이전트 제품마다 사전 등록" |
 | D6 | PKCE 강제 | **Dex v2.45.1에는 강제 설정이 없다**(r1: `code_challenge` 없는 공개 클라이언트 요청이 발급된다, `cmd/dex/config.go`에 설정 없음). 레지스트리도 토큰만 보므로 알 수 없다. PKCE는 클라이언트 몫이고 MCP 인가 스펙이 클라이언트에 요구한다. V2의 "`code_challenge` 없는 요청 거부" 기준을 뺀다 | r1 실측(2026-10-07). 이전 행의 `pkce.enforce`는 문면 오류였다 |
 | D7 | 토큰 수명 | Dex `expiry.idTokens`·액세스 토큰을 1시간으로. 리프레시는 Dex 기본 | DESIGN §2 "1시간 이하를 요구한다". 실제 수명은 V4가 잰다 |
@@ -73,7 +73,7 @@
 
 ### distribution P0. 실측 지원용 개발 compose (우산 P0 안)
 
-1. LDAP 스키마 실측: NAS Directory Server에 `ldapsearch`로 사용자 하나·그룹 하나의 항목을 읽어 객체 클래스와 `member`(그룹 쪽)·`memberOf`(사용자 쪽) 원문을 pilot r에 적는다. D4의 선례(dp-charts argocd)가 `member`에 DN을 담는 형태로 이미 운영 중이라 이 단계는 발견이 아니라 확인이고, `skills-readers` 그룹을 NAS에서 만들고 시험 사용자를 넣은 뒤의 항목을 같이 적는다. Dex 없이 된다.
+1. LDAP 스키마 실측: NAS Directory Server에 `ldapsearch`로 사용자 하나·그룹 하나의 항목을 읽어 객체 클래스와 `member`(그룹 쪽)·`memberOf`(사용자 쪽) 원문을 pilot r에 적는다. D4의 선례(dp-charts argocd)가 `member`에 DN을 담는 형태로 이미 운영 중이라 이 단계는 발견이 아니라 확인이고, `harness-readers` 그룹을 NAS에서 만들고 시험 사용자를 넣은 뒤의 항목을 같이 적는다. Dex 없이 된다.
 2. `docker-compose.dev.yml` 초판: `postgres`(init.sql로 데이터베이스·역할 둘) + `dex`(LDAP 커넥터는 1의 실측값, 정적 클라이언트는 공개 PKCE·공개 장치·`ci-runner` 셋). pilot Q2·Q5가 이것으로 토큰 실물을 잰다.
 3. `.env.example` 초판: Dex·DB 비밀과 LDAP 바인드 값.
 
@@ -111,10 +111,10 @@
 1. git 호스트에 빈 저장소를 만든다. 확인: `git ls-remote <url>`이 빈 결과로 성공한다.
 2. `harness-catalog init <repo-url>`을 운영자 git 자격으로 돌린다. 확인: 원격의 루트에 `.harness-catalog`(`layout = 1`)·`skills/.gitkeep`·README·pre-commit 설정·이 호스트의 CI 워크플로가 있고, 두 번째 실행이 변경 0이다.
 3. `main` 보호는 걸지 않는다(우산 §6-8 결정, DESIGN §11). 강제 push 금지는 규율이다. 확인 항목 없음.
-4. deploy key(**읽기 전용**)를 등록하고 개인 키를 `.env`의 자리에 넣는다. 확인: 레지스트리 컨테이너 안에서 `git fetch`가 성공하고 `git push --dry-run`이 거부된다. 저자에게는 저장소 write(브랜치·PR), 병합·설정을 할 사람에게는 admin을 준다. `skills-readers` 그룹 명단과 저장소 read 이상 명단이 같다.
+4. deploy key(**읽기 전용**)를 등록하고 개인 키를 `.env`의 자리에 넣는다. 확인: 레지스트리 컨테이너 안에서 `git fetch`가 성공하고 `git push --dry-run`이 거부된다. 저자에게는 저장소 write(브랜치·PR), 병합·설정을 할 사람에게는 admin을 준다. `harness-readers` 그룹 명단과 저장소 read 이상 명단이 같다.
 5. `init`이 놓은 CI 워크플로가 도는지 본다. 확인: 첫 PR(두 스킬)의 CI가 `harness-catalog check`를 돌려 초록이다(V6). pre-commit 훅은 저자마다 `pre-commit install`.
 6. Dex에 하네스 제품의 정적 클라이언트가 있고 리다이렉트 URI가 그 제품 문서와 같다. 확인: 그 하네스에서 로그인 한 번(우산 V1).
-7. DSM의 LDAP Server 패키지(구 Directory Server) → 그룹 관리에서 `skills-readers`를 만들고(r2: 아직 없다) 첫 팀원을 넣는다. LDAPS 검증을 켜려면 mini에서 `gyojunan.synology.me`를 192.168.3.95로 풀어 주고(/etc/hosts 또는 split DNS) `.env`를 `LDAP_HOST=gyojunan.synology.me:636`, `LDAP_INSECURE_SKIP_VERIFY=false`로 둔다(r2: 인증서는 2026-10-07 패키지 재시작으로 갱신됨; 갱신 뒤 데몬이 안 읽으면 `sudo synopkg restart DirectoryServer`)(r2: 636이 만료된 인증서를 낸다). LDAP 그룹 `skills-readers`에 첫 팀원이 있다. 확인: 그 사람의 토큰에 `groups`가 있다(V2). 카탈로그 저장소의 read 이상 권한을 가진 사람 명단이 이 그룹과 같다(그룹에 없는 사람은 레지스트리에서 `not_a_member`이므로 저장소 쪽만 넓으면 우회가 생긴다).
+7. DSM의 LDAP Server 패키지(구 Directory Server) → 그룹 관리에서 `harness-readers`를 만들고(r2: 아직 없다) 첫 팀원을 넣는다. LDAPS 검증을 켜려면 mini에서 `gyojunan.synology.me`를 192.168.3.95로 풀어 주고(/etc/hosts 또는 split DNS) `.env`를 `LDAP_HOST=gyojunan.synology.me:636`, `LDAP_INSECURE_SKIP_VERIFY=false`로 둔다(r2: 인증서는 2026-10-07 패키지 재시작으로 갱신됨; 갱신 뒤 데몬이 안 읽으면 `sudo synopkg restart DirectoryServer`)(r2: 636이 만료된 인증서를 낸다). LDAP 그룹 `harness-readers`에 첫 팀원이 있다. 확인: 그 사람의 토큰에 `groups`가 있다(V2). 카탈로그 저장소의 read 이상 권한을 가진 사람 명단이 이 그룹과 같다(그룹에 없는 사람은 레지스트리에서 `not_a_member`이므로 저장소 쪽만 넓으면 우회가 생긴다).
 8. `.env`의 필수 설정값 다섯이 채워졌고 선택 둘은 비워 두거나 의도한 값이다. 확인: `docker compose config`가 빈 필수 변수를 경고하지 않는다.
 9. `docker compose up -d` 뒤 `/healthz` 200, `/readyz` 200(V1). 503이면 본문의 사유(`not_a_catalog`·`no_main_branch`·`repo_unreachable`·`layout_mismatch`)대로 2·4번을 다시 본다.
 10. 하네스에 레지스트리 URL 한 줄을 등록하고 `list_skills`가 두 스킬을 돌려준다.
@@ -161,7 +161,7 @@
 | # | 검증 | 방법 | 통과 기준 | 상태 |
 |---|---|---|---|---|
 | V1 | 깨끗한 VM에서 기동 | 새 VM에 저장소를 받고 `.env`만 채운 뒤 `docker compose up -d` | 컨테이너 셋 전부 healthy, `/healthz` 200, `/readyz` 200. 프록시 뒤에서 토큰 없는 호출의 401 챌린지 `resource_metadata`가 공개 URL이다. 실행 중인 `registry` 이미지의 digest가 CI 빌드 출력의 digest와 같다(D11) | 대기 |
-| V2 | 사람 토큰 | LDAP 사용자로 공개 클라이언트(PKCE) 로그인 | 토큰의 `iss`가 issuer, `aud`가 레지스트리 URL, `groups`에 `skills-readers`, `sub`가 사용자 | 대기 |
+| V2 | 사람 토큰 | LDAP 사용자로 공개 클라이언트(PKCE) 로그인 | 토큰의 `iss`가 issuer, `aud`가 레지스트리 URL, `groups`에 `harness-readers`, `sub`가 사용자 | 대기 |
 | V3 | 서비스 주체 토큰 | `ci-runner`로 클라이언트 자격 증명 | 토큰 실물(`sub`·`azp`·`groups` 유무)을 pilot r에 기록했고, service의 인가 정책이 그 표지로 서비스 주체를 가른다 | 대기(pilot P0과 같은 실측) |
 | V4 | 토큰 수명 | V2·V3 토큰의 `exp - iat` | 3600초 이하 | 대기 |
 | V5 | 표지 검사 | `.harness-catalog`가 없는 저장소, `layout = 2`인 저장소, 빈 저장소를 각각 가리켜 기동 | 각각 `/readyz` 503과 사유 `not_a_catalog`·`unsupported_layout`·`no_main_branch` | 대기 |
@@ -182,6 +182,7 @@
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | 사용자 결정: 읽기 그룹 `harness-readers` | DESIGN §11. NAS에 그룹과 첫 사용자 `gyojunan`이 생겼고 그 토큰의 `groups`에 실림을 실측(r2). D4 `emailAttr: uid` | DESIGN §11, r2 |
 | 2026-10-07 | r2: LDAP 실물·Dex 연합 토큰 | P0-1 완료. D4 확정(member DN), 체크리스트 7에 그룹 생성·인증서 재배정. 이 맥의 Docker 컨테이너는 LAN에 닿지 않아 Dex를 소스 빌드로 호스트에서 띄워 쟀다 | plans/pilot/r2.md |
 | 2026-10-07 | 운영 compose 연기 시험(로컬) + 마지막 Codex 리뷰 반영 | `docker-compose.yml` + `scripts/make-secrets.sh`(비밀 파일 여섯, database_url 조립) + bare 카탈로그(file://, bind mount)로 실 기동: 4초 만에 `/readyz` 200·`degraded: []`, 마이그레이션 1개 적용, `skill_index`에 스킬 둘, PRM 문서·401 챌린지 정상, 병합 push가 12초 안에 인덱스에 반영(`FETCH_INTERVAL_SECONDS=5`), 강제 push 되감기 → `main_rewound`(메모리·DB 불변), `reindex --accept-rewind`는 사라진 기준 커밋 때문에 실패 → 수용 시 이력 기준을 버리도록 수정(서빙 중인 프로세스는 재기동해야 메모리가 새 main이 된다 — 명령 도움말에 적음). 실측 발견: 컨테이너 안 비루트가 다른 uid 소유의 file:// 저장소를 읽으려면 git `safe.directory`가 필요해 어댑터 환경에 넣었다; 운영 compose의 `init.sh`가 `*_FILE`을 읽지 않던 치명 결함(Codex) 수정·양쪽 모드 실측. 리뷰 반영: evals 변경 범위를 check와 같은 push 기준으로, GHCR 보존은 태그 없는 것 삭제 → 최신 5개 순, 코드 CI의 dind 제거, agent 분할 glob 안전, init 호스트 판별은 github.com·*.github.com만(나머지는 `--host`) | D1·D10·D11·V1·V5·V8·V10 일부, Codex 리뷰 |
 | 2026-10-07 | P2 초판: 운영 compose·코드 CI | `docker-compose.yml`(registry·postgres·dex, 비밀은 docker secrets 파일 — `*_FILE`; Dex 템플릿은 `_FILE`이 있으면 `file.Read`), `.env.example`에 레지스트리 절(`config docs` 생성)·`REGISTRY_IMAGE`·`SECRETS_DIR`, `docs/configuration.md`, `.github/workflows/ci.yml`(PR: 게이트·pyright·pytest / main: mini 러너가 GHCR로 SHA 태그 push + 보존 5개). 운영 compose는 `config --quiet` 검증만(실 기동은 P5 VM) | D1·D10·D11·D12 |

@@ -19,7 +19,7 @@
 | 저장소 표지와 기동 검사 넷 | §2.1 저장소 초기화 | `.harness-catalog`의 `layout = 1`, `skills/`, 실패 사유 넷(`repo_unreachable`·`no_main_branch`·`not_a_catalog`·`unsupported_layout`·`layout_mismatch`) |
 | DB 스키마 | 그림 3 + DDL + 규칙 다섯 | 업무 표 하나(`skill_index`) + `index_state` + 마이그레이션 메타. DDL 문자열이 계약이다 |
 | 게시 = git 워크플로 | §2 게시, §5, §5.1 ③ | 레지스트리는 `main`을 fetch·검사·인덱스만 한다. 검사 열(§5)은 `harness-catalog check` 하나이고 pre-commit·CI·인덱스 빌드가 같은 구현을 돈다. 되감기(`main_rewound`)는 규칙 3이 잡는다 |
-| 인증·인가 | §2 인증·인가 표, 그림 4 | JWT 검증 계약(`iss`·`aud`·`exp`·`nbf` 60초·RS256/ES256·`sub`·`scope`), 401/403 챌린지 경계, 스코프↔도구, 역할 reader 하나(그룹 `skills-readers`, 서비스 주체) |
+| 인증·인가 | §2 인증·인가 표, 그림 4 | JWT 검증 계약(`iss`·`aud`·`exp`·`nbf` 60초·RS256/ES256·`sub`·`scope`), 401/403 챌린지 경계, 스코프↔도구, 역할 reader 하나(그룹 `harness-readers`, 서비스 주체) |
 | 실패 시 동작 | §2.1 실패 시 동작 표 | PostgreSQL·push는 시간 초과+브레이커, fetch는 지수 백오프, JWKS는 캐시, DB 단절 시 메모리 사본으로 읽기 |
 | 파이썬 스택 | §2.1 Python 쪽 구체 표 | `mcp` v2 + Starlette + uvicorn, PyJWT, psycopg 3 + yoyo, git·gitleaks 서브프로세스, `skills_ref`, anyio, pydantic-settings, pytest·testcontainers, uv·ruff·pyright strict. **표에 없는 것은 넣지 않는다** |
 
@@ -42,7 +42,7 @@
         catalog_file.py     #   harness-catalog.toml 파서·허용 키(layout, [evals] enabled·agents). check 항목 1과 CI gate가 같은 파서를 쓴다
         model.py            #   SkillEntry·IndexSnapshot·Principal·오류 코드 열거. 순수 데이터
         ports.py            #   요구 포트 넷 = typing.Protocol: ContentStore·FactStore·IdentityVerifier·SkillValidator
-        authz.py            #   인가 정책(그림 4): reader(그룹 skills-readers 또는 서비스 주체) -> CATALOG_READ
+        authz.py            #   인가 정책(그림 4): reader(그룹 harness-readers 또는 서비스 주체) -> CATALOG_READ
         catalog.py          #   카탈로그: 목록·검색·본문·파일, 인덱스 빌드(메모리 스냅샷), 구조 검사, 상태. FactStore는 포트로만
         check.py            #   검사 열(§5): 저장소 구조 + 스킬마다 + 스킬 쌍. 인덱스 빌드(server)와 CLI(cli)가 같은 함수를 부른다
         adapters/
@@ -195,7 +195,7 @@
 | V2 | 빈 카탈로그 준비됨 | `init`으로 만든 저장소(스킬 0) | `/readyz` 200, `list_skills` 빈 목록, 마지막 fetch 시각 있음 | 대기 |
 | V3 | 401 챌린지 | HTTP로 토큰 없음·서명 불일치·`aud` 다름·만료·`iss` 다름 다섯 | 다섯 전부 401 + `WWW-Authenticate: Bearer resource_metadata=… scope="skills:read"`, RFC 9728 메타데이터 GET이 200 | 대기 |
 | V4 | 403 두 종 | `skills:read` 없는 토큰(`openid`만)으로 `list_skills`; `skills:read`는 있으나 그룹 없음 | 전자 403 + `error="insufficient_scope"` 챌린지, 후자 403 + 챌린지 없음 + 본문 `not_a_member` | 대기 |
-| V5 | 인가 행렬 | 주체 셋(`skills-readers` 사람·그룹 없는 사람·서비스) × 도구 넷 = 12칸을 `authz.decide` 단위 시험으로 | 12칸 전부 DESIGN 그림 4 표와 일치. 그룹 없음은 넷 전부 `not_a_member` | 대기(서비스 주체 칸은 D8 뒤) |
+| V5 | 인가 행렬 | 주체 셋(`harness-readers` 사람·그룹 없는 사람·서비스) × 도구 넷 = 12칸을 `authz.decide` 단위 시험으로 | 12칸 전부 DESIGN 그림 4 표와 일치. 그룹 없음은 넷 전부 `not_a_member` | 대기(서비스 주체 칸은 D8 뒤) |
 | V6 | 인덱스 세대 검사 | testcontainers: 커밋 B(자손)로 빌드 뒤 커밋 A(조상)로 빌드 | 두 번째 빌드 뒤 `index_state.commit_sha`가 B이고 행 집합이 B의 것 | 대기 |
 | V7 | 도구 호출 스팬 | `InMemorySpanExporter`를 꽂고 도구 넷을 사람 토큰으로 호출(`search_skills`는 결과 0인 검색어 하나 포함) | 호출마다 `SERVER` 스팬 하나, 이름 `tools/call <tool>`, `gen_ai.tool.name`=도구, `langfuse.user.id`=토큰 `sub`; `load_skill`·`get_skill_file`에 `metadata.skill`·`.sha`(응답 `sha`와 같음); `search_skills`에 `.query`·`.result_count`(0). DB를 끊어도 스팬은 같다 | 대기 |
 | V8 | degraded 읽기 | DB 컨테이너를 멈춘 채 도구 넷 호출과 `/readyz` | 넷 전부 응답(검색은 부분 일치), `/readyz` 200 + `degraded: ["db_unavailable"]`. 도구 응답에 `degraded` 필드가 없다 | 대기 |

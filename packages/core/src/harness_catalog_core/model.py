@@ -68,7 +68,7 @@ def _freeze(m: Mapping[str, str]) -> Mapping[str, str]:
     return MappingProxyType(dict(m))
 
 
-SKILLS_READERS = "skills-readers"
+SKILLS_READERS = "harness-readers"
 REQUIRED_SCOPE = "skills:read"
 SUPPORTED_LAYOUT = 1
 

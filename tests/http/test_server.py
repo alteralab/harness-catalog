@@ -102,7 +102,7 @@ def test_protected_resource_metadata_and_401(server: tuple[str, FakeIssuer]) -> 
 
 def test_reader_calls_all_four_tools(server: tuple[str, FakeIssuer]) -> None:
     base, issuer = server
-    token = issuer.token(sub="user-1", aud=base + PUBLIC_PATH, groups=["skills-readers"], scope="skills:read")
+    token = issuer.token(sub="user-1", aud=base + PUBLIC_PATH, groups=["harness-readers"], scope="skills:read")
     listing = result_of(call_tool(base, token, "list_skills", {}))
     names = [s["name"] for s in listing["structuredContent"]["skills"]]
     assert names == ["pin-skill", "yt-subs"]
@@ -118,11 +118,11 @@ def test_reader_calls_all_four_tools(server: tuple[str, FakeIssuer]) -> None:
 
 def test_wrong_audience_expired_and_not_a_member(server: tuple[str, FakeIssuer]) -> None:
     base, issuer = server
-    wrong_aud = issuer.token(sub="u", aud="claude-code", groups=["skills-readers"], scope="skills:read")
+    wrong_aud = issuer.token(sub="u", aud="claude-code", groups=["harness-readers"], scope="skills:read")
     assert call_tool(base, wrong_aud, "list_skills", {}).status_code == 401
-    expired = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["skills-readers"], scope="skills:read", exp_in=-120)
+    expired = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["harness-readers"], scope="skills:read", exp_in=-120)
     assert call_tool(base, expired, "list_skills", {}).status_code == 401
-    no_scope = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["skills-readers"])
+    no_scope = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["harness-readers"])
     r = call_tool(base, no_scope, "list_skills", {})
     assert r.status_code == 403 and "insufficient_scope" in r.headers.get("www-authenticate", "")
     outsider = issuer.token(sub="u", aud=base + PUBLIC_PATH, scope="skills:read")

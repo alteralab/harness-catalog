@@ -10,7 +10,7 @@ SERVICE = frozenset({"ci-runner"})
 
 @pytest.mark.parametrize("tool", sorted(READ_TOOLS))
 def test_matrix(tool: str) -> None:
-    reader = principal_from_claims({"sub": "u1", "groups": ["skills-readers"], "aud": "claude-code"}, SERVICE)
+    reader = principal_from_claims({"sub": "u1", "groups": ["harness-readers"], "aud": "claude-code"}, SERVICE)
     outsider = principal_from_claims({"sub": "u2", "aud": "claude-code"}, SERVICE)
     service = principal_from_claims({"sub": "ci-runner", "aud": "ci-runner"}, SERVICE)
     assert authorize(reader, tool).allowed
