@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["PyJWT[crypto]>=2.9"]
+# dependencies = ["PyJWT[crypto]==2.15.1"]
 # ///
 """pilot Q3 측정 도구: 하네스가 첫 접촉에 보내는 요청을 원문으로 받아 적는 인가 서버 stub.
 

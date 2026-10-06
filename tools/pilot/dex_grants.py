@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["PyJWT[crypto]>=2.9"]
+# dependencies = ["PyJWT[crypto]==2.15.1"]
 # ///
 """Dex의 그랜트 셋과 토큰 클레임 실물을 받아 적는 측정 도구.
 
