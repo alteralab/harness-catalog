@@ -18,6 +18,7 @@ gen postgres_password
 gen hc_db_password
 gen dex_db_password
 gen dex_ci_runner_secret
+if [ ! -f "$dir/ldap_bind_pw" ]; then umask 077; : > "$dir/ldap_bind_pw"; echo "note: $dir/ldap_bind_pw is empty — put the LDAP bind password there (synology-ldap overlay)" >&2; fi
 if [ ! -f "$dir/git_deploy_key" ]; then
   umask 077
   if [ -n "$key" ]; then cp "$key" "$dir/git_deploy_key"; else : > "$dir/git_deploy_key"; echo "warning: empty git_deploy_key (fine for file:// repos only)" >&2; fi

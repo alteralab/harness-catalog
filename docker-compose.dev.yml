@@ -50,5 +50,9 @@ services:
       retries: 10
     restart: unless-stopped
 
+secrets:
+  ldap_bind_pw:
+    file: ${SECRETS_DIR:-./secrets}/ldap_bind_pw
+
 volumes:
   pgdata-dev:
