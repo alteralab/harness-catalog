@@ -1,0 +1,12 @@
+# 우리 팀 변형 (distribution D4·D18): Dex를 Synology Directory Server(LDAP) 연합 판으로 바꿔 끼운다.
+# docker compose -f docker-compose.dev.yml -f examples/synology-ldap/docker-compose.override.yml up -d
+services:
+  dex:
+    environment:
+      LDAP_HOST: ${LDAP_HOST:-192.168.3.95:389}
+      LDAP_BIND_DN: ${LDAP_BIND_DN:-uid=admin,cn=users,dc=gyojunan,dc=synology,dc=me}
+      LDAP_BIND_PW: ${LDAP_BIND_PW:?.env의 LDAP_BIND_PW}
+      LDAP_USER_BASE_DN: ${LDAP_USER_BASE_DN:-cn=users,dc=gyojunan,dc=synology,dc=me}
+      LDAP_GROUP_BASE_DN: ${LDAP_GROUP_BASE_DN:-cn=groups,dc=gyojunan,dc=synology,dc=me}
+    volumes:
+      - ./examples/synology-ldap/dex/config.yaml:/etc/dex/config.yaml:ro

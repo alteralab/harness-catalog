@@ -1,0 +1,78 @@
+# Dex — Synology Directory Server(LDAP) 연합 판 (distribution D4). 정적 사용자는 없다.
+# 커넥터 값은 운영 중인 선례(~/workspace/dp-charts/argocd/values-override.yaml, Argo CD 내장 Dex)와 같다:
+# 그룹은 member 속성에 사용자 DN을 담는다(memberUid 아님). bindPW만 환경 변수.
+issuer: {{ getenv "DEX_ISSUER" | required "DEX_ISSUER" }}
+
+storage:
+  type: postgres
+  config:
+    host: postgres
+    port: 5432
+    database: dex
+    user: dex
+    password: "{{ getenv "DEX_DB_PASSWORD" }}"
+    ssl:
+      mode: disable
+
+web:
+  http: 0.0.0.0:5556
+
+telemetry:
+  http: 0.0.0.0:5558
+
+logger:
+  level: info
+  format: json
+
+oauth2:
+  responseTypes: ["code"]
+  skipApprovalScreen: true
+
+expiry:
+  idTokens: "1h"
+  deviceRequests: "5m"
+  refreshTokens:
+    validIfNotUsedFor: "720h"
+
+staticClients:
+  - id: claude-code
+    name: Claude Code
+    public: true
+  - id: codex
+    name: Codex
+    public: true
+  - id: cursor
+    name: Cursor
+    public: true
+  - id: ci-runner
+    name: CI runner (unattended read)
+    secretEnv: DEX_CI_RUNNER_SECRET
+  - id: "{{ getenv "HC_PUBLIC_URL" }}"
+    name: harness-catalog registry (audience)
+    secretEnv: DEX_CI_RUNNER_SECRET
+    trustedPeers: [claude-code, codex, cursor, ci-runner]
+
+connectors:
+  - type: ldap
+    id: ldap
+    name: Synology LDAP
+    config:
+      host: "{{ getenv "LDAP_HOST" }}"
+      insecureNoSSL: true          # tailnet·사내망 안. 선례와 같음
+      bindDN: "{{ getenv "LDAP_BIND_DN" }}"
+      bindPW: "{{ getenv "LDAP_BIND_PW" }}"
+      usernamePrompt: LDAP Username
+      userSearch:
+        baseDN: "{{ getenv "LDAP_USER_BASE_DN" }}"
+        filter: ""
+        username: uid
+        idAttr: dn
+        emailAttr: mail
+        nameAttr: cn
+      groupSearch:
+        baseDN: "{{ getenv "LDAP_GROUP_BASE_DN" }}"
+        filter: ""                 # 비워 둔다(선례). 그룹 하나만 거르려면 "(cn=skills-readers)"
+        userMatchers:
+          - userAttr: dn
+            groupAttr: member
+        nameAttr: cn

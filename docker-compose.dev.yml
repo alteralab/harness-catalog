@@ -1,0 +1,49 @@
+# 개발용 compose — postgres + dex만 (plans/distribution.md P0·P1, D1·D2·D3·D12·D18).
+# 레지스트리는 포함하지 않는다: service P1·P2가 호스트에서 uvicorn으로 뜨고 이 둘에 붙는다.
+# 쓰는 법: cp .env.example .env && docker compose -f docker-compose.dev.yml up -d
+# LDAP 연합(우리 팀): -f docker-compose.dev.yml -f examples/synology-ldap/docker-compose.override.yml
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?.env의 POSTGRES_PASSWORD}
+      HC_DB_PASSWORD: ${HC_DB_PASSWORD:?.env의 HC_DB_PASSWORD}
+      DEX_DB_PASSWORD: ${DEX_DB_PASSWORD:?.env의 DEX_DB_PASSWORD}
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+      - ./docker/postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  dex:
+    image: ghcr.io/dexidp/dex:v2.45.1
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    environment:
+      DEX_ISSUER: ${DEX_ISSUER:-http://localhost:5556/dex}
+      DEX_DB_PASSWORD: ${DEX_DB_PASSWORD}
+      DEX_CI_RUNNER_SECRET: ${DEX_CI_RUNNER_SECRET:?.env의 DEX_CI_RUNNER_SECRET}
+      HC_PUBLIC_URL: ${HC_PUBLIC_URL:-http://localhost:8000/mcp}
+    volumes:
+      - ./docker/dex/config.yaml:/etc/dex/config.yaml:ro
+    ports:
+      - "127.0.0.1:${DEX_PORT:-5556}:5556"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5558/healthz/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata-dev:

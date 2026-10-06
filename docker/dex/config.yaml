@@ -1,0 +1,73 @@
+# 빠른 시작용 Dex (distribution D18): 정적 사용자(staticPasswords)와 정적 클라이언트(D5). 시험·데모용이다.
+# 운영은 examples/synology-ldap/ 오버레이가 이 파일을 LDAP 커넥터 판으로 바꿔 끼운다.
+# 환경 변수는 gomplate 문법으로 넣는다: 이미지의 entrypoint가 `dex serve <file>.yaml`의 파일을 gomplate로 먼저 렌더링한다(cmd/docker-entrypoint 실측).
+# Dex 자체의 달러-VAR 치환은 storage.config·connectors[].config·signer.config 안에서만 돈다(cmd/dex/config.go 실측) — issuer·staticClients에는 안 된다.
+issuer: {{ getenv "DEX_ISSUER" | required "DEX_ISSUER" }}
+
+storage:
+  type: postgres
+  config:
+    host: postgres
+    port: 5432
+    database: dex
+    user: dex
+    password: "{{ getenv "DEX_DB_PASSWORD" }}"
+    ssl:
+      mode: disable
+
+web:
+  http: 0.0.0.0:5556
+
+telemetry:
+  http: 0.0.0.0:5558
+
+logger:
+  level: info
+  format: json
+
+oauth2:
+  responseTypes: ["code"]
+  skipApprovalScreen: true
+  # grantTypes는 적지 않는다 = Dex가 지원하는 전부(authorization_code·refresh_token·device_code·token-exchange).
+  # client_credentials는 v2.45.1 서버 코드에 없다(pilot r1).
+
+expiry:
+  idTokens: "1h"          # D7: 액세스 토큰 1시간 이하
+  deviceRequests: "5m"
+  refreshTokens:
+    validIfNotUsedFor: "720h"
+
+# 정적 클라이언트 (D5). 공개 클라이언트는 redirectURIs를 비워 두면 Dex가 127.0.0.1:<any>·localhost 루프백과
+# urn:ietf:wg:oauth:2.0:oob·장치 콜백을 허용한다(storage.Client 주석·validateRedirectURI 실측). 제품이 고정 URI를 문서에 적으면 그때 적는다(pilot Q3).
+staticClients:
+  - id: claude-code
+    name: Claude Code
+    public: true
+  - id: codex
+    name: Codex
+    public: true
+  - id: cursor
+    name: Cursor
+    public: true
+  - id: ci-runner
+    name: CI runner (unattended read)
+    secretEnv: DEX_CI_RUNNER_SECRET
+  # 레지스트리를 audience 실험용 클라이언트로 등록한다. 하네스 클라이언트가 scope에
+  # audience:server:client_id:<이 id>를 넣으면 토큰 aud에 이 id가 실린다(Dex 교차 클라이언트, trustedPeers). pilot r1 (e).
+  - id: "{{ getenv "HC_PUBLIC_URL" }}"
+    name: harness-catalog registry (audience)
+    secretEnv: DEX_CI_RUNNER_SECRET
+    trustedPeers: [claude-code, codex, cursor, ci-runner]
+
+enablePasswordDB: true
+# 비밀번호는 둘 다 "password" (Dex 예제의 bcrypt 해시). 개발 전용.
+staticPasswords:
+  - email: dev@example.com
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: dev
+    userID: 2d9c2a8e-0b1c-4f3e-9a5e-000000000001
+    groups: [skills-readers]
+  - email: outsider@example.com
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: outsider
+    userID: 2d9c2a8e-0b1c-4f3e-9a5e-000000000002

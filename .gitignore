@@ -1,2 +1,5 @@
 .claude/rules/
 research/
+.env
+var/
+__pycache__/
