@@ -151,6 +151,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | P3 리뷰 반영 + P5 초판 | P3 Codex 리뷰 9건 전부 반영(CI 템플릿·init·플러그인 실물 모델·기동 경합). 운영 compose(파일 비밀)·코드 CI 워크플로·설정 문서 초판. P5의 git 호스트 쪽(첫 카탈로그 저장소 `init`, GHCR push, mini 러너 등록)과 push는 사용자 자격·결정이 필요해 남겼다 | plans/service.md §9, plans/distribution.md §10 |
 | 2026-10-07 | P4 스킬 작성 | skills P1 1~5 완료(두 스킬·규약·evals 넷, validate·check 통과). 규칙 게이트: `lang/bash` 완주(shellcheck, 스크립트 5), `purpose/agent-skill` 선언(훅 없음 — 표면 텍스트만). V7의 bash 완주 | plans/skills.md §9 |
 | 2026-10-07 | P3 구현 + P2 리뷰 반영 | `init`·`config`·템플릿 패키지 데이터·Langfuse 플러그인(가짜로 시험), P2 Codex 리뷰 10건 전부 반영(치명 1: 빈 index_state 레이스). 시험 63, pyright 0, 게이트 0. P3 끝 조건 중 "PR 병합 스킬이 두 주기 안에 search_skills"는 P5(첫 카탈로그 저장소)에서 실측 | plans/service.md §9 |
 | 2026-10-07 | P2 구현 + P1 리뷰 반영 | service P2 1~6(마이그레이션·pg 어댑터·세대 검사·reindex·스팬) 완료, P1 Codex 리뷰 16건 전부 반영(치명 1: 항목 5 fail-open). 시험 50, pyright 0, 게이트 0. P2 끝 조건 전부 통과(DDL 그대로, 낡은 커밋 빌드가 되돌리지 않음, 스팬 속성, DB 단절 시 200+degraded). 남은 P1 미달 하나(Dex 토큰 HTTP 호출)는 §6-11·12 | plans/service.md §9 |

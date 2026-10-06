@@ -29,8 +29,23 @@ def test_detect_host() -> None:
     assert detect_host("https://github.com/alteralab/catalog.git") == "github"
     assert detect_host("git@github.com:alteralab/catalog.git") == "github"
     assert detect_host("https://gitlab.example.com/team/catalog") == "gitlab"
-    with pytest.raises(InitError):
-        detect_host("https://bitbucket.org/x/y")
+    for bad in ("https://bitbucket.org/x/y", "https://evilgithub.example/x/y", "https://notgitlab.example/x/y"):
+        with pytest.raises(InitError):
+            detect_host(bad)
+
+
+def test_init_refuses_repo_without_main(tmp_path: Path) -> None:
+    remote = bare(tmp_path, "nomain.git")
+    work = tmp_path / "w"
+    subprocess.run(["git", "clone", "-q", str(remote), str(work)], check=True)
+    git(work, "checkout", "-q", "-b", "develop")
+    (work / "x").write_text("x")
+    git(work, "add", "-A")
+    subprocess.run(["git", "-C", str(work), "-c", "user.email=t@x", "-c", "user.name=t", "commit", "-q", "-m", "x"], check=True)
+    git(work, "push", "-q", "origin", "develop")
+    git(remote, "symbolic-ref", "HEAD", "refs/heads/develop")
+    with pytest.raises(InitError, match="no 'main' branch"):
+        init_repository(str(remote), pin="x", host="github")
 
 
 def test_init_twice_is_idempotent(tmp_path: Path) -> None:

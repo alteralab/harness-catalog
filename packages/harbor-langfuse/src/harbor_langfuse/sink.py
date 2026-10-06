@@ -46,7 +46,7 @@ class LangfuseSink:
 
         def task(*, item: Any, **_: Any) -> str:
             t = by_case[str(_case_of(item))]
-            return t.verifier_stdout
+            return t.verifier_output
 
         def passed(*, item: Any = None, **_: Any) -> Evaluation:
             t = by_case[str(_case_of(item))] if item is not None else None

@@ -10,7 +10,7 @@ storage:
     port: 5432
     database: dex
     user: dex
-    password: "{{ getenv "DEX_DB_PASSWORD" }}"
+    password: "{{ if getenv "DEX_DB_PASSWORD_FILE" }}{{ file.Read (getenv "DEX_DB_PASSWORD_FILE") | strings.TrimSpace }}{{ else }}{{ getenv "DEX_DB_PASSWORD" }}{{ end }}"
     ssl:
       mode: disable
 
@@ -46,7 +46,7 @@ staticClients:
     public: true
   - id: ci-runner
     name: CI runner (unattended read)
-    secretEnv: DEX_CI_RUNNER_SECRET
+    secret: "{{ if getenv "DEX_CI_RUNNER_SECRET_FILE" }}{{ file.Read (getenv "DEX_CI_RUNNER_SECRET_FILE") | strings.TrimSpace }}{{ else }}{{ getenv "DEX_CI_RUNNER_SECRET" }}{{ end }}"
   - id: "{{ getenv "HC_PUBLIC_URL" }}"
     name: harness-catalog registry (audience)
     public: true    # 스스로 인증하지 않는다 — 다른 클라이언트의 토큰 aud에 실리기 위한 등록. 시크릿을 두지 않는다
@@ -63,7 +63,7 @@ connectors:
       insecureNoSSL: {{ getenv "LDAP_INSECURE_NO_SSL" "false" }}
       insecureSkipVerify: {{ getenv "LDAP_INSECURE_SKIP_VERIFY" "true" }}
       bindDN: "{{ getenv "LDAP_BIND_DN" }}"
-      bindPW: "{{ getenv "LDAP_BIND_PW" }}"
+      bindPW: "{{ if getenv "LDAP_BIND_PW_FILE" }}{{ file.Read (getenv "LDAP_BIND_PW_FILE") | strings.TrimSpace }}{{ else }}{{ getenv "LDAP_BIND_PW" }}{{ end }}"
       usernamePrompt: LDAP Username
       userSearch:
         baseDN: "{{ getenv "LDAP_USER_BASE_DN" }}"

@@ -105,12 +105,15 @@ class Catalog:
         """같은 커밋: 빌드는 건너뛰되, 지난번 DB 반영이 실패했으면 그 스냅샷으로 다시 시도한다."""
         snap = self._snapshot
         assert snap is not None
-        degraded = tuple(d for d in self._status.degraded if d != "db_unavailable")
+        degraded = tuple(d for d in self._status.degraded if d not in ("db_unavailable", "main_rewound"))
         if not self._db_synced:
             outcome = self._facts.replace_index(snap, lambda stored: accept_rewind or self._store.is_ancestor(stored, commit))
             self._db_synced = outcome is IndexOutcome.REPLACED
             if outcome is IndexOutcome.UNAVAILABLE:
                 degraded += ("db_unavailable",)
+            elif outcome is IndexOutcome.STALE:
+                # DB가 더 앞서 있다(또는 이 메모리 판이 되감긴 판이다): 숨기지 않고 적는다
+                degraded += ("main_rewound",)
         self._status = Status(ready=True, degraded=degraded, commit_sha=commit, fetched_at=fetched_at, built_at=snap.built_at, rejected=snap.rejected)
         return self._status
 

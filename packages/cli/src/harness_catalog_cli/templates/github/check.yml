@@ -15,45 +15,68 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: base commit
         id: base
+        env:
+          BEFORE: ${{ github.event.before }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "sha=$(git merge-base origin/${{ github.base_ref }} HEAD)" >> "$GITHUB_OUTPUT"
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "sha=$BEFORE" >> "$GITHUB_OUTPUT"      # push 전체(여러 커밋)를 기준으로 본다
           else
             echo "sha=$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           fi
       - name: gitleaks
-        run: |
-          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz" | tar -xz -C /usr/local/bin gitleaks
+        run: curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz" | tar -xz -C /usr/local/bin gitleaks
       - name: harness-catalog check
         run: uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog check . --rev HEAD --base "${{ steps.base.outputs.sha }}"
 
+  # HARNESS_EVALS_AGENTS(공백 구분, 기본 "claude-code codex")를 JSON 배열로 — 표현식은 문자열을 쪼개지 못하므로 셸이 한다
+  agents:
+    if: github.event_name == 'push' && vars.HARNESS_EVALS == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.split.outputs.list }}
+    steps:
+      - id: split
+        env:
+          AGENTS: ${{ vars.HARNESS_EVALS_AGENTS || 'claude-code codex' }}
+        run: echo "list=$(printf '%s\n' $AGENTS | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+
   evals:
-    if: github.ref == 'refs/heads/main' && vars.HARNESS_EVALS == 'true'
-    needs: check
+    needs: [check, agents]
     runs-on: [self-hosted, harness-catalog]
     strategy:
       fail-fast: false
       matrix:
-        agent: ${{ fromJSON(format('["{0}"]', join(fromJSON(format('["{0}"]', vars.HARNESS_EVALS_AGENTS || 'claude-code codex')), '","'))) }}
+        agent: ${{ fromJSON(needs.agents.outputs.list) }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: credentials present
+      - name: credentials present (Harbor 에이전트 구현이 읽는 변수 그대로)
+        env:
+          AGENT: ${{ matrix.agent }}
         run: |
-          case "${{ matrix.agent }}" in
-            claude-code) [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ] || [ -n "$ANTHROPIC_API_KEY" ] || { echo "claude-code credentials missing"; exit 1; } ;;
-            codex) [ -n "$OPENAI_API_KEY" ] || [ "$CODEX_FORCE_AUTH_JSON" = "1" ] || { echo "codex credentials missing"; exit 1; } ;;
+          case "$AGENT" in
+            claude-code) { [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ] && [ "$CLAUDE_FORCE_OAUTH" = "1" ]; } || [ -n "$ANTHROPIC_API_KEY" ] || { echo "claude-code: CLAUDE_CODE_OAUTH_TOKEN+CLAUDE_FORCE_OAUTH=1 또는 ANTHROPIC_API_KEY"; exit 1; } ;;
+            codex) [ -n "$OPENAI_API_KEY" ] || { [ "$CODEX_FORCE_AUTH_JSON" = "1" ] && [ -f "${CODEX_AUTH_JSON_PATH:-$HOME/.codex/auth.json}" ]; } || { echo "codex: OPENAI_API_KEY 또는 CODEX_FORCE_AUTH_JSON=1 + auth.json"; exit 1; } ;;
+            cursor-cli) [ -n "$CURSOR_API_KEY" ] || { echo "cursor-cli: CURSOR_API_KEY"; exit 1; } ;;
+            gemini-cli) [ -n "$GEMINI_API_KEY" ] || [ -n "$GEMINI_FORCE_OAUTH" ] || { echo "gemini-cli: GEMINI_API_KEY 또는 GEMINI_FORCE_OAUTH"; exit 1; } ;;
+            *) echo "unknown agent $AGENT — 자격 규칙이 없다"; exit 1 ;;
           esac
           [ -n "$LANGFUSE_PUBLIC_KEY" ] && [ -n "$LANGFUSE_SECRET_KEY" ] && [ -n "$LANGFUSE_HOST" ] || { echo "Langfuse keys missing"; exit 1; }
       - name: changed skills
         id: changed
         run: echo "dirs=$(git diff --name-only HEAD~1 HEAD -- skills | cut -d/ -f1-2 | sort -u | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
-      - name: harbor run
+      - name: harbor run — 스킬 있이·없이
         if: steps.changed.outputs.dirs != ''
+        env:
+          HARNESS_SKILL_REF: ${{ github.sha }}
+          HARNESS_CATALOG_NAME: ${{ github.event.repository.name }}
         run: |
+          harbor_run() { uvx --from "harbor==0.24.0" --with "harbor-langfuse @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/harbor-langfuse" harbor run "$@"; }
           for d in ${{ steps.changed.outputs.dirs }}; do
             [ -d "$d/evals" ] || continue
-            uvx --from "harbor==0.24.0" --with "harbor-langfuse @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/harbor-langfuse" \
-              harbor run --dataset "$d/evals" --agent "${{ matrix.agent }}" --env docker --plugin harbor_langfuse:LangfusePlugin
+            harbor_run --path "$d/evals" --agent "${{ matrix.agent }}" --env docker --skill "./$d" --plugin harbor_langfuse:LangfusePlugin   # 스킬 있이
+            harbor_run --path "$d/evals" --agent "${{ matrix.agent }}" --env docker --plugin harbor_langfuse:LangfusePlugin                  # 없이(baseline)
           done

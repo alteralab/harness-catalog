@@ -3,3 +3,4 @@ research/
 .env
 var/
 __pycache__/
+secrets/

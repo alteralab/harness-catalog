@@ -182,6 +182,7 @@
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | P2 초판: 운영 compose·코드 CI | `docker-compose.yml`(registry·postgres·dex, 비밀은 docker secrets 파일 — `*_FILE`; Dex 템플릿은 `_FILE`이 있으면 `file.Read`), `.env.example`에 레지스트리 절(`config docs` 생성)·`REGISTRY_IMAGE`·`SECRETS_DIR`, `docs/configuration.md`, `.github/workflows/ci.yml`(PR: 게이트·pyright·pytest / main: mini 러너가 GHCR로 SHA 태그 push + 보존 5개). 운영 compose는 `config --quiet` 검증만(실 기동은 P5 VM) | D1·D10·D11·D12 |
 | 2026-10-07 | 템플릿 원본 = 패키지 데이터 | `examples/catalog-template`은 `packages/cli/src/harness_catalog_cli/templates`의 심볼릭 링크다(원본 하나, 드리프트 없음; D15의 "원본은 examples/"를 이렇게 읽는다). GitHub `check.yml`은 D22 (b)·D19 그대로, GitLab 판은 문면 | service P3 |
 | 2026-10-07 | Dockerfile 초판 | 다단계(builder: uv 0.11.8 `uv sync --frozen --no-dev --package harness-catalog-server`; runtime: python:3.12-slim + git + gitleaks v8.30.1 바이너리, 비루트 uid 10001, `/var/lib/harness-catalog`). 로컬 빌드·`--help`·import 확인. 태그는 로컬 `dev`(D11) | service P1-8 |
 | 2026-10-07 | Codex 리뷰(aedbff8) 반영 | init.sql을 initdb.d 밖으로(이중 실행 실측), 역할·DB 생성 멱등(\gexec), healthcheck가 초기화 결과를 본다, audience 클라이언트는 public(시크릿 공유 제거), LDAP 오버레이 기본 LDAPS 636(평문은 변수로), D1·D10 개발 예외 명시, P1-4 스코프 문구, 측정 도구 재작성(종료 코드·interval·state·JWKS 검증·`/token` 장치 그랜트) | Codex 리뷰 |

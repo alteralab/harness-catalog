@@ -37,6 +37,14 @@ class NoFactStore:
         return None
 
 
+def _enable_after_migration(facts: PgFactStore, ready: anyio.Event) -> Callable[[], None]:
+    def enable_db() -> None:
+        facts.enable()
+        ready.set()
+
+    return enable_db
+
+
 class App(NamedTuple):
     asgi: Starlette
     catalog: Catalog
@@ -73,9 +81,11 @@ def bootstrap(settings: Settings, workdir: Path, *, jwks_uri: str | None = None,
         try:
             async with mcp_app.router.lifespan_context(mcp_app):
                 async with anyio.create_task_group() as tg:
+                    db_ready: anyio.Event | None = None
                     if isinstance(facts, PgFactStore):
-                        tg.start_soon(run_migrations, settings.database_url.get_secret_value(), stop, facts.enable)
-                    tg.start_soon(run_scheduler, catalog, settings.fetch_interval_seconds, stop)
+                        db_ready = anyio.Event()
+                        tg.start_soon(run_migrations, settings.database_url.get_secret_value(), stop, _enable_after_migration(facts, db_ready))
+                    tg.start_soon(run_scheduler, catalog, settings.fetch_interval_seconds, stop, db_ready)
                     try:
                         yield
                     finally:

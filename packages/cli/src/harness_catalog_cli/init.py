@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import subprocess
 import tempfile
+from collections.abc import Mapping
 from importlib.metadata import version
 from importlib.resources import as_file, files
 from pathlib import Path
@@ -31,12 +32,12 @@ def detect_host(repo_url: str) -> str:
     """URL에서 git 호스트 종류: github | gitlab. 그 밖이면 InitError."""
     u = repo_url.strip()
     hostname = urlsplit(u).hostname if "://" in u else u.split("@", 1)[-1].split(":", 1)[0]
-    name = (hostname or "").lower()
-    if "github" in name:
+    labels = (hostname or "").lower().split(".")
+    if labels[-2:] == ["github", "com"] or "github" in labels[:-2]:
         return "github"
-    if "gitlab" in name:
+    if labels[-2:] == ["gitlab", "com"] or "gitlab" in labels[:-2]:
         return "gitlab"
-    raise InitError(f"unsupported git host in {repo_url!r} (github·gitlab only)")
+    raise InitError(f"unsupported git host in {repo_url!r} (github.com·*.github.com·gitlab.com·gitlab.<domain> only)")
 
 
 def resolve_pin(pin: str | None, *, code_repo_url: str = CODE_REPO_URL) -> str:
@@ -50,7 +51,7 @@ def resolve_pin(pin: str | None, *, code_repo_url: str = CODE_REPO_URL) -> str:
     return tag
 
 
-def template_files(host: str) -> dict[str, str]:
+def template_files(host: str) -> Mapping[str, str]:
     """상대 경로 → 내용. 호스트의 워크플로만 싣는다."""
     base = files("harness_catalog_cli") / "templates"
     out: dict[str, str] = {}
@@ -73,7 +74,7 @@ def _git(repo: Path, *args: str) -> str:
     return proc.stdout
 
 
-def write_missing(repo: Path, contents: dict[str, str], pin: str) -> tuple[str, ...]:
+def write_missing(repo: Path, contents: Mapping[str, str], pin: str) -> tuple[str, ...]:
     """없는 파일만 쓴다. 표지가 있는데 layout이 다르면 멈춘다."""
     marker = repo / MARKER_PATH
     if marker.exists():
@@ -104,9 +105,14 @@ def init_repository(repo_url: str, *, pin: str | None = None, host: str | None =
         proc = subprocess.run(["git", "clone", "-q", repo_url, str(repo)], capture_output=True, text=True, check=False, timeout=600)
         if proc.returncode != 0:
             raise InitError(f"clone failed: {proc.stderr.strip()}")
+        has_main = subprocess.run(["git", "-C", str(repo), "ls-remote", "--exit-code", "--heads", "origin", "main"], capture_output=True, check=False).returncode == 0
         unborn = subprocess.run(["git", "-C", str(repo), "rev-parse", "--verify", "HEAD"], capture_output=True, check=False).returncode != 0
-        if unborn:
+        if has_main:
+            _git(repo, "checkout", "-q", "main")  # 기본 브랜치가 다른 것이어도 카탈로그는 main이다
+        elif unborn:
             _git(repo, "checkout", "-q", "-b", "main")
+        else:
+            raise InitError("repository has commits but no 'main' branch — create main (the catalog branch) first, then rerun")
         written = write_missing(repo, template_files(host), ref)
         if written:
             _git(repo, "add", "-A")

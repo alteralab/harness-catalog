@@ -50,7 +50,14 @@ def rebuild_failed(status: Status) -> bool:
     return bool(status.reasons) or any(d.startswith(FAILURE_PREFIXES) for d in status.degraded)
 
 
-async def run_scheduler(catalog: Catalog, interval_seconds: int, stop: anyio.Event) -> None:
+MIGRATION_WAIT_SECONDS = 10.0
+
+
+async def run_scheduler(catalog: Catalog, interval_seconds: int, stop: anyio.Event, db_ready: anyio.Event | None = None) -> None:
+    """db_ready가 주어지면 첫 빌드 전에 마이그레이션 완료를 기다린다(상한 10초 — DB는 준비됨 조건이 아니므로 그 뒤엔 db_unavailable로 간다)."""
+    if db_ready is not None:
+        with anyio.move_on_after(MIGRATION_WAIT_SECONDS):
+            await db_ready.wait()
     backoff = 1
     while not stop.is_set():
         try:

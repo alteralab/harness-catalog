@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import tarfile
 import threading
+from collections.abc import Mapping
 from pathlib import Path
 
 from ..model import ContentError, ReadyReason, SkillTree, TreeEntry
@@ -63,7 +64,7 @@ class GitStore:
             raise ContentError(ReadyReason.NO_MAIN_BRANCH, f"{revision}: {e.stderr.strip()}") from e
 
     # ---- 내부 ----
-    def _env(self) -> dict[str, str]:
+    def _env(self) -> Mapping[str, str]:
         env = {k: v for k, v in os.environ.items() if k not in ("GIT_DIR", "GIT_WORK_TREE")}
         env["GIT_TERMINAL_PROMPT"] = "0"
         if self._key_path is not None:

@@ -49,7 +49,7 @@ def server(tmp_path: Path, catalog_repo: CatalogRepo, issuer: FakeIssuer) -> Ite
     }
     proc = subprocess.Popen([sys.executable, "-m", "harness_catalog_server", "serve", "--host", "127.0.0.1", "--port", str(port), "--workdir", str(tmp_path / "work"), "--log-level", "warning"], env=env)
     base = f"http://127.0.0.1:{port}"
-    deadline = time.time() + 30
+    deadline = time.time() + 60  # 마이그레이션 대기(최대 10초) + 첫 빌드
     while time.time() < deadline:
         try:
             if httpx.get(base + "/readyz", timeout=1).status_code == 200:

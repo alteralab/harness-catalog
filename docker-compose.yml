@@ -1,0 +1,101 @@
+# 운영·빠른 시작 compose — registry + postgres + dex (plans/distribution.md D1·D2·D3·D10·D11·D12·D18).
+# .env만 채우면 뜬다: cp .env.example .env && chmod 600 .env && docker compose up -d
+# 우리 팀(Synology LDAP)은 오버레이를 겹친다: docker compose -f docker-compose.yml -f examples/synology-ldap/docker-compose.override.yml up -d
+# 비밀은 파일로 넘긴다(D10): 값이 아니라 경로가 환경 변수다 — docker inspect에 값이 보이지 않는다.
+services:
+  registry:
+    image: ${REGISTRY_IMAGE:?.env의 REGISTRY_IMAGE (ghcr.io/alteralab/harness-catalog:<짧은 SHA> 또는 로컬 태그)}
+    environment:
+      HC__CATALOG_REPO_URL: ${HC__CATALOG_REPO_URL:?.env의 HC__CATALOG_REPO_URL}
+      HC__GIT_DEPLOY_KEY_FILE: /run/secrets/git_deploy_key
+      HC__OIDC_ISSUER: ${HC__OIDC_ISSUER:?.env의 HC__OIDC_ISSUER}
+      HC__PUBLIC_URL: ${HC__PUBLIC_URL:?.env의 HC__PUBLIC_URL}
+      HC__DATABASE_URL_FILE: /run/secrets/database_url
+      HC__FETCH_INTERVAL_SECONDS: ${HC__FETCH_INTERVAL_SECONDS:-60}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+    secrets:
+      - git_deploy_key
+      - database_url
+    volumes:
+      - clone:/var/lib/harness-catalog
+    ports:
+      - "127.0.0.1:${REGISTRY_PORT:-8000}:8000"   # 프록시(tailscale serve)가 받는다
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dex:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3).status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      HC_DB_PASSWORD_FILE: /run/secrets/hc_db_password
+      DEX_DB_PASSWORD_FILE: /run/secrets/dex_db_password
+    secrets:
+      - postgres_password
+      - hc_db_password
+      - dex_db_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+      - ./docker/postgres/init.sql:/opt/harness-catalog/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "psql -U postgres -d harness_catalog -tAc \"select 1 from pg_extension where extname='pg_trgm'\" | grep -q 1 && psql -U postgres -d dex -tAc 'select 1' | grep -q 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  dex:
+    image: ghcr.io/dexidp/dex:v2.45.1
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    environment:
+      DEX_ISSUER: ${DEX_ISSUER:?.env의 DEX_ISSUER}
+      DEX_DB_PASSWORD_FILE: /run/secrets/dex_db_password
+      DEX_CI_RUNNER_SECRET_FILE: /run/secrets/dex_ci_runner_secret
+      HC_PUBLIC_URL: ${HC__PUBLIC_URL}
+      DEX_EXPAND_ENV: "true"
+    secrets:
+      - dex_db_password
+      - dex_ci_runner_secret
+    volumes:
+      - ./docker/dex/config.yaml:/etc/dex/config.yaml:ro
+    ports:
+      - "127.0.0.1:${DEX_PORT:-5556}:5556"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5558/healthz/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+secrets:
+  git_deploy_key:
+    file: ${SECRETS_DIR:-./secrets}/git_deploy_key
+  database_url:
+    file: ${SECRETS_DIR:-./secrets}/database_url
+  postgres_password:
+    file: ${SECRETS_DIR:-./secrets}/postgres_password
+  hc_db_password:
+    file: ${SECRETS_DIR:-./secrets}/hc_db_password
+  dex_db_password:
+    file: ${SECRETS_DIR:-./secrets}/dex_db_password
+  dex_ci_runner_secret:
+    file: ${SECRETS_DIR:-./secrets}/dex_ci_runner_secret
+
+volumes:
+  pgdata:
+  clone:
