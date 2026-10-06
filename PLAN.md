@@ -86,7 +86,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 |---|---|---|---|
 | 1 | 레지스트리의 소유 팀과 운영 호스트. compose를 어느 VM(또는 mini)에 올리는가 | 조직·기계의 사실 | **결정(2026-09-26)**: 소유는 GitHub org `alteralab`, 운영 호스트는 `mini.altera.lab`. 개발 중에는 로컬(맥북)에서 compose를 띄워 시험한다(distribution P0·P1의 개발 compose가 그 자리다) |
 | 2 | git 호스트. 카탈로그 저장소와 이 코드 저장소를 GitHub(`alteralab` org, chronicle 선례)에 두는가. CI 워크플로 파일은 그 호스트 것만 먼저 쓴다 | 조직의 저장소 정책 | **결정(2026-09-26)**: GitHub `alteralab`(1번에서 따라옴). 코드 저장소 `alteralab/harness-catalog`, 카탈로그 저장소는 이름 미정. CI는 GitHub Actions 파일을 먼저 돌리고 GitLab 파일은 작성만(distribution D13). 브랜치 흐름은 §6-7 |
-| 3 | 공개 URL과 TLS 종단. 레지스트리 canonical URI(토큰 audience)와 Dex issuer URL이 여기서 정해진다. 리버스 프록시의 "사내 표준"이 무엇인가 | 네트워크·도메인의 사실 | **결정(2026-09-26)**: Tailscale. mini의 `tailscale serve`가 TLS를 끊고 경로로 나눈다. 레지스트리 `https://mini.tail2f9fe3.ts.net/mcp`, Dex issuer `https://mini.tail2f9fe3.ts.net/dex`(tailnet 이름은 2026-09-26 `tailscale status` 실측). 개발 중 로컬은 `http://localhost` 그대로 |
+| 3 | 공개 URL과 TLS 종단. 레지스트리 canonical URI(토큰 audience)와 Dex issuer URL이 여기서 정해진다. 리버스 프록시의 "사내 표준"이 무엇인가 | 네트워크·도메인의 사실 | **결정(2026-09-26)**: Tailscale. mini의 `tailscale serve`가 TLS를 끊고 경로로 나눈다. **실측 정정(2026-10-07): tailnet 머신 이름은 `alteraui-macmini.tail2f9fe3.ts.net`이다.** 레지스트리 `https://alteraui-macmini.tail2f9fe3.ts.net/mcp`(아래 `mini.…`는 당시 추정), Dex issuer `https://mini.tail2f9fe3.ts.net/dex`(tailnet 이름은 2026-09-26 `tailscale status` 실측). 개발 중 로컬은 `http://localhost` 그대로 |
 | 4 | 인가 서버. P0의 SSO Server 실측 결과에 따라 Dex를 유지할지 SSO Server로 바꿀지 | 실측 뒤의 선택 | **결정(2026-09-26)**: Dex. pilot Q1(SSO Server 능력)은 기록용 실측으로만 남고 결정에 걸리지 않는다 |
 | 9 | 읽기 신원을 git 호스트(GitHub)로 합칠 것인가. v3.3에서 쓰기 신원은 git 호스트 계정이라 읽기(LDAP)와 둘이 됐다. 합치지 않아도 동작한다 — 명단 둘을 같게 유지하는 운영 부담만 있다 | 조직의 신원 정책 | **결정(2026-09-26)**: LDAP 유지. Dex GitHub 커넥터 실측은 지금 하지 않는다(pilot Q13에서 뺌). 명단 동기는 `scripts/membership-diff.sh` |
 | 5 | 파일럿 사용자 범위. 사용자 하나로 시작하는가, 역할 그룹에 몇 명을 넣는가 | 팀 구성의 사실 | **결정(2026-09-26)**: 실사용자 한 명. 시험(그룹 가입·탈퇴, 두 주체 동시 갱신 등)에 필요하면 LDAP에 시험 계정을 더한다. 시험 계정의 사용 기록은 Q8 집계에서 주체로 갈라 적는다 |
@@ -151,6 +151,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | P5 실행: mini 배포·러너·r3 | 레지스트리가 mini에서 tailnet HTTPS(`https://alteraui-macmini.tail2f9fe3.ts.net/mcp`)로 산다. 러너 `mini-hc` 온라인. r3: Claude Code는 PRM 스코프 그대로 요청·OIDC 발견 폴백·사전 등록은 `.mcp.json` `oauth.clientId`. 남은 사용자 몫: PR #1 병합, 시크릿 둘(`HARNESS_CATALOG_READ_TOKEN`·`ALTERALAB_READ_TOKEN`) 또는 저장소 공개, 대화형 로그인 확인 | plans/distribution.md §10, plans/pilot/r3.md |
 | 2026-10-07 | P1 끝 조건 실물 충족 | NAS LDAP의 `gyojunan`·`svc-harness` 실물 토큰으로 HTTP 경유 도구 호출 200, aud 불일치 401, 비가입자 not_a_member(r2). 남은 P1 미달 없음 | plans/pilot/r2.md |
 | 2026-10-07 | 사용자 결정 §6-10·11·12 ("셋 다") | (바) 기계 계정 + 비밀번호 그랜트, (다) PRM 교차 클라이언트 스코프, (가) 토큰 스코프 검사 없음. DESIGN §2·§3·§9·§11, 코드(서비스 주체 제거, 요구 스코프, 검증기), Dex 설정(`passwordConnector`), 시험 반영. §6 미결 0 | DESIGN §11 |
 | 2026-10-07 | 사용자 결정: 읽기 그룹 이름 `harness-readers` | 코드 상수·인가·시험·템플릿·Dex 설정·PLAN 전부 교체(기록 r1·r2는 당시 이름). NAS에 그룹·첫 사용자 생성됨, 실물 토큰 `groups`에 `harness-readers` 확인 | DESIGN §11 |
