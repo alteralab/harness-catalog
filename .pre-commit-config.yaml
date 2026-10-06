@@ -6,3 +6,4 @@ repos:
       - id: altera-ruff
         args: ["--config", "ruff.toml"]
       - id: altera-ast-grep
+      - id: altera-shellcheck

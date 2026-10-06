@@ -1,6 +1,7 @@
 rev: rules-v0.10.0
 surfaces:
   - common
-  - lang/python          # 배포물 넷(packages/*/src)과 측정 도구(tools/)가 파이썬이다(DESIGN §2.1 결정). 소스는 2026-09-26 현재 0이고 첫 커밋부터 게이트가 돈다
+  - lang/python          # 배포물 넷(packages/*/src)과 측정 도구(tools/)가 파이썬이다(DESIGN §2.1 결정). 2026-10-07 실측 52개
+  - lang/bash            # 첫 셸 스크립트: docker/postgres/init.sh, skills/*/evals/*/tests/test.sh (2026-10-07 실측 5개)
+  - purpose/agent-skill  # 카탈로그가 실어 나르는 스킬 둘: skills/pin-skill, skills/write-skill (2026-10-07 실측 SKILL.md 2개)
   - review               # 검증 루브릭 -> REVIEW.md 추적 사본. 설계 문서가 Codex 적대 리뷰 6회를 거쳤고 PLAN·판정 원장이 V-REC-1의 주 표적
-# lang/bash, purpose/* 는 설치하지 않는다 — 셸 0, SKILL.md 0 (2026-09-26).

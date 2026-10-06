@@ -141,7 +141,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 | V4 | 검사 fail-closed | `check`에 걸리는 스킬(validate 실패, 시크릿)을 규율을 어기고 직접 push | 인덱스에서 빠지고 `/readyz`의 `degraded`에 적히며, 같은 변경을 PR로 올리면 CI가 붉다 | 대기 |
 | V5 | 재기동 복구 | 새 VM에 compose를 올리고 기존 카탈로그 저장소를 가리킨다 | fetch만으로 인덱스가 다시 지어지고 `/readyz` 200. 은퇴한 이름을 `check` 항목 5가 여전히 거부한다(이력에서 읽으므로) | 대기 |
 | V6 | 내려받기 왕복 | `pin-skill`로 프로젝트·사용자 범위에 각각 내려받고 새 판 확인 | `PINNED` 형식 일치, 두 범위의 낡은 쪽 안내, 하네스 셋에서 한 번만 로드 | 대기 |
-| V7 | 규칙 게이트 완주 | 네 축(common·python·bash·agent-skill)과 review가 선언되고 `pre-commit run --all-files` 통과 | 선언한 표면마다 그 게이트가 한 번 이상 실제로 **파일을 검사하며** 돌았다 | common·review 통과(2026-09-26). **python 완주(2026-10-07)**: 첫 파이썬 커밋에서 ruff·ast-grep이 검출 넷을 냈고 전부 참. bash·agent-skill 대기 |
+| V7 | 규칙 게이트 완주 | 네 축(common·python·bash·agent-skill)과 review가 선언되고 `pre-commit run --all-files` 통과 | 선언한 표면마다 그 게이트가 한 번 이상 실제로 **파일을 검사하며** 돌았다 | common·review 통과(2026-09-26). **python 완주(2026-10-07)**: 첫 파이썬 커밋에서 ruff·ast-grep이 검출 넷을 냈고 전부 참. **bash 완주(2026-10-07)**: shellcheck가 5개를 검사, SC2010 1건 참. agent-skill: 선언·실체화 완료, rules-v0.10.0에 그 축의 커밋 훅이 없어 "파일을 검사하며 돈 게이트"는 없다(skills-ref validate로 대신) |
 
 ## 10. 개정 규약
 
@@ -151,6 +151,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | P4 스킬 작성 | skills P1 1~5 완료(두 스킬·규약·evals 넷, validate·check 통과). 규칙 게이트: `lang/bash` 완주(shellcheck, 스크립트 5), `purpose/agent-skill` 선언(훅 없음 — 표면 텍스트만). V7의 bash 완주 | plans/skills.md §9 |
 | 2026-10-07 | P3 구현 + P2 리뷰 반영 | `init`·`config`·템플릿 패키지 데이터·Langfuse 플러그인(가짜로 시험), P2 Codex 리뷰 10건 전부 반영(치명 1: 빈 index_state 레이스). 시험 63, pyright 0, 게이트 0. P3 끝 조건 중 "PR 병합 스킬이 두 주기 안에 search_skills"는 P5(첫 카탈로그 저장소)에서 실측 | plans/service.md §9 |
 | 2026-10-07 | P2 구현 + P1 리뷰 반영 | service P2 1~6(마이그레이션·pg 어댑터·세대 검사·reindex·스팬) 완료, P1 Codex 리뷰 16건 전부 반영(치명 1: 항목 5 fail-open). 시험 50, pyright 0, 게이트 0. P2 끝 조건 전부 통과(DDL 그대로, 낡은 커밋 빌드가 되돌리지 않음, 스팬 속성, DB 단절 시 200+degraded). 남은 P1 미달 하나(Dex 토큰 HTTP 호출)는 §6-11·12 | plans/service.md §9 |
 | 2026-10-07 | P1 구현 | service P1 0~9 코드·시험 39·이미지. 규칙 게이트 첫 완주(C-GATE-1): 첫 파이썬 커밋에서 altera-ruff·altera-ast-grep이 파일을 검사하며 돌았고 검출(dict 반환 C-PY-1, 정규식 C-BRANCH-2, 미사용 인자 ARG)을 전부 참으로 판정해 고쳤다(V7 python 완주). P1 끝 조건 중 Dex 토큰 HTTP 호출은 §6-11·12 대기 | plans/service.md §9 |

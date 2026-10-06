@@ -191,6 +191,7 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | P1 작성 1~5 | `skills/pin-skill/SKILL.md`(§2.1 단계 11 + 새 판 확인 + 하네스 표 본문), `skills/write-skill/SKILL.md` + `references/conventions.md`(점검표 7절: 결정/판단·스크립트·종속성 두 자리·공유 스크립트·SKILL.md·evals·은퇴), 각자 evals 양성·음성(Harbor schema 1.4 실측: `harbor/cli/template-task/task.toml`; 검증기는 파일 시스템 상태 — PINNED 형식·심볼릭 링크 / 브랜치의 SKILL.md·evals 쌍·main 불변). `skills-ref validate` 둘 통과, 임시 카탈로그에서 `harness-catalog check`(gitleaks 포함) 종료 0. `lang/bash`·`purpose/agent-skill` 선언·재실체화, `altera-shellcheck` 훅 추가 → 셸 게이트가 스크립트 5개를 검사하며 완주(SC2010 하나 참 → 수정). agent-skill 표면에는 rules-v0.10.0에 커밋 훅이 없다(선언은 에이전트가 읽는 텍스트). 6(Codex 리뷰)·7(README 문장 → 템플릿에 이미 반영) | 우산 §4 P4 |
 | 2026-09-27 | 설계 개정 반영 | `new-skill`→`write-skill`(전부), 공유 스크립트 규약 D11·V11 | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.5: README 문단 ⑶(검색어는 Langfuse 스팬) | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.4: 결과를 `record_eval`에서 Langfuse 플러그인으로(트리·단계 8·D8·V9·description·부르는 도구) | DESIGN §11 |
