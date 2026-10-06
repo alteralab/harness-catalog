@@ -147,7 +147,7 @@
 0. 착수 조건: D8의 표지가 `plans/pilot.md`의 실측 기록으로 정해져 있다. 없으면 서비스 주체를 reader로 세우는 한 줄만 뒤로 두고 나머지를 먼저 한다.
 1. `app/check.py`: DESIGN §5의 검사 열을 순수 함수로. 입력은 검사할 트리(작업 트리 또는 커밋)·기준 커밋·git 어댑터(삭제 이력, 기준 커밋의 트리), 출력은 위반 목록(항목 번호·경로·사유). 기준 커밋이 없으면 5·9를 건너뛰고 그 사실을 출력에 적는다. P1의 인덱스 빌드가 이 함수를 부르도록 바꾼다(스킬 실패 → 인덱스 제외, 구조 실패 → 빌드 실패).
 2. `cli.py check [<root>] [--base <commit>]`: 1을 CLI로. `--base`는 항목 5·9의 기준 커밋(DESIGN §2.1: pre-commit은 HEAD, PR CI는 merge-base, main CI는 직전 커밋, 인덱스 빌드는 `index_state.commit_sha`). 얕은 클론이면 항목 5는 종료 2. 종료 0 통과 / 1 위반 / 2 검사기 실패(gitleaks 없음·얕은 클론 등). pre-commit 훅과 CI 워크플로가 이 명령을 부른다(`examples/catalog-template/`의 훅·워크플로 파일이 그렇게 적혀 있다).
-3. `cli.py init <repo-url>`: 운영자 git 자격으로 clone → URL에서 호스트 판별(GitHub·GitLab) → 패키지 데이터 `catalog-template/`에서 `.harness-catalog`·`skills/.gitkeep`·README·pre-commit 설정·그 호스트의 CI 워크플로를 없는 것만 쓰고(템플릿의 판 자리표 `<판>`은 cli 자기 판 `importlib.metadata.version("harness-catalog-cli")`로 채운다 — distribution D22) → 커밋·push. 표지가 있는데 `layout`이 다르면 멈춘다(종료 1). 두 번 돌리면 변경 0.
+3. `cli.py init <repo-url>`: 운영자 git 자격으로 clone → URL에서 호스트 판별(GitHub·GitLab) → 패키지 데이터 `catalog-template/`에서 `.harness-catalog`·`skills/.gitkeep`·README·pre-commit 설정·그 호스트의 CI 워크플로를 없는 것만 쓰고(템플릿의 판 자리표 `<판>`은 cli 자기 판 `importlib.metadata.version("harness-catalog-cli")`로 채우되, 먼저 코드 저장소에 태그 `v<판>`이 있는지 `git ls-remote --tags`로 확인하고 없으면 종료 1. `--pin <ref>`는 확인 없이 그 ref — distribution D22) → 커밋·push. 표지가 있는데 `layout`이 다르면 멈춘다(종료 1). 두 번 돌리면 변경 0.
 4. `cli.py reindex --accept-rewind`: 규칙 3의 `main_rewound` 뒤 운영자가 명시적으로 인덱스를 새 `main`으로 다시 짓는 명령.
 6. `app/authz.py` 완성: 주체 셋(reader·그룹 없음·서비스) × 도구 넷 × 스코프.
 7. `packages/harbor-langfuse/`: 별도 배포물(`pyproject.toml`, `src/harbor_langfuse/plugin.py`), 서비스 이미지에 들어가지 않는다. Harbor `BaseJobPlugin` 구현. `on_job_start`에서 잡의 태스크 경로에서 스킬 이름과 `evals/` 케이스를 읽어 Langfuse dataset `<catalog>/<skill>`과 item(케이스, `input` = `instruction.md`)을 있으면 재사용·없으면 생성하고, dataset run(`run_name` = Harbor 잡 이름, `metadata` = `skill`·`sha`(주입한 스킬 원천의 ref)·`scenario_sha`(`evals/` tree)·`model`·`harness`(agent 이름)·`baseline`(스킬 원천 없음))을 연다. `on_job_end`에서 트라이얼마다 trace(입력 instruction, 출력 검증기 stdout 요약, 메타데이터 `trial_uri`·토큰·비용)와 run item, score `passed`(BOOLEAN, reward ≥ 1)를 만든다. 키는 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST` 환경 변수. Harbor의 `packages/harbor-langsmith/src/harbor_langsmith/plugin.py`(852줄, `_create_root_run`·`_create_feedback`·`_request` 재시도)를 본뜨되 ATIF 스텝은 그쪽도 올리지 않으므로 올리지 않는다. Langfuse SDK v3의 저수준 dataset run·score API 이름은 pilot Q14(e)가 실측한 뒤 쓴다.
@@ -221,6 +221,7 @@
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | Codex 리뷰 반영 | `init`의 태그 존재 확인·`--pin`(P3-3), ruff.toml 면제 경로를 배포물 둘의 `__main__.py`로 | Codex 01a111e5 |
 | 2026-10-07 | 잔재 정정 | 워크스페이스 전환(2026-09-27) 뒤 남은 단일 패키지 경로 `src/harness_catalog/`를 §0·§1·P2-1·P2-5에서 `packages/`로. `init`이 템플릿의 판 자리표를 자기 판으로 채운다(P3-3, distribution D22) | D1, 우산 §11 |
 | 2026-09-27 | 설계 개정 반영 | `check` 항목 10(복사본 드리프트 경고): §1 표, P3-8 표본, V9 | DESIGN §11 |
 | 2026-09-27 | 설계 개정 반영 | v3.5: `usage_record`·보존 삭제·`USAGE_RETENTION_DAYS` 제거(설정값 여섯·표 하나·규칙 다섯), 스팬 속성을 `mcp_tools.py`에(P2-4), 스케줄러 루프 하나(D11), V7을 스팬 시험으로 | DESIGN §11 |

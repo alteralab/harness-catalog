@@ -55,7 +55,7 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
 2. **식별자.** 각 PLAN의 판정은 `D1…`, 검증은 `V1…`, 실측 기록은 `r1…`이고 PLAN 안에서만 유일하다. 다른 PLAN의 것을 가리킬 때는 `plans/service D3`처럼 경로를 붙인다.
 3. **설계와의 관계.** DESIGN에 이미 있는 결정은 PLAN의 판정 원장에 다시 올리지 않는다. PLAN의 판정은 "설계가 정하지 않은 구현·운영 선택"과 "실측이 설계를 뒤집은 것"만이다. 후자는 DESIGN §11 행이 먼저다.
 4. **진행 상태.** 각 PLAN의 진행 원장(마지막 절)이 정본이고, 이 우산의 §11은 단계 완료만 적는다.
-5. **규칙 게이트.** altera-rules `common`·`lang/python`·`review`가 설치되어 있고 `altera-ruff`(`ruff.toml`이 base를 extend)·`altera-ast-grep` 훅이 걸려 있다(2026-09-26). 파이썬 게이트 둘은 파이썬 소스가 0이라 아직 한 파일도 검사한 적이 없고, `src/`의 첫 파이썬 커밋이 첫 완주다(C-GATE-1). `scripts/`의 첫 셸 스크립트에서 `lang/bash`를, `skills/`의 첫 SKILL.md에서 `purpose/agent-skill`을 선언한다. 선언마다 그 축의 게이트를 한 번 완주시킨다.
+5. **규칙 게이트.** altera-rules `common`·`lang/python`·`review`가 설치되어 있고 `altera-ruff`(`ruff.toml`이 base를 extend)·`altera-ast-grep` 훅이 걸려 있다(2026-09-26). 파이썬 게이트 둘은 파이썬 소스가 0이라 아직 한 파일도 검사한 적이 없고, `packages/*/src/` 또는 `tools/`의 첫 파이썬 커밋이 첫 완주다(C-GATE-1). `scripts/`의 첫 셸 스크립트에서 `lang/bash`를, `skills/`의 첫 SKILL.md에서 `purpose/agent-skill`을 선언한다. 선언마다 그 축의 게이트를 한 번 완주시킨다.
 6. **교차 검증.** 판정 원장에 행을 더하거나 단계를 완료로 올리기 전에 Codex 독립 리뷰를 한 번 받는다(DESIGN이 여섯 차례 그렇게 했다). 발견은 반영·기각을 사유와 함께 해당 PLAN 진행 원장에 적는다.
 7. **비밀.** deploy key·클라이언트 시크릿·DB 접속값은 저장소에 없다. compose는 `.env`를 읽고 `.env`는 gitignore다. 예시는 `.env.example`.
 8. **배치는 오픈소스 공통 골격.** 이 저장소는 어디서든 설치되는 패키지로 만든다(사용자 결정 2026-09-26, DESIGN §11). 저장소 자체는 비공개(`alteralab` 다른 저장소와 같다)로 시작하고 공개 여부는 별도 결정이다. 골격을 따르는 이유는 공개가 아니라 설치 가능성이다. 그래서 소스 배치는 설계가 인용한 오픈소스 여섯(Dex·Langfuse·MCP registry·Gitea·DataHub·Polaris, 2026-09-26 `gh api` 실측)의 공통 골격을 따른다 — compose·Dockerfile은 루트, 파이썬 패키지는 `src/`, compose 지원 파일은 `docker/`, 예시 설정은 `examples/`, 문서는 `docs/`, 스크립트는 `scripts/`, Helm은 `helm/`(지금 없음). 계획 문서는 `plans/`에 모아 소스 배치에 종속시키지 않는다(REVIEW.md V-REC-1의 적용 경로 `plans/**`와 같다). 실측 기록 `rN.md`는 `plans/pilot/`에 추적하고, 측정 도구는 `tools/pilot/`에 추적하며, 원자료(전사본·받아 둔 문서)는 `research/`에 두되 추적하지 않는다(사용자 결정 2026-09-26). 우리 팀의 Synology LDAP 변형은 `examples/synology-ldap/`이고 기본 compose는 Dex 정적 사용자로 어느 머신에서나 뜬다.
@@ -148,6 +148,7 @@ DESIGN §11의 사용자 결정 전부. 그중 구현에 직접 걸리는 것만
 
 | 일자 | 항목 | 내용 | 근거 |
 |---|---|---|---|
+| 2026-10-07 | Codex 리뷰 반영 | 6586e9f 리뷰 8건 전부 반영: 태그↔이미지 매핑·`init` 태그 확인(distribution D22·V13), R1, DESIGN §2 "같은 패키지"·§11 2026-09-26 행 대체 표지, ruff.toml·altera-rules.yml·§3-5의 `src/` 경로 | Codex 01a111e5 |
 | 2026-10-07 | 잔재 정정: 워크스페이스 설치 경로 | 07ea482(배포물 넷)가 남긴 둘을 닫았다. ① service §0·§1·P2-1·P2-5의 `src/harness_catalog/` → `packages/`. ② 단일 패키지 git 설치 명령(§6-6·§7)을 하위 디렉토리 명세로, pre-commit·CI·evals 러너의 설치와 판 핀을 distribution D22·V13으로. 실측(uv 0.11.8, pre-commit 4.3.0, 대역 워크스페이스): uv는 cli 명세 하나로 core를 워크스페이스 소스에서 풀고, pre-commit(pip)은 core·cli 둘 다 명시해야 한다. DESIGN §5 "rev로 핀" 문구와 §11 행 보정 | service §9, distribution §10, DESIGN §11 |
 | 2026-09-26 | 저장소 신설 | `git init`, altera-rules rules-v0.10.0 설치(common·lang/python·review, 훅 declared·ruff·ast-grep). 게이트 완주: `--check` 일치, selftest 통과, census 0(파이썬 없음), `pre-commit run --all-files` 통과. lang/python은 사용자 결정으로 소스 0인 시점에 미리 선언했다 | §3-5, V7 |
 | 2026-09-26 | 설계 개정 | 사용자 결정: 주기 fetch 간격을 설정값 `FETCH_INTERVAL_SECONDS`(기본 60초)로. DESIGN §2·§2.1·§11에 반영(설정값 여섯 = 필수 다섯 + 선택 둘) | DESIGN §11 |

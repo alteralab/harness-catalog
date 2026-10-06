@@ -188,7 +188,7 @@ Dex를 두면 v3.0 compose는 서비스 1 + PostgreSQL 1 + Dex 1이 된다. 클�
 |---|---|---|
 | **저장소** | git 저장소 하나. `skills/<name>/`. 스킬 **내용**의 정본이자 **쓰기의 유일한 경로**. `main` = 인증된 판, 브랜치 = 초안, 병합 = 게시이자 인증. `main` 직접 push·강제 push 금지는 규율이다(브랜치 보호 없음, §11) | 저장소 1 |
 | **PostgreSQL** | 저장소에서 파생한 인덱스(재구축 가능). 정본 사실은 없다 — 스킬에 **대한 사실**(사용 기록·평가 결과)은 Langfuse에 있다 | DB 1 |
-| **harness-catalog 서비스** | 호스트 한 대에서 도는 MCP 서버(HTTP 전송). 저장소를 fetch해 검사하고 인덱스를 짓고 도구 넷을 낸다. 사내 SSO로 사용자를 알고, 저장소에는 쓰지 않는다. 같은 패키지가 CLI 둘을 낸다: `harness-catalog init <repo-url>`(저장소 초기화, §2.1)과 `harness-catalog check`(검사, pre-commit·CI가 부른다) | 서비스 1, 플랫폼 팀 소유 |
+| **harness-catalog 서비스** | 호스트 한 대에서 도는 MCP 서버(HTTP 전송). 저장소를 fetch해 검사하고 인덱스를 짓고 도구 넷을 낸다. 사내 SSO로 사용자를 알고, 저장소에는 쓰지 않는다. 같은 코드 저장소의 별도 배포물 `harness-catalog-cli`가 명령 둘을 낸다(§11 2026-09-27 워크스페이스): `harness-catalog init <repo-url>`(저장소 초기화, §2.1)과 `harness-catalog check`(검사, pre-commit·CI가 부른다) | 서비스 1, 플랫폼 팀 소유 |
 | **CI 검증** | PR마다·`main` push마다 `harness-catalog check`를 돌린다. 저장소 구조와 스킬마다의 검사(§5)가 한 명령이고, 붉으면 병합하지 않는 것이 규율이다(브랜치 보호가 없어 강제는 아니다). 인덱스 빌드가 같은 검사를 다시 돌려 통과하지 못한 스킬을 인덱스에서 뺀다(아래 인덱스 갱신) | 워크플로 1 |
 
 운영자가 살려 둬야 하는 것: 서비스 1, DB 1, 인가 서버(Dex) 1. 사내 IdP로 옮기면 Dex는 빠진다. v2.4는 MCP 서버·collector·Grafana·gh-pages였고 DB를 "기록 시스템 하나 더"라며 뺐다. v3는 DB를 되돌리되 역할을 좁힌다.
@@ -945,7 +945,7 @@ skills/yt-subs/
 
 | 결정 | 내용 | 근거 |
 |---|---|---|
-| harness-catalog를 어디서든 설치 가능한 오픈소스 패키지로 낸다 | 코드 저장소의 배치는 이 문서가 인용한 오픈소스 여섯(Dex·Langfuse·MCP registry·Gitea·DataHub·Polaris)의 공통 골격을 따른다. compose·Dockerfile은 루트, 파이썬 패키지는 `src/harness_catalog/`(마이그레이션은 패키지 데이터), compose 지원 파일은 `docker/`, 예시 설정은 `examples/`, 문서는 `docs/`, 스크립트는 `scripts/`, Helm은 `helm/`(§7대로 지금 없음). 기본 compose는 Dex 정적 사용자로 어느 머신에서나 뜨는 빠른 시작이고, Synology LDAP 연합(§2 신원 제공자 표)은 `examples/synology-ldap/` 오버레이가 된다. 저장소 템플릿은 `examples/catalog-template/`(6차 리뷰의 `deploy/repo-template/`을 대체). 계획 문서는 `plans/`, 실측 기록은 `research/` | 사용자 결정. 여섯 저장소의 최상위 배치는 2026-09-26 `gh api repos/<r>/contents`로 실측했다(Dex·Langfuse·MCP registry는 compose를 루트에, DataHub·Gitea는 `docker/`, Polaris는 `helm/`, Dex는 `examples/`). 서비스가 배포 형태를 모른다는 §2.1의 결정과 설정값 일곱은 그대로다 |
+| harness-catalog를 어디서든 설치 가능한 오픈소스 패키지로 낸다 | 코드 저장소의 배치는 이 문서가 인용한 오픈소스 여섯(Dex·Langfuse·MCP registry·Gitea·DataHub·Polaris)의 공통 골격을 따른다. compose·Dockerfile은 루트, 파이썬 패키지는 `src/harness_catalog/`(마이그레이션은 패키지 데이터 — **이 배치는 2026-09-27 행이 `packages/` 워크스페이스로 대체했다**), compose 지원 파일은 `docker/`, 예시 설정은 `examples/`, 문서는 `docs/`, 스크립트는 `scripts/`, Helm은 `helm/`(§7대로 지금 없음). 기본 compose는 Dex 정적 사용자로 어느 머신에서나 뜨는 빠른 시작이고, Synology LDAP 연합(§2 신원 제공자 표)은 `examples/synology-ldap/` 오버레이가 된다. 저장소 템플릿은 `examples/catalog-template/`(6차 리뷰의 `deploy/repo-template/`을 대체). 계획 문서는 `plans/`, 실측 기록은 `research/` | 사용자 결정. 여섯 저장소의 최상위 배치는 2026-09-26 `gh api repos/<r>/contents`로 실측했다(Dex·Langfuse·MCP registry는 compose를 루트에, DataHub·Gitea는 `docker/`, Polaris는 `helm/`, Dex는 `examples/`). 서비스가 배포 형태를 모른다는 §2.1의 결정과 설정값 일곱은 그대로다 |
 
 ### 7차 리뷰(2026-09-26, PLAN 다섯의 Codex 교차 검증, 17건) — 설계에 닿은 것
 

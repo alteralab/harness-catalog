@@ -4,5 +4,7 @@ extend = "../altera-rules/gates/ruff/base.toml"
 
 # extend-per-file-ignores: per-file-ignores로 쓰면 base의 면제를 통째로 덮어쓴다 (syntopicon에서 실측).
 [lint.extend-per-file-ignores]
-# The service entry point (uvicorn bootstrap) is the output layer: printing is its job.
-"src/harness_catalog/__main__.py" = ["T201", "T203"]
+# The entry points of the two deliverables are the output layer: printing is their job
+# (plans/service.md §2 — server: serve/reindex, cli: init/check/config).
+"packages/server/src/harness_catalog_server/__main__.py" = ["T201", "T203"]
+"packages/cli/src/harness_catalog_cli/__main__.py" = ["T201", "T203"]
