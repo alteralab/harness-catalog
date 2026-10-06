@@ -6,7 +6,8 @@ ARG GITLEAKS_IMAGE=zricethezav/gitleaks:v8.30.1
 FROM ${GITLEAKS_IMAGE} AS gitleaks
 
 FROM ${PYTHON_IMAGE} AS builder
-COPY --from=ghcr.io/astral-sh/uv:0.11.8 /uv /usr/local/bin/uv
+# uv는 PyPI에서 받는다(GHCR의 uv 이미지는 레지스트리 자격이 섞인 데몬에서 denied가 날 수 있다 — mini 실측)
+RUN pip install --no-cache-dir uv==0.11.8
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PROJECT_ENVIRONMENT=/opt/venv
 WORKDIR /src
 COPY pyproject.toml uv.lock ./
