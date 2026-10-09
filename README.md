@@ -25,15 +25,39 @@
 
 로그인은 팀 LDAP 계정으로 한 번 합니다. 레지스트리 앞의 Dex가 LDAP을 OIDC로 감싸고, LDAP 그룹 `harness-readers`에 든 사람만 도구를 부를 수 있습니다.
 
-```
- 팀원의 하네스 ──(MCP, OAuth)──▶ 프록시(TLS) ──▶ registry ──▶ postgres(색인)
-      │                              │               │
-      │ 브라우저 로그인              ▼               │ fetch main (deploy key, 읽기 전용)
-      │                            dex ──▶ LDAP      ▼
-      └──(브랜치·PR·병합)──────────────────────▶ 카탈로그 저장소 (git 호스트)
-                                                      │ PR마다 CI: harness-catalog check
-                                                      ▼
-                                          harbor run ──▶ Langfuse (평가·사용 기록)
+```mermaid
+flowchart LR
+    subgraph team["팀원"]
+        H["하네스<br/>(Claude Code · Codex · Cursor)"]
+    end
+
+    subgraph host["운영 호스트 (compose)"]
+        P["프록시 (TLS)"]
+        R["registry<br/>MCP 서버 · 색인"]
+        D["dex<br/>OIDC"]
+        PG[("postgres<br/>색인")]
+    end
+
+    L["LDAP<br/>harness-readers"]
+
+    subgraph git["git 호스트"]
+        C["카탈로그 저장소<br/>skills/&lt;name&gt;/"]
+        CI["CI: harness-catalog check"]
+    end
+
+    LF["Langfuse<br/>평가 · 사용 기록"]
+
+    H -- "MCP (OAuth 토큰)" --> P
+    P -- "/mcp" --> R
+    P -- "/dex" --> D
+    H -. "브라우저 로그인" .-> D
+    D -- "인증 · groups" --> L
+    R --> PG
+    R -- "fetch main<br/>(deploy key, 읽기 전용)" --> C
+    H -- "브랜치 · PR · 병합" --> C
+    C -- "PR마다" --> CI
+    CI -- "harbor run" --> LF
+    R -. "도구 호출 스팬" .-> LF
 ```
 
 이 저장소(`alteralab/harness-catalog`)는 레지스트리·CLI·이미지·템플릿을 담은 **코드 저장소**입니다. 카탈로그 저장소(우리 팀은 `alteralab/catalog`)와는 별개입니다. 설계의 근거는 [DESIGN.md](DESIGN.md), 진행과 결정의 원장은 [PLAN.md](PLAN.md)와 `plans/`에 있습니다.
