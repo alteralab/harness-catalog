@@ -116,15 +116,51 @@ curl -fsS http://127.0.0.1:8000/readyz
 
 ## 저장소 구성
 
+`tree -L 2 --dirsfirst` 출력에 역할을 달았습니다.
+
 ```
-packages/core/            harness-catalog-core    모델 · 카탈로그 앱 · 검사 항목 · git/검증 어댑터
-packages/server/          harness-catalog-server  MCP 서버 · OIDC 검증 · PostgreSQL · 스케줄러 · 마이그레이션
-packages/cli/             harness-catalog-cli     check · init · config, 카탈로그 저장소 템플릿
-packages/harbor-langfuse/ harbor-langfuse         Harbor 플러그인: evals 결과를 Langfuse로
-skills/                   첫 카탈로그에 올린 메타 스킬 둘(pin-skill · write-skill)
-docker/ examples/         Dex 설정 · PostgreSQL 초기화 · Synology LDAP 오버레이 · 카탈로그 템플릿
-scripts/ tools/pilot/     비밀 생성 · 토큰 · Dex/하네스 실측 도구
-docs/ DESIGN.md plans/    문서
+.
+├── docker/                      # 이미지에 딸린 설정
+│   ├── dex/                     #   Dex 설정 (gomplate, 빠른 시작용 정적 사용자)
+│   └── postgres/                #   PostgreSQL 초기화 (DB·역할 둘)
+├── docs/                        # 독자별 안내
+│   ├── using.md                 #   팀원: 등록·로그인·찾기·pin
+│   ├── authoring.md             #   저자: 규약·절차·검사 항목·evals
+│   ├── operations.md            #   운영자: 설치·프록시·Dex/LDAP·런북
+│   ├── configuration.md         #   설정값 참조 (harness-catalog config docs 생성)
+│   └── development.md           #   개발자: 배치·시험·게이트·릴리스
+├── examples/
+│   ├── catalog-template -> ../packages/cli/src/harness_catalog_cli/templates
+│   └── synology-ldap/           #   Synology LDAP Server 연동 오버레이 (compose + Dex 설정)
+├── packages/                    # uv 워크스페이스, lockstep 배포물 넷
+│   ├── core/                    #   harness-catalog-core: 모델·카탈로그 앱·검사 항목·git/검증 어댑터
+│   ├── server/                  #   harness-catalog-server: MCP 서버·OIDC·PostgreSQL·스케줄러·마이그레이션
+│   ├── cli/                     #   harness-catalog-cli: check·init·config, 카탈로그 저장소 템플릿
+│   └── harbor-langfuse/         #   harbor-langfuse: Harbor 플러그인 → Langfuse
+├── plans/                       # 실행 계획과 원장 (PLAN.md가 우산)
+│   ├── pilot/                   #   측정 결과 r1~r3 (Dex 그랜트, LDAP, 하네스 첫 접촉)
+│   ├── service.md
+│   ├── distribution.md
+│   ├── pilot.md
+│   └── skills.md
+├── scripts/
+│   ├── make-secrets.sh          #   운영 비밀 파일 여섯 생성 (멱등)
+│   └── dev-token.sh             #   기계 계정 토큰 (비밀번호 그랜트)
+├── skills/                      # 첫 카탈로그에 올린 메타 스킬 둘 (각자 evals 포함)
+│   ├── pin-skill/
+│   └── write-skill/
+├── tests/                       # pytest (core는 가짜 어댑터, adapters는 testcontainers, http는 실제 서버)
+├── tools/
+│   └── pilot/                   #   Dex 그랜트 실측 · 하네스 첫 접촉 캡처 stub
+├── Dockerfile                   # registry 이미지 (python:3.12-slim + git + gitleaks)
+├── docker-compose.yml           # 운영: registry · postgres · dex (docker secrets)
+├── docker-compose.dev.yml       # 개발: postgres · dex만
+├── pyproject.toml               # 워크스페이스 루트 (배포물 아님)
+├── uv.lock
+├── altera-rules.yml             # 규칙 게이트 표면 선언
+├── REVIEW.md                    # 리뷰 루브릭 (altera-rules review 표면)
+├── DESIGN.md                    # 설계와 결정의 근거
+└── PLAN.md                      # 실행 계획 우산
 ```
 
 ## 판과 호환
