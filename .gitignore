@@ -1,10 +1,23 @@
-.claude/rules/
-research/
+# 비밀·로컬 상태
 .env
-var/
-__pycache__/
 secrets/
-node_modules/
+var/
+.claude/rules/
+.claude/settings.local.json
+research/
 
-# graft's local graph cache — regenerable, not committed (run `graft build`).
+# 파이썬 — uv 가상환경·캐시·빌드 산출물. .venv와 .pytest_cache는 도구가 안에 .gitignore(*)를 만들지만 그것에 기대지 않는다
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+
+# 개발 도구 — 재생성 가능
+node_modules/
 /graft/
+openwiki/.run.json
+
+# OS
+.DS_Store
