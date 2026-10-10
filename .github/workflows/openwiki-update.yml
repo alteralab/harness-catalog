@@ -2,8 +2,17 @@ name: OpenWiki Update
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 8 * * *"
+  push:
+    branches: [main]
+    # 위키 갱신 PR이 병합될 때 다시 깨어나지 않도록. 소스가 바뀐 병합만 돈다.
+    paths-ignore:
+      - "openwiki/**"
+      - ".github/workflows/openwiki-update.yml"
+
+# 연속 병합이 겹치면 .last-update.json 기준 커밋이 갈린다. 한 번에 하나만, 뒤의 것이 이긴다.
+concurrency:
+  group: openwiki-update
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -35,17 +44,11 @@ jobs:
         continue-on-error: true
         run: openwiki code --update --print
         env:
-          OPENWIKI_PROVIDER: openai
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENWIKI_MODEL_ID: "gpt-5.6-terra"
-          # Required for the LangSmith connector's code-mode pull to authenticate.
-          # For extra workspaces, add OPENWIKI_LANGSMITH_API_KEY_2, _3, ... as repo
-          # secrets and env entries here.
-          OPENWIKI_LANGSMITH_API_KEY: ${{ secrets.OPENWIKI_LANGSMITH_API_KEY }}
-          # Optional: also trace this workflow's own OpenWiki run to LangSmith.
-          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
-          LANGCHAIN_PROJECT: openwiki
-          LANGCHAIN_TRACING_V2: "true"
+          OPENWIKI_PROVIDER: anthropic
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # 0.6.1의 Anthropic 선택지: claude-haiku-4-5 · claude-sonnet-5 · claude-opus-5 · claude-opus-4-8.
+          # 저장소 변수 OPENWIKI_MODEL_ID로 커밋 없이 바꿀 수 있다(예: 비용이 신경 쓰이면 claude-sonnet-5).
+          OPENWIKI_MODEL_ID: ${{ vars.OPENWIKI_MODEL_ID || 'claude-opus-5' }}
 
       - name: Remove transient OpenWiki run state
         if: ${{ !cancelled() }}
