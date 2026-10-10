@@ -34,7 +34,7 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-  "http: 실제 uvicorn 프로세스와 개발 compose의 Dex가 필요하다(HC_TEST_TOKEN)",
+  "http: 실제 uvicorn 프로세스 + 가짜 issuer(JWKS). Dex 불필요",
   "pg: docker가 필요하다(testcontainers PostgreSQL)",
 ]
 

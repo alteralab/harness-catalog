@@ -39,7 +39,7 @@ uv run pyright packages tests tools         # strict, 0
 pre-commit install && pre-commit run --all-files
 ```
 
-`pg` 표시 시험은 docker(testcontainers PostgreSQL)가 필요합니다. macOS Docker Desktop은 `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`이 필요하고 시험이 setdefault로 넣습니다. `http` 표시(실제 서버 + Dex)는 마커로 선언만 되어 있고 아직 시험이 없습니다. 끝에서 끝은 빠른 시작 스택에서 손으로 확인합니다.
+`pg` 표시 시험은 docker(testcontainers PostgreSQL)가 필요합니다. macOS Docker Desktop은 `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock`이 필요하고 시험이 setdefault로 넣습니다. `http` 표시 시험은 실제 uvicorn 프로세스와 가짜 issuer(JWKS, `tests/http/fake_issuer.py`)로 돌며 Dex가 필요 없습니다. 실제 Dex·LDAP까지의 끝에서 끝은 빠른 시작 스택에서 손으로 확인합니다.
 
 커밋 훅은 altera-rules 게이트 넷(ruff·ast-grep·shellcheck·표면 선언 드리프트)을 돌립니다. 선언은 `altera-rules.yml`, 리뷰 루브릭은 `REVIEW.md`입니다. CI(`.github/workflows/ci.yml`)는 ubuntu에서 게이트(비공개 altera-rules를 읽을 `ALTERALAB_READ_TOKEN`이 있을 때만)·pyright·pytest를 돌리고, `main` 병합이면 self-hosted 러너(mini)가 이미지를 빌드해 GHCR로 올립니다.
 
