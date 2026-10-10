@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:34852c44ba2ca5e672cde90b2a3c8558bf3cae9ee6d6a13e84ece5ff577f54c2",
+  "pageVersion": "sha256:644c82c52684b7fe0740a3c23adec13d60ed9ec450b4ab10dc8bbf2afbde59c7",
   "claims": [
     {
       "id": "claim_e55b2aad17184b168fec1d2207238fc1",
@@ -14,31 +14,125 @@
     },
     {
       "id": "claim_3c74b16909d543fa945404ebafcb4e12",
-      "statement": "A SessionStart hook compares the wiki's recorded base commit with HEAD and reports how many commits have landed since the last wiki update, which is the freshness signal this quickstart refers to.",
+      "statement": "A SessionStart hook registered in .claude/settings.json runs .claude/helpers/openwiki-age.sh, which reads the wiki's base commit (gitHead) from openwiki/.last-update.json and prints the number of commits between it and HEAD, plus warnings when the baseline is missing, is not an ancestor of HEAD, or the work tree is dirty; this is the freshness signal this quickstart refers to.",
       "evidence": [
         {
-          "resource": "repo://.claude/helpers/openwiki-age.sh",
-          "version": "repo-file-v1:sha256:dce3ca3f93b2a2518c95dca4ff4fccf82acda5e798dcb6da7a52502bb87a46d6"
+          "resource": "repo://.claude/helpers/openwiki-age.sh#L5-L19",
+          "version": "repo-lines-v1:sha256:41cd3d6859d705de908685e76c5842f4258f95c4424af08976b1557e5e36046a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjZTZkM2IxODQwNzViNTMzODQwMzA5NjVhNDY4YjZhYjA3MzA1ZDQ3Nzk4MTRhZDhjN2NiZjUxMjM3YTVmMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2Y2UzZGQ4YWRkM2FiZTJkOTdmNGI1NjRlMzQ5MzU0ZGEwZWUwOGRmNDQ4NzA0MDIyZDQ4ODUwZTEyY2Q0OGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1ZGE0MTlmNDcyOTk4YjljM2VkNGYxYjgzODJjNzZhNzk4M2ExOTczYTQ0MTY0NGVjN2EwNGZkNDFjODQ4ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAifQ"
+        },
+        {
+          "resource": "repo://.claude/settings.json#L36-L55",
+          "version": "repo-lines-v1:sha256:07d67f58ff297d52cba9baef25bbd740ef3d0bdfa723aa24a8f3142e61443fe8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYTkzOGUwODlhZTRhN2YzYzAyMmE3NzFmMGY4OGE5MDM4ZjU4NWViY2ZhYWQ4ZGUzNjU1YjdlYTU3ZTc1N2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2M2Q1MzVjZTM4MDYzZDZiNGM1MWQ4YzM4NmE3ZjliM2U1ODBhMTRhMTBjMDdiMTk4ZGZhZjE5YzkzYTNiZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0N2ZlZTRhY2NhMzA5MDIxNzMwMTE1YzhhZmQwZDk4ZDBjNDEyOWQwNjc5Mzk4Zjk3ODVmYTNkN2MyZmM4NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjNDM4Y2QxYWNlYjdmMWFkNTc3ZmIwNjcxNDQ4N2ZkZDM3MzdlYmE0MmI3NzEyODQ4NmIxMDdlZjFmYWExNmQifQ"
         }
       ]
     },
     {
       "id": "claim_bd87164185cc495684fcd09d9c5dd3a5",
-      "statement": "The human-facing operating guides (using, authoring, operations, configuration, development) live under docs/ and the design contract with its decision ledger in DESIGN.md, so wiki pages cite those rather than duplicating them.",
+      "statement": "The human-facing operating guides (quickstart, using, authoring, operations, configuration, development) live under docs/ in Korean, while DESIGN.md is the design contract whose §11 is the dated decision ledger and PLAN.md plus plans/{service,distribution,pilot,skills}.md hold the execution plans with measurements in plans/pilot/r1~r3.md; wiki pages cite those rather than duplicating them.",
       "evidence": [
         {
-          "resource": "repo://README.md#L105-L116",
-          "version": "repo-lines-v1:sha256:1ceb2493a441cec15978d6e7841cba41f7d7a2e3329639e94c5e6b722dad3cf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NjFhZGQ3NTViYTQ0OTQ0ODRlMDY3NjA3N2UxYjM1YWY4ZDc5MDBmYjMwNzZlZjBjNjU1NmNkOTVjN2I3MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzYzRkZTIxMDEwM2IyMjg4ZmM5NGIyY2I3MmMyYWY1NTZmMDUyOTI4ZjYxNzAyZGU1NGU4NWEzZjhlYTViZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ODQwZGUxOTM2YmRlYTEzMDZmNDk1ZWY0OTM0YmYwZTYwYmQ4ZmQ0YWZlNGJjNTJiMjk4YjAwNmIzNTUwYmIifQ"
+          "resource": "repo://DESIGN.md#L730-L730",
+          "version": "repo-lines-v1:sha256:14b2cbd944ee89390a295ffc147d351a6cf808faa946a86aef2c611fb1692101:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRiMmNiZDk0NGVlODkzOTBhMjk1ZmZjMTQ3ZDM1MWE2Y2Y4MDhmYWE5NDZhODZhZWYyYzYxMWZiMTY5MjEwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRiMmNiZDk0NGVlODkzOTBhMjk1ZmZjMTQ3ZDM1MWE2Y2Y4MDhmYWE5NDZhODZhZWYyYzYxMWZiMTY5MjEwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTQ5YWJhODJiMjk2NGY0ZDUzODdmNjY4YmM4OWE3NDU2NGJkYjVjMGRhZGNkZDdmNzRhODA5MDQzNmU0ZDBjMSJ9"
         },
         {
-          "resource": "repo://docs/development.md#L80-L94",
-          "version": "repo-lines-v1:sha256:4b8211fa507788840d766a705c2142b512ab8e7bdc1db485b17e3924599408ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0MTBmMDA0ZTA4MThjNTEyMDVlZjcyZDhmNTYxMTQyNTMwZjVmMTI4NWUyNzk4YWRlZmM4MjJkNDM3M2RkZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MzJlNTU0NTdjMjEwNmIzOGRlNzRlNTU1N2JlYjJmMTE1MmJlMmRmYmI2YzlmOTE3M2NhMDFhNjJmNGU1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyZWFhYmEzZmI0M2M3NzY0ZjY0Y2UwNzk2MWQ3MGRiZDkyZmFiN2E0N2FkYTM1NDIxNTRkYTYxZmNlNzI1MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://PLAN.md#L1-L3",
+          "version": "repo-lines-v1:sha256:23b21eb283ee2048bdcaae656804d145f9e212f915a915fc481261cd9b272197:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTY1ZTE1OTE2NTdhYWQ0NjUxNmJhZDViMTA1OGRmMjU4OGIyNWQzNTEyZWJiMWNjOTdhNWJiYWI0NzRkZDQ5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmE5YTA3ZjM3ZGUyMDJlYTNmYWU4NzZjODhiOGExMTVkYjdjNGQxZDVjMTFlMGI1N2U2ZTE0ZTVlMjUxZmVmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmZjZDFjNWNkNTViYmFiYzBlNzE1MzU4NDRlOGQ5MmE3ODA4N2FjOWNjNDZjNjdkMjhhZDE0NDI5MDA3MTc1MCJ9"
+        },
+        {
+          "resource": "repo://README.md#L117-L128",
+          "version": "repo-lines-v1:sha256:8b6482d8c28cdf9019e4435855b2c80775aea20c865a5f2b2975965bd140783a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NGIyMTZiZmQzZjE2NmY0M2Y2YWExNTA4MmMyZjc5ZDZhYTljMjRkYjdkYzJkZjUwZWI5MWZmNmM1ZDAwMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlOGExNDQ4MmM0ZWZhMTNjZjg5YThjMzkwMmNmM2QyN2JiNDFmNWQwYmRkMjNhM2VlNzY5NGIyMjgzYTczMGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkZTkxOTY1YzM0ODFiNGEyNzQ1ZTAyOGQxMzRkMGMyYTQzMTQwMjhmOGZjMjQ4ZTJmNmMwZTM1YzhjYzdiZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmMzQyOTgyMTMyZjQ0YWJlYTUxOTBlM2RmNDZjYTdjYjA5NDQyYzI2YTEzYjAyMzE3OGQxNjE3MDlmZTAxMjgifQ"
+        },
+        {
+          "resource": "repo://docs/development.md#L92-L94",
+          "version": "repo-lines-v1:sha256:f39716d5406bb1372509bbc990d2b83a16b4795eb0eb7f37dec20fd1a764a2f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzdkOTA1OGM2YjM1ZjNiZjI3MzY2N2E2ZGNhMDEyZWYyYWU2ODljOWQ1OWJlMTUwYTY3MTg3OTg0YzA4NTE1YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgzMmU1NTQ1N2MyMTA2YjM4ZGU3NGU1NTU3YmViMmYxMTUyYmUyZGZiYjZjOWY5MTczY2EwMWE2MmY0ZTU0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGFkNTg4N2Y0Y2Y2ZmE2NWI0YmVhOTc5MjNkZDJjYzc3YjRhNzUwZGNjOWE3NzNiNzFiYjE5NTFhZGJjNTJjZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_00edc2775cfa463db77968836d6c8067",
+      "statement": "CLAUDE.md's OPENWIKI:START block delegates to @AGENTS.md, whose generated block states that OpenWiki retrieval is just-in-time rather than preloaded at task start (openwiki_search then openwiki_read), that source code and tests are authoritative, and that generated OpenWiki pages should not be hand-edited.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L5-L14",
+          "version": "repo-lines-v1:sha256:965b11a851738f08a591fcd7200331a525a9902e67b614ce6d86c6a4283402a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkYjQ2MDY2MGY0ZDUwYTI1YWNhNzc5NjEwMDJkMzk3MDVjNjQ2ZGMyNmE4YmZhNjZhZTZmNjkwOTU5YzY5NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTM5NTNiZmI3MmMxMjYyYmJhZTJlYWNhNzJjYWJmMWFmNDk5MjdhMGJiYTExNTdiMmQ1YmRiMjg1YzRiZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhZmI5NjA2ZjViMGQ4ZjYzNGIyNjAzNzhkNmVjZTI1M2I1YzE0NDdhOWJmMWQwNDkzNDk0NDBhOGI1ZWJmMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwODlkZjkzZjhiYTU3YTRkZGJmZDhmMDEzOTYyYzM5NzhjZTRkYjY4MTk5YzRkYTY2NjY0OWIwOTk2Y2VkYTkifQ"
+        },
+        {
+          "resource": "repo://CLAUDE.md#L9-L13",
+          "version": "repo-lines-v1:sha256:b4e9f64d5d29b5b514fcd109921a4d536e698c91dbc6959a94a279acafdb91f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYxODBmOWMxMjY5MDNiY2MzMzFhYTk1NDU2ZTQ5NDQ0YTdkNGQwMTFlOGEyYTgzZjVkYzg3MDIzOTE4MTJkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzM2Y2M0ZmJmMTliZWFhZGE3Y2NmOTk4NjQxNGZhOTE4NTFhOGQ3YTA3ZGZiM2NjYmU4MDBhNjllZWQwYWI0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjEzMzBhOGZjMmQ3NmNlN2IxNTA0YWNiNWExOTQxMzAzOTI0NzMwYTIxYzhkNjUyNjM1ZTRiZDBmMmY1YWFiOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzA4OWRmOTNmOGJhNTdhNGRkYmZkOGYwMTM5NjJjMzk3OGNlNGRiNjgxOTljNGRhNjY2NjQ5YjA5OTZjZWRhOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3830398e400e4d819baff0e2ec607665",
+      "statement": "The wiki is regenerated by .github/workflows/openwiki-update.yml, which runs `openwiki code --update --print` on pushes to main that do not only touch openwiki/** or the workflow file, using OPENWIKI_PROVIDER anthropic and the model from repository variable OPENWIKI_MODEL_ID (default claude-opus-5), and opens a pull request on branch openwiki/update; the recorded baseline only advances when that PR is merged.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L3-L15",
+          "version": "repo-lines-v1:sha256:6d8ebfd200e03139beaf04c72fb99423dfebb44d42dc62e6819b14110d1da525:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0YTc5NmEwMWY4NDU4Yzg5OWQ1YjIyODkwZTVkZjQ0ODAzY2E0ZDgwMTdjMzg3OGQ3Zjg3OTQ0NDkxMjBjOGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1YjFmMjRlNjE4MDVlZTFhOWJjNzgwNDdlMWU0YjNkODYxNTdkNmUzN2Q4YWMwYmNiZWJkNWU2NWU1ZWYxYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5NDYyZDVmMmMyMDdlNmI0ZjgyODQzZDkxNTRmZjBiYmFkMDM0MzkyNGIyYzNjNGJhYmQ5OWI4N2NjZDRiODIifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L42-L51",
+          "version": "repo-lines-v1:sha256:c48054ae8ba190e2f0c990b60b34ffd5935e457927146d08d18786df5cedabda:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZThmOWZhNDBlN2JkMDQ5OWQxYzBkODNmZDc1OGFhODViMzA4NDJkYmQ2MWYwZWE2YjdhZTEwZWZlYzc2ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYWU2MWJmYmM4MDc0ZDBjZTc0Yjk3Y2Y0NGJjNzJlYTI0N2I4MjBiMWRjNDdmZTE2YmZmZjdjNGFiM2I1NTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyYzNjN2RlMmE5NjkxY2ZhZWMzOGFjZTBiNDA0NzFjNTM0M2JkZDk5MWY4ZWE5NzMyZWUyN2NiOTkxMWU5NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0ZTc5NGRkZjMyYTNlMmRhYWFkODgyNjMxM2MyNGY0ZTRjZGE2ZjYxYWJmNDE3ZTQ4OWJlMzlkNWI5OGE1NTkifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L67-L84",
+          "version": "repo-lines-v1:sha256:56227a7346a0b3044464fbbad5faa05d8275cebcac558447dd5e3919d3b331f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxY2ZmNGFkMzNiYTkxYjE0OGUxYjFiODI5MGI4ZmZmMjdiMjAzZmFiZmVlNTg3MDI4MmRlMzY3MzgzYjFiZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZTFhZGFkYTE3YWUyZjRmM2Q4ZDQ3OTdkYjM2ZDUyNjc1OGJmNDlhOGM0YTc0OTg5ODY0YTQzY2NiMThlMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMjNlMjAxZTk5YzUwNDI3ZmJiMjMxMjExMjVlZjYyY2NhYTE4NzBmMzlkZWRlYjIxOGY0NWQ0NThkNmU3N2MifQ"
+        },
+        {
+          "resource": "repo://docs/development.md#L83-L83",
+          "version": "repo-lines-v1:sha256:722e295119989be6f88a331dbaed9a25d9a9b12dcbae852cf141a760d6215d61:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzIyZTI5NTExOTk4OWJlNmY4OGEzMzFkYmFlZDlhMjVkOWE5YjEyZGNiYWU4NTJjZjE0MWE3NjBkNjIxNWQ2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzIyZTI5NTExOTk4OWJlNmY4OGEzMzFkYmFlZDlhMjVkOWE5YjEyZGNiYWU4NTJjZjE0MWE3NjBkNjIxNWQ2MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDk2NGMxZWYxMDkwYzQ4NTkyNjYxNjQxYjI5OWM0MmRkMGZkMDY0ZjdiZDI1YTYwZWUyODIxMTM3YmY1MjkwMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTY0ZWUyY2RjMGU3MTQ3OWJjYmNjOTk3M2QzNjY3MGYxNWQ3OTU4ZjVhYmU1YTQzZTdmZjE0NzRjMjc3ODc2OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc999b9347524fd78a4785699b834e2b",
+      "statement": "The OpenWiki toolchain is pinned to openwiki@0.6.1 in package.json, in the .mcp.json MCP server entry, and in the CI workflow's global install, and `make mcp-pin` rewrites .mcp.json from package.json because the init tools write the servers without a version.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L38-L40",
+          "version": "repo-lines-v1:sha256:9ca5d28c9d58e6d43056cf35df8e80ddc1e72f9e91276a82ed4991e6608a5f39:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODZjZTBiMGQzYjM4MTIyYmMyNzUxNWE4ZDk2OTYxNWQ5ZTEwZTI4MDY0NGY3NjEyMjFkMDQ0NzlhZDI1MzkzYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQxZDU5OGMwYzMwMDljYTM1MWMwMTNhMGRhMDU2NDZkMGZjMDVkOGM1ZTEwMzk3ZDJjNzUxMjhkMjYyYjI1ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNmM2I4ODAyYjMxMGZmMmFkZDAwMjZiODJlZTJlOWU1NzE1OTEyZWFmMDgxYWY4NmNlMTEwZGQ2NDJmYzFhMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTM3NjlkMjkyYWFhMDBjMmQzZDAyNzBkZmM5MjIzODZhMGRlNGRhMzhjOTA3MDA1NThlYjIzMmI4ZGIyYjdiNyJ9"
+        },
+        {
+          "resource": "repo://.mcp.json#L11-L20",
+          "version": "repo-lines-v1:sha256:9c9244d2f319182f3702e866cdd829d4282a5a3814835eb8312308609ce348c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmYWRhZWIxOWQwYmIyM2JmMjJiNDdlNjFhODg1MGI1ZmFjYmU1MzVhMmZjMWM4N2NjMzExNmI3MTI2YTBmYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzODdkOGVjMmYxOTcxMTViY2FlOTlmMmNmOWRhYzU3ZjIwYmE4NTE0YWVmZWVhMWUzYWU3ZmE4MWI0ZGQ3MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
+        },
+        {
+          "resource": "repo://Makefile#L55-L61",
+          "version": "repo-lines-v1:sha256:57ebfaaf2529a1eca13ec18ba38c8121f34db10122c297db91c76fd72cd79db2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjhiYTI5MWJmMjg2ZGYyMjllM2U5MmUxNDQ0ZTNkMWJmYTM0ZjhjM2VlNzVkNmFhN2M5ZGJjMjRmNzlkNzdhYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWI2NzUwNjE0YjQwYmFlMzZkZTE1NzRmOGFiMWNhYzBiZDc4MDZkZTNmMWExYWEyNWYzZDM3YmIyNmYwN2FiZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWI3NWI4N2U4YTZiMDFkMDRiOWYxNTRkNzRiODNjNmI3MWEwZGI1OGJmZTE1Y2Y5OWE2M2VjNDRlOTQzOTFlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWI4MGIzYjdjNDFhYWI5OWExYTllOTAxYTgzZDYxNDg0OTA1NmM2NjcyY2MwZDliMGJkMjMzZTU4NmNjMTNiYyJ9"
+        },
+        {
+          "resource": "repo://package.json#L5-L8",
+          "version": "repo-lines-v1:sha256:9be2407109a2b6d2a9a1d681cfb6001b0697e2da6ca497bfc9424c1329614592:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWRjNGRlN2VkMzVhMjMzNjQ1Mzk4NjRkYWRiOTM4Yjg3MjMzMzc5MTc5ZDYyOTJiOWZmNWY2MTlhNmMxMzE2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2UzNjU1ZWQzNDgzNmQ0MTk1NDAzZWFiNDdkNTllYTc0Y2Y5MjdmMzBiNmZjMWQ2MGZmYTJjNWJlMThhOGU5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_347c89a429064fdd985a700007f52d9e",
+      "statement": "`make wiki-claims` is a model-free pre-MR check: it greps the wiki's claim records for the files the current branch changed (diff against the merge-base with origin/main plus the dirty work tree) and prints which claim pages cite them.",
+      "evidence": [
+        {
+          "resource": "repo://Makefile#L63-L65",
+          "version": "repo-lines-v1:sha256:2d29ee908436d0d1e0fc506ee4146aeb24fb825801824575fbd3e3267c3d29a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTUyZDdkM2UzODA2MGI2MTVhODYwMzAzYmQ4Yzc5ZmE2OWZmOWIyMGNiZDg4NWEyMTljNmMwODI2MzAxZmZhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGRhMmUwZjZhNGQ1ZTlkZjI4NWVkMTgyZmRjMzhlZGY0Mzk1NzZiNzNlMmQ2YmNjMzAxYzdlZmNiOWFiMmVlYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTBiOGNjNDYxZDdkMDkyMjRiNzFlMTYxNDBkMDUzZWFlZjg1MWM1MjYwN2E0YWNiYjUzOTQxNDQzMjFhNDcyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://docs/development.md#L85-L90",
+          "version": "repo-lines-v1:sha256:644c35b63394155dce4e80d39a090002b4f313238c8601fcfe7338a7e99c215e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzk4NmUyOWRiNjU4ZWRlOTEyODY5NDE4MmMzZWJmNjk4YjYxZDZjMzBlMDA5NTEzNzk1NGIxNWU1ZGJlYmIyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2U3M2JhMzIxMjFmZGJlNzgxZTFiNTRlOTQ5ZmU1MzVkMGEyNjQ5ZjBiN2I0OWExMWE1ZWU2MDRlMDM5MzRjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzI5NTQwY2FkMDk4YzQxNTYxMzRhNTJmOTc1NjVlOWZjZDEzZTliNTk5ZTQ1ZjFlMzUwNzdmM2IxNDBmODBhYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2546a0403974ec8a21965e7fb5c742c",
+      "statement": "The registry's configuration surface is exactly six Settings fields — catalog_repo_url, git_deploy_key, oidc_issuer, public_url and database_url required, plus fetch_interval_seconds defaulting to 60 — so proposed new settings usually belong to another layer.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/settings.py#L36-L46",
+          "version": "repo-lines-v1:sha256:051859907fb5e66e4896df5c86f6e3a46e9e4ce635657d00cfea864de5b8ee8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjODYzMzFjOTBiNzhjZGI5MTdmZDViZDY5ZmMwNzE0ZDVhNWZlODQ2MGQ4NzYyNzllMTVmZjQyZmZjNzIzNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkYmI4ZWIwODI2ZmJmMjEzYzc2YTBjNDBmMWRlNmYyNGNjOThlMGU2ZmViYWZjNDk5MjI1MTJmNDVlZDc4MjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzNzgwNmM0ODMxYTg1ZDJiYWUwNjk4NDRlYmYzN2FjZmE0MzIzNDFkOTM1OWU3MmJiOWE4YWNmNTg5NjlhZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyNTA4MzNkNzEyZjk2NGRjZWI5Nzg5NGY0NmZiZTZlNDJhNDdiMGVlYWJhZWNiNjkxZjI5YmU5ODlkM2I1NDAifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.1",
-    "at": "2026-10-10T11:24:40.987Z"
+    "at": "2026-10-10T12:19:13.361Z"
   }
 }
