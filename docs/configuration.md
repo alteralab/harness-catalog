@@ -80,7 +80,7 @@ compose 파일은 `.env`(같은 디렉토리)와 셸 환경에서 변수를 채�
 | `OTEL_EXPORTER_OTLP_ENDPOINT` · `_PROTOCOL` | 아니오 | §2 | 헤더는 변수가 아니라 비밀 파일 `otlp_headers` |
 | `REGISTRY_PORT` | 아니오 | 8000 | 호스트 `127.0.0.1`에 여는 레지스트리 포트(프록시가 받는다) |
 | `DEX_PORT` | 아니오 | 5556 | 호스트 `127.0.0.1`에 여는 Dex 포트 |
-| `SECRETS_DIR` | 아니오 | `./secrets` | 비밀 파일 디렉토리(0700) |
+| `SECRETS_DIR` | 아니오 | `../secrets` | 비밀 파일 디렉토리(0700). `docker/.env` 기준 상대 경로라 기본값이 저장소 루트의 `secrets/`다 |
 
 비밀 파일 여덟은 `scripts/make-secrets.sh <SECRETS_DIR> [deploy_key]`가 만듭니다. 있는 파일은 건드리지 않습니다.
 
