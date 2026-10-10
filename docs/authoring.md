@@ -18,7 +18,7 @@ skills/<name>/
   references/         선택. 본문이 가리키는 긴 참고 문서
   assets/             선택. 템플릿·데이터
   evals/              선택이지만 팀 규약은 최소 한 쌍
-    <case>/task.toml · instruction.md · environment/Dockerfile · tests/test.sh
+    <case>/task.toml · instruction.md · environment/Dockerfile · tests/test.sh(진입점) · tests/test_outputs.py(pytest) · solution/solve.sh(Oracle)
 ```
 
 최소 `SKILL.md`는 이렇습니다.

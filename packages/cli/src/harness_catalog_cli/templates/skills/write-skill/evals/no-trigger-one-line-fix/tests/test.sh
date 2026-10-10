@@ -1,13 +1,11 @@
-#!/bin/sh
-set -eu
+#!/bin/bash
+# Harbor 공식 뼈대(harbor tasks init)의 검증기 진입점: /tests/test_outputs.py를 pytest로 돌려 종료 코드로 reward 0/1을 쓴다.
+# pytest·pytest-json-ctrf는 environment/Dockerfile이 미리 넣는다(검증 때 네트워크 없음). CTRF 보고는 /logs/verifier/ctrf.json.
+set -u
 mkdir -p /logs/verifier
-# 새 스킬 디렉토리가 생기지 않았고 yt-subs 하나만 있어야 1 (브랜치 어디에도 새 skills/* 없음)
-cd /work/catalog
-NEW=0
-for ref in $(git for-each-ref --format='%(refname:short)'); do
-  n=$(git ls-tree --name-only "$ref:skills" 2>/dev/null | grep -vc '^yt-subs$' || true)
-  [ "$n" -gt 0 ] && NEW=1
-done
-[ "$(git ls-tree --name-only HEAD:skills | grep -vc '^yt-subs$' || true)" -gt 0 ] && NEW=1
-for d in skills/*/; do [ "$d" = "skills/yt-subs/" ] || NEW=1; done
-if [ "$NEW" -eq 0 ]; then echo 1 > /logs/verifier/reward.txt; else echo 0 > /logs/verifier/reward.txt; fi
+cd /work || exit 1
+if python -m pytest --ctrf /logs/verifier/ctrf.json /tests/test_outputs.py -rA; then
+  echo 1 > /logs/verifier/reward.txt
+else
+  echo 0 > /logs/verifier/reward.txt
+fi

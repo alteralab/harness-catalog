@@ -2,7 +2,7 @@
 # requires-python = ">=3.12"
 # dependencies = []
 # ///
-"""새 스킬의 뼈대를 결정적으로 만든다 — SKILL.md(frontmatter + 본문 절 표지), evals 양성·음성 한 쌍(Harbor 태스크 다섯 파일씩).
+"""새 스킬의 뼈대를 결정적으로 만든다 — SKILL.md(frontmatter + 본문 절 표지), evals 양성·음성 한 쌍(Harbor 태스크 여섯 파일씩).
 
 호출: uv run --script scripts/scaffold.py <name> --description "<한 문장>" [--positive <case>] [--negative <case>] [--root <skills-dir>] [--script <x.py>]
   name        1~64자, 소문자·숫자·하이픈(agentskills.io name 문법). 디렉토리명이 된다.
@@ -12,8 +12,8 @@
   --script    scripts/<x.py>에 PEP 723 머리와 종료 코드(2 입력·3 대상 없음·4 도구 없음) 골격을 쓴다
 있는 파일은 건드리지 않는다(멱등). 만든 파일을 한 줄씩 찍는다. 종료 코드: 0 성공 · 2 입력 오류.
 판단은 여기 없다 — 내용(설명·과제 문장·검증 조건·절차)은 에이전트가 TODO 자리에 쓴다. 규약 문면은 references/conventions.md.
-Harbor 쪽 계약(tests/test.sh가 /logs/verifier/reward.txt에 쓰고, solution/solve.sh를 Oracle이 돌린다)은 `harbor tasks init`의 뼈대와 같다;
-다른 점은 이미지에 uv를 미리 넣고(검증 때 네트워크 없음) 레지스트리용 `skills_dir`를 두는 것이다.
+검증기는 `harbor tasks init`의 공식 뼈대 그대로다 — bash 진입점 tests/test.sh가 pytest로 tests/test_outputs.py를 돌려 CTRF 보고와 reward 0/1을 쓴다.
+다른 점은 pytest와 uv를 이미지에 미리 넣고(검증 때 네트워크 없음) 레지스트리용 `skills_dir`를 두는 것이다.
 """
 
 from __future__ import annotations
@@ -96,20 +96,32 @@ INSTRUCTION_MD = "TODO 사용자가 실제로 할 한 문장. 과제의 입력�
 DOCKERFILE = """FROM python:3.12-slim
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=ghcr.io/astral-sh/uv:0.11.8 /uv /usr/local/bin/uv
+RUN uv pip install --system --no-cache pytest==8.4.1 pytest-json-ctrf==0.3.5   # 검증기(tests/test_outputs.py). Harbor 공식 뼈대와 같은 판
 WORKDIR /work
 # TODO 과제의 시작 상태(파일·저장소)를 여기서 만든다
 """
 
-TEST_SH = """#!/bin/sh
-set -eu
+TEST_SH = """#!/bin/bash
+# Harbor 공식 뼈대(harbor tasks init)의 검증기 진입점: /tests/test_outputs.py를 pytest로 돌려 종료 코드로 reward 0/1을 쓴다.
+# pytest·pytest-json-ctrf는 environment/Dockerfile이 미리 넣는다(검증 때 네트워크 없음). CTRF 보고는 /logs/verifier/ctrf.json.
+set -u
 mkdir -p /logs/verifier
-# {condition}
-if false; then  # TODO 끝 상태를 검사하는 조건으로 바꾼다
+cd /work || exit 1
+if python -m pytest --ctrf /logs/verifier/ctrf.json /tests/test_outputs.py -rA; then
   echo 1 > /logs/verifier/reward.txt
 else
   echo 0 > /logs/verifier/reward.txt
 fi
 """
+
+TEST_OUTPUTS_PY = '''"""{description} — 끝 상태를 검사하는 pytest. {condition}"""
+
+from pathlib import Path
+
+
+def test_outputs() -> None:
+    assert Path("/work/TODO").exists()  # TODO 끝 상태를 검사하는 단언으로 바꾼다
+'''
 
 SOLVE_SH = """#!/bin/sh
 # Oracle: 검증기가 참으로 보는 끝 상태를 직접 만든다. 먼저 `harbor run -p skills/{name}/evals -a oracle -e docker`로 reward 1을 확인한다.
@@ -131,7 +143,8 @@ def case_files(case_dir: Path, name: str, description: str, condition: str, solv
     put(case_dir / "task.toml", TASK_TOML.format(description=description), created)
     put(case_dir / "instruction.md", INSTRUCTION_MD, created)
     put(case_dir / "environment" / "Dockerfile", DOCKERFILE, created)
-    put(case_dir / "tests" / "test.sh", TEST_SH.format(condition=condition), created)
+    put(case_dir / "tests" / "test.sh", TEST_SH, created)
+    put(case_dir / "tests" / "test_outputs.py", TEST_OUTPUTS_PY.format(description=description, condition=condition), created)
     put(case_dir / "solution" / "solve.sh", SOLVE_SH.format(name=name, body=solve_body), created)
 
 

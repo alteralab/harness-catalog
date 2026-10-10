@@ -1,10 +1,10 @@
-#!/bin/sh
-set -eu
+#!/bin/bash
+# Harbor 공식 뼈대(harbor tasks init)의 검증기 진입점: /tests/test_outputs.py를 pytest로 돌려 종료 코드로 reward 0/1을 쓴다.
+# pytest·pytest-json-ctrf는 environment/Dockerfile이 미리 넣는다(검증 때 네트워크 없음). CTRF 보고는 /logs/verifier/ctrf.json.
+set -u
 mkdir -p /logs/verifier
-# PINNED 한 줄(이름 sha40 시각)과 .claude/skills 링크가 있어야 1
-P=/work/.agents/skills/yt-subs/PINNED
-if [ -f "$P" ] && [ "$(wc -l < "$P")" -eq 1 ] && grep -Eq '^yt-subs [0-9a-f]{40} [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z$' "$P" \
-   && [ -f /work/.agents/skills/yt-subs/SKILL.md ] && [ -L /work/.claude/skills/yt-subs ] && [ ! -d /work/.agents/skills/.yt-subs.pin-tmp ]; then
+cd /work || exit 1
+if python -m pytest --ctrf /logs/verifier/ctrf.json /tests/test_outputs.py -rA; then
   echo 1 > /logs/verifier/reward.txt
 else
   echo 0 > /logs/verifier/reward.txt

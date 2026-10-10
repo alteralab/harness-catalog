@@ -20,11 +20,11 @@ def test_creates_skill_and_eval_pair_then_is_idempotent(tmp_path: Path) -> None:
     assert (d / "SKILL.md").read_text().startswith("---\nname: demo-skill\ndescription: 데모.")
     assert (d / "scripts" / "demo.py").read_text().startswith("# /// script")
     for case in ("runs-demo", "no-trigger-explain"):  # 음성 이름에 no-trigger- 접두가 붙는다
-        for f in ("task.toml", "instruction.md", "environment/Dockerfile", "tests/test.sh", "solution/solve.sh"):
+        for f in ("task.toml", "instruction.md", "environment/Dockerfile", "tests/test.sh", "tests/test_outputs.py", "solution/solve.sh"):
             assert (d / "evals" / case / f).is_file(), f"{case}/{f}"
         cfg = tomllib.loads((d / "evals" / case / "task.toml").read_text())
         assert cfg["schema_version"] == "1.4" and cfg["environment"]["skills_dir"] == "/skills"
-    assert len(created) == 12
+    assert len(created) == 14
     second = run(tmp_path, "demo-skill", "--description", "x", "--positive", "runs-demo", "--negative", "explain", "--script", "demo.py")
     assert second.returncode == 0 and second.stdout == ""  # 있는 파일은 건드리지 않는다
     assert (d / "SKILL.md").read_text().startswith("---\nname: demo-skill\ndescription: 데모.")
