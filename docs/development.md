@@ -71,7 +71,7 @@ npx graft check       # 그래프가 코드와 어긋났는지(훅이 자동으�
 
 커밋되는 것은 배선뿐입니다: `.claude/settings.json`·`.claude/helpers/*.cjs`·`.claude/skills/graft/SKILL.md`·`.mcp.json`·`.ignore`·`package.json`·`package-lock.json`. `graft/`(그래프 캐시)와 `node_modules/`는 git에도 Docker 빌드 컨텍스트에도 들어가지 않습니다(`.gitignore`·`.dockerignore`). 레지스트리 이미지는 python 기반이라 node 자체가 없습니다.
 
-협업에서는 그래프를 커밋하지 않고 각자 만듭니다. 같은 커밋이면 같은 그래프가 나오고(결정적, 1초), 브랜치를 옮기면 훅의 auto-sync가 자기 체크아웃에 맞춥니다. `graft init`의 훅은 그래프가 없을 때 만들어 주지 않으므로(실측) `.claude/helpers/graft-ensure.sh`를 SessionStart에 하나 더 두었습니다. `graft/`가 없으면 그 자리에서 만들고, `node_modules/`까지 없으면 `make graft`를 돌리라는 한 줄을 세션에 넣습니다.
+협업에서는 그래프를 커밋하지 않고 각자 만듭니다. 질의용 그래프는 질의 전마다 스스로 갱신되지만 사람이 grep하는 카드(`graft/**/*.md`)는 `graft build` 때만 다시 써지므로, SessionStart 훅이 매 세션 `graft build`를 돕니다(캐시 재생 0.2초). 같은 커밋이면 같은 그래프가 나오고(결정적, 1초), 브랜치를 옮기면 훅의 auto-sync가 자기 체크아웃에 맞춥니다. `graft init`의 훅은 그래프가 없을 때 만들어 주지 않으므로(실측) `.claude/helpers/graft-ensure.sh`를 SessionStart에 하나 더 두었습니다. `graft/`가 없으면 그 자리에서 만들고, `node_modules/`까지 없으면 `make graft`를 돌리라는 한 줄을 세션에 넣습니다.
 
 주의 둘. 훅 shim은 저장소 `node_modules`와 전역 설치 중 **더 새 판**을 고릅니다. 전역에 더 새 graft를 깔면 훅은 그것을 쓰므로, 고정을 지키려면 전역 설치를 두지 않거나 같은 판으로 둡니다. 그리고 `graft init`은 `.mcp.json`을 판 없이 쓰므로 직접 돌리지 말고 `make graft-init`을 씁니다(뒤에 다시 고정합니다). 사용자 설정의 statusLine(ccstatusline)을 가리지 않도록 `--no-statusline`으로 연결했고, `~/.claude`·`~/.claude.json`에는 아무것도 쓰지 않습니다. 텔레메트리는 이 머신에서 꺼져 있습니다(`graft telemetry disable`).
 

@@ -1,6 +1,8 @@
 #!/bin/sh
 # SessionStart(이 훅 하나가 graft의 session-start를 감싼다). 하는 일 셋:
-#  1) graft/ 가 없으면 만든다(구조 계층, 약 1초). node_modules가 없으면 빌드 대신 안내 한 줄.
+#  1) graft build를 매 세션 돈다(캐시 재생 0.2초, 처음은 약 1초). 질의용 그래프(.graph/wiring.json)는 질의 전마다 스스로
+#     새로 만들지만 사람이 grep하는 카드(graft/**/*.md, INDEX.md)는 build 때만 다시 써진다 — 2026-10-10 실측(카드의 함수 범위가
+#     당일 수정 전 값으로 남아 있었다). node_modules가 없으면 빌드 대신 안내 한 줄.
 #  2) 배선 스탬프(graft/.cache/wiring-stamp.json)를 우리 의도로 보장한다 — global:false(~/.claude·~/.claude.json에 쓰지 않음),
 #     mcp:false(.mcp.json은 우리가 판을 고정해 관리), statusline:false, 판은 package.json. 스탬프가 없거나 다르면 graft의
 #     session-start가 기본값(global:true)으로 배선을 다시 써서 모든 팀원의 ~/.claude에 훅·MCP를 심는다.
@@ -15,9 +17,9 @@ if [ ! -x node_modules/.bin/graft ]; then
   exit 0
 fi
 if [ ! -f graft/.graph/wiring.json ]; then
-  node_modules/.bin/graft build >/dev/null 2>&1 || true
   note="[graft] graft/ was missing — built it now (structural layer, pinned version from package.json). "
 fi
+node_modules/.bin/graft build >/dev/null 2>&1 || true   # 카드·INDEX.md를 HEAD와 작업 트리에 맞춘다(캐시 재생, 0.2초)
 version=$(node -p "require('./package.json').devDependencies['@nanonets/graft']")
 mkdir -p graft/.cache
 printf '{"version":"%s","hosts":["claude"],"opts":{"global":false,"mcp":false,"hooks":true,"statusline":false},"at":"%s"}\n' \
