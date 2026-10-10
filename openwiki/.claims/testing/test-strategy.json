@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:c3937bedfd1ec7e7f823a5aacd39abd43876a1857b23d420d8b3c16e89150464",
+  "claims": [
+    {
+      "id": "claim_31dfdd8f5ec5483bad941bb8dd173b8c",
+      "statement": "Core tests drive the Catalog application through one fake per port (FakeStore, FakeValidator, MemoryFacts) defined in tests/core/fakes.py, with MemoryFacts switchable to unavailable and FakeValidator told which skills to reject, so the status machine is covered without git, a database or a clock.",
+      "evidence": [
+        {
+          "resource": "repo://tests/core/fakes.py#L12-L125",
+          "version": "repo-lines-v1:sha256:018e62069115353c7fec150b2315625e619b40d1d37b94b99a26fd0bc2f2ead1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlNzM2Y2JmYWI1MTY4ZGMzYWZjNzk5ZGM1NzU1OTdiMGM4OWQ0Mjg3M2QzOWNmMWRkMWJkODY4OWJhMGE5NjVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyNGMyZjgxMDI2MWQ5NmE4ZmVlNjk1MTBiMjVmZGNiZWMwZGIzZDNlMGNlYzVlNGMzMDBlYjRhMGI0MjMxMmZkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0NzJhZDgxMTA1ZjA2NTc4YWFmNjZiYTgxMDM5YmRlNDQyY2QyZWNhZDA0ZTY2NmVhZjNlMjA4ZTk4MTQ4MWZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://tests/core/test_catalog.py#L109-L176",
+          "version": "repo-lines-v1:sha256:3cc210cae5b78f88018f0525cba4bdbb0d7b96386fe1a6ba02c50b2dc8ac1bab:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZjVjMjExZGFmNDc2YWM4Yzc0NzhiZTg4MTdjN2U5MDc0MzlhYzQxMzk3NmFmY2QyYzRlOGQ2ZTA1MjllZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3NWIzYmJiNDM0ZWQ5MjM1OGFhYzNmYTc2MDI0NTFjN2M3NGIwYzk1ZGYwYTJhYzFhYmM0YWNiMjRlMGY3OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyZTMxYzgzYTAwODFjYmZkM2QyNmVjY2ZlY2U1YzEyNjM4ZjliMTRjYzcyODcyMWY3MWUxYWI4N2M3ZjIyYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2f1e839203e4f5a9a527c219074aafa",
+      "statement": "The catalog_repo fixture builds a valid catalog repository (marker, skills/, CI workflow, pre-commit config, README, two committed skills) in a temporary directory and is shared by the adapter, CLI and HTTP suites.",
+      "evidence": [
+        {
+          "resource": "repo://tests/conftest.py#L28-L72",
+          "version": "repo-lines-v1:sha256:3702dd6983e4153c54fd634449c00b6c28ff8a6c8efb686db01db612bc4141b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmYjcwZDAwNGY1MWRjYjE2YzdhYjVmMjhiNmUzNTQ5NWE4ZGE2ZWI2NjU5MDhkY2FjYWRjMzM3YTlhZGNlMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlYmYxODY3ZmUyNmZiZmY1Y2RlOTg5ZDgxZGNmYmQwNzI3NDQ1NjJmM2ZmODQzNzExMzAzYTRlZWFmNDhkYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YWU2MGEwOWE3ODRiNDdlYTA4NTMxNmJmZjkyYzY4MDExZGQ2NzBkODlmMjhkYWY1ZGE5YmI2YWU0MWJjNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7b46b5a0888a46c3b6c438655f198781",
+      "statement": "HTTP tests start the real server as a subprocess with the six HC__ settings pointing at the fixture repository and a fake issuer, wait for /readyz to return 200, and exercise the deployed auth middleware and tools over real HTTP.",
+      "evidence": [
+        {
+          "resource": "repo://tests/http/test_server.py#L29-L50",
+          "version": "repo-lines-v1:sha256:19af1376af35dbf23a893897d38c874031df62b55c206b49eca76ec9d584d16d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmN2E1Y2FkNTJkNDBiM2Y1Y2QzNTZiYWQyNWNmNDg3MmIwZGE4OThkYWY2Zjg0N2UxMmVjMDM3MDNkY2QwYzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYjRlZjRkYTg4NTFhYzBiYmNhZWExNzQ0OTBmYjdhMmQzNzRjYjY5MGZlYzQwNTNmYzc2N2MzNThhMDMzODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1NjliN2YxOTYzOTQ4MjU2OWNiYzYzMDFhNjM4ZjU1MzdkZDAyMjAwM2YyZmMzZmIyZmZjMWRmMGJiNTc5MGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_965ccdddb8174917a2147a75d6182a5e",
+      "statement": "FakeIssuer is a local HTTP server that serves OIDC discovery and a JWKS and mints RS256 tokens with chosen sub, aud, groups, scope and expiry, so no Dex is needed for the HTTP suite.",
+      "evidence": [
+        {
+          "resource": "repo://tests/http/fake_issuer.py#L19-L66",
+          "version": "repo-lines-v1:sha256:eb452e4576f19beae1f58de50b133e6429c24b7010cc027e329dcd29428c3361:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4NGY1M2I4ZTE2YzJhMjY5NGNiZmFlZGQxMmI4YWY0NzU0NGQ1NDgwYzNjNGI4YjQwYzIyNTkzMzFiODhiN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MmI5MTQ5ODgwNjlhMDQ3MGZlNjBhMWVhNmVmZTZkZTIyOGFlZGJkMDZkZjgwMTk2YmFkZmIyYmFlMWZkNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2NDI0MDdmNTM0ZDVlZWQyNTYwZjM4NGE4ODkwNjgwNDY1MWE4MWZhMDE4NDVmZDMzMTEyODdmMTcxYWRmYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9e75a3d26109496485904f41ae94ea40",
+      "statement": "PostgreSQL adapter tests run against a testcontainers PostgreSQL with the real migration applied and set TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE for macOS Docker Desktop themselves; the pg and http markers identify the suites that need Docker or a free port.",
+      "evidence": [
+        {
+          "resource": "repo://pyproject.toml#L35-L40",
+          "version": "repo-lines-v1:sha256:38db56ac98b25d462ddd105c4bcb0909e81cf3446c025bb2344012536cfcfcc1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDEwODVhZDA5MDQyNTcxMWFkYjRmMTVmMjhlMjVjMTcxMDc5MmMxZDQ1ZGE3Mzk0ZWU5MTJlMDM4MTkwNDU5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjM1YzBjZjM1NDMwZTBkOTM3OWU1YzNmMTE2YWY1ZDUzYzY1ZDhkODhjZWUwYzhkZmZhN2Y5MGI2MGEzMDk2ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjY2NWY2MWEyYTk5OWUzNjhmYzFlMTQ4NzU2MjY1NDcwYTIzMzUxOWFkMjA0NjUxM2Q4NmViZjkyOTBhZWRhYyJ9"
+        },
+        {
+          "resource": "repo://tests/adapters/test_pg.py#L1-L34",
+          "version": "repo-lines-v1:sha256:f14091a880b328e9455615d521c239deaa6d30a348b6715fd8aea4296dc5dc09:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZDkyZjlkNjFiNzE0Y2UxYmVjNzVkOTYwYzNlMDIwZGUwY2E0N2Q5MjcxYmIyOWM3MjkxZTY0OGI0NWYwNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1MTA4Mzk3YjYwNTg5ZDY5YjU0NDI4ZmI2YTU2ZGIwNjA1ZWI5NWE0M2I3ZDg5MGJjNjNlZGQ4MWViZTgyOGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c04d5496abea4394a0e5c1bd29cd5abf",
+      "statement": "Pre-commit runs the altera-rules gates (declared surfaces, ruff, ast-grep, shellcheck) pinned at a tag, and CI runs pyright strict and pytest on every PR, running the rule gates only when a token for the private rules repository is available and otherwise skipping them with a warning.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/ci.yml#L9-L41",
+          "version": "repo-lines-v1:sha256:7968625172c9092cd1318c141674ce563eb317139d679e4b7802c4d1b160645e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNGZjYmQyMTY0OTUxYjA1YzU3ZmFkODkzYjEyNzdhNGVlNmExOWJhZTI5ZmRjODYzYjlhMzZkOWE5YWU4NjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkYzU4ZjhhMzE0Y2UyZDM1YTMzMDI4ZDU2NjM1OTAwMWJkOTU1N2M1ZDJlMzdhNzQyN2UyYWFkZmQxMjZhYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMzk0ODliNGY4YTIyNDNkZDBkMGE3NzYzZTE0MDlmNmZhNDJhY2VjM2EwYjc4MTBlODc5Y2FhOTdmMjdjZWEifQ"
+        },
+        {
+          "resource": "repo://.pre-commit-config.yaml#L1-L9",
+          "version": "repo-lines-v1:sha256:82f9877c2f839548d1ef85acc8977f3b1dc0683f654ca2a72d0daf6b83f65cde:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWExMTBkYjVhOTM1N2NkYTFkNzgyMTZjZGMwYmY4YjI1NWUzMzhjYmMxZjMyN2UwZGYwOGNmYzc3MzkxZGRlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRkZGZmYWM0NzRhNGYxNmRmNTE1Y2RhYjk5NGI0YTdmY2NlMmQ4ZDFhNDdiYWY0NTcwOTcxNTg3ZTE3OWJjNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_17a974b5048142b4a7f716d3573e0873",
+      "statement": "anyio-based tests are restricted to the asyncio backend by a conftest fixture.",
+      "evidence": [
+        {
+          "resource": "repo://tests/conftest.py#L12-L15",
+          "version": "repo-lines-v1:sha256:cc1043062b421afcc2ce3b92bf38668d2165a83775d56cd4ccd62329c8e7c726:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNmMzY2YjliZDlhOGQwZjM0MGEyYmMwYmUxZTIyZWVhMjA1NjhkZDc4YTQ1MjgxYjcyMWIzMGYyMmQwODdmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZjY2JkMjg3YTM1MWY4N2U2MzEzZGI4NDk5ZWIyNDc0MWU2ZWQ0OWM5MjNlOTQ1NWJlOTZkNGY1NDcyZmVlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDk3ZDUzYmE2YzEzMDEwN2ZhODlkOTdjYTQ1MTg2NTY1ZTQwYzMzNjAxY2RlZjM2YTQ3OWRkZDk2NWY4OTI2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmFjNGY0MWQzNTAzZjRkYjdlZDdjZWE5ZWNjNDhjOGMwNzcxNmYzZjk1ZWJkMDJhMzBhZDE5NDdlZDU0M2VkYiJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T11:24:40.987Z"
+  }
+}

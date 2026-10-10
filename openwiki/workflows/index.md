@@ -1,0 +1,4 @@
+# Files
+
+- [Evals and records — Harbor evals and the harbor-langfuse plugin](evals-langfuse.md) - How a skill's evaluation cases are run with Harbor and recorded in Langfuse as dataset experiments. The dataset and run naming, the metadata that makes with-skill and baseline runs comparable (skill, sha, scenario_sha, harness, model, baseline), the environment variables the plugin reads, and how the catalog CI's optional evals job is switched on and refuses to run without credentials.
+- [Skill lifecycle — repository contract, publishing, updating, retiring](skill-lifecycle.md) - What a catalog repository must contain and how harness-catalog init writes it once; why a branch, a PR and a merge into main are the only publication mechanism; how a skill is updated, retired or replaced and why a retired name can never return; how the templates pin the CLI version; and the two meta-skills (write-skill, pin-skill) that encode the procedures for agents.

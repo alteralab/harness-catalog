@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:29e9b66ec64866f988ccace3d9a9f88baeb2db804962c96408e7fb5d85f94ba9",
+  "claims": [
+    {
+      "id": "claim_372ac1bb1b9d4867861cb2a184b01cdf",
+      "statement": "The harbor-langfuse plugin satisfies Harbor's job-plugin contract by duck typing (no Harbor import): on_job_start derives a RunContext and ensures the Langfuse dataset <catalog>/<skill> exists with one item per case, and on_job_end converts every trial into a record and writes the run through run_experiment, then flushes.",
+      "evidence": [
+        {
+          "resource": "repo://packages/harbor-langfuse/src/harbor_langfuse/plugin.py#L119-L148",
+          "version": "repo-lines-v1:sha256:4e93bafe4946df6539139a304a808afc1cb22cad2c28784262dffa65abab3896:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmNDlmYWMzMGRiMTE4ZTQwNDAyYmZhMjQxMjE0NzRjOWY4Y2Y5OGQ1ZGM4YTM4ZTMzMWE1NjhjMDBlMjU2OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MjQ3Y2YzZmI1YmIxOTc2YzJiZDgxYTg2MGQwMmJkMzQ3ZTBmN2IyZTNlZGVlYzgxYTM0ODkwZjgzN2FlNTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1NjI4MzNlMmU4M2JiMjk3MWY1YzNmNzczN2UyMWMxMWE1ZmQyYjBjZWQwYjQ5Y2U3NjI0ODZmYjU4YzUwMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://packages/harbor-langfuse/src/harbor_langfuse/sink.py#L36-L59",
+          "version": "repo-lines-v1:sha256:57e3eb98dee987f8993cbe3c407c96af6dc2a8ef8cdede1df056eb77894fcc68:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MTlmY2E3OTA5NjQyZjZhZDBkNTQ0NzQxNWFjNDYzN2IwZmNlM2M0YzRkMjA1OTJkYmFmMTRjNjc0ZmE4ODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5OWU3NjI2YzI5YTc3YzZjM2Q2ZGQ5ZWQ5MTZkYTI1MjkxMzBmNGNkYzFiN2ZhMTlmNGE3NDY2N2UzZjI1NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxYTFjNmY0NTlkNjgxYzBjNTM3NTA1M2ZkYTU1YzFmNDJhNGMxNzg3ZDMyYjJlZjY2MDQ2ODA5YmQzYjYwM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc65923e8026473bac23c8f6c28fec64",
+      "statement": "Run metadata consists of skill, sha (from the HARNESS_SKILL_REF environment variable because Harbor rewrites the skill source to a cache path), scenario_sha (git rev-parse HEAD:./ of the evals directory), harness, model and baseline, where baseline is true when no skill was injected.",
+      "evidence": [
+        {
+          "resource": "repo://packages/harbor-langfuse/src/harbor_langfuse/plugin.py#L20-L20",
+          "version": "repo-lines-v1:sha256:36b44217b56bb1db97d6a674764793c61fcb440146d3fbc0a6d9d291ab1a481f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZiNDQyMTdiNTZiYjFkYjk3ZDZhNjc0NzY0NzkzYzYxZmNiNDQwMTQ2ZDNmYmMwYTZkOWQyOTFhYjFhNDgxZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZiNDQyMTdiNTZiYjFkYjk3ZDZhNjc0NzY0NzkzYzYxZmNiNDQwMTQ2ZDNmYmMwYTZkOWQyOTFhYjFhNDgxZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTRmOGFiOWUzMTQxY2M5NThhNmU4ZGQwOTRhZTZhODFhY2VjYWZlNmZlMDQ0Y2Q2NzRjYWNiYmMzMzg0OGIxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUwNTI5MzI5MTE5NjEzYmMxOTlkN2RiZDQ5NTVmYzAzNzAxZTg4Yjc2ZmJmZWVlZGVmYjgyNjdjMDU2NTU3MSJ9"
+        },
+        {
+          "resource": "repo://packages/harbor-langfuse/src/harbor_langfuse/plugin.py#L66-L96",
+          "version": "repo-lines-v1:sha256:4367b1deb01e3220e37d3ca1275465498def85123c1378cea263a74ebdbe44f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4M2UzZWUyZWMwOGE3NzEyNmQ0OWFmZTE2NGY4ZGU2NWQ3MjA2ZTE1MTU1NmQ1NmZiMGJlZDRjN2JjZTQ1NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiMjc1YmJmZjVjYjM3YzNiZjk2YmEyMzRjNDliMDcxNjk4NjM2NDY3ZDZmMzJkODU0NTI1NWI2ZjNiNTczMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjNGQ0MTQ5NDQ4NWI2NDM4YjFkZDBhNzQxZjFjMzBkZDYwMzdhYjBmOTVhOGM5MWI4Mjg0MjlkZGZkNGJjMDQifQ"
+        },
+        {
+          "resource": "repo://tests/plugin/test_plugin.py#L69-L98",
+          "version": "repo-lines-v1:sha256:ba9e0d5ee15c3de8df1d3f9f9eaff4bf8ac3db81190670cd81991be882cf1916:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczYmNkNTQ5ODQ5ZjczYzJjMTFkZDBkZTgzMzc1NDdkMWNkMWM2MmQwOWE1Y2RhN2M1OTdkMWNmNzJiZjU1NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwMDUyYjcxYmM3ZWEyZjUyZWIzNmZlYjVlOTQxZDBlM2MxMmZhZDQ0ZDQ4Njc5ZTQyMzc5MTZiN2Y3YzRlNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlYzJiMTM5NmM4YTFhZDUwZDIxZTQ4MGVmOWIwMTk2ZWVlNjc2NjgxZTY3NTRiYzY0NjRjNzRjYWRiYmE2MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f2930a80d5e4d5e825b47893bb98ef0",
+      "statement": "A trial is recorded as passed when its reward is at least 1.0, together with verifier output, token counts, cost and any exception; the Langfuse score is a boolean named by the plugin.",
+      "evidence": [
+        {
+          "resource": "repo://packages/harbor-langfuse/src/harbor_langfuse/plugin.py#L98-L118",
+          "version": "repo-lines-v1:sha256:8ac8862aaf4f3be2db0e0e82daaa7a7687286a8d971a4885763be1dd65eef2c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNDZkZjM2MzJhZTY0ZTU1YWQzMjc0MWI0ZDlhNjI5NDUzYzkyOWZiZTQ3ZGRhNGEwNGVjZWRjMjQyYjNjMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OTgwMmZhZGVkNmY2OGJkZDVkZDljM2Q0YTMzZjZlNDQxZDNlMzQ1ZWFiZDE1ZGUxYWY4YTEzMDI1MDAyMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjNmYxYmY3Y2U0ZDIwMTViMjAyNjRkNjQzOTAxOTRiYjc3YjUwMDdlODhkMGVhYzE2Y2VkMGJkY2JmODc4YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjOTdjOTQ3YzNiZTFmNzU2NTdmMGEwY2ZlMzk1ZmE4MjhjNTkwMmNiOTFhOTA2ZjI2MDZiZjIxMDQ2MzNiODEifQ"
+        },
+        {
+          "resource": "repo://packages/harbor-langfuse/src/harbor_langfuse/sink.py#L43-L57",
+          "version": "repo-lines-v1:sha256:5de4e89cc6df9af92c83b07badd57fb495794bc725766a77dde4868a04231cf4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYTU3OTYxY2IyOTJiODJlNmFmZGI5OTlhOTJmNzBjNDYyYmM5YzFkNTExZTRlY2RjZmZjZmZkMmJjNjc0YzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhOTMxNzZiZjU5ZDQxZmNhYmM5ZDJiM2ZjZmJjYzI2ZTYzOWQyNGM1YTJlNzVjZjg2NTNhMzkwOWQ4OWM5NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2MWZmYzllZDhlMDE1MGNiZjAzZDUwM2VkZTMzNDMxNDkwMDA3MmM3NDA4ZmE2ZDI5ZjhjNjdmZDkzZTYwYWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1ae997a075e54e159d62e7123f87ca0b",
+      "statement": "The real Langfuse sink is constructed from the environment and raises immediately when LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY or LANGFUSE_HOST is missing.",
+      "evidence": [
+        {
+          "resource": "repo://packages/harbor-langfuse/src/harbor_langfuse/sink.py#L25-L35",
+          "version": "repo-lines-v1:sha256:92c60b407452e81ae4d03b4c87cd59fd7a255af1763af39ee957fe2f6c7f3132:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2Zjg0OTFlNTBhNzZhZDZlY2RkZGViNTk0MWM0NTA1ZjhhZmZhZWYxYzQwYTUxODAyMzRjYmE5ODJlMzRlMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxOWQ4MThiMGIwZDJmNjgwMWQ5OTdlNmQ5ZTUxMzAxYjc2ODk4MWVlNDU3MTNhM2QwM2ZmODdhZDY3NTMwNjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlZDA4OGQxMTY5Mjc4MDBlZDM0ZGRhOTE0OWJiYzlmOGYzZjc4ZDA1YjZkYzFlNjQxMTYzNGQyYjc5NGJlYjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_701ec616cba94d9dac06922354034a94",
+      "statement": "The catalog CI template creates the evals jobs only on a push to main when the repository variable HARNESS_EVALS is true; an agents job converts the space-separated HARNESS_EVALS_AGENTS (default claude-code codex) into a JSON matrix; the evals job first fails if the harness's model credentials or the three Langfuse keys are missing, then runs harbor run with and without the skill for each changed skill, passing HARNESS_SKILL_REF and HARNESS_CATALOG_NAME.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/github/check.yml#L59-L134",
+          "version": "repo-lines-v1:sha256:b8431739181bbc14e5b33853ea56cb41242e095d6a088b591eebb256a40df270:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNGIxNDI2OWQzYzIzODVhOGUyMDQyNzFkZjMyNWQ3ZjZkYjI5YWY5YmZhOWE2NTg1OGQ0NjEzMDMxNDI2MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MTMzM2RmNjZkNTk1YzYyMjM3NDEyZTdkMTYwN2I1Y2ZiMDExNDdmMGYzYTlkYjdiN2FjNGU3MjljNDNkMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyYzliOTVhYjdhNzc1YjE0NWMxMGViM2I2OTVjNjEyZTg5Y2IyYzIyMGIxOTU0ZmQ5YjE0ODRkMjA2ODBiMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b42ff7a8c194e55b23ae132ec484556",
+      "statement": "The self-hosted runner's root .env template lists, per harness, the credential variable names that Harbor's agent implementations read, plus the three Langfuse variables.",
+      "evidence": [
+        {
+          "resource": "repo://docs/runner.env.example#L1-L26",
+          "version": "repo-lines-v1:sha256:f6d5aee515ebf8588932693b88b070a9511810943ce438f453ea21f20bfe49e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YWQ0OGM1N2RlMzBlNjJmNGVhNzRiZDQ5MjBhOTJhOTliNTQ2NGU1MDFkNTk1YWZmZGQ0MmRhY2RmMjZjOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkYzVhMmVmNjI2ODJkYmU1NGIzMTU2YTNiZTdjMDA3ODBkMzllZTE3MTc4YTMwMDU4YmFmZmYwYmQyNGJjZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T11:24:40.987Z"
+  }
+}

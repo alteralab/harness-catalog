@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:fdb02d6cf24043b20983b5fa7b6a551da6f2f7008adac5dcac8e4f2c1e7650c4",
+  "claims": [
+    {
+      "id": "claim_61cbd566bedd4348b9499857a709a255",
+      "statement": "serve exits with code 2 when settings are missing or invalid, configures tracing only when an OTLP endpoint is set, and runs the bootstrapped ASGI app under uvicorn with --host, --port, --workdir and --log-level options.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/__main__.py#L24-L60",
+          "version": "repo-lines-v1:sha256:8b17c4b816ef68e80f7190611ba802c3a14676dac313d808ed8b308feab6a826:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMGYwNmEyZDMwYWY4NTFhYjNjNzc5OGRjYWQxYTlmZGViY2RjZjQxN2U1ZDEyMzJjNjYwMTZlMzcyMjc4ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0MTU3NzZhOTlmMTQxNTY1OWRlMjZlYjRkYjI2MTg2M2ZhMTIxOTY2NjBjOTU3ODUzYTYzMTMxOWJmZDliODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZGIyNzQxOGM2NGE4YWMyMWFhN2VjNTU5YWYzNzFmYjllMzdiYmZhNDkzYWU5NGE5NzNmYmQ2ZTlkYmU4NjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc1b033afbb04a909e5381e237aca7fb",
+      "statement": "The lifespan opens the PostgreSQL pool, starts the migration task and the scheduler in one task group, and on shutdown sets the stop event and waits for both tasks before closing the pool and the git store.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L76-L96",
+          "version": "repo-lines-v1:sha256:f57d982d011efd3a35d0463583161ad096f7bc4ce1f1c66d3f921cb8d907c71e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmY2U1NzE3ZWE0Mjg3ZThmYTMyNzU1NDIwNWRkNDQ1NWNiMzBmODVhNTE5MjZmYWQyMjUzZTMyMWFjMjNjYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5MjQ2M2RmNzM4NzRhODhiNDAwY2YyZmRhMmU1NjE0N2FjNWU0MTc3YzVhYzcxNmNjZGNkNDgzOTNjNzFlOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYmZiNjkwMTI0MDg3YTc5MDg2OTU1Y2I4YmE4ZGQxNmJhOTRkYzMyMWIxMjAyNDA2Mzg5ZGRkZTcyNzc0ZmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_15cd212f1d38408899ddb04afbfb38e0",
+      "statement": "The fetch loop sleeps interval × backoff between rebuilds, where backoff doubles on failure up to 16 and resets to 1 on success; only fetch failures (reasons) and checker_failed/rebuild_failed degradations count as failures, not rejected skills or a lost database, and an exception from rebuild is logged rather than ending the loop.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/scheduler.py#L39-L74",
+          "version": "repo-lines-v1:sha256:3237db301de6d182f79140d54224e055de722eb80a554dd2798c43547be4889a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4OTVhNTVhMjM2YTgyMzRmZTRlYzkxY2FhYjA0MjNiMTQ2NTM5YTU4MzhjOTJmOGM1MWVkOWIwMWI0YWJiMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNDQ5MzI3ODE0OTRlYmI0ZGIyYjhkYmYwN2Y3Y2ZkYzAzNWRiNzY5MDdjYTVmYzdkZjk5OTFlYWVmNmEwZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5ZWFjMWY5MGY3NDE5ZDEyMTM5YjI1NGQ0ZDExMDBiMDc2ZGU0N2JhYTQyOWIwZjA5MjNmOTIwOWQ0ZmEzOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_725159d84ca8402f90b57db3a5e542e0",
+      "statement": "The scheduler waits at most 10 seconds for the migration task's db_ready event before the first build, because the database is not a readiness condition.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/scheduler.py#L53-L60",
+          "version": "repo-lines-v1:sha256:c261d8fefaf5e66418864aef9dff815e903f4e8899f84a7afb883155633e3c2b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFmNDI5MzdjOTExMzZjYmNmNTNjOGMxNDZjZTY4N2Q3YmUyYzRlNWNhMDVjNDI4ZmNlOTFjYjQ3MDQ2YjgzYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2I1NTQ3NTg1MDBjZWJlOTg2YjNmNzJjNzdiNzI3MzBiZjRiMDMyNTA2NGRiMWQ4YjQ4ZDhmNTI2ZDBiMzdiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGZhYjhhMzQ4MzFlOTgxNmZkNTdiZjA1YTBlMzExZGM5NGMyY2JjOTQ1MmFlOWNiNzcwNTdiODViMjc1N2E0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQ2ZjMzOThkNTI0MDNhNjhlMzEyYTAwNDZiOWE4ZTI1Mzk3NjE4NTg3ZjU3NzYwZTQyNjUyMjllOGY1MjFlYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_117f8a14a3cd4137835585c6dcaf17a6",
+      "statement": "/healthz always returns 200 with {\"status\": \"ok\"}, while /readyz returns the catalog status as JSON (ready, reasons, degraded, commit, fetched_at, built_at, rejected) with HTTP 200 when a snapshot exists and 503 otherwise.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/ops.py#L11-L28",
+          "version": "repo-lines-v1:sha256:ed74b307185a26121d7e441997311f62c3ac4f2d7d7f004deb2480eb88188559:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjM2NiZjgzN2NmNmIyOGVmMzMyMTg5ZDIwMzE5ZjM1MWY2MGNlOThmNWM4ZGU4ODY1Mjk4NTczY2NjMDYxYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzYzZiODIwZTI1YTYzMDEwOGEzZWU3YmRhYjExMmNmN2M0MDM1NDU5NTNiMTRmMzcwZDRkNmRiYjE3YzhhMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliNDk2YmNlNjMyYzA1MjA5YzBkZjNhYTI1ZjE3YTdhNDlmY2I0ZmI2MGE1MWE3Yzc5M2I0OGFiMWMyM2JmM2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b977d38e5404d2d9c3027756daa4753",
+      "statement": "reindex applies migrations, builds the catalog with the same settings, enables the fact store, calls rebuild(accept_rewind=flag), prints the status and exits 0 only when the catalog is ready and main_rewound is not among the degradations.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L72-L78",
+          "version": "repo-lines-v1:sha256:f22c0afd704b8e2ed3c6574394c521dcec5605810cf3e54b2a80332b9873a48b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVlNDVlMDJlY2Q2NTg2NGM3Nzg1NjFmY2Y5Y2ExYTMzNmMxNjI3M2IyN2QwOWJmZmNhNTIyODlkNDA0ODEyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk4ZTIzMmMxNDkzMmExODhjZWIwY2QwZDc5ODBhODRmNTU0NWUwMzhiYWI1Y2M3YjM0OTViZjUxZWNhYmNmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzg3ZDI5ODFmZTNmZDc0Yjk1YWQ4NWZmNmZmYjg5OTgyNTA3OGUzOTc4ZDRkODQxYzQxNGY4MzhiNWJkMjk1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjc2Y2QzZGE0ZjM5N2M5ZjI4NzBmNmEwMjc5NDdiOGUxMGZiMWYzMWJjZmVmNzAyNzkyYjcwZTNkZDQ2YmU1MSJ9"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/__main__.py#L41-L55",
+          "version": "repo-lines-v1:sha256:404e63b58e188c3f5e83570cd283560b0dfdbd0973aceca3c6889227424bb92f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmOGY4ZmQ4Yjg2M2JkOGJhNDJlZTgwNGUxOTE5MDg3Njc4NzIxY2EyNzVkMGVjMTQ2NTkyNGNlMDA1MDIxZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWJlN2MzNTZkMDgzMjY3NjM5ZTUyYTY3YjAwMmRiN2ExZTEyNTQwODY5YjBjNzM5OTY4ZmE5YjIyOTNiNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmZjY0NzVlNmNhYTAzOTlkYmYwZDQ3NWQyY2IzMDIxM2FkNGE0NjRmYWE2Zjc2NzRmODk5NDEyZmFiYTdjOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5MjE1NDFjNTRiMDQ2OGM5M2I4ODQ2MzhhNmQ1ZDFhMzJkMjBjZTRmOWZmMGZkNzM5MzYzOWQzOTRhZDQzZjEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T11:24:40.987Z"
+  }
+}

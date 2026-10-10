@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0c8aca50a728eaace9cfc9e1dafe4dea943a0f4fd44358cb117a16f9f7b72f43",
+  "claims": [
+    {
+      "id": "claim_a0b4d9ea7e8c49be8964e06ed9ad5a9f",
+      "statement": "The index schema is one skill_index table plus a single-row index_state table; replaced_by, requires_tools, search_text and the tsvector search are STORED generated columns derived from metadata, with GIN indexes on the tsvector, a trigram index on search_text and an array index on requires_tools.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/migrations/0001_schema.sql#L1-L37",
+          "version": "repo-lines-v1:sha256:8ae0b69e9d0fa92e74b43f8afa20c600cae0e6d13a1d2b97c26376b13bfabd0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiOTNlYTBlZjMxYmY2MTMwYzFkZWYxNjA3N2RlNmNkN2JiMjZmN2RhNjZiMTAzMGI2ZjIwNzhjNGQ0NThkNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMmI0NzFmN2UwODY0N2NjYWQ1ZDgxODYxNzNlZWM0ODExNTg1OWI1MmE3Yjk0M2EwNGRjMTdkZDNmZGUwM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_048dfe95aa7047469b49d1d668d3c29a",
+      "statement": "replace_index performs the whole index replacement in one transaction: it takes a transaction-scoped advisory lock, locks the index_state row FOR UPDATE, returns STALE when a stored commit exists that differs from the new one and is not its ancestor, and otherwise deletes and re-inserts every row and upserts index_state.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/adapters/pg.py#L127-L153",
+          "version": "repo-lines-v1:sha256:bb545c221a65758dff5c863aa4ac63d14c61e6fb8ebd45744dc13ce502dcd8f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZDllY2JjZjg1NmI2MDAxYzQ2ZDk3NGFhNWM5OGFkOTM1NzdhODQxNThjNGU3ZGJmZWUzMmU2MDkyYzliOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYTlmYTdmNmQ3ZTI5ZTE0NGE3NzI4NTg5MTAzOWQ2OGU4NGM5MTRhZWNhM2YyZDgzMzEyNjcyMGM0Zjc1YTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmMzVhMDBkNGExMTdmMDZjMmVhNGFiMmE1OGJjY2M1MjMzYTc3MDgwOWEwOTFhNjJhYmZlNDdiYjZkZGU3NGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiZjFjZTMwZGRlNWUxYjIzNTEzZWZjOTJmMDVhODE5MDM4ZTg2N2IxZDUyYWRkODA2ZDgwNmQzYzg3ZGM4ODQifQ"
+        },
+        {
+          "resource": "repo://tests/adapters/test_pg.py#L96-L129",
+          "version": "repo-lines-v1:sha256:64184ae0c7d6192af51c4256ea52c4158cdeafb47fad19ddcd8dcd30baf2cdf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkNGY0NDYxZmM5ZGQyZDBjNDUxYzRmNmI0ZWZjOWJiOWE5ZjlhZTI2YWZlNTIwMTRhNDA1ZDU5Y2I2YzNhNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhYjk3MWZjYjEyYzdiNWRkNTQyMWRjYjYxMzQ0OTk2MmQ1ZmE0YWZiMjkxNDk2MjUwZDBkMWRjODZjYjljOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjZjNlZDY3NWZkMWNiZmY0ZWJhMzJmODE1MTRhOTE3YWNjYTAwMDI2ZjYyZTA3M2NiNTkwOTViYTMyMjcyMzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_307ffcd211a3497694585c159cdc20e3",
+      "statement": "Database errors and pool timeouts are returned as values (IndexOutcome.UNAVAILABLE from replace_index, None from search and current_commit) after recording a breaker failure; they are never raised to the app.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/adapters/pg.py#L112-L126",
+          "version": "repo-lines-v1:sha256:d524d10df729c8759aeca7559c12a441d52260f4ec86aba13fd8ba0a671d9d93:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NjgzMjI5NjA2NDM0ODE4MWE3OTI1YjJjMDI2NTZlZTYzNzNkNzZjMTBlYzA2MGE5MjU4M2Q5YTg5MDVjYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyODdiZGNmNzM1ZTJmODc2MmNjMjA4MmE5YWI0MGNiMzAzYzAzZTljN2VjMmJlYTQ3NTIyMzA2YmNhMTk5ZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3ZTIwNjhlOTBjZDJhOTkwNGZmZWFiYjhjNDAwOWViZTJkNDA1ZmRjMThkYTEzMmFjYTZjYTM0MjMxMmUzMjcifQ"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/adapters/pg.py#L148-L168",
+          "version": "repo-lines-v1:sha256:8d39f5e975fdb55421d51f35d53a0714bb11929df3926c1490e932bcbe123d55:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MjljNWJlYzE0MGUxNjM2NjU5ZDgzYjgyMWE1NTM2NjZiYTUwMWJkZmZkNjMxOGM4ZmVmNzQzNTU5ZGNjNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNGM0MGUwOGE3YmM4NzEzMmQ3MjZkYTVkNWQ0YjgzMmM2ZGE1OGI5MGFjY2ZhZjBiM2E1NmU0YmYyMzM3YjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1YmQyYWU2MmYyZWFjZDFjNzAwMWE1Y2RmNGNkNGU3MDIzYzRkNGQ5NWQ5MTUzNDdmZDMwNDUyZWQyYTk1OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/adapters/test_pg.py#L83-L91",
+          "version": "repo-lines-v1:sha256:f90d411afb5aab39edaa3e1bea4349f43e950501c4490e47933e57ab69fce1de:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGMzNzQ2MmJjNzE4NzhmODI0ZTZiODFkOTE1OTZjNmZmYmI4NWVjYWZiN2JjOGUwMzZjOThkNTcxYjgyNTY1MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTQxYzE3OGIyYTlhOGUxMGQyN2VjM2Y4NjQ1Mjg2MjE5NjIwNzg0MjYzZmI5ODk4ODg3ZDdkZWRlYmNiNzY3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJlODdmYThhODY5Y2NkMjM0NjQyYTI2NTkxM2JmMTEzNGU2MTY1YWExZjllNDhjYWYwNmZmYTcyNjQ3NDVmOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ed65d28fe6674df685ed0888597e3aab",
+      "statement": "Search ranks by full-text rank, then trigram similarity, then name, matching through a tsquery, a trigram similarity operator or a case-insensitive ILIKE with the query's words joined by wildcards, with the query passed as a bound parameter.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/adapters/pg.py#L155-L168",
+          "version": "repo-lines-v1:sha256:16b94f1a9b888dd121c5cb5d554fa766d3f97d586e60ed6ab7daf86f66ac14e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NTA0YmY3OWNjOWM3NjA2ZDY2ZWYyZmVhYzFhMGM3OTg1OWJlZTU5ZmUxMWU0OGNkYjYxNjBlOWVjMGZmMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNGM0MGUwOGE3YmM4NzEzMmQ3MjZkYTVkNWQ0YjgzMmM2ZGE1OGI5MGFjY2ZhZjBiM2E1NmU0YmYyMzM3YjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwZGUyYTdmYjU3ZGNmOTFmZjMxMDVkMWYyOTg1OGUzYjAwYmQwMDNmZjcwM2UxMDdhOTFlM2EwMDhhYmIyMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/adapters/pg.py#L29-L37",
+          "version": "repo-lines-v1:sha256:bc213282f3730339d389e666d75eb22da21fc3cffbaf2c88c2b9b2c375d18c19:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWUzYThkYWViYTdjYzQxZGMwNzM2MjI4ZjhiODgxMTdlOWE4YWQyMzhkMWU1MWFkOTFkZDM2NWJjMThlNTVlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2RjNGIzNjZjZWFiOGY1Y2NlNzMwMzM1YWI5NjAyNzZkYmM3ODNlZWNiMTNhNmFiYmY2YmQ4NjU2M2VjNDIwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODAzNTQ3OTY1YjRmYzQ3N2IyOGI1MzVjZGNhOWNkNGQ5MDY2ZDVkZTgxNTdhY2M3MDMwZTMzMjgzM2ZkYmM5YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2a99688a7566492fb1146cc32f42b231",
+      "statement": "The circuit breaker opens after three consecutive failures for 30 seconds, then enters a half-open state that admits exactly one probe; success closes it and failure re-opens it. The clock is injectable and the behaviour is unit-tested without sleeping.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/adapters/pg.py#L20-L22",
+          "version": "repo-lines-v1:sha256:96eb9e963e139a0f9e104b750402586e72382a054bc2aa1a1034775c59e88191:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUzZGZkMzZiMGU1OTgzZmU1MzZjNjcwODJiNzI0MzdkOTYzZjAxMmI1ZjRlMGFmNGNjMzQ2MzY3NTFjMDgwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTc3ZTM4OWMwY2I0MWVhZDYwMjA2Y2JlNGU5ZjI5MDMxMmQyNzk1NDFlOTUzN2VkNWVmY2UwYjJlZjhjMWI3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDA0NGMyN2ZhMWU5ZTNkYWRmOWJhMDU1YTE3YTQxYWE3MzBkYWUzZmY5ZGZmNDFmYTczOGE0ODgzODNhOWNhOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGNkZTVlZTFhZGM1M2M0YmFkNWU1MTk5MzNjOTY0ZmNiMzAwMjRlNzMzNDE5ZmVhYjcwZWI5MWFlNTYxYTk0ZCJ9"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/adapters/pg.py#L39-L83",
+          "version": "repo-lines-v1:sha256:fd93f8d409b6f8fb1f8a37d40038c064749ba571e91f4c39f7e74a0454687cfe:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjYzIwNjJiYTFjODQ0NWQ0Y2Q3NDU1Nzg4ZjMyMGIyOTIyNDAzYzVlMGM2YTI2ZTQ5ZmQwNDI1MDJhYmJmMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YWU2MGEwOWE3ODRiNDdlYTA4NTMxNmJmZjkyYzY4MDExZGQ2NzBkODlmMjhkYWY1ZGE5YmI2YWU0MWJjNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ZmIxNjVlNjNhOTA0NzI0NjAwNzNjMWJkOWE2NDE3NDdmNmI3YzI2NmQ5MDM0MWQ4ZmIzZmRiM2E3Mzg5MDgifQ"
+        },
+        {
+          "resource": "repo://tests/adapters/test_pg.py#L146-L161",
+          "version": "repo-lines-v1:sha256:cbb440711994993d07f732d4e8ea73c7b161cd4ebdbe6308273453cecbcc4fde:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMGMzZjMzMzRiN2Y4ODA5YzI0NTNiYjk2NGZlOGJhZGEwYzAxN2NjZDFiNmUzODgzMzJiNTZhNzI5OTNiYTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NmQ5ZjJmNTVjOWZhMzliY2FhZGIwZGZkMDgxNjYyZTlkMjg4ZTI5YWEyYzUwOTlkOTM5ZTVhZmNlNTJkY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMmZmMTNmZWVmOWMwMTNjOTM3MGExMzNmNDFiOTY0Zjk2YzM5NWM2MWZkODQxNDk1NzRjOTNiMzRhOGVmY2MifQ"
+        },
+        {
+          "resource": "repo://tests/adapters/test_pg.py#L69-L82",
+          "version": "repo-lines-v1:sha256:377ac4515a338cbd07b59187c34f3d5f399948d418d446e904cd185b2f748277:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4ODhiMTExZWVlZmQwODliMGI3MzQ0NzMzZjEzMGFhMDFlZjY1MWQ5ZjkyZWI1MGZiYmVlNWM5ZDZiYzZkYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczZjY3MDQ0ZTQyMjhmNThkNzc1ZWQ1OTJjYWVjNWMwZDNiYTJiOTNlNjZlYzc0Y2Y5NjQ2N2U4NjhmYjM1MGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1YzJjNjBlMWZlYjhkN2JkNjRjODFiMTg0YTQwZjdhNjU0ZjhjY2Q5ZjhiMWE0MjMyMDRkY2ZlMDA1ZDVmYzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6d4639dbd05f4411921f6240daf253dc",
+      "statement": "Until enable() is called after migrations succeed, every store call is gated off and returns UNAVAILABLE/None; the server wires enable() to the migration task's completion event.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/adapters/pg.py#L98-L104",
+          "version": "repo-lines-v1:sha256:6b6d785b8d4b01053b96f8ddec83497012f1f5cb89e852ea118505cca55c6e2a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTFmMGExOWY1MTRhMWE0ZTZkNTkwOWFhMGQ4NDgzYzUwMGNjYzZmYmRiMTVmMTBkMmE0MDc2ZGJiMTExNWNkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2IzZDljNTdjNDFmMzRhOTcwYzlhYzQ4NGJlMTU5YmEwMWMxZTNhYjhjN2RhZjJmMzZjMTc5MTZlZTA5ZDNiMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE3YzVhMWE4OTQ4ZjdhMWNhNTgxZGYwNDE5MTVkNDdhMGFmYTA4ZDlmOTFjOTNhZmZlMjk1ZGFlODkwNDY0NyJ9"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L39-L45",
+          "version": "repo-lines-v1:sha256:73e6f7093f192c96ef40d5da1f555bdd56c1f625cfc6c84042dd7784e73bd4c5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFkZGY0MzRiMDg5ZGIyYjEzN2IzNGQ0NTdlM2RmMTg4NzQxNzI2NDg0ZjM4N2FjM2M5MWIwOTcwZTZmYTNkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzMzZTg0ODdjODVkZmRjZjlmYTdiOTNjNzQ2Yzk0NjI1YWU0N2UxMjBjNzk3ZTc5MWU3MzdmOWVkN2ZmYzczZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmJhYWQ3OGYyZDI1Y2JiYmE1ZWQ0YjU3ZmE5YmZmMDk3ZTkxNjU4ZjFjNTc3OGI1OGEwNGRlYjc0YTZhZGU0NiJ9"
+        },
+        {
+          "resource": "repo://tests/adapters/test_pg.py#L162-L169",
+          "version": "repo-lines-v1:sha256:5a0581ef3c1953e5194883555f525e38a29980da382fb770dd774adc66aebd13:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBiZjkzZGFjNjFjZDc5OWYwMmFmYmQyYWM3M2MzZmZkYmEzMDJlZTMzNjZlMmVhN2ZhMWUxMWYxMzE3NGU1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2ZjMzVmMTkwMmNlNWExZjZjZmUzMjNmZWQ2YTQ3NzkxNDFhNjk5N2U4YThlNzcyYzY1YzFkNWJiNjExNjM2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjUyYTUyZjlkMzdkNzk0MDhjZTYwNzY4ZDVjNmFmMmIzOWU3ZTA3ZWYzODg5NWY4NTNiNTY1ZmMyMGNiMjEwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1e05dad35314bf481a27ac6f4d2dbb8",
+      "statement": "Migrations are applied with yoyo from the package's migrations directory under yoyo's lock, and a dedicated startup task retries a failed migration with exponential backoff from 5 s to 5 min independently of the fetch loop.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/scheduler.py#L22-L36",
+          "version": "repo-lines-v1:sha256:18bb151976a068034784c1ffb15fc6cd9cbcaebb8d6a457f43ca6f11d6d1fae0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkZjc2MTA5YTJkMzI2OTZiNDFhZjI3NzI5MWU2ZGU0YTliZTYwOWU0NTA2M2IzNDI5YmViNWE1NzVlZDE3NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MmM2ZjgwNDcwM2QxMWYwNDIwMzcwZWUzMDU3NzEwMWE2M2JmYTI2NTY3YWNhNTExYjQwY2NjYWM5OTgzMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0ZDU1YWIxNDhkZjUzMDVhZmUxYjdmOTllNTdlNTM5OWY3ZGY4MjgyMDI3MjFmOWEwY2M3Yzg1NDExMTFjYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwMjg1NmQzMzhjOGQ4MTkyN2JhOTc5MWRkYzQzNDA1MzRkMTVhOWM2OGEyZDRkYjA2MDVlOTUwYTg1YTFiYWIifQ"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/migrate.py#L23-L33",
+          "version": "repo-lines-v1:sha256:a920f51bb158aa64b43c6edc39a7df3a5913806868aaad38c62035119fea04ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyNjIyZjdjM2ZkNmJkOWM4NTBjOWFiM2JlNmU2MWIyMzI4YWE2ZDdkOTEwNThhZWM4M2EzNzI5OWQxN2ExYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiODVkMWNhN2Y3NDcxZDNiNGM1ZDg4NzI3MmUyZDlmYWYzNzM1NTQ3N2ZhMzg3NTNlZDA1OTBmNTkzMmNhYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZTkwZDZhNGUzZWZjMTIzZjc3OWRjMzQ2MmJjZDNhMzhhZjA4NDJlNmZjYjg1ZGFhODAxNjQ1Y2I3NmY0OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a623ab3301374048a81fc8294dff688d",
+      "statement": "The statement timeout is 5 seconds and the connection pool holds between 1 and 4 connections, bounding the latency of a stalled database.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/adapters/pg.py#L20-L20",
+          "version": "repo-lines-v1:sha256:b53dfd36b0e5983fe536c67082b72437d963f012b5f4e0af4cc34636751c080d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUzZGZkMzZiMGU1OTgzZmU1MzZjNjcwODJiNzI0MzdkOTYzZjAxMmI1ZjRlMGFmNGNjMzQ2MzY3NTFjMDgwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjUzZGZkMzZiMGU1OTgzZmU1MzZjNjcwODJiNzI0MzdkOTYzZjAxMmI1ZjRlMGFmNGNjMzQ2MzY3NTFjMDgwZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDA0NGMyN2ZhMWU5ZTNkYWRmOWJhMDU1YTE3YTQxYWE3MzBkYWUzZmY5ZGZmNDFmYTczOGE0ODgzODNhOWNhOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzdjZGNlMDJiNjI0MDRmZDA3NWYwOTA5MjA5ZDllNjc1NWUyYmEwMDMwMGE5OTNkODNiYzNkN2VkYzU0NWEyMCJ9"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/adapters/pg.py#L84-L96",
+          "version": "repo-lines-v1:sha256:a700d2d2196b4299527ecc6377e7cd7dfcde6e8232633de9566780edfabd266d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMTBiODIwZjI2NDhjOTlmNDdmMzliN2Y4NWE4NWJmNzI2ZGJiYzdmZGFkNzk3ODgzODY4MWI1OGEzN2ExMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ODMyNGJiMDkzMDc2NmNhY2EzMmM4NTdjZjYyYTBkNDAzNGI5NTg2M2M4OWYzZmMxMDY1Yjc5ZTVlZWQwMjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhN2M3ODRlY2JlZGY1YjFiN2I0ODU2ZDJhOGNjMmVlMjBjNGQ1MDlkZmY4YzQ1OTNmZGRlYjRjNjk2ODFhYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhNGM2OWIzMzU2ZGU4ZWVkY2ZiMzM1YmZiNWQ4ZmE3ODg5YjNmNDFhN2RhM2IzYTI4MDE3MmZmMzY3NTg3MTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f6b36e87d7de43ff8b3c9908730cca1e",
+      "statement": "A test reads the live catalog's generated-column and index definitions back and compares them with the documented contract, so drift between the design document and the migration fails the suite.",
+      "evidence": [
+        {
+          "resource": "repo://tests/adapters/test_pg.py#L130-L145",
+          "version": "repo-lines-v1:sha256:b3404e489e2144bec53aac06885fbd3190cdd3dcd2563d6c4bfd1568ba5bef19:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkOTNhNzZlZTYyNTc2NDRkNjgyNzc1N2FjMmEzOWZjNzE5NzQ4NWI0MmMzYTYzMGMzMDNiOWNiODJjMTQ3MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjNWY3NjBiOTVjODMyOWQxY2JjOGFlNWViNGE2MmQyZjY0OGQ0YjE4NWNiOWE2YzIwM2VlMTg0MWIxZmY0MGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyNThjMTc0MjM4MTFmMjUyNDJmY2E4NTk4NWY5NWQ3NGI2NDcyYjFjM2FlZTJiYzc1ODQxOWRjNGFjYTgxNzQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T11:24:40.987Z"
+  }
+}

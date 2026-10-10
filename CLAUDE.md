@@ -5,3 +5,11 @@
 - 세션 시작에 `openwiki: 마지막 갱신 이후 커밋 N개`가 뜨면 그 사이 바뀐 파일은 위키 대신 소스를 본다.
 - 설계 결정의 정본은 DESIGN.md와 `plans/*.md`의 원장이다. 계약을 바꾸는 변경은 DESIGN §11 행이 먼저다.
 - 개발 절차는 docs/development.md, 명령은 `make help`.
+
+<!-- OPENWIKI:START -->
+
+## OpenWiki
+
+@AGENTS.md
+
+<!-- OPENWIKI:END -->

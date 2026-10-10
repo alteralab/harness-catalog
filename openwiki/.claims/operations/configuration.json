@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:5a2bfb8ee2e4768f2b9a7cfce696ec678443157784418526f9439f411713a5eb",
+  "claims": [
+    {
+      "id": "claim_f5eea3679d6344e4b8b5201da237eaf5",
+      "statement": "The registry's configuration is exactly six HC__-prefixed settings: five required (catalog_repo_url, git_deploy_key, oidc_issuer, public_url, database_url) and fetch_interval_seconds with default 60 and a minimum of 1; the two secrets are SecretStr fields.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/settings.py#L36-L47",
+          "version": "repo-lines-v1:sha256:61679b1194585c9ef43182d1dad133e5946562d36ec0277da5e38b586d35c97e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjODYzMzFjOTBiNzhjZGI5MTdmZDViZDY5ZmMwNzE0ZDVhNWZlODQ2MGQ4NzYyNzllMTVmZjQyZmZjNzIzNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzNzgwNmM0ODMxYTg1ZDJiYWUwNjk4NDRlYmYzN2FjZmE0MzIzNDFkOTM1OWU3MmJiOWE4YWNmNTg5NjlhZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmMGU3NzE1NzA1OGQ2ZWNhNjA1MDVhNDExZWE5MjJkMjMwZWRjODZmYjc2OWE3YTVkMDcxYzRlOTU5ODQ4NDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_61e41b0431ab4f79af32a48a2ce56d0b",
+      "statement": "A before-validator rejects a trailing slash on oidc_issuer and public_url so that Dex (which uses the raw string as issuer and audience client id) and the registry (which strips it) can never diverge.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/settings.py#L48-L56",
+          "version": "repo-lines-v1:sha256:6ddbfccdbe620f01e6815f9dfb7ae06ad0fa7d1cbb3e9a0d5ae8f5640b2aacdf:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE5MWNkMzU2YzU1ZDU2OWFmMGQxNGYwN2VlNjYxYjczNjY1NGVkM2ViMzA5MTUxZWU3YzhiNGVmODNhMjFkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjIxMDlkMTdiMDE0OTg2NjlkNjI3OTkxNmYzZmU5ZmE1MjRlNDhlZTA5ZDgzY2NmYWU3MThiNWJjOGNhMmViZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQyNzk2YjA0M2FiYWE5NTFlZGMxYmQ3YzRlYmRiYjc4NmM0ZjQ5YjQ4ZDQ2MzFiM2JjYWFmMjg0NjFjNGZjMiJ9"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L67-L71",
+          "version": "repo-lines-v1:sha256:4ac486e710577d1721ce8e1f893738c44cb7d0db23713c61550cab48290e9473:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODcyZTcxNjIzM2NjNzQwYTI4OGViZTJlMmE2Yjg0MDgxZjA3N2M4MTE3MzNkNGJlZTZhYzgzZjUzMWYxYjIyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZkN2YyMjg2NmFiNThlZGY3NjBhM2FjYjA4YmE2MmIyZDVmMDg3NmNkZDliMTY2YTU2MmY1OTQwMGExYmU5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWYzZDhhZjU2OWZhYzIxNjU5MjMzMzA5MWUwNWI1NDJhYTY4ZGU4Y2MyZjViMDUyNDQyZWI3YWU1MWY4MWIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRmMWE1OGU3Y2U2NzQyOGFmNzkyNGRlMjY2ZDI0YTQ1ZWFjNjAzMWRkNmRhMjYxZGQ1YTBiZjliNWM4NjE0NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1bf9f268ba4e405abc0a84a626f8bad1",
+      "statement": "A custom settings source reads HC__<NAME>_FILE and substitutes the file's content, ranked after the plain environment so an explicit HC__ variable wins; production compose uses it for the deploy key and the database URL via /run/secrets.",
+      "evidence": [
+        {
+          "resource": "repo://docker-compose.yml#L7-L20",
+          "version": "repo-lines-v1:sha256:45f8363169699a332f2572547a690ad4ecfbcab5c7f22e704efc6438c9f4f7e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczNmFkNDJlNDk0Y2EwNWM2NzE3NjI2YmM5YzIwNDg0ZTU2OTJjNDkyMjBkYjM1Yzg2NGIxMTI5ZGI3MDNmZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTQ0YWExMGMwNWZkN2U4MDY0MDIxOTdjNzE3MTE2Yjg3ZTMwYTJlNDU4ZGY5YjE4NjllMGE4OTA3MmUwNzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkZWFmOTU0NDk4Mzg3ODk4YTlkNTE1OTUwYjVlYWNmNDQwYTVhMjAzMmFmOTA4YmRlY2MzM2IwNzU5OThjNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1ZDI2MzRkZGZhZDQ5NWNiMmVjYjA3NjEyN2E5OWQ2ODllNmVmYmRhM2RlNmM5OTk5MjlkNWIyMzgxNDBiZmMifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/settings.py#L16-L34",
+          "version": "repo-lines-v1:sha256:7c85bf56a044102d04ebccb8ba38ea7f7143230b2ccad7c511611d39dcba43c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1NTkzMDJjZTQ1NWY5ZGQzZjE3MTgxNzY3ZDYxZmE0MzFkZTRmZWQwOTJiMTA4ZGU3MmFiY2Y4Mjc4YTk5NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MDQ5ZjY2MTVkNjFmOTVlMDMyNmVlMTkxNDdhYjMxNmQ1NzRhNWY1Zjk2NGRlMTQ5ZTQ5YjU0OTRiYjg5MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMTZmMzhlN2UyOGRmNTVjMjU4NmYzZmRkZjEzZmQzNDg4MzI1ZTMzYzMzYmNlNzljYjY1MDRjNzk4Y2Q3NzUifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/settings.py#L57-L66",
+          "version": "repo-lines-v1:sha256:714eb260959620d394ce78c33ca0cb0b404c7eb09618f91a86b5ae9011a8d44b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyMGI0NTNmNWUwYzkyZDVmNmMyNTFhNWVhMTk2MGQ3MmYzYmQwNzk1NmFlODU3ZGEyMGUzMWE4OGM1NTk2OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NDgzZjcwNWViNTY2YmZjMDNmZWI3OTMwNmU2ZjkwMzZjZDlkOTJlZTQ3OTNjYjk1N2E5ZDNlY2JhZjY4MmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2YTIyZmE4ODFkZTgwYWJjYjlkNTdlYmM1MWZiMDdjMTYxZmUxYTY3YTA4ZjBmNTlmZmM2YWFkYzA0N2M3ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_17c69a73b816414daa99a131a8057ae4",
+      "statement": "All three compose files derive Dex's DEX_ISSUER and HC_PUBLIC_URL from HC__OIDC_ISSUER and HC__PUBLIC_URL, so the operator supplies the issuer and the public URL only once.",
+      "evidence": [
+        {
+          "resource": "repo://docker-compose.dev.yml#L30-L40",
+          "version": "repo-lines-v1:sha256:83118542124383c7010c1fc22174355dfc9f67d1e205377d550bc556fe07f186:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZmFiMjY2YTFjYWJlZjQ3MTk5ZjE3ZDUyZjNmZDA3YWVkMWIyOTc4MDhiYzNhYzdlZWI0NDJmOGU5MGYwMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4NjVkMWUzYzIxODYyOTZhM2YzNDU5Zjg0OTdhY2RmNzQ3YTIxOTYyNzI2NGRjYjhkYmJhZmVhM2Q3ZDdmZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxMzdhNzc4YTM0MjE0YTQ1NDgwYmQ2MmJiZmRmNGNlMDQ5YTljODFmY2NmMDI4OTI1NWJjMTgxNWQ1ZDFlYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwZTU2OGVjMzgyMDAyODU5Y2E2YWY0ZTQ4MDJhYmM5ODZiNzkzNGVlZTBiMDQ3OWI5OTZkZjRkMTA5YzYwYzkifQ"
+        },
+        {
+          "resource": "repo://docker-compose.quickstart.yml#L35-L48",
+          "version": "repo-lines-v1:sha256:9f2db167ca1bf11193cd63b1b7de4c5dbc904ddd23291873210efe1ba88f27b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZmFiMjY2YTFjYWJlZjQ3MTk5ZjE3ZDUyZjNmZDA3YWVkMWIyOTc4MDhiYzNhYzdlZWI0NDJmOGU5MGYwMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZDRkOGU0MjQ5MTJlNDZhMjNjZTU3NTlkNDIzMmY1NTg4MzlhOGFhMTYxYmFjZGQ0YjUzODBkNTkxZjc2NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxMzdhNzc4YTM0MjE0YTQ1NDgwYmQ2MmJiZmRmNGNlMDQ5YTljODFmY2NmMDI4OTI1NWJjMTgxNWQ1ZDFlYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiNmMyOGUxZmY2YjMxM2IwYjE1YjM5MmE0ZGY0YWYyMzExMWIyNjY1ODU4NDJhZWE2MzQzYmY4MjlkMWE2OGQifQ"
+        },
+        {
+          "resource": "repo://docker-compose.yml#L61-L70",
+          "version": "repo-lines-v1:sha256:ea45891027e6f4c29241a406b08e4eaeb0bfebb3ecd357ca32199f9f3d6c48f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZmFiMjY2YTFjYWJlZjQ3MTk5ZjE3ZDUyZjNmZDA3YWVkMWIyOTc4MDhiYzNhYzdlZWI0NDJmOGU5MGYwMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiM2Q0YjY1NzVlMDE4MDBmODAyYWZiZjAwNWE0ZDQxNTdkNDk1NDU2YjViNWZhZDUwMzNiYjgwYmQxZDhjOGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxMzdhNzc4YTM0MjE0YTQ1NDgwYmQ2MmJiZmRmNGNlMDQ5YTljODFmY2NmMDI4OTI1NWJjMTgxNWQ1ZDFlYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0NzcyNzdiNzNhN2FiMDEyOWY1MWY5YmUyNTc5M2EyODg0Y2IxNzI3YWM3ODNmMTUxYTQ3NjFhNjIzZWE5YjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c19d3fb9d99945028e9cac1879106cdc",
+      "statement": "Observability is configured through the standard OTEL_EXPORTER_OTLP_* variables rather than settings; production supplies the OTLP header through the secret file otlp_headers via OTEL_EXPORTER_OTLP_HEADERS_FILE and an empty file means no headers.",
+      "evidence": [
+        {
+          "resource": "repo://.env.example#L42-L50",
+          "version": "repo-lines-v1:sha256:87ce4d2b17a274e9fa127d86995d913cc96c4a799f7c537274e7377ebc2f81e7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZThhODFhMWI1Nzc4OTcyMDdkMDA2MzM3ZGQ3NWIxNmUxZGIwZWJiNDNjOGNkZjBmM2QyOTUxYjdhMTUxOTZmZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGNlMTRjNmY0ZDEzMTBlMDg4NjI3NDI5YThhYjBhNmRmNDA1MWUxZmVhODRmYWFlZjJjMzdiMDIwMjljMmY2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDhjOGU1MzViZmYwMGNmMzZmOGJlMWExMjJiNjEwM2E3MTU0MDRhNjQwYTcwMDM2ZjIxNjA2OTNjZjRmYTFjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2UwNjdhMDA2MzhlYmVhMWRkNzVjYmQ0ZGY1ZmRhOWYzNjM3NmM5MTBlN2I1YzE4MTU4OTlmMDU5MGExYzUxYyJ9"
+        },
+        {
+          "resource": "repo://docker-compose.yml#L14-L18",
+          "version": "repo-lines-v1:sha256:bfbbc19f2ec253f21ab081e4667a84ba4ee0c65599b6b0bc063c680bb49b52b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkzYTBhNTU1ZGE5ZTcwMDYwOTVlZTM3MTA0ZTI4N2JkMGEyMjE5ZTNmYmI3MmI5YjJkZDk4ZjhlMGE4MGJiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQ1NDAxNWI5NWRjMWJjODk3NzZlYjMyYWUzNzA1N2IxYzQ0MTdjMzg0YWYyYWIxZDljOTM1YmJiM2I0MzVmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTI3YzAyMzgwY2NiYzNiYmM1YmEwMGY0ODliOGQ4Nzg5Y2JmNDNlZjg1MTljNzgxOGZkNTE3YmQ3M2YwZTlkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2VhZjRmNTc2ODYwYTZmN2E5NzdjOGEwNmNjMTBjZmYyZjJjMzE4NTk2OTJmYmUxY2FlNjRiZGExODk0ZTU5OSJ9"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/telemetry.py#L22-L48",
+          "version": "repo-lines-v1:sha256:db06e429983f2e8145842cc5484838d6d25f76e14b38555edbc772300f4ac114:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1Yjk1YjRlZWEyNTk2M2E3ZTg1ODQ0ZWQxNjdjNjFlOWE3ZWZmODBiZmE3MTA5NTU5YmMwMWUxNjg1NTY3MDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYjY3Mjg1MTJiNDAwOWEwNTcwNzMxMzY3NmMxMjhjZGJlZjkyYzA3NGExMjU0ODI4NzFkMzNlZmI2YTI0YzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzZWMzMzg4Mjg5Zjk2MDFkMDVmZGNkNjRmZGI5MTVkNzYwYmQ3NThjMzdkZmE4OGU3NjdhMjExZWJmMGRkY2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ff87668f35c14584a0ff741431bc0d31",
+      "statement": "harness-catalog config docs regenerates only the marked region of docs/configuration.md from Settings.model_fields and preserves the hand-written sections around it; config list reports each setting's effective value and origin (env, file, default, missing).",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/config.py#L21-L63",
+          "version": "repo-lines-v1:sha256:4288b19b9ee435afd0eb196b60fcc836615e8c86e18e919f3d653d756d841289:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3MzU5NzM1ZTZkOTA5MmY4NzM5OTRhN2JkOThhY2FjZDQzMjdmNWQ1N2I1OWE3YTE5YTQwMTZhM2Y3NDcyMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViM2QxNzFiZDdkNWI0MzI1OTk4MDEyN2NhYTJmNDQ2YTgxNmQ1OGI3NzEwMjYzZjZhNjNhZWRmZjYzMGU4NDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxN2Q5OTI2M2FhYTI3ZDU5MTE5MTg4NjcwMjI0YzZlMjRmM2I0YzI3YjhlOGE2OTU5ZWYxZTE0ODBiODg0M2QifQ"
+        },
+        {
+          "resource": "repo://tests/cli/test_config_docs.py",
+          "version": "repo-file-v1:sha256:363435d5ffff5bcd112ad3734ce96126f8edcfda07664c2618f679280bc2559d"
+        }
+      ]
+    },
+    {
+      "id": "claim_c048d0d2be3341948cd5d5ca411e2bc6",
+      "statement": "The configuration reference opens with a minimal-input table: four values and one deploy-key file are always required for a production install, while LDAP, hairpin and Langfuse entries are needed only when those features are used.",
+      "evidence": [
+        {
+          "resource": "repo://docs/configuration.md#L7-L22",
+          "version": "repo-lines-v1:sha256:467f8202c3643499e11a149d6d6e8bc0548df157be3bb51cf28b5644b8b82715:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkNDYxMTRkYWVkMzhlNjZjYmEyMDY5MWEwZmZlNTVjZDczMWFlMDg0NzUxNWUxNTExYjkwNGFkNDU0OWUxNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwYWZlN2VjOGE4NGU1MGVkNThjYjRmZGE4ZDZkMjkwZThmMmE0ZTg2ZjYxZGUzYjU4ODdjZmIwMjE4ZGI4ODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiOTBiMDA4NjE4MWZkNWU3Y2YwYWU2NzJkNTQ0ZDg1MDViZGEwMzFiMWI2NjBmZjgxZmU3MjRmNjUyNjI2OWUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T11:24:40.987Z"
+  }
+}

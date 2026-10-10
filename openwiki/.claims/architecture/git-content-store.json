@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3f08f7e46b5915de6dda3debc94e6a47c574f6ec03bebaf237a0ecfdc775713f",
+  "claims": [
+    {
+      "id": "claim_4c46d0433e8d456ca1014c3278736a45",
+      "statement": "GitStore has two modes: registry mode keeps a bare clone of remote_url and fetches refs/heads/main into refs/remotes/origin/main on every fetch(), while CLI mode (GitStore.local) reads an existing repository in place without fetching and can resolve INDEX to the staged tree.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L28-L36",
+          "version": "repo-lines-v1:sha256:03f91eb938efe3da140f960e40d4d7a9badc58b0459556fd6f5cb6446638f5d4:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWFmNTE5NmUwOWE4MWQzY2U1YmI3YTA3ZGY5MjFmOTdlZmRhNmMyODUxZTVlMTY1M2IzODVjMzRiMTIwNWE0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE1YWU2ODFmN2I5MmE2NTZmYTM2ZDIyN2JmOWExMzlkMzY3YWNkYjc4YzdhNjUyMTc0YzM0OTBlZGZhZjljYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjRlNmM1YzZhMjY4ZDBjY2JkNTcyMDRlZTg0MjljMzVmN2Q2MTY4MGZlMTg2YzBkMWUyZjBlYWFkNTU4YTNiMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmJhNzg2Yjc3ZDZjZjFkZjY4MGE5MjgyMWNmMjU5MzVjNGNhYWMyMDU1OTk4ZjZkZDE1MTVhMDZkYjBiNDJkNyJ9"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L60-L72",
+          "version": "repo-lines-v1:sha256:8373f8965c18ec246e6fcbaf0a2e4f675289a4a032b78fb3e7a419c38cbc7b45:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyMGI0NTNmNWUwYzkyZDVmNmMyNTFhNWVhMTk2MGQ3MmYzYmQwNzk1NmFlODU3ZGEyMGUzMWE4OGM1NTk2OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhZWIzZjM1ZGU2MTRlZjhmNGIxYjU5NDE3ZTBhZmQ0ZDY5ZmQ2YWI2YzUwYTg4OWZiOTliNWUzYjQyZjE2YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyY2I2OGZjOGVlZmRjNDM3ODA1ODAwZTFlNDA0NDc5YzYwYWVhMDRkYmFlNWE5NWM0YjdkNjVlZjdhOTU5NDYifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L94-L115",
+          "version": "repo-lines-v1:sha256:3a3f185bb655a63e7e42d77b7152f1d2d20ac69eab3e666486eb0018198bda28:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMDEyOWE1Zjk3MTE5MGQ3OGZiMmZjY2QzNWUzYjZmNThkMWRkZTEzYTRiMTFjNTQyMjkzNDBiZWFhMGNjZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1MTJmN2MxN2I3MTM1NTg5MTZhMDdiMTlkZDBmN2NmZDJiYzJkMzkyNGEyN2UwMDVjYzViYmVhMjE1ZThhMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzOWI4ZTZjODY0N2E2N2NmMGEyMDU2MmM5YWY4NzEwZjRlNTVkNzkzYWQ0ZTJiYTg0NzhmNWY1YzA5MmNhZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjOWY4NmI3YjgxM2U1N2Y2NTUzZGRhODA5Mzg3N2FlNzg1M2Y1MWVmMjNlN2QwOTY4YzE0Mzg2NTY4NTA3NjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b63cbda85358465786e3d05e5fa06168",
+      "statement": "A missing remote main is reported as ContentError(no_main_branch) and any other clone or fetch failure as repo_unreachable with git's stderr attached, so the app can expose the exact git error via /readyz.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L100-L121",
+          "version": "repo-lines-v1:sha256:0e4c8fa182209438c937e54596624aeef8d0c3e48ad7e71270a1eb3f5c3eb767:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0ZmI0OThhZmI1MDE2MDI4NWVkMDBjZTI1YjI3ZWJmNzM5ZDRhNjlkM2Q5MGI0ZGE3ZDc4NWU0NmI0ZWM5M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NWU3M2UxZjQwZWZlZmFhYzNmMGRlNjY1ZjUxNGViMTQzYTZkNjFlZjM5ZmFhYzcyN2Q3NDgyZGVkZTM2ZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlNzY0NTUwYmZhYjBlMGVhMmJlYjA4Njk2MzNkNGI5MzBlYzRlNjM2NmQ4MGRjOTZhNDYwNzlmMjVmMTdlMzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMDhlNTQ1Njk0NGUyZTQwMzk4ZWUxYjQ3Y2EwMDNiYTIwNTYxYTE1ZGRlYjk1YjNlY2Y5Yzc1NjEyNDJiZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_400c323b88ee4e1aa97f2d4c34440e44",
+      "statement": "The deploy key is written to <workdir>/ssh/deploy_key with mode 0600 in a 0700 directory, used through GIT_SSH_COMMAND with IdentitiesOnly, accept-new host keys and BatchMode, and deleted by close(); GIT_TERMINAL_PROMPT=0 and the removal of GIT_DIR/GIT_WORK_TREE from the environment keep git non-interactive and unredirectable.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L45-L58",
+          "version": "repo-lines-v1:sha256:075bcaf29e9839c14c6a3234212be8603bdfd83d61ca5935371c7b967c085505:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjYTQyM2E5NzY1NDRmZWRjMmYyODg5NGU5NmY1MDk3NjIwNGZhNjQ4MDU1MWU3YTc3M2U0MmMzYzY3NTBhNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1Yzg2MDAzNTQ1MzcxN2ZhM2Q1YTJiOWI1ZTk3NmU0OThmOTdiZTI2ZjZmY2EwYTMwOThjYmNjYWYzMDQ3YmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxYzM2OWZhZjM4ODVjMTlkMWUzNDA1ZjE4NjE4ZmIwY2Q4MzQzNzJhZTFkZGM4NjRiZTM5ODU3ZWJmMzNjYWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMjFhODgxYTkxNTQzYTdkNjRmMzhiNGQxOTgyOTdlOTM5ZTE3NTJkN2E2M2Q1YWExNDljYjMwNDk3ZDVhZjkifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L74-L82",
+          "version": "repo-lines-v1:sha256:cef398bdead31ba3917292d9fee2bc4fa948fa0eea3ba39a0b061ce628e94496:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFiYjg5MjY0ODZiMTg2ZDg0NzYzNDZjYzllYzEyNDRlOWQzNDZhOTI2NmQxMDc0NDkzZGMwMDU2ZWFlOGFiMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWM3MWYzNGQ4MzFmZTZmZTZiMTM0NjRlNGUwN2UwNjg0NjQ5ZGY0NjFmN2U2YmEzNTY4YjA4MWJmMzc3YTc2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFkNzBhOGRmOTRhMDFmOWJmNWNhNGNkNDVlYTUzZjUxYmE2M2U3NzVhODViZGQ1OWM3MWI2YjA1YTIwOGYzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDY1ZWFlMTdlOGJmZGI0ZjQ0ZWMyZTFlNDVmYzI3MmJkOTI3NDEzMDE1YTE1MGY5M2JjOGJhN2M5MjllZTlmZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_652aa17d2fb14283b2375768a175829d",
+      "statement": "In registry mode GitStore writes a private global git config containing safe.directory=* and points GIT_CONFIG_GLOBAL at it, because safe.directory is only honoured from protected scopes and the file:// upload-pack child ignores -c and GIT_CONFIG_* overrides; CLI mode leaves the user's global config untouched.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L37-L44",
+          "version": "repo-lines-v1:sha256:004e676ee0dad7a11218e54dcd0121746da79fc120d75eba36dee11f461fcefa:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjIyOGRmZDMwZjkyNmIyZmVhZjAxZmQxYzc3NGRjZTAzNTkwYjI5NjUyNjZjMTllNmRjZTI3NjliYzY5M2NiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWUwMTVmMDI2ZmIzZTY2NDUxY2FiMDk0OTFkZTgzMWI2OGI5YTBkNTIyYTQ5ZTMwODU3MTFiMzhiODkzMzdjZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWJkODdkYmVjMzUyNmJmNzc2NmVlZjY3MTQ3MzM4N2I1MzBiMGU5M2M5NjNkMGE0NTRkNjBhZDJiMzgwOTJkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWE3Mjg1OTAxN2RmOWFiZTk5N2U2MDEzM2RmMzg3N2E0MjM4ZDdhOTdmMjcwZmMxMGQyMzk0OTM4NDY3ZTI4NCJ9"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L74-L80",
+          "version": "repo-lines-v1:sha256:74dd2e32a0e56ef197b8cb46070df00556b9b268c2adcde7201b742745d8705c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFiYjg5MjY0ODZiMTg2ZDg0NzYzNDZjYzllYzEyNDRlOWQzNDZhOTI2NmQxMDc0NDkzZGMwMDU2ZWFlOGFiMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVmZWIyOGJkYWQ2MmY4NzY1YmQ4Y2I3MDU1Yzk5Y2RlMDlkN2NiOTRhODIyYjEzMzM2ZWEyNTA5MGFmZDJjOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFkNzBhOGRmOTRhMDFmOWJmNWNhNGNkNDVlYTUzZjUxYmE2M2U3NzVhODViZGQ1OWM3MWI2YjA1YTIwOGYzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjc2ZjIwZGFjZTkyMWFmYmFmMzk1NTU0NzQxNTk3ZGQ3YTc1YzVmMjU2YTlhMDY0NzhiZjdkNTI3ZThmYjBhYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2d9c84b38288434c8cbb5dcbd2d8161b",
+      "statement": "deleted_skill_names derives the set of retired skill names from git log --diff-filter=D over skills/*/SKILL.md and fails closed on a shallow clone by raising ContentError instead of returning an empty set.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L164-L171",
+          "version": "repo-lines-v1:sha256:ae8252d5e8a821646c0a7ab688e07b69595a40cbcf546442d7af6d5de1f26010:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhlMDhkMmQ0ODAzZWE2MzBjN2Y3ZDg5NDEyMjBjNjYzMjI0NWZlMTczYjBkNmFjYTUxN2NmMjU5OThkMTgwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGE0OTllOGMzNmYyMDZjOWRlNTE4OWJlYjk3NjE0YTQ1ZjQ0NmEyMWJjYWIyNzE1MmU5NjZhOWJlNmNhYWZjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTE1ZWQ4NGM2M2FjZjRhMzI0NTljMWZhMjU0YzIwNTJjZmIyMDk5N2Q3NmFjNWUzNjcwOGI2YmE2MGM5NGVmZSJ9"
+        },
+        {
+          "resource": "repo://tests/adapters/test_git_history.py#L17-L27",
+          "version": "repo-lines-v1:sha256:2e8ea4fac130cfdb7d7faf0241114bdca7ebfbb205874881b597a3fc0297b779:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1MmJmMmQ4ZDNiZWE0NzU4NTk4ZGVkNGNlNDg4YTk4OWNlNWI5ZWU1YWU4MjkzNDNiZjU3NmFmNzk4MmU2NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyMDRkZDBiYWEwZTFhMmRiNWUzOThlODY3M2M0NGRlNTA5ODM2ZTRjZGJkMTNmMDIzZjgyYWI5MjVmZjVhYmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmY2ZiMWFlMWI5M2QzODMyMzQ0YmY1ZjIxZTk4MDlhZjM1NDM0ZWNjYzkyODg3OGI5YTQ5NDBjMWZmZWFkODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f2b33eaba144ef29537da0f45258424",
+      "statement": "resolve_version walks the commits that touched skills/<name> from head backwards and returns the first commit whose skills/<name> tree hash equals the requested sha, or None when no commit matches.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L172-L181",
+          "version": "repo-lines-v1:sha256:497063794c65740d1fec1ed1eddc1a91e82893e3fb29df5f158bee77e1732524:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNDM1MDY1MzY3NWYwZTI1ZGRkZmY1OWQ0OGM2ZmUxNDc4Njc2YTU5YjUxMDFmYzM3YThkZTVhOTFkMGQxYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlN2M5NTdiY2I0NGZiNjczYzk4YjAwNTBhNzVkMzgwODJkYjgxZDkxOGRlMzEzYTNmMDdjMTIzNTMwNmQ3ZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhZDVlZmVhYTFkMWJlNThjNDA4NjQ2YjZkNTkyMWI4YmQzNTIyODJkYzVlOWJjNTEwZDQ0N2FmYThmYTE1YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiYzRjYjg0Mjg0ODVmMDc2NGY2ZTNmNzIyOGUzOGQ5ZDkxNTJmOTdiNzVmYzk3ODE4ZDI4OWQyZTYwZWUxMTEifQ"
+        },
+        {
+          "resource": "repo://tests/adapters/test_git.py#L32-L45",
+          "version": "repo-lines-v1:sha256:8ed06e55da4085621b44566c564ee11bde7b662bc84181b847d7d2115cc0cd9b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzOWJlZWY2NjkyYTkzNGNhNGY2MDE0MDlmMGRhMTlmOGU2MWQyODY3ZDQ3MzhmMDgwNzRkYmU1ZmQzM2VhMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYzZhNDQ2YmI0NTM1ZTEwNjMyODJiYTQ2MThkOGI1ZWE4OWYxNDQ1NzkxNzY3YTBjMTI0Yzk5NDkyYTYwZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmMDJlZmJjZWM4YTViOGIzZWFlYjMyZWQwOWEwOGJhMWZiMWExNmQ1YmNlOWI0ZDE4MTM4OTljZWViYjI5MTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_09513c6c43594033992cb6cb82552cdb",
+      "statement": "is_ancestor treats git merge-base exit codes 0 and 1 as answers and raises ContentError for any other exit code, so a missing or corrupt object is never misreported as a rewound main.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L183-L190",
+          "version": "repo-lines-v1:sha256:e2c7a2f70f683ce6c04c6d6d33be7f54863326acc7c4f6dcf2036df5b5d67037:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDNiZGM3NDg1N2NjNWM1MjZlNjdjZWZlOTU3M2QzNDAxNjY4OWQ1NjA4ZTg1NjYwMTdhZWI1ZjM3NjJkZWQyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGQwMjQzMjZjYjZhNjliZmFiNWFjZDllODUyODg1MjczNWU3YmFkMTIyM2I1Mzg5NTdiYzU0Y2IxYWQwZjliZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDRjMGYxZDZkZjVhZTRmY2ZhNjczY2I4OTUxMmFiZTg4M2UyNzAwZDYyOTJjY2U0YTYzNmUwNjc1ZGE4YTE2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzJjMzJhNWIwZWNmNGIwNDRlZTc0NGYwYTI0ZmVkN2IxNmU4Y2JlYjRjYzg4OTk2MjdmMGZiOWFjYzBkYmIxNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8950601922604a4ea38b45305e110a07",
+      "statement": "export_tree extracts a skill tree with git archive into a destination directory using tarfile's data filter, which is the staging area where the validator and gitleaks run.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L192-L196",
+          "version": "repo-lines-v1:sha256:fd346ab6c1e53bdb2b572bb69f985d56c847b37dddb023a872b2944b03ddfc14:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTkyYTFjMDVmNjZhMGVmZDc0NmY1NTM2Njg1ZDNmOTQxMTM5NmVhMmFjNzhhOTkzNTEwNDZmZmJhYzA0OTUyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTg4NjEwYmZmMGEzMWJjYTA5ZGJmYjhmM2YyZmM3M2MzYjc2YmUzYTA5ZDgxZDZlNjBjYTc2M2Y5MThmNzE5MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDg1NWRjMTAxZDU5NGRlYmRiOGJjNmY3Y2Q3OTgxMDVlMmI4YmQyMDMzZWFiYjZhMjlhYTk5MGMwMTIwYTljMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/check.py#L151-L169",
+          "version": "repo-lines-v1:sha256:12d0ae8cc4863e43d71a7bb3856582206fd85bcf1e2d87edc84a2981a162b387:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMjdiM2UyM2VjZmQwYmQyOGI1NTVhMGU1MTJlMzg2ZTA1ZDMxY2UwYzhkNTU3ZWMxYTZjNTcwMTNjMDk5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxMDFlZTFmNjNhMWVmMjIyYmJkMzQyMmMxNzE5ZjAwM2UxN2VjMzY3MzE5MzYyMGVhZDcyMzM4Y2NmZjNiZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkZTZmZjdkYjQ2NTI2OWYxNzAzZDYxZTcwMDhjYTQzNmQzNzg1MDg4NzQ2MDE4OTdiZTdmNDY0ZTllOTJiMDkifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T11:24:40.987Z"
+  }
+}

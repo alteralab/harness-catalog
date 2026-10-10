@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:aee0211b7450be1b6dbcfba68fec3a886a0c7b1559bde66b40bdf5c334ff30a5",
+  "claims": [
+    {
+      "id": "claim_e0aaf34a7b0c4c27aaf3c8b3be169372",
+      "statement": "harness-catalog init clones the repository with the operator's credentials, detects GitHub or GitLab from the URL, checks out main (creating it on an unborn repository and refusing a repository that has commits but no main), writes only the missing files among marker, skills/.gitkeep, README, pre-commit config and the host's CI workflow, commits and pushes to main; a second run writes nothing.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/init.py#L54-L68",
+          "version": "repo-lines-v1:sha256:6d2379eee6b38f811a390bcca21d385508b8b56f0d749037e002c8981564707c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzYjRiMTgyM2MyMGMwZjFiOTdlMGQ5ZjczMzVlMjgxNmVhYjZkOTUzZmIyZDg3MmEzODA5YzgyYjZiYWNhY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyNjAzZWIxOThhMDZiZDdkOTEyMWVlYzYyMjEwYmI5MjJjNzY0Mjc2ZjU1YjdjNzJlNGFlYmU4YmEyN2NkNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4N2EyNjViMjE5N2VjNTgyZjM3YTdlMTY4MTczNTUxYWVlODNhMzFjMDM0MzgwODI3NGY1NmEzYzBlZmNhMmEifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/init.py#L98-L121",
+          "version": "repo-lines-v1:sha256:b6dea8bada434f785f3ac1514784edcb31cb49c5fd0419c0de7e460aa1c6c7e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxNmU0ZDBkMzY0NzEyOWM5MDMwYzllN2FkYjIzN2QwMTQ3NGE2MGU3NjA1NWRlNDIxNTYzYmZiMTQ0NTRhOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NzZjOTNkZjJiZDc4MzMyYTM4NTVhYmM2NjZiM2M1ZGZmODhiOWQxOWY3ZTQxYWYzYTU0MzhkOWNlMmMwMGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlZmI0OGM4YzA2MDAzMzc4YjNhMTZkY2E4ODc1MTIyOGIyNzM0MDEzNzFmYmEyNDcwNGFlMjBkMTZmZDgyZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/cli/test_init.py#L37-L70",
+          "version": "repo-lines-v1:sha256:1b9b30db90552d8c423d3ae4dba30cef94c0e396d4e271f486373fbdd72be501:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZDQxNTJmYTM0Mzc5MDhmZTMwYTg1YWEyZDBiZjFmMzE1MGM4NjhmNDIwN2NhMzA4Y2UzMTI2NDVlMzY5NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwN2VlYjBlYzdkNzNmZjc3ZTdmYzkyZTg3Njg5MjAzY2Q0ZjE2YzY3ZWJlMjk0MGRiNDNhYTMyNWYwZDZjMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViZWM3NWUxNjE0MjUyNWFmZGMxZjI4MWJjZjZkY2UwYjllN2VmYTdmZGY5NmY1Njk2MWRlYmQzZDcwY2I3OGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_50931b63777d475e8486d20ce6803895",
+      "statement": "init refuses to proceed when an existing marker declares a layout other than the supported one, and substitutes the v<판> placeholder in the templates with the pin.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/init.py#L77-L96",
+          "version": "repo-lines-v1:sha256:6fdd00f96accf3bfc7ecccced40550681b88a416486441bd6daa99f99efc31dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNjM4M2I2YjQ1ODE5MzczYWZlNzBiODM4MzE1NjU2ZTU3N2I0MjdlYmIyYjdjMThhNmFhNGNhMzI5ZTYwYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMjlmNzNlYWQxZDRkOWYwZTA0M2UwOGJlNGNiYjVkZTc3YzQ5NGZjOTI0MGQ2MGUyMGY3OWU4NzE3YjA4Y2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4YzRlMzZkZWZiYTQzMWU4MjdiMzBjNzQ2ZDAzYWQ5NGExOGYzNGNhMDM5MjY2ZDQyZWFkMGNkZjg5MWFkZDYifQ"
+        },
+        {
+          "resource": "repo://tests/cli/test_init.py#L71-L83",
+          "version": "repo-lines-v1:sha256:04953aeceac34e899ccc452845b0855d0c57a50f2097fc7ca69ae96eaefdd35a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YzMxOTljY2NhNzJkNjk5MGI0NjM5MjI0ZGQ2MGJhMDUyMmI3NTZmMzM4NWRhZTllNjI4OTdiNmY1ODEyMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNDU3ZjEwZWY4MWU3NTE0YzZjNDRmMjljMjdhMTg0NjlhM2RkYjU0NDFlODViNDMyMDlhYjEyYjQ1YTg3ZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1YWMzZjU4NTQ0YjAwOTI0MTBmZTVjMzIxYjJjYmY4ZDE2NDM5OTJlZmQwOTM5MDc4OWI4OTNiYmVlMThjYzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8e267e696da0443a932770fc4bed787c",
+      "statement": "Without --pin, init uses its own package version as the template pin and verifies with git ls-remote that the tag exists in the code repository, failing otherwise so an unpublished pin is never written.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/init.py#L43-L52",
+          "version": "repo-lines-v1:sha256:4877c8661a17821ced781a241315b8d4e2508f40509221abf98d7ebbe9bcfcc2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlOTI1MTNiMzVlNjg4NWJmZWRjZGQxNzZmMTA1ZDk0NTNjNWEwNTljMWE3ZjcwNjExMzM4ZWU5YTZhZjY1N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0NWI1N2FmZWQ0MTNiY2IwYzI2N2NjYzE5NWY5NWFlMWZiZmE5OGU4YWFlNDAzMTEwZDVjMDM0NTUyNTIwMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4MTIzYTI5MGM4ODk1MDgxMTQ0OGIzNmNhNTk2MDMzMzVkMDgwMzI2MzVhMWMzNDlhNjA1ODA3OGQ1MjgyZDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5fe388b28ad04ce28fb6b4619e37704d",
+      "statement": "The generated pre-commit configuration runs harness-catalog check --rev INDEX --base HEAD with core and cli installed from the pinned code-repository tag, and the generated workflow runs the CLI from the same tag with uvx on every PR and push to main.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/.pre-commit-config.yaml#L1-L14",
+          "version": "repo-lines-v1:sha256:675400cd8d3caea32f9c8980401b9b01ca61174875f9408039f6c3fccf0e6699:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNWUzYTJlYTAyYzEwOTU0MDlkOWYxYmYzYTIzMjI0ZWUzMDNlYjIxYWVjYzBkMDJkMDRlYWNlMmRmMDM5NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNGY1NmJjMWViNWEwYjA3YWE2MTUyOTBlNjNlNjk3NTg4MjlkMWEzZmNjMzkyNzg4NWMyOGIxY2IxNjdlMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/github/check.yml#L1-L10",
+          "version": "repo-lines-v1:sha256:408370f6d046364052c0425159b53c99b15172c95de4535e89c8aff4cc54437c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmZGM0MzY5MzQyNDZmMTQyNTNiZDhmODcxNTJkMjc2NzBlNzJhMDM4Nzk2OGMxN2E4ZjE5NjI5N2ZkNDI4NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzMzczMzRhZWMwZGNiMjRlNDBlM2MyMGRjMDlkNTlhZjY3NDNkMDI3ZGJmZjUwYzFhY2EwODk3NDcxMTc2NzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5Nzg1NTUzZDRmZTkxNmM3M2ZjOTkxYzZmZDc3NDE0NmU2OTM5Yjk1YzRiNGVlNWFjZjExOTY5MzM1YjU0YjkifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/github/check.yml#L56-L57",
+          "version": "repo-lines-v1:sha256:6621bcc615bc17569dff1ebb8eae1a633c9465d7c2bd2dd3b11ef02328262259:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmEyMTlmZDFhYTU0NGI3ZDBjOGQ3N2IxZjg0OTA5NzJhZjM5YmI0MWVjMTRiOTVmNmM4ZjZiYmM3NTA0MTJlYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I0NWJhMDlhNjgwYjdkNGFjZWRiZGRlZjVmYTI1ZDkxZGU4MjIxZDQ4MDcyMGY0NjA0NjQ2OWJkMWE3NmY4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2RiYTYwNTQxOTg3OTdhYWJjOWNiZmM4MzQyNWE3Y2IwM2Y5M2UyOWQ5NjZmOGJhMmNjM2QzODUxMzVkNGJiNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTUzMmE0NGNlMjcyMjZhNDMxMjk5NDM2ZmFkMDVhNjc1ZmVmNmFhNjNmZGZlZjA3YzlkZTQwMDExNDFjOTVmOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6a4b6f2770d2413db8a382cb434d1d4b",
+      "statement": "The catalog README written by init states the publication discipline: no direct or force push to main, PRs checked by CI, the merger is the certifier, names are unique and retired names are never reused, and replacement is recorded in metadata.replaced-by before deletion.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/README.md#L11-L16",
+          "version": "repo-lines-v1:sha256:e2928b030016810e06ec9253a97e6d22920d3890ff8670c6e0abf5a6a52a156f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTY4YmMwZDE1Mzk1Y2UzMDllYTU2ZjFlYjYzZGU1ODYwNmU4MTU1OGM3N2I3ZjI4ODdjMTUyZDBmMjc4OWNlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGRjMzJiOTc3ZmYxYWQyOTk3NWFmZmNmOGQyOGRiMmY5MTMzODljZjIxZGFiNDllZDYwOGMxYTM1MzkyNTNlYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjFlYzk2ZWU0YmI0MTIzMGY2YWE1ZWJjZTJjN2RmOTRiZGExMmQ0MTA3ODA1N2ExOWM5ZTcwNzVlM2Q5Njg3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDE5MmMxZmI5NDczMmI0N2I1NWUxOTg3MzRjMjYyNzFkMWQ0MTRiOGQ2YzFlYWI0NjZmZjUzMDZlNzdjMWIzMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_468c0f1bdd774fb6907156564e74508d",
+      "statement": "write-skill encodes the authoring procedure for agents: search for an existing skill first, branch skill/<name>, write the skeleton with scripts and an eval pair, pass the convention checklist, run harness-catalog check and the with/without harbor runs, and stop before opening a PR until the user says so.",
+      "evidence": [
+        {
+          "resource": "repo://skills/write-skill/SKILL.md#L18-L29",
+          "version": "repo-lines-v1:sha256:454968bd889046e2d7250b032fdaf703828d31b67c27ff066cbee4645630eae4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlMWFjZGE5ZGIxZTM0Njg0NDZjMzgyMjVjZjUzOWExYTE0M2U2Nzk2NjhiZThlOTUzMWVmYTg2Nzg5NjRiY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5MzQwYTFhZGZjZGJlZjliYjJhZTJjM2FkODNkZjZhMzBlZjViNzcxYTVkYjUzMjFmMjk4MTRjY2NhYmM3NTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiZTY5ZTg3ZDY0ODAxZDQxMjBlMjQ5YWM2MmEzM2VkOGNkOWY5ZTU0ZmViMDczZDI4YjY2NjllYmRlNzhkNGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b50deacab2de4a6581f5e8a0c7a39a78",
+      "statement": "pin-skill downloads a skill into .agents/skills/<name>/ (project) or ~/.agents/skills/<name>/ (user), fetching every file at one sha, verifying the file set against load_skill's list, renaming atomically, writing a PINNED line and symlinking .claude/skills/<name>; newer versions are detected by comparing PINNED's sha with list_skills.",
+      "evidence": [
+        {
+          "resource": "repo://skills/pin-skill/SKILL.md#L25-L46",
+          "version": "repo-lines-v1:sha256:b2bf0c35a776a949c27b27fd972350025b722855bfc02fda42fc5493aa2716fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NTQ3Nzk3MTM0NjhjYzdkODRkOTkzZjVmYmE2NDZlMDM0OWI2YTg2ZThmZTdhMTVhOTI5MjcwYjMzNzI2YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiODA3MDI3NjkxNTM2YzVhZGMxNjE2MjEyYTQ1NWU2NTNlODgwNzIyZGE1ZDg1MmExZmI2MzFkMzg4NTM4YTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzYTdkYjkzMmJhMzJiYWZjN2U4NWFlNjY1YjVkMmRlZWUzMWIzNzRiYzdlNTIzY2U0NTFiOWZjZGE4NjkwOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiNGU5NDQ2NWEwYzNlMWRmZDY3ODRkZTE1OGU4YWE5ODI4NmQ5MTNlNzVhMTUzN2FjMmU4NTdlMDU3Y2Y2ZmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4681cab4246c4d13ac0f978531398c58",
+      "statement": "A retired name can never be reused and a replacement must point at an existing, unreplaced skill: check item 5 refuses names deleted anywhere in main history and item 6 rejects missing or chained replaced-by targets, while older versions stay readable because load_skill resolves a tree sha through main history.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L220-L234",
+          "version": "repo-lines-v1:sha256:1aba26c6f6d7d1cc7e3feadae5842ec003e35d74775a2e3c09ffb1960ce51ce4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZTY1MDI4MDdlMzg4NGZmNGM3ZTExOGJlZmFhOTI1ZGU2MGY3ZDg0NmYyNjU0ZjdkZDYwYjgxZTVkYjEzZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljYmQ3MzRlNDc1NDExNzE1M2E0MDdkYmMwOThiOTEyNWQ0OGY1OTAxMGY2ZjU1MDI5MTVlMGIzMzU2ODBjMGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiOTZjOWJmMjZjMDMxNDJkMGQ4YzZlODFmMGRjNTk0OTc4YjI4ZWZiYzYzYTM4M2U1YjE0MmEzM2U0YzM4M2MifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/check.py#L120-L131",
+          "version": "repo-lines-v1:sha256:ac6877049e51c843a48802b4bac6c31e5de7a3ff8f58abaa9e9212f53da3df7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0YWFmOWZkY2M5NDIyZjc0MWJiNGIxMDIyYThmODQxMTA1ZjIwOTEwNDk1NzI3YzRkMGFhYjJjZTViNGE0ZTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0OTg1YWU1MjU4OGY1NTQ5MWQ2OWEzNTBjNDY2OTMwMWM3ZTYzMjZhZDM0ZGJjY2ZkN2VlZjNmNDJjOGJiZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkNzJjZWY4M2M2OTUyMWNjOTk2ODFjZTY2YjYzZGI4MDE5MTgyNDgyNWEyMTFmMGE5NGUyZTJhNDAyMTllN2EifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/check.py#L197-L214",
+          "version": "repo-lines-v1:sha256:4f3b473b544c4e3f74d81a2a04ea0184ca48487bce4f07b12c3cf2d21c7496e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NmI1ZGRmZDU2ZTY1M2JkMWI4ZTIwY2YyYzYzNGU2NDUxNzlkOTc5ODMyZjBmYmY4YWE5OTkwNjEwNDQ3NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NTI2YWZkNzhlMmJiZGM0N2QwODZmNjliOTdhZjYwZTQ5MjAzZDNjNDlhMTAwMDNmNTQxNzEyODlmOTYxZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0NmM3NTRiMTUzNzg5NjY1Y2MxYmZkMGNkM2Q5ZDE1ZTQ2YTYwYjI0NDRiMjcxYTdhMDk1NTQ2NDE4Mzg2NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T11:24:40.987Z"
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:4f992f531a5faed4b7733c34aac3b55144b0dc7af8a6215b00f4822564a7106f",
+  "claims": [
+    {
+      "id": "claim_d0f081d6994c42d6be35d838b4dea1ce",
+      "statement": "The application layer depends on exactly three protocols (ContentStore, SkillValidator, FactStore) and the Catalog is constructed with one implementation of each plus a working directory.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L53-L66",
+          "version": "repo-lines-v1:sha256:57462edd218220e057f11948da83f8388ec4bb78fc2b6bd1954c1a96c49a32c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3M2MyZDdhNWJjZjFjM2JlMTE4YzFhMDMxYmUyZWU5ZjZlNzdjMmE0ZjFmNDRiYjNkOGRjMDE3YjhiZjI2NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxMjBkNDhkYmYyYjgwMjRjZWZiZGRmZjY0YWQ0MmY4MjlmMGE1MDEwM2E4NjA0OGY0ODFkM2Q4NDc1MzMzM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MzJlM2VjZmNlMTkwMzcxZDlmZDExMDQyNDY2ZjI3ZGRiYTNkMzNmYzliNmEzM2M4ODU5NmM5OWIyNDliZjEifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/ports.py#L12-L75",
+          "version": "repo-lines-v1:sha256:1b68a2fa22ece8db4475b85bd04505b182feae018a030bca10f791c11fe2fff9:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ODFmNGVhZWNhZWQzYzZhODM5NmY3Y2FkMjlkZmFhYjQ2MGIzMDZlYTI2NzIxZTAxYTFmMTRlYTJmYTEwYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NjgzMjI5NjA2NDM0ODE4MWE3OTI1YjJjMDI2NTZlZTYzNzNkNzZjMTBlYzA2MGE5MjU4M2Q5YTg5MDVjYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlM2Q4NGY0YjFlMmUzZmM2NmJiYzRkNThjYmZmY2YzNGM3M2UzNjc1NmNjYmNiNGQzOWMzOTIxYWUxZmQ3MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNDJhNDk5ZTVmMjVjYWY1NThmNWMwZGU4Y2U1M2FlMzE3Yjk5NWFiNWEyYzQxOTJmNjRjZjI3ZTc4ZjhmYzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4ae14283abcf451ba0db06b1a5e46162",
+      "statement": "bootstrap is the configurator: make_catalog builds GitStore, SkillsRefValidator and PgFactStore (or a no-op store) from the settings and wires the Catalog; bootstrap then builds the MCP app and a Starlette lifespan that starts the migration task and the scheduler in a task group and stops them on shutdown.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L59-L101",
+          "version": "repo-lines-v1:sha256:45c057293cc3adf43256f3dddbfc41a29a3afeb346816f9ab06fa9d3dc63d643:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYzM2N2UzNDVkMmQ1MDk5NTBiNGQ3MzQ2MjI1MWYzMmI3NGFlOTlhNmU3YzFmYzYxNzc2YTljNDQxMjUyODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZTUxY2FjNWEzYWYxNTAzNmRjZDYyMmJlNDc2OWFhZWY0ZDkzY2U3MGU4Yzk5NDQ5NDI1OWQxMzNiZWRkMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5M2NhNTY2OTU1M2FhYTNiZDFiYTJjY2NmNGIzMzFjMWQyMDRkZjkzZTVjM2UxM2E5YzVkMDM1YTQxZDcyYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_49ebaedf6c484232942a05f5b11a384a",
+      "statement": "The code repository is a uv workspace of four packages at the same version; harness-catalog-cli and harness-catalog-server each depend on harness-catalog-core and expose the console scripts harness-catalog and harness-catalog-server respectively.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/pyproject.toml#L1-L16",
+          "version": "repo-lines-v1:sha256:77a6b712451429557ee0caa2377ceb8248fe902d39f152baa7e32f1bbcd4c57a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMmE4MWMzODM2ZWRlZjJkMGJhMTFkMjM1M2ZiNmRhYmM3NzcxNTBhN2NhODNlYTBkOWU5YTcwMzEzZmVhYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNmY0NTE5OWM1ZWViMzllNjVhNWIyNTZjNTEwZDYwNmUwZjU3NjAyMTkyYTRkYTcyZjk0NTU0YzE1ZmU3MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MDViZGVkMDY0NDAxOTgyODQ5MGIxZDU2YzkwNmE0OGE5OGMyMDNiZTE2OTAzYjRmZjUyMDJiOTU0ZmI2YWUifQ"
+        },
+        {
+          "resource": "repo://packages/server/pyproject.toml#L1-L23",
+          "version": "repo-lines-v1:sha256:c0d0f5d926e36f7f31157d769e361d5ceda40cad3664aa059071b7a79d3e92fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMmE4MWMzODM2ZWRlZjJkMGJhMTFkMjM1M2ZiNmRhYmM3NzcxNTBhN2NhODNlYTBkOWU5YTcwMzEzZmVhYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNmY0NTE5OWM1ZWViMzllNjVhNWIyNTZjNTEwZDYwNmUwZjU3NjAyMTkyYTRkYTcyZjk0NTU0YzE1ZmU3MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MDViZGVkMDY0NDAxOTgyODQ5MGIxZDU2YzkwNmE0OGE5OGMyMDNiZTE2OTAzYjRmZjUyMDJiOTU0ZmI2YWUifQ"
+        },
+        {
+          "resource": "repo://pyproject.toml#L1-L20",
+          "version": "repo-lines-v1:sha256:1a22721a7dcb1aa3f5e059765c70cd6ba11e57ec0c36316cc8d7a3b89941c186:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzMDMxYmIyNGU5NmQ2OTk0ZmIwZmY3ZmUzNjJhZGNmNjgwZDVhM2I0MGZhNDAxYWY1M2E2ODI4MGZhZjM2ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYjc0OTliMWNlMWM0ZjRiMjUyN2YzYTMyODRjYWM2YjZhMWUzYmY0OTg4YjU2Nzk4MmMzZGM4ZTlhMTdmMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YzBkZDkzOGI1NmFjZGQ4NmI0ZjFkYzhiN2NhNzFlNTAxYjNlY2NkOTljMjBkYmM4NGFiMjY5ZjEzMjM4ZTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_17681283953346eab6af3053e29ec51a",
+      "statement": "The container image installs only the server package and its dependencies from pyproject.toml, uv.lock and packages/, runs as a non-root user with git, ssh and gitleaks present, and starts harness-catalog-server serve by default.",
+      "evidence": [
+        {
+          "resource": "repo://Dockerfile#L1-L33",
+          "version": "repo-lines-v1:sha256:ce544a2a9d1fd267e4fcf91d57b00a0ca3901bc40aea2124d522b57d4eef537f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYmQxOTAyYzc3ZmMxN2I0MmMzZGE3N2EwNzRiOWIxYWVlZmIyZTg5NzNlNmQ5MjViODgyYmNiYWE5ZDMyMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhMDM3YWJjZGQzYjI1ODAyNzQ4ZDgyZjg4NTc1ZTgyYjIzNTJjM2Y3NDMwYzQ0YTBkOTI5MjgyODY5YzdjYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ca8c664c35fb49e4a9672f243dd5c16a",
+      "statement": "Operational routes /healthz and /readyz are mounted beside the MCP app at /, so one process serves tools, liveness and readiness.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L97-L101",
+          "version": "repo-lines-v1:sha256:72c954f4052b59626734d6eadb930d7c2832bc0c5a7f00159771c5c90847f019:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNhODA3ZmU2NDA4NDJjNTdhMmU3ZGFjMjg2MDY3M2EwOWY5YzY5MmM4YmZkYTkzMDU5YTJiNzI2MTk4YzJiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVlNTFjYWM1YTNhZjE1MDM2ZGNkNjIyYmU0NzY5YWFlZjRkOTNjZTcwZThjOTk0NDk0MjU5ZDEzM2JlZGQxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTcyNjJlMTAxMzZmYjI0MjJhYzNhZWYwMTc3OGEzOTc3NTJlMzM1MjM2MDAwNDNkOGZhZGQxOGI0NjNmYjI0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T11:24:40.987Z"
+  }
+}

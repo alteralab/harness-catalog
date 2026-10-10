@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:34852c44ba2ca5e672cde90b2a3c8558bf3cae9ee6d6a13e84ece5ff577f54c2",
+  "claims": [
+    {
+      "id": "claim_e55b2aad17184b168fec1d2207238fc1",
+      "statement": "The repository's agent instructions assign locations, signatures and call relationships to Graft or the source and design rationale, flows and failure modes to OpenWiki, and tell agents not to pre-read the wiki at task start.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L1-L7",
+          "version": "repo-lines-v1:sha256:9854dea9c9e5ccb50980690bb235831c83f89175547a6ca2d276fa388b19df2e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDhiZDU3ZjI2NjNjMTY4ODhmOWY0ZDRjZThmNDllMGQ2YzBjODhjZDM1MjE5ODdiYmJmZDgzNjAwMDBiNGM5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTczMTM0MGMxMDdjNTExMmEyMTdlZDRiNTZjNWQyYmQ3YmYzMzdiMDMxMzIyNTgzNjQ1OTE5N2QyMDMwYzYzMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWIxYmM1YmM0YTIzN2Y1NzhlNmFmNGE0MTVkMDY0N2Y5OTEwYjAzYjM2NGUxZTI3YzFmMWRiYWE3NDNkMDNiYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c74b16909d543fa945404ebafcb4e12",
+      "statement": "A SessionStart hook compares the wiki's recorded base commit with HEAD and reports how many commits have landed since the last wiki update, which is the freshness signal this quickstart refers to.",
+      "evidence": [
+        {
+          "resource": "repo://.claude/helpers/openwiki-age.sh",
+          "version": "repo-file-v1:sha256:dce3ca3f93b2a2518c95dca4ff4fccf82acda5e798dcb6da7a52502bb87a46d6"
+        }
+      ]
+    },
+    {
+      "id": "claim_bd87164185cc495684fcd09d9c5dd3a5",
+      "statement": "The human-facing operating guides (using, authoring, operations, configuration, development) live under docs/ and the design contract with its decision ledger in DESIGN.md, so wiki pages cite those rather than duplicating them.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L105-L116",
+          "version": "repo-lines-v1:sha256:1ceb2493a441cec15978d6e7841cba41f7d7a2e3329639e94c5e6b722dad3cf7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NjFhZGQ3NTViYTQ0OTQ0ODRlMDY3NjA3N2UxYjM1YWY4ZDc5MDBmYjMwNzZlZjBjNjU1NmNkOTVjN2I3MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzYzRkZTIxMDEwM2IyMjg4ZmM5NGIyY2I3MmMyYWY1NTZmMDUyOTI4ZjYxNzAyZGU1NGU4NWEzZjhlYTViZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ODQwZGUxOTM2YmRlYTEzMDZmNDk1ZWY0OTM0YmYwZTYwYmQ4ZmQ0YWZlNGJjNTJiMjk4YjAwNmIzNTUwYmIifQ"
+        },
+        {
+          "resource": "repo://docs/development.md#L80-L94",
+          "version": "repo-lines-v1:sha256:4b8211fa507788840d766a705c2142b512ab8e7bdc1db485b17e3924599408ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0MTBmMDA0ZTA4MThjNTEyMDVlZjcyZDhmNTYxMTQyNTMwZjVmMTI4NWUyNzk4YWRlZmM4MjJkNDM3M2RkZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MzJlNTU0NTdjMjEwNmIzOGRlNzRlNTU1N2JlYjJmMTE1MmJlMmRmYmI2YzlmOTE3M2NhMDFhNjJmNGU1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyZWFhYmEzZmI0M2M3NzY0ZjY0Y2UwNzk2MWQ3MGRiZDkyZmFiN2E0N2FkYTM1NDIxNTRkYTYxZmNlNzI1MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T11:24:40.987Z"
+  }
+}

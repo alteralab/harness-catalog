@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ce3d87902e7542eaf2792185dbbcd94ef56ff9a49be86445dde88af0e5af9af6",
+  "claims": [
+    {
+      "id": "claim_17a8480c15bd43ddaa39a79f060c6163",
+      "statement": "check_commit is the single implementation of the ten check items shared by the CLI (pre-commit hook and CI) and the registry's index build: it checks repository structure, then each skill, then skill pairs, and history items only when a base commit is given.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/__main__.py#L36-L62",
+          "version": "repo-lines-v1:sha256:8ed796b292dc398ac7c7763230a640c3c57a01f8dc1cfd52455f1a59b7cf83c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDhiZGVjZGIwZmVhZDY4M2YwY2I4NjVkNmM5YThiZDcyYTMxNzZhYThjOWY5YWM2ZWU5ZWU3ODhkYjY1NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1NDEyNzMwOWZkZTJiZWUxOWQzODY1MWRkOWU5ZmJiZmQzM2E5MGM2Yjc1ODk4NjY4MzM3N2U1YmNjNzUyOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3NGU3ZTJmZTE4NWI5Y2QyODAyOTgzYTI4OWMwNmQxMDIxMDBmZGYyZjg3ZTYzMGZiNzhiNDJmNjBiZTcyN2EifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/check.py#L171-L196",
+          "version": "repo-lines-v1:sha256:72b40c72e892c03a554716b5f93a04b449b8492b2a1381884fa892cc1c61da13:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlNzY5OTBhY2I3Nzk3NmE2ZTM2NDU3NTJmNTJhNjI0ZTNjY2MyNTY1MjA1Y2YyOWUwYTk2N2Q3NDRjMzkzZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmMWZhNmNkM2ZkMjgzMzA5NTM4OWNmM2Q5MWFiOGUyYzU0ZjhjMGZlMTkxYzA0MTY4NWM0ZGI0OWUyMzIzMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4ODlkMjg0MzcxZDhiNzY0N2EwYWFmOTU3NmU5OTk0M2U2ZjE4MDFjM2Q1N2MzMTJkM2Y3NmI1MGU2YzE3ZDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe10c591ada840ad82f7ed3742335970",
+      "statement": "Item 1 requires the .harness-catalog marker to parse as TOML with the supported layout and the presence of skills/, a CI workflow (.github/workflows/ or .gitlab-ci.yml), .pre-commit-config.yaml and README.md; item 2 requires skills/ to contain only directories (plus .gitkeep) each holding SKILL.md.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/check.py#L40-L78",
+          "version": "repo-lines-v1:sha256:d02ab9c92cdfa051705c82e36ba30129ea70a3932e2ddd3ccff0ce6d9eb7134f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNTllNjJiNTA1MmQ3MmUyNGU3NmU3YTY5NjNlNjZlNjkxNTQyMjRjM2JkMGRkNjUyYzJjMDAyY2MyNDdhYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1OGNmNWJjYjcyZGI3NjgwMzQ2NWI5NjNkMmUxMzIyMjNiOTQ4OWRmYmNjOTE0YmJiZGU4NTc2YWIyMmExYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhMzhiZDkxMjExZTNkZTYxM2FlOWZjYmRlZmFhZWM3M2FjZTgxNDY5NWFiZDhiMmMyOTUyN2E2NTJjYzhlMTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a65780527ae44fd295b9159aaecfd9a9",
+      "statement": "Items 3, 4, 7 and 8 run per skill on an exported copy of the skill tree: the agentskills reference validator plus name-equals-directory, a gitleaks secret scan, size limits (50 files, 1 MB per file, 5 MB total, no symlinks) and the requires-tools token grammar.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/check.py#L151-L169",
+          "version": "repo-lines-v1:sha256:12d0ae8cc4863e43d71a7bb3856582206fd85bcf1e2d87edc84a2981a162b387:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMjdiM2UyM2VjZmQwYmQyOGI1NTVhMGU1MTJlMzg2ZTA1ZDMxY2UwYzhkNTU3ZWMxYTZjNTcwMTNjMDk5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxMDFlZTFmNjNhMWVmMjIyYmJkMzQyMmMxNzE5ZjAwM2UxN2VjMzY3MzE5MzYyMGVhZDcyMzM4Y2NmZjNiZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkZTZmZjdkYjQ2NTI2OWYxNzAzZDYxZTcwMDhjYTQzNmQzNzg1MDg4NzQ2MDE4OTdiZTdmNDY0ZTllOTJiMDkifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/check.py#L94-L118",
+          "version": "repo-lines-v1:sha256:027378111715a86e20fd215f7fe24bbc0bc2e60e6b7629d04d3db7b854f25c24:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzOTdmNzIzMGFmNjMyMWRhMTJhMmJiMzU5ZjRlNDg1YTlkM2FlNjI5Nzg0YjI3YWRjMDViMzRkMGZiZDYzZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyOTM1MGEzMzcwYjMwMTlmZTMxYzQxZThiNDQyYWJkMmNlODA3ZDEzMjE5YWYwOTcyYzZiNmRjOTBkYTI3MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyODc4MWNlODIxN2FkYzgxMWU4M2MzYTQyOGMxODFhZmU2NTE1MmFiZWZlY2Q0ZDI5OGQzODYwZjBmZDM5OGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7dd0c3e87206451e858e8182265a3718",
+      "statement": "Item 6 rejects a replaced-by target that does not exist or is itself replaced (no chains), and item 10 only warns when two skills carry the same scripts/ relative path with different blob contents.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/check.py#L120-L148",
+          "version": "repo-lines-v1:sha256:4d43333133213d53e4744013885e15a66d6b27aeab9569715b98d7bbdf693c15:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0YWFmOWZkY2M5NDIyZjc0MWJiNGIxMDIyYThmODQxMTA1ZjIwOTEwNDk1NzI3YzRkMGFhYjJjZTViNGE0ZTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZGYzMGU0MzU2ZWJlNTU0N2E1ZmM3NzU5NDRkNDc4MzQ3ZmQ1NzY2NTgwMjhkNDM2YzYxMDUzZDdiNmEwZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0OTg1YWU1MjU4OGY1NTQ5MWQ2OWEzNTBjNDY2OTMwMWM3ZTYzMjZhZDM0ZGJjY2ZkN2VlZjNmNDJjOGJiZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1MmY5NmU3MjE4ZDgxYzkxNzA5YzUzNTdlMWFmM2M5YjRlMTI5ZWQwZjUyNGZmNjhiZjZlNDJhMDc1YWIwOGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf64836144f944cbba8b06353b167635",
+      "statement": "Findings flagged warning=True (items 9 and 10) never affect the exit code and never exclude a skill from the index; rejected_skills is computed from error findings only.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/check.py#L20-L37",
+          "version": "repo-lines-v1:sha256:142ca1890fc75b3c08a636521201e30ede15e6ad560c5a26896c58d0d0ec205c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiODJkZTMxZTBkZDFmNjAyYTUwOWQ5ZjVjOTBiNjQzMzMwYmFhMTgwYmVmZGRlN2Y4YjI4NmQzMGY5MTE4YTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4MzQxY2UyZDczMzkyYTNhZTIzZjMzYzM0YWE5MTQxYzdlY2EwYzJmMjQ1MmYzYjNhYjcyNTJjNTU4Zjg1YWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxYWY5YmM4ODU2NjBhYjRlNmI5MmU4ODZiODdiZTM4YTY2MjdmMDZhOWI3ZmM1NjAzMTM4YmI0ZTMzYTE4YzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_69ad1c3a916f4b8e8cae8798ce4a30db",
+      "statement": "The checker is fail-closed: a missing or failing gitleaks binary raises ValidatorFailure and any ValidatorFailure or ContentError turns the whole report into checker_failed, which the CLI reports as exit code 2 and the registry treats as a degraded state that keeps the previous index.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/validate.py#L16-L44",
+          "version": "repo-lines-v1:sha256:405f5ec22b6eee999b90d80ee94aa157bbcffd3de58a7a3e4d61d27bd70195a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNTMzYTg3YTdlOWMzNTdlNTJiYWQ3YzVjNGYyYjJiODg1MWJlNjNhZjcyNWI3YzNhODJjZWFlMjljNjJkNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhNDM5ODdlMGM4ZGE4MzI2Nzc5MmZjYTkyMjc5YjUyMTQ0ZDE0MTdkYzlkYmI0MGU5MDU5YWUzMmI4NzhkODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkMzJjYWJlOWZiNDhkN2YwMzlkOTVmNGQyZjBjNmE4ZjA2ZjdhN2E5NjNmMzI5YjJhOTdhNTdjZWVjZTAzYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlN2YxMmUyMmIzNGJlYmVkYTZmOTkwNjc1Njk5OWYyMDBkMmJhMmEwMmI3NTE4MDA5OTRlOTAxOWZmNTg3NjIifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/check.py#L190-L196",
+          "version": "repo-lines-v1:sha256:77c717c4d31a711bceded6cd8da1383b09ec04e92cfebc0b4bdb05f0ef4846c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI3N2NhYTVmNjdiZjM0MzFiYmQ3ZDk0NzA5NWUxMTc2ZjUxY2MyMmQ4M2I1OTNlODE0MDI1OThmZDNhMTE3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjAwZGVkM2NmMDVjMDY3NzVkYjZiYWIxMzVmOTVmMDM1Nzg5ZTExMTRhODVkOGIxYzRkNTQxNDY0MzI1NjRkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjg4OWQyODQzNzFkOGI3NjQ3YTBhYWY5NTc2ZTk5OTQzZTZmMTgwMWMzZDU3YzMxMmQzZjc2YjUwZTZjMTdkOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a9dd97537322469195b2d3e91d564095",
+      "statement": "Items 5 and 9 need a base commit: item 5 refuses a new name that was ever retired (deleted SKILL.md anywhere in main history) and item 9 warns when a deleted skill's base version lacked replaced-by, reading the base SKILL.md frontmatter with the parser rather than searching body text.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/check.py#L197-L214",
+          "version": "repo-lines-v1:sha256:4f3b473b544c4e3f74d81a2a04ea0184ca48487bce4f07b12c3cf2d21c7496e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NmI1ZGRmZDU2ZTY1M2JkMWI4ZTIwY2YyYzYzNGU2NDUxNzlkOTc5ODMyZjBmYmY4YWE5OTkwNjEwNDQ3NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NTI2YWZkNzhlMmJiZGM0N2QwODZmNjliOTdhZjYwZTQ5MjAzZDNjNDlhMTAwMDNmNTQxNzEyODlmOTYxZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0NmM3NTRiMTUzNzg5NjY1Y2MxYmZkMGNkM2Q5ZDE1ZTQ2YTYwYjI0NDRiMjcxYTdhMDk1NTQ2NDE4Mzg2NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/core/test_check_items.py#L30-L40",
+          "version": "repo-lines-v1:sha256:d4cf3c6941a26cf6cf33ab3a9a64eb8d4dabc17e07684dc3acdedcf09e708553:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhNzcxMzY5ZDU3MDAyYTliM2RmYmE0MGY3NWYyZjcwODBiNjJkMTgyNjJiMTBkNTcyMDk4MjQyM2MwNmY4ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhYmNlZTFlMDQ4ZTkwZDM1N2ExZTNhYjVlMDZlNmJhOGY0YTdmMzlmOTk1ZjY3MDg1NmZjOThkNDFkOTk5NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmOGUxZTgzYjYxODQ0OWEyZTdmZjYzMGQwYzQ1MTZjZTUxMmRlOThjZjAxMzBlNDZkYzVlYTlhYmM4MTFiZjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_24ac433ae500489c84fc39d963d8298b",
+      "statement": "Retired-name detection requires full history: on a shallow clone GitStore.deleted_skill_names raises ContentError instead of returning an empty set, so the catalog CI template fetches with full depth.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/github/check.yml#L17-L20",
+          "version": "repo-lines-v1:sha256:9c74fa0626d6718e14e59bb04bf486d4fdf52fa485e399e5f4b93e8408a0a9b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjA3YTk1MzlkMjk2MDY3ZDRlMjhmZTdlNmUyZGEwZmRmMGFhNzdjODQ0OTMzMzZlOTE1MjAxYmIxMDQyYmI5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODdhZTMyYmEzYTJkYTQ4NDIzYzYwNTg1ODRiOTEwMDk4NWY0ZGJlMjBlZmZjMjYyYjNjOWI4ZTY0YmY2MjU2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWYxN2U0ODdkNDMyNjE5ZWQ1YTYxZjNhN2UzMTNiMWZhZGFlNTBiMDZjYTQ1MTBlYjk4M2VjOGIxMWE4NjcyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODRmMWUwOWUxNjhjZmUyOWQwMGU1OWRlNzJjOTE4MThlNGE1MWM3NGUxOTU1YWNmNzRhMjY4YzlhOGNjMGI1MyJ9"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L164-L171",
+          "version": "repo-lines-v1:sha256:ae8252d5e8a821646c0a7ab688e07b69595a40cbcf546442d7af6d5de1f26010:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhlMDhkMmQ0ODAzZWE2MzBjN2Y3ZDg5NDEyMjBjNjYzMjI0NWZlMTczYjBkNmFjYTUxN2NmMjU5OThkMTgwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGE0OTllOGMzNmYyMDZjOWRlNTE4OWJlYjk3NjE0YTQ1ZjQ0NmEyMWJjYWIyNzE1MmU5NjZhOWJlNmNhYWZjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTE1ZWQ4NGM2M2FjZjRhMzI0NTljMWZhMjU0YzIwNTJjZmIyMDk5N2Q3NmFjNWUzNjcwOGI2YmE2MGM5NGVmZSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T11:24:40.987Z"
+  }
+}
