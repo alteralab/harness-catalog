@@ -8,6 +8,7 @@
 
 - [무엇인가](#무엇인가)
 - [빠른 시작](#빠른-시작)
+  - [먼저 돌려 보기](#먼저-돌려-보기)
   - [팀원: 하네스에서 쓰기](#팀원-하네스에서-쓰기)
   - [저자: 스킬 올리기](#저자-스킬-올리기)
   - [운영자: 레지스트리 띄우기](#운영자-레지스트리-띄우기)
@@ -64,6 +65,17 @@ flowchart LR
 
 ## 빠른 시작
 
+### 먼저 돌려 보기
+
+Docker만 있으면 명령 둘로 전체(레지스트리·Dex·PostgreSQL·심은 카탈로그)가 내 머신에 뜹니다. 편집할 파일도 환경 변수도 없습니다. 평가·데모 전용이고 비밀번호는 공개된 값입니다.
+
+```sh
+git clone https://github.com/alteralab/harness-catalog && cd harness-catalog
+docker compose -f docker-compose.quickstart.yml up -d --build --wait    # 또는 make quickstart
+```
+
+끝나면 `docker compose -f docker-compose.quickstart.yml logs welcome`이 접속 방법을 찍습니다. 레지스트리는 `http://localhost:8000/mcp`, 로그인은 `dev@example.com` / `password`. 다음은 [docs/quickstart.md](docs/quickstart.md).
+
 ### 팀원: 하네스에서 쓰기
 
 필요한 것: Claude Code 2.1 이상, 레지스트리 URL, LDAP 계정이 `harness-readers` 그룹에 있을 것.
@@ -90,7 +102,7 @@ PR의 CI가 같은 검사를 돌리고, 사람이 병합하면 레지스트리�
 
 ### 운영자: 레지스트리 띄우기
 
-필요한 것: Docker(compose v2), TLS를 맡을 리버스 프록시, LDAP(또는 빠른 시작용 정적 사용자), 카탈로그 저장소의 읽기 전용 deploy key.
+운영 경로입니다. 필요한 것: Docker(compose v2), TLS를 맡을 리버스 프록시, LDAP(또는 정적 사용자), git 호스트의 카탈로그 저장소와 읽기 전용 deploy key.
 
 ```sh
 git clone https://github.com/alteralab/harness-catalog && cd harness-catalog
@@ -106,6 +118,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 
 | 문서 | 누구에게 | 내용 |
 |---|---|---|
+| [docs/quickstart.md](docs/quickstart.md) | 처음 보는 사람 | 명령 둘로 로컬에 전체 띄우기, 로그인, 지우기 |
 | [docs/using.md](docs/using.md) | 팀원 | 등록, 로그인, 찾기·적재, 곁에 두기(pin), 기계 계정, 문제 해결 |
 | [docs/authoring.md](docs/authoring.md) | 스킬 저자 | 스킬의 모양, 팀 규약, 올리는 절차, 검사 항목, evals, 갱신·은퇴 |
 | [docs/operations.md](docs/operations.md) | 운영자 | 구성, 카탈로그 저장소 신설, 설치, 프록시, Dex·LDAP, 런북 |
@@ -121,9 +134,11 @@ curl -fsS http://127.0.0.1:8000/readyz
 ```
 .
 ├── docker/                      # 이미지에 딸린 설정
-│   ├── dex/                     #   Dex 설정 (gomplate, 빠른 시작용 정적 사용자)
-│   └── postgres/                #   PostgreSQL 초기화 (DB·역할 둘)
+│   ├── dex/                     #   Dex 설정 (gomplate, 정적 사용자)
+│   ├── postgres/                #   PostgreSQL 초기화 (DB·역할 둘)
+│   └── quickstart/              #   빠른 시작의 카탈로그 심기 스크립트
 ├── docs/                        # 독자별 안내
+│   ├── quickstart.md            #   처음: 명령 둘로 전체 띄우기
 │   ├── using.md                 #   팀원: 등록·로그인·찾기·pin
 │   ├── authoring.md             #   저자: 규약·절차·검사 항목·evals
 │   ├── operations.md            #   운영자: 설치·프록시·Dex/LDAP·런북
@@ -155,6 +170,8 @@ curl -fsS http://127.0.0.1:8000/readyz
 ├── Dockerfile                   # registry 이미지 (python:3.12-slim + git + gitleaks)
 ├── docker-compose.yml           # 운영: registry · postgres · dex (docker secrets)
 ├── docker-compose.dev.yml       # 개발: postgres · dex만
+├── docker-compose.quickstart.yml # 빠른 시작: 전체를 기본값으로, 편집 없이
+├── Makefile                     # make help — 자주 치는 명령의 이름
 ├── pyproject.toml               # 워크스페이스 루트 (배포물 아님)
 ├── uv.lock
 ├── altera-rules.yml             # 규칙 게이트 표면 선언

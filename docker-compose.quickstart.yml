@@ -1,0 +1,128 @@
+# 빠른 시작 — 명령 하나로 레지스트리 전체를 로컬에 띄운다. 평가·데모 전용이고 운영이 아니다.
+#
+#   git clone https://github.com/alteralab/harness-catalog && cd harness-catalog
+#   docker compose -f docker-compose.quickstart.yml up -d --wait
+#
+# 편집할 파일도, 내보낼 환경 변수도 없다. 모든 값에 기본값이 있고 비밀은 공개된 값이다(Airflow·Polaris 빠른 시작과 같은 전제).
+# 띄우는 것: postgres · dex(정적 사용자 dev@example.com / outsider@example.com, 비밀번호 password) · catalog-init(이 저장소의 skills/를 bare 저장소로 심는다) · registry.
+# 같은 디렉토리에 .env가 있으면 compose가 그 값을 기본값 대신 쓴다(변수 이름이 개발 compose와 같다). 처음 받은 저장소에는 .env가 없다.
+# 끝나면 레지스트리는 http://localhost:8000/mcp, Dex는 http://localhost:5556/dex. 지우기: docker compose -f docker-compose.quickstart.yml down -v
+#
+# 왜 registry가 dex의 네트워크 네임스페이스를 공유하는가(network_mode: service:dex): OIDC issuer는 브라우저(호스트)와 레지스트리(컨테이너)
+# 둘 다에서 같은 URL로 닿아야 한다. 네임스페이스를 공유하면 둘 다 http://localhost:5556/dex 이고, 포트는 dex 서비스가 함께 연다.
+# 운영 compose(docker-compose.yml)는 프록시 뒤 공개 호스트 이름으로 이 문제를 풀므로 이 트릭이 없다.
+name: harness-catalog-quickstart
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quickstart}
+      HC_DB_PASSWORD: ${HC_DB_PASSWORD:-quickstart}
+      DEX_DB_PASSWORD: ${DEX_DB_PASSWORD:-quickstart}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+      - ./docker/postgres/init.sql:/opt/harness-catalog/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "psql -U postgres -d harness_catalog -tAc \"select 1 from pg_extension where extname='pg_trgm'\" | grep -q 1 && psql -U postgres -d dex -tAc 'select 1' | grep -q 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  dex:
+    image: ghcr.io/dexidp/dex:v2.45.1
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    environment:
+      DEX_ISSUER: http://localhost:${DEX_PORT:-5556}/dex
+      DEX_DB_PASSWORD: ${DEX_DB_PASSWORD:-quickstart}
+      DEX_CI_RUNNER_SECRET: ${DEX_CI_RUNNER_SECRET:-quickstart}
+      DEX_EXPAND_ENV: "true"
+      HC_PUBLIC_URL: http://localhost:${REGISTRY_PORT:-8000}/mcp
+    volumes:
+      - ./docker/dex/config.yaml:/etc/dex/config.yaml:ro
+    ports:
+      - "127.0.0.1:${DEX_PORT:-5556}:5556"       # Dex (브라우저 로그인·토큰)
+      - "127.0.0.1:${REGISTRY_PORT:-8000}:8000"  # registry — 네임스페이스를 공유하므로 여기서 연다
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5558/healthz/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # 카탈로그 저장소를 흉내 낸다: 이 저장소의 skills/ 둘과 init 템플릿으로 bare 저장소 하나를 볼륨에 심는다(한 번만, 멱등).
+  catalog-init:
+    image: alpine/git:2.49.1
+    entrypoint: ["/bin/sh", "/seed/seed-catalog.sh"]
+    environment:
+      HC_VERSION: ${HC_VERSION:-}   # 비우면 packages/cli/pyproject.toml의 version
+    volumes:
+      - catalog:/catalog
+      - ./docker/quickstart/seed-catalog.sh:/seed/seed-catalog.sh:ro
+      - ./skills:/seed/skills:ro
+      - ./packages/cli/src/harness_catalog_cli/templates:/seed/template:ro
+      - ./packages/cli/pyproject.toml:/seed/cli-pyproject.toml:ro
+
+  registry:
+    image: ${REGISTRY_IMAGE:-harness-catalog:quickstart}
+    build: .                       # 이미지가 없으면 이 저장소에서 빌드한다(코드 저장소가 비공개인 동안 GHCR pull 대신)
+    network_mode: "service:dex"    # 위 주석 참조. ports는 dex에 있다
+    environment:
+      HC__CATALOG_REPO_URL: file:///catalog/catalog.git
+      HC__GIT_DEPLOY_KEY: ""
+      HC__OIDC_ISSUER: http://localhost:${DEX_PORT:-5556}/dex
+      HC__PUBLIC_URL: http://localhost:${REGISTRY_PORT:-8000}/mcp
+      HC__DATABASE_URL: postgresql://harness_catalog:${HC_DB_PASSWORD:-quickstart}@postgres:5432/harness_catalog
+      HC__FETCH_INTERVAL_SECONDS: ${HC__FETCH_INTERVAL_SECONDS:-10}
+    volumes:
+      - catalog:/catalog:ro
+      - clone:/var/lib/harness-catalog
+    depends_on:
+      dex:
+        condition: service_healthy
+      catalog-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=3).status == 200 else 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  # 준비가 끝나면 접속 방법과 자격을 로그에 찍는다(Polaris polaris-setup 패턴). docker compose -f docker-compose.quickstart.yml logs welcome
+  welcome:
+    image: alpine/curl:8.14.1
+    network_mode: "service:dex"
+    depends_on:
+      registry:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        echo "harness-catalog quickstart is ready."
+        echo
+        echo "  registry (MCP)   http://localhost:${REGISTRY_PORT:-8000}/mcp"
+        echo "  issuer (Dex)     http://localhost:${DEX_PORT:-5556}/dex"
+        echo "  users            dev@example.com / password       (harness-readers — can read)"
+        echo "                   outsider@example.com / password  (not in the group — tool calls are refused)"
+        echo "  machine account  client ci-runner / ${DEX_CI_RUNNER_SECRET:-quickstart}, password grant with the users above:"
+        echo "                   scripts/dev-token.sh http://localhost:${DEX_PORT:-5556}/dex http://localhost:${REGISTRY_PORT:-8000}/mcp ci-runner ${DEX_CI_RUNNER_SECRET:-quickstart} dev@example.com password"
+        echo
+        echo "Claude Code:"
+        echo "  claude mcp add --transport http harness-catalog http://localhost:${REGISTRY_PORT:-8000}/mcp"
+        echo "  then add  \"oauth\": {\"clientId\": \"claude-code\"}  to that entry, restart, /mcp -> log in as dev@example.com."
+        echo
+        echo "readyz: $$(curl -fsS http://127.0.0.1:8000/readyz)"
+
+volumes:
+  pgdata:
+  catalog:
+  clone:

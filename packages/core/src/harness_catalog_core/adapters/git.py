@@ -35,6 +35,13 @@ class GitStore:
         self._url = remote_url
         self._dir = git_dir
         self._key_path: Path | None = None
+        self._config_path: Path | None = None
+        if remote_url is not None:
+            # 레지스트리 모드의 전용 global git 설정. safe.directory는 보호 범위(system·global)에서만 읽히고, 로컬 전송(file://)의
+            # upload-pack 자식은 -c·GIT_CONFIG_*를 받지 않는다(git 2.47 실측) — 다른 uid가 소유한 볼륨의 저장소를 읽으려면 이 파일이 필요하다.
+            git_dir.parent.mkdir(parents=True, exist_ok=True)
+            self._config_path = git_dir.parent / "gitconfig"
+            self._config_path.write_text("[safe]\n\tdirectory = *\n")
         if deploy_key:
             keydir = git_dir.parent / "ssh"
             keydir.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -67,8 +74,9 @@ class GitStore:
     def _env(self) -> Mapping[str, str]:
         env = {k: v for k, v in os.environ.items() if k not in ("GIT_DIR", "GIT_WORK_TREE")}
         env["GIT_TERMINAL_PROMPT"] = "0"
-        # 로컬 경로(file://)의 저장소가 다른 uid 소유여도 읽는다(컨테이너의 bind mount). 레지스트리는 설정된 저장소만 읽는다
-        env.update({"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "safe.directory", "GIT_CONFIG_VALUE_0": "*"})
+        # 레지스트리 모드에서만 전용 global 설정(safe.directory=*)을 쓴다. CLI(check)는 사용자의 ~/.gitconfig를 그대로 둔다
+        if self._config_path is not None:
+            env["GIT_CONFIG_GLOBAL"] = str(self._config_path)
         if self._key_path is not None:
             env["GIT_SSH_COMMAND"] = f"ssh -i {shlex.quote(str(self._key_path))} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
         return env
