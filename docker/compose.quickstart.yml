@@ -1,16 +1,16 @@
 # 빠른 시작 — 명령 하나로 레지스트리 전체를 로컬에 띄운다. 평가·데모 전용이고 운영이 아니다.
 #
 #   git clone https://github.com/alteralab/harness-catalog && cd harness-catalog
-#   docker compose -f docker-compose.quickstart.yml up -d --wait
+#   docker compose -f docker/compose.quickstart.yml up -d --wait
 #
 # 편집할 파일도, 내보낼 환경 변수도 없다. 모든 값에 기본값이 있고 비밀은 공개된 값이다(Airflow·Polaris 빠른 시작과 같은 전제).
 # 띄우는 것: postgres · dex(정적 사용자 dev@example.com / outsider@example.com, 비밀번호 password) · catalog-init(이 저장소의 skills/를 bare 저장소로 심는다) · registry.
-# 같은 디렉토리에 .env가 있으면 compose가 그 값을 기본값 대신 쓴다(변수 이름이 개발 compose와 같다). 처음 받은 저장소에는 .env가 없다.
-# 끝나면 레지스트리는 http://localhost:8000/mcp, Dex는 http://localhost:5556/dex. 지우기: docker compose -f docker-compose.quickstart.yml down -v
+# docker/.env가 있으면 compose가 그 값을 기본값 대신 쓴다(변수 이름이 개발 compose와 같다). 처음 받은 저장소에는 .env가 없다.
+# 끝나면 레지스트리는 http://localhost:8000/mcp, Dex는 http://localhost:5556/dex. 지우기: docker compose -f docker/compose.quickstart.yml down -v
 #
 # 왜 registry가 dex의 네트워크 네임스페이스를 공유하는가(network_mode: service:dex): OIDC issuer는 브라우저(호스트)와 레지스트리(컨테이너)
 # 둘 다에서 같은 URL로 닿아야 한다. 네임스페이스를 공유하면 둘 다 http://localhost:5556/dex 이고, 포트는 dex 서비스가 함께 연다.
-# 운영 compose(docker-compose.yml)는 프록시 뒤 공개 호스트 이름으로 이 문제를 풀므로 이 트릭이 없다.
+# 운영 compose(docker/compose.yml)는 프록시 뒤 공개 호스트 이름으로 이 문제를 풀므로 이 트릭이 없다.
 name: harness-catalog-quickstart
 
 services:
@@ -23,8 +23,8 @@ services:
       DEX_DB_PASSWORD: ${DEX_DB_PASSWORD:-quickstart}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./docker/postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
-      - ./docker/postgres/init.sql:/opt/harness-catalog/init.sql:ro
+      - ./postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+      - ./postgres/init.sql:/opt/harness-catalog/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "psql -U postgres -d harness_catalog -tAc \"select 1 from pg_extension where extname='pg_trgm'\" | grep -q 1 && psql -U postgres -d dex -tAc 'select 1' | grep -q 1"]
       interval: 5s
@@ -42,7 +42,7 @@ services:
       DEX_EXPAND_ENV: "true"
       HC_PUBLIC_URL: http://localhost:${REGISTRY_PORT:-8000}/mcp
     volumes:
-      - ./docker/dex/config.yaml:/etc/dex/config.yaml:ro
+      - ./dex/config.yaml:/etc/dex/config.yaml:ro
     ports:
       - "127.0.0.1:${DEX_PORT:-5556}:5556"       # Dex (브라우저 로그인·토큰)
       - "127.0.0.1:${REGISTRY_PORT:-8000}:8000"  # registry — 네임스페이스를 공유하므로 여기서 연다
@@ -62,14 +62,14 @@ services:
     entrypoint: ["/bin/sh", "/seed/seed-catalog.sh"]   # 템플릿에 박는 판은 packages/cli/pyproject.toml의 version
     volumes:
       - catalog:/catalog
-      - ./docker/quickstart/seed-catalog.sh:/seed/seed-catalog.sh:ro
-      - ./skills:/seed/skills:ro
-      - ./packages/cli/src/harness_catalog_cli/templates:/seed/template:ro
-      - ./packages/cli/pyproject.toml:/seed/cli-pyproject.toml:ro
+      - ./quickstart/seed-catalog.sh:/seed/seed-catalog.sh:ro
+      - ../skills:/seed/skills:ro
+      - ../packages/cli/src/harness_catalog_cli/templates:/seed/template:ro
+      - ../packages/cli/pyproject.toml:/seed/cli-pyproject.toml:ro
 
   registry:
     image: ${REGISTRY_IMAGE:-harness-catalog:quickstart}
-    build: .                       # 이미지가 없으면 이 저장소에서 빌드한다(코드 저장소가 비공개인 동안 GHCR pull 대신)
+    build: ..                      # 컨텍스트는 저장소 루트(Dockerfile·.dockerignore가 거기). 이미지가 없으면 이 저장소에서 빌드한다(코드 저장소가 비공개인 동안 GHCR pull 대신)
     network_mode: "service:dex"    # 위 주석 참조. ports는 dex에 있다
     environment:
       HC__CATALOG_REPO_URL: file:///catalog/catalog.git
@@ -78,7 +78,7 @@ services:
       HC__PUBLIC_URL: http://localhost:${REGISTRY_PORT:-8000}/mcp
       HC__DATABASE_URL: postgresql://harness_catalog:${HC_DB_PASSWORD:-quickstart}@postgres:5432/harness_catalog
       HC__FETCH_INTERVAL_SECONDS: "10"   # 빠른 시작은 짧게 고정(운영 기본 60)
-      # 선택: 스팬을 Langfuse 등으로 보내려면 환경에서 넘긴다(.env.example의 관측 절). 비면 no-op
+      # 선택: 스팬을 Langfuse 등으로 보내려면 환경에서 넘긴다(docker/.env.example의 관측 절). 비면 no-op
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
@@ -98,7 +98,7 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # 준비가 끝나면 접속 방법과 자격을 로그에 찍는다(Polaris polaris-setup 패턴). docker compose -f docker-compose.quickstart.yml logs welcome
+  # 준비가 끝나면 접속 방법과 자격을 로그에 찍는다(Polaris polaris-setup 패턴). docker compose -f docker/compose.quickstart.yml logs welcome
   welcome:
     image: alpine/curl:8.14.1
     network_mode: "service:dex"

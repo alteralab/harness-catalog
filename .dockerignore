@@ -20,14 +20,12 @@ package-lock.json
 secrets/
 Makefile
 .github/
-docker-compose*.yml
 .dockerignore
 # Dockerfile이 쓰는 것은 pyproject.toml · uv.lock · packages/ 뿐이다
 .pytest_cache/
 docs/
 skills/
 scripts/
-.env.example
 altera-rules.yml
 ruff.toml
 .pre-commit-config.yaml

@@ -1,7 +1,7 @@
 # 자주 치는 명령의 이름. `make help`가 목록이다. 실제 절차는 docs/ 가 정본이고 이 파일은 그 줄임이다.
 .DEFAULT_GOAL := help
-COMPOSE_QS  := docker compose -f docker-compose.quickstart.yml
-COMPOSE_DEV := docker compose -f docker-compose.dev.yml
+COMPOSE_QS  := docker compose -f docker/compose.quickstart.yml
+COMPOSE_DEV := docker compose -f docker/compose.dev.yml
 
 
 .PHONY: mcp-pin
@@ -27,7 +27,7 @@ dev-down: ## 개발용 스택 정지(볼륨 유지)
 	$(COMPOSE_DEV) down
 
 serve: ## 레지스트리를 호스트에서 띄운다(.env를 환경으로 읽는다)
-	set -a; . ./.env; set +a; uv run harness-catalog-server serve --port 8000
+	set -a; . ./docker/.env; set +a; uv run harness-catalog-server serve --port 8000
 
 test: ## pytest (pg 표시 시험은 docker, http 표시 시험은 dev 스택이 필요)
 	uv run pytest -q tests

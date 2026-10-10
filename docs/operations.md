@@ -56,7 +56,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
 
    ```sh
    git clone https://github.com/alteralab/harness-catalog && cd harness-catalog
-   cp .env.example .env && chmod 600 .env
+   cp docker/.env.example docker/.env && chmod 600 docker/.env
    ```
 
    채울 것: `REGISTRY_IMAGE`(GHCR 태그 또는 로컬 태그), `HC__CATALOG_REPO_URL`(deploy key로 받을 ssh URL), `HC__OIDC_ISSUER`(`https://<호스트>/dex`), `HC__PUBLIC_URL`(`https://<호스트>/mcp`). Dex의 issuer와 audience 클라이언트 ID는 compose가 이 두 값에서 그대로 건네므로 따로 적을 것이 없습니다. 끝에 `/`를 붙이면 레지스트리가 기동을 거부합니다. 설정값의 뜻은 [configuration.md](configuration.md).
@@ -68,7 +68,8 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
 3. 띄우고 확인합니다.
 
    ```sh
-   docker compose up -d
+   docker compose -f docker/compose.yml up -d
+   # 매번 -f를 치기 싫으면 운영 사용자의 셸에 export COMPOSE_FILE=docker/compose.yml 을 두면 아래 명령에서 -f를 뺄 수 있다
    curl -fsS http://127.0.0.1:8000/readyz
    ```
 
@@ -102,7 +103,7 @@ tailscale serve --bg --set-path /dex http://127.0.0.1:5556/dex
 기본 `docker/dex/config.yaml`은 정적 사용자(`dev`·`outsider`)로 빠른 시작용입니다. 팀 LDAP으로 바꾸려면 오버레이를 겹칩니다.
 
 ```sh
-docker compose -f docker-compose.yml -f examples/synology-ldap/docker-compose.override.yml up -d
+docker compose -f docker/compose.yml -f examples/synology-ldap/docker-compose.override.yml up -d
 ```
 
 `.env`의 `LDAP_HOST`(LDAPS 636 기본)·`LDAP_BIND_DN`·`LDAP_USER_BASE_DN`·`LDAP_GROUP_BASE_DN`을 채우고, 바인드 비밀번호는 `secrets/ldap_bind_pw`에 둡니다. Synology LDAP Server의 인증서를 신뢰하지 않으면 `LDAP_INSECURE_SKIP_VERIFY=true`(기본)입니다.
@@ -136,12 +137,12 @@ Dex에 등록된 클라이언트는 다음과 같습니다. 바꾸려면 설정 
 **`main`이 되감겼을 때**(강제 push 등). 레지스트리는 색인을 멈추고 `/readyz`에 알립니다. 의도한 것이면 받아들이고 재기동합니다.
 
 ```sh
-docker compose exec registry harness-catalog-server reindex --accept-rewind && docker compose restart registry
+docker compose -f docker/compose.yml exec registry harness-catalog-server reindex --accept-rewind && docker compose -f docker/compose.yml restart registry
 ```
 
-**이미지 올리기.** `.env`의 `REGISTRY_IMAGE`를 바꾸고 `docker compose up -d`. 몇 초 끊깁니다. 마이그레이션은 기동 때 자동으로 적용됩니다.
+**이미지 올리기.** `.env`의 `REGISTRY_IMAGE`를 바꾸고 `docker compose -f docker/compose.yml up -d`. 몇 초 끊깁니다. 마이그레이션은 기동 때 자동으로 적용됩니다.
 
-**비밀 회전.** 값을 새로 만들어 `secrets/`의 파일을 바꾸고 그 값을 쓰는 컨테이너만 재기동합니다. 옛 값은 발급처에서 지웁니다. deploy key는 git 호스트에서, `ci-runner` 시크릿은 Dex 설정에서, DB 비밀번호는 PostgreSQL 역할에서. `docker compose config`의 출력은 비밀을 담으니 기록에 남기지 않습니다.
+**비밀 회전.** 값을 새로 만들어 `secrets/`의 파일을 바꾸고 그 값을 쓰는 컨테이너만 재기동합니다. 옛 값은 발급처에서 지웁니다. deploy key는 git 호스트에서, `ci-runner` 시크릿은 Dex 설정에서, DB 비밀번호는 PostgreSQL 역할에서. `docker compose -f docker/compose.yml config`의 출력은 비밀을 담으니 기록에 남기지 않습니다.
 
 **관측(Langfuse).** 레지스트리가 Langfuse를 직접 알지는 않습니다. 도구 호출마다 OpenTelemetry 스팬(`tools/call <tool>`, 속성 `langfuse.user.id`·`harness_catalog.skill`·`sha`·`query`·`result_count`)을 내고, 표준 OTLP 환경 변수가 있을 때만 내보냅니다. Langfuse로 보내려면 `.env`에 셋을 둡니다.
 

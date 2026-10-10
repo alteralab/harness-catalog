@@ -1,6 +1,6 @@
 # 우리 팀 변형 (distribution D4·D18): Dex를 Synology LDAP Server 연합 판으로 바꿔 끼운다. 운영(mini)은 이 오버레이를 운영 compose에 겹친다.
-# docker compose -f docker-compose.yml -f examples/synology-ldap/docker-compose.override.yml up -d
-# 개발(dev compose)에도 겹칠 수 있다: -f docker-compose.dev.yml -f examples/synology-ldap/docker-compose.override.yml
+# docker compose -f docker/compose.yml -f examples/synology-ldap/docker-compose.override.yml up -d
+# 개발(dev compose)에도 겹칠 수 있다: -f docker/compose.dev.yml -f examples/synology-ldap/docker-compose.override.yml
 # LDAP 바인드 비밀번호는 파일 비밀(SECRETS_DIR/ldap_bind_pw)이거나 환경 변수 LDAP_BIND_PW 둘 중 하나.
 services:
   dex:
@@ -16,7 +16,7 @@ services:
     secrets:
       - ldap_bind_pw
     volumes:
-      - ./examples/synology-ldap/dex/config.yaml:/etc/dex/config.yaml:ro
+      - ../examples/synology-ldap/dex/config.yaml:/etc/dex/config.yaml:ro
   registry:
     # 프록시(tailscale serve) 뒤에서 자기 공개 호스트 이름으로 issuer에 닿아야 한다(hairpin). 컨테이너 안에서 그 이름을 호스트의 tailscale IP로 푼다.
     extra_hosts:
@@ -24,4 +24,4 @@ services:
 
 secrets:
   ldap_bind_pw:
-    file: ${SECRETS_DIR:-./secrets}/ldap_bind_pw
+    file: ${SECRETS_DIR:-../secrets}/ldap_bind_pw

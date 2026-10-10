@@ -2,8 +2,11 @@
 # 레지스트리는 포함하지 않는다: service P1·P2가 호스트에서 uvicorn으로 뜨고 이 둘에 붙는다.
 # D1의 예외 둘(개발 전용): PostgreSQL을 호스트 127.0.0.1에 연다(호스트의 서비스·시험이 붙는다), 비밀은 환경 변수로 넘긴다.
 # 정적 사용자(docker/dex/config.yaml)의 비밀번호는 공개된 값이다 — 이 파일을 127.0.0.1 밖에 노출하지 않는다.
-# 쓰는 법: cp .env.example .env && docker compose -f docker-compose.dev.yml up -d
-# LDAP 연합(우리 팀): -f docker-compose.dev.yml -f examples/synology-ldap/docker-compose.override.yml
+# 쓰는 법: cp docker/.env.example docker/.env && docker compose -f docker/compose.dev.yml up -d
+# LDAP 연합(우리 팀): -f docker/compose.dev.yml -f examples/synology-ldap/docker-compose.override.yml
+# 프로젝트 이름을 고정한다. 기본값은 compose 파일의 디렉토리 이름(docker)이 되어 기존 볼륨(harness-catalog_*)과 갈린다.
+name: harness-catalog
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -15,8 +18,8 @@ services:
     volumes:
       - pgdata-dev:/var/lib/postgresql/data
       # init.sql은 initdb.d 밖에 둔다 — 안에 두면 entrypoint가 .sql을 한 번 더 돌린다(실측: 두 번째 실행이 psql 변수 없이 실패)
-      - ./docker/postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
-      - ./docker/postgres/init.sql:/opt/harness-catalog/init.sql:ro
+      - ./postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+      - ./postgres/init.sql:/opt/harness-catalog/init.sql:ro
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     healthcheck:
@@ -37,7 +40,7 @@ services:
       DEX_EXPAND_ENV: "true"
       HC_PUBLIC_URL: ${HC__PUBLIC_URL:-http://localhost:8000/mcp}   # 레지스트리 설정값과 같은 값 하나
     volumes:
-      - ./docker/dex/config.yaml:/etc/dex/config.yaml:ro
+      - ./dex/config.yaml:/etc/dex/config.yaml:ro
     ports:
       - "127.0.0.1:${DEX_PORT:-5556}:5556"
     depends_on:
@@ -52,7 +55,7 @@ services:
 
 secrets:
   ldap_bind_pw:
-    file: ${SECRETS_DIR:-./secrets}/ldap_bind_pw
+    file: ${SECRETS_DIR:-../secrets}/ldap_bind_pw
 
 volumes:
   pgdata-dev:

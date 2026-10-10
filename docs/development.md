@@ -21,8 +21,8 @@ uv 워크스페이스에 배포물 넷이 있습니다. 의존 방향은 `cli �
 
 ```sh
 uv sync -p 3.12
-cp .env.example .env                                  # 비밀은 openssl rand -base64 32
-docker compose -f docker-compose.dev.yml up -d        # postgres + dex (호스트 127.0.0.1 바인딩)
+cp docker/.env.example docker/.env                                  # 비밀은 openssl rand -base64 32
+docker compose -f docker/compose.dev.yml up -d        # postgres + dex (호스트 127.0.0.1 바인딩)
 set -a; . ./.env; set +a
 uv run harness-catalog-server serve --port 8000
 ```

@@ -49,7 +49,7 @@ harness-catalog의 설정 표면 전부를 층별로 적은 참조입니다. 층
 | `OTEL_EXPORTER_OTLP_HEADERS` | | `k=v,k2=v2`. Langfuse는 `Authorization=Basic <base64(public_key:secret_key)>`. 개발·빠른 시작용 |
 | `OTEL_EXPORTER_OTLP_HEADERS_FILE` | | 같은 내용을 파일에서(운영 compose는 비밀 파일 `otlp_headers`). 비어 있으면 무시하고 위 변수를 쓴다 |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` | Langfuse는 gRPC를 받지 않는다 |
-| `OTEL_SERVICE_NAME` | `harness-catalog`(코드 기본값) | 스팬의 `service.name`. compose·`.env.example`에는 없고 바꿀 때만 표준 변수로 준다 |
+| `OTEL_SERVICE_NAME` | `harness-catalog`(코드 기본값) | 스팬의 `service.name`. compose·`docker/.env.example`에는 없고 바꿀 때만 표준 변수로 준다 |
 
 스팬 하나는 도구 호출 하나(`tools/call <tool>`)이고 속성은 `langfuse.user.id`(토큰의 `sub`), `harness_catalog.skill`, `harness_catalog.sha`, `harness_catalog.query`(검색어, 2000자까지), `harness_catalog.result_count`입니다. 검색어가 기록에 남는다는 것이 "검색어에 비밀 금지"의 이유입니다.
 
@@ -68,9 +68,9 @@ harness-catalog의 설정 표면 전부를 층별로 적은 참조입니다. 층
 
 ## 4. compose 변수와 비밀 파일
 
-compose 파일은 `.env`(같은 디렉토리)와 셸 환경에서 변수를 채웁니다. `.env.example`을 복사해 씁니다.
+compose 파일은 `.env`(같은 디렉토리)와 셸 환경에서 변수를 채웁니다. `docker/.env.example`을 복사해 씁니다.
 
-### 운영 (`docker-compose.yml`)
+### 운영 (`docker/compose.yml`)
 
 | 변수 | 필수 | 기본값 | 뜻 |
 |---|---|---|---|
@@ -95,9 +95,9 @@ compose 파일은 `.env`(같은 디렉토리)와 셸 환경에서 변수를 채�
 | `otlp_headers` | 빈 파일. Langfuse면 `Authorization=Basic …` | registry (`OTEL_EXPORTER_OTLP_HEADERS_FILE`) |
 | `ldap_bind_pw` | 빈 파일. LDAP 오버레이를 쓰면 바인드 비밀번호 | dex (`LDAP_BIND_PW_FILE`) |
 
-회전은 파일을 바꾸고 그 파일을 읽는 컨테이너만 재기동하는 것입니다. `docker compose config`의 출력은 비밀을 담으므로 기록에 남기지 않습니다.
+회전은 파일을 바꾸고 그 파일을 읽는 컨테이너만 재기동하는 것입니다. `docker compose -f docker/compose.yml config`의 출력은 비밀을 담으므로 기록에 남기지 않습니다.
 
-### 개발 (`docker-compose.dev.yml`)
+### 개발 (`docker/compose.dev.yml`)
 
 postgres와 dex만 띄우고 비밀을 환경 변수로 넘깁니다(개발 전용 예외). 레지스트리는 호스트에서 §1 변수를 환경으로 읽어 돕니다(`set -a; . ./.env; set +a`).
 
@@ -108,7 +108,7 @@ postgres와 dex만 띄우고 비밀을 환경 변수로 넘깁니다(개발 전�
 | `HC__OIDC_ISSUER` · `HC__PUBLIC_URL` | 아니오 | `http://localhost:5556/dex` · `http://localhost:8000/mcp` | Dex의 issuer·audience로도 쓰인다 |
 | `POSTGRES_PORT` · `DEX_PORT` | 아니오 | 5432 · 5556 | 호스트 `127.0.0.1`에 여는 포트 |
 
-### 빠른 시작 (`docker-compose.quickstart.yml`)
+### 빠른 시작 (`docker/compose.quickstart.yml`)
 
 모든 변수에 기본값이 있어 아무것도 적지 않아도 뜹니다. 같은 디렉토리에 `.env`가 있으면 그 값이 기본값을 덮습니다(변수 이름이 개발 compose와 같습니다).
 

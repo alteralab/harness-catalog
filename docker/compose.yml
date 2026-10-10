@@ -1,8 +1,11 @@
 # 운영·빠른 시작 compose — registry + postgres + dex (plans/distribution.md D1·D2·D3·D10·D11·D12·D18).
-# 기동: cp .env.example .env && chmod 600 .env && scripts/make-secrets.sh ./secrets [deploy_key.pem] && docker compose up -d
+# 기동: cp docker/.env.example docker/.env && chmod 600 docker/.env && scripts/make-secrets.sh ./secrets [deploy_key.pem] && docker compose -f docker/compose.yml up -d
 # (.env의 값 + SECRETS_DIR의 비밀 파일 여섯. make-secrets.sh가 비밀 파일을 만들고 database_url을 hc_db_password와 맞춰 조립한다)
-# 우리 팀(Synology LDAP)은 오버레이를 겹친다: docker compose -f docker-compose.yml -f examples/synology-ldap/docker-compose.override.yml up -d
+# 우리 팀(Synology LDAP)은 오버레이를 겹친다: docker compose -f docker/compose.yml -f examples/synology-ldap/docker-compose.override.yml up -d
 # 비밀은 파일로 넘긴다(D10): 값이 아니라 경로가 환경 변수다 — docker inspect에 값이 보이지 않는다.
+# 프로젝트 이름을 고정한다. 기본값은 compose 파일의 디렉토리 이름(docker)이 되어 기존 볼륨(harness-catalog_*)과 갈린다.
+name: harness-catalog
+
 services:
   registry:
     image: ${REGISTRY_IMAGE:?.env의 REGISTRY_IMAGE (ghcr.io/alteralab/harness-catalog:<짧은 SHA> 또는 로컬 태그)}
@@ -49,8 +52,8 @@ services:
       - dex_db_password
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./docker/postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
-      - ./docker/postgres/init.sql:/opt/harness-catalog/init.sql:ro
+      - ./postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+      - ./postgres/init.sql:/opt/harness-catalog/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "psql -U postgres -d harness_catalog -tAc \"select 1 from pg_extension where extname='pg_trgm'\" | grep -q 1 && psql -U postgres -d dex -tAc 'select 1' | grep -q 1"]
       interval: 5s
@@ -71,7 +74,7 @@ services:
       - dex_db_password
       - dex_ci_runner_secret
     volumes:
-      - ./docker/dex/config.yaml:/etc/dex/config.yaml:ro
+      - ./dex/config.yaml:/etc/dex/config.yaml:ro
     ports:
       - "127.0.0.1:${DEX_PORT:-5556}:5556"
     depends_on:
@@ -86,19 +89,19 @@ services:
 
 secrets:
   git_deploy_key:
-    file: ${SECRETS_DIR:-./secrets}/git_deploy_key
+    file: ${SECRETS_DIR:-../secrets}/git_deploy_key
   database_url:
-    file: ${SECRETS_DIR:-./secrets}/database_url
+    file: ${SECRETS_DIR:-../secrets}/database_url
   postgres_password:
-    file: ${SECRETS_DIR:-./secrets}/postgres_password
+    file: ${SECRETS_DIR:-../secrets}/postgres_password
   hc_db_password:
-    file: ${SECRETS_DIR:-./secrets}/hc_db_password
+    file: ${SECRETS_DIR:-../secrets}/hc_db_password
   dex_db_password:
-    file: ${SECRETS_DIR:-./secrets}/dex_db_password
+    file: ${SECRETS_DIR:-../secrets}/dex_db_password
   dex_ci_runner_secret:
-    file: ${SECRETS_DIR:-./secrets}/dex_ci_runner_secret
+    file: ${SECRETS_DIR:-../secrets}/dex_ci_runner_secret
   otlp_headers:
-    file: ${SECRETS_DIR:-./secrets}/otlp_headers
+    file: ${SECRETS_DIR:-../secrets}/otlp_headers
 
 volumes:
   pgdata:

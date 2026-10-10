@@ -71,10 +71,10 @@ Docker만 있으면 명령 둘로 전체(레지스트리·Dex·PostgreSQL·심�
 
 ```sh
 git clone https://github.com/alteralab/harness-catalog && cd harness-catalog
-docker compose -f docker-compose.quickstart.yml up -d --build --wait    # 또는 make quickstart
+docker compose -f docker/compose.quickstart.yml up -d --build --wait    # 또는 make quickstart
 ```
 
-끝나면 `docker compose -f docker-compose.quickstart.yml logs welcome`이 접속 방법을 찍습니다. 레지스트리는 `http://localhost:8000/mcp`, 로그인은 `dev@example.com` / `password`. 다음은 [docs/quickstart.md](docs/quickstart.md).
+끝나면 `docker compose -f docker/compose.quickstart.yml logs welcome`이 접속 방법을 찍습니다. 레지스트리는 `http://localhost:8000/mcp`, 로그인은 `dev@example.com` / `password`. 다음은 [docs/quickstart.md](docs/quickstart.md).
 
 ### 팀원: 하네스에서 쓰기
 
@@ -106,9 +106,9 @@ PR의 CI가 같은 검사를 돌리고, 사람이 병합하면 레지스트리�
 
 ```sh
 git clone https://github.com/alteralab/harness-catalog && cd harness-catalog
-cp .env.example .env && chmod 600 .env             # REGISTRY_IMAGE, HC__*
+cp docker/.env.example docker/.env && chmod 600 docker/.env             # REGISTRY_IMAGE, HC__*
 scripts/make-secrets.sh secrets ~/.ssh/catalog-deploy-key
-docker compose up -d
+docker compose -f docker/compose.yml up -d
 curl -fsS http://127.0.0.1:8000/readyz
 ```
 
@@ -133,7 +133,11 @@ curl -fsS http://127.0.0.1:8000/readyz
 
 ```
 .
-├── docker/                      # 이미지에 딸린 설정
+├── docker/                      # compose 셋과 지원 파일. compose의 상대 경로·.env는 이 디렉토리 기준
+│   ├── compose.yml              #   운영: registry · postgres · dex (docker secrets). 프로젝트 이름 harness-catalog 고정
+│   ├── compose.dev.yml          #   개발: postgres · dex만
+│   ├── compose.quickstart.yml   #   빠른 시작: 전체를 기본값으로, 편집 없이
+│   ├── .env.example             #   설정값 견본 → docker/.env
 │   ├── dex/                     #   Dex 설정 (gomplate, 정적 사용자)
 │   ├── postgres/                #   PostgreSQL 초기화 (DB·역할 둘)
 │   └── quickstart/              #   빠른 시작의 카탈로그 심기 스크립트
@@ -168,9 +172,6 @@ curl -fsS http://127.0.0.1:8000/readyz
 ├── tools/
 │   └── pilot/                   #   Dex 그랜트 실측 · 하네스 첫 접촉 캡처 stub
 ├── Dockerfile                   # registry 이미지 (python:3.12-slim + git + gitleaks)
-├── docker-compose.yml           # 운영: registry · postgres · dex (docker secrets)
-├── docker-compose.dev.yml       # 개발: postgres · dex만
-├── docker-compose.quickstart.yml # 빠른 시작: 전체를 기본값으로, 편집 없이
 ├── Makefile                     # make help — 자주 치는 명령의 이름
 ├── package.json                 # 개발 도구 고정(Graft 0.21.1 · OpenWiki 0.6.1). 배포물 아님, 이미지에 안 들어감
 ├── .mcp.json · .claude/         # Graft·OpenWiki의 Claude Code 배선(훅·skill·MCP). docs/development.md
