@@ -80,6 +80,11 @@ services:
       HC__PUBLIC_URL: http://localhost:${REGISTRY_PORT:-8000}/mcp
       HC__DATABASE_URL: postgresql://harness_catalog:${HC_DB_PASSWORD:-quickstart}@postgres:5432/harness_catalog
       HC__FETCH_INTERVAL_SECONDS: ${HC__FETCH_INTERVAL_SECONDS:-10}
+      # 선택: 스팬을 Langfuse 등으로 보내려면 환경에서 넘긴다(.env.example의 관측 절). 비면 no-op
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-harness-catalog}
     volumes:
       - catalog:/catalog:ro
       - clone:/var/lib/harness-catalog

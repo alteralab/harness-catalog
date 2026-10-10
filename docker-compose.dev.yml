@@ -31,11 +31,11 @@ services:
     image: ghcr.io/dexidp/dex:v2.45.1
     command: ["dex", "serve", "/etc/dex/config.yaml"]
     environment:
-      DEX_ISSUER: ${DEX_ISSUER:-http://localhost:5556/dex}
+      DEX_ISSUER: ${HC__OIDC_ISSUER:-http://localhost:5556/dex}   # 레지스트리 설정값과 같은 값 하나
       DEX_DB_PASSWORD: ${DEX_DB_PASSWORD}
       DEX_CI_RUNNER_SECRET: ${DEX_CI_RUNNER_SECRET:?.env의 DEX_CI_RUNNER_SECRET}
       DEX_EXPAND_ENV: "true"
-      HC_PUBLIC_URL: ${HC_PUBLIC_URL:-http://localhost:8000/mcp}
+      HC_PUBLIC_URL: ${HC__PUBLIC_URL:-http://localhost:8000/mcp}   # 레지스트리 설정값과 같은 값 하나
     volumes:
       - ./docker/dex/config.yaml:/etc/dex/config.yaml:ro
     ports:

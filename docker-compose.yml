@@ -14,11 +14,13 @@ services:
       HC__DATABASE_URL_FILE: /run/secrets/database_url
       HC__FETCH_INTERVAL_SECONDS: ${HC__FETCH_INTERVAL_SECONDS:-60}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
-      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      OTEL_EXPORTER_OTLP_HEADERS_FILE: /run/secrets/otlp_headers   # 예: Authorization=Basic <base64(pk:sk)>. 비면 헤더 없음
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-harness-catalog}
     secrets:
       - git_deploy_key
       - database_url
+      - otlp_headers
     volumes:
       - clone:/var/lib/harness-catalog
     ports:
@@ -61,10 +63,10 @@ services:
     image: ghcr.io/dexidp/dex:v2.45.1
     command: ["dex", "serve", "/etc/dex/config.yaml"]
     environment:
-      DEX_ISSUER: ${DEX_ISSUER:?.env의 DEX_ISSUER}
+      DEX_ISSUER: ${HC__OIDC_ISSUER:?.env의 HC__OIDC_ISSUER}   # 레지스트리와 같은 값 하나(issuer)
       DEX_DB_PASSWORD_FILE: /run/secrets/dex_db_password
       DEX_CI_RUNNER_SECRET_FILE: /run/secrets/dex_ci_runner_secret
-      HC_PUBLIC_URL: ${HC__PUBLIC_URL}
+      HC_PUBLIC_URL: ${HC__PUBLIC_URL:?.env의 HC__PUBLIC_URL}   # 레지스트리와 같은 값 하나(audience)
       DEX_EXPAND_ENV: "true"
     secrets:
       - dex_db_password
@@ -96,6 +98,8 @@ secrets:
     file: ${SECRETS_DIR:-./secrets}/dex_db_password
   dex_ci_runner_secret:
     file: ${SECRETS_DIR:-./secrets}/dex_ci_runner_secret
+  otlp_headers:
+    file: ${SECRETS_DIR:-./secrets}/otlp_headers
 
 volumes:
   pgdata:

@@ -48,7 +48,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
    ```
 
    fine-grained PAT(Contents: Read)를 `HARNESS_CATALOG_READ_TOKEN`으로 넣어도 됩니다. 웹에서만 만들 수 있고 만료가 있습니다. 코드 저장소를 공개하면 둘 다 필요 없습니다.
-6. CI evals(선택)는 git 호스트 변수 `HARNESS_EVALS=true`와 self-hosted 러너 `.env`의 자격(하네스 모델 자격 + `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`)으로 켭니다. 하네스 목록은 `HARNESS_EVALS_AGENTS`(기본 `claude-code codex`). 변수가 없으면 evals 잡은 만들어지지 않습니다.
+6. CI evals(선택)는 git 호스트 변수 `HARNESS_EVALS=true`와 self-hosted 러너 루트 `.env`의 자격으로 켭니다. 변수 이름은 [runner.env.example](runner.env.example)에 전부 있습니다. claude-code는 `CLAUDE_CODE_OAUTH_TOKEN`+`CLAUDE_FORCE_OAUTH=1` 또는 `ANTHROPIC_API_KEY`, codex는 `OPENAI_API_KEY` 또는 `CODEX_FORCE_AUTH_JSON=1`(+`CODEX_AUTH_JSON_PATH`), cursor-cli는 `CURSOR_API_KEY`, gemini-cli는 `GEMINI_API_KEY` 또는 `GEMINI_FORCE_OAUTH`, 그리고 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`. 하네스 목록은 `HARNESS_EVALS_AGENTS`(기본 `claude-code codex`). 변수가 없으면 evals 잡은 만들어지지 않고, 켰는데 자격이 비면 잡의 첫 단계가 그 이름을 적고 실패합니다.
 
 ## 2. 레지스트리 설치
 
@@ -59,7 +59,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
    cp .env.example .env && chmod 600 .env
    ```
 
-   채울 것: `REGISTRY_IMAGE`(GHCR 태그 또는 로컬 태그), `HC__CATALOG_REPO_URL`(deploy key로 받을 ssh URL), `HC__OIDC_ISSUER`(`https://<호스트>/dex`), `HC__PUBLIC_URL`(`https://<호스트>/mcp`), `DEX_ISSUER`, `HC_PUBLIC_URL`. 설정값의 뜻은 [configuration.md](configuration.md).
+   채울 것: `REGISTRY_IMAGE`(GHCR 태그 또는 로컬 태그), `HC__CATALOG_REPO_URL`(deploy key로 받을 ssh URL), `HC__OIDC_ISSUER`(`https://<호스트>/dex`), `HC__PUBLIC_URL`(`https://<호스트>/mcp`). Dex의 issuer와 audience 클라이언트 ID는 compose가 이 두 값에서 그대로 건네므로 따로 적을 것이 없습니다. 끝에 `/`를 붙이면 레지스트리가 기동을 거부합니다. 설정값의 뜻은 [configuration.md](configuration.md).
 2. 비밀 파일을 만듭니다. DB 비밀번호 셋과 `ci-runner` 시크릿은 무작위로 만들고, deploy key는 둘째 인자의 파일을 복사하며, DB 접속 문자열은 조립합니다. 있는 파일은 건드리지 않습니다.
 
    ```sh
@@ -75,7 +75,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
    `/healthz`는 프로세스가 살아 있는지, `/readyz`는 섬길 준비가 됐는지입니다. 준비되면 본문에 색인한 `commit`과 거부된 스킬 목록이 실립니다.
 4. 이미지는 `main` 병합마다 self-hosted 러너가 빌드해 GHCR에 올립니다(짧은 SHA 태그, 최근 5개 보존). 같은 호스트에서 `docker build -t harness-catalog:current .`로 만들어 써도 됩니다.
 
-`HC__PUBLIC_URL`은 토큰의 audience이자 RFC 9728의 resource라 Dex 설정의 audience 클라이언트 ID(`HC_PUBLIC_URL`)와 글자까지 같아야 합니다.
+`HC__PUBLIC_URL`은 토큰의 audience이자 RFC 9728의 resource이고, Dex 설정의 audience 클라이언트 ID도 같은 값입니다. compose가 한 값에서 둘을 채우므로 어긋날 길이 없습니다.
 
 ## 3. 프록시
 
@@ -143,6 +143,14 @@ docker compose exec registry harness-catalog-server reindex --accept-rewind && d
 
 **비밀 회전.** 값을 새로 만들어 `secrets/`의 파일을 바꾸고 그 값을 쓰는 컨테이너만 재기동합니다. 옛 값은 발급처에서 지웁니다. deploy key는 git 호스트에서, `ci-runner` 시크릿은 Dex 설정에서, DB 비밀번호는 PostgreSQL 역할에서. `docker compose config`의 출력은 비밀을 담으니 기록에 남기지 않습니다.
 
-**관측.** 도구 호출은 OpenTelemetry 스팬으로 나갑니다. `OTEL_EXPORTER_OTLP_ENDPOINT`·`_HEADERS`·`_PROTOCOL`을 `.env`에 두면 켜지고 없으면 no-op입니다. 평가 결과는 `harbor run`이 Langfuse에 직접 남기므로 레지스트리는 Langfuse를 모릅니다.
+**관측(Langfuse).** 레지스트리가 Langfuse를 직접 알지는 않습니다. 도구 호출마다 OpenTelemetry 스팬(`tools/call <tool>`, 속성 `langfuse.user.id`·`harness_catalog.skill`·`sha`·`query`·`result_count`)을 내고, 표준 OTLP 환경 변수가 있을 때만 내보냅니다. Langfuse로 보내려면 `.env`에 셋을 둡니다.
+
+```sh
+OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com/api/public/otel     # US는 us.cloud.langfuse.com, 셀프호스팅은 <host>/api/public/otel
+printf 'Authorization=Basic %s' "$(printf '%s:%s' "$LANGFUSE_PUBLIC_KEY" "$LANGFUSE_SECRET_KEY" | base64)" > secrets/otlp_headers   # 운영은 비밀 파일(D10). 개발·빠른 시작은 환경 변수 OTEL_EXPORTER_OTLP_HEADERS
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf                                   # Langfuse는 gRPC를 받지 않는다
+```
+
+`ENDPOINT`가 비면 스팬은 no-op이고 아무 데도 가지 않습니다(`secrets/otlp_headers`가 비어 있어도 됩니다). 평가 결과는 다른 경로입니다. `harbor run`의 플러그인이 러너 환경의 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`로 Langfuse에 직접 씁니다. 같은 Langfuse 프로젝트의 키 한 쌍이면 둘 다 됩니다.
 
 **팀원 온보딩.** LDAP 계정을 `harness-readers`에 넣고, 카탈로그 저장소 read를 줍니다. 두 명단은 같아야 합니다. 그다음 [using.md](using.md)를 건넵니다.

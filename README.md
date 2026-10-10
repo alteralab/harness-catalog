@@ -106,7 +106,7 @@ PR의 CI가 같은 검사를 돌리고, 사람이 병합하면 레지스트리�
 
 ```sh
 git clone https://github.com/alteralab/harness-catalog && cd harness-catalog
-cp .env.example .env && chmod 600 .env             # REGISTRY_IMAGE, HC__*, DEX_ISSUER, HC_PUBLIC_URL
+cp .env.example .env && chmod 600 .env             # REGISTRY_IMAGE, HC__*
 scripts/make-secrets.sh secrets ~/.ssh/catalog-deploy-key
 docker compose up -d
 curl -fsS http://127.0.0.1:8000/readyz

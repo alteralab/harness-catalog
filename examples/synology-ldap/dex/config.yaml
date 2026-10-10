@@ -64,7 +64,8 @@ connectors:
       insecureNoSSL: {{ getenv "LDAP_INSECURE_NO_SSL" "false" }}
       insecureSkipVerify: {{ getenv "LDAP_INSECURE_SKIP_VERIFY" "true" }}
       bindDN: "{{ getenv "LDAP_BIND_DN" }}"
-      bindPW: "{{ if getenv "LDAP_BIND_PW_FILE" }}{{ file.Read (getenv "LDAP_BIND_PW_FILE") | strings.TrimSpace }}{{ else }}{{ getenv "LDAP_BIND_PW" }}{{ end }}"
+      # 비밀 파일이 있고 비어 있지 않으면 그것, 아니면 환경 변수 LDAP_BIND_PW. (오버레이가 _FILE을 항상 주므로 "있으면 파일"만으로는 환경 변수 길이 죽는다 — Codex 리뷰 2026-10-10)
+      bindPW: "{{ $f := getenv "LDAP_BIND_PW_FILE" }}{{ if and $f (file.Exists $f) (ne (file.Read $f | strings.TrimSpace) "") }}{{ file.Read $f | strings.TrimSpace }}{{ else }}{{ getenv "LDAP_BIND_PW" }}{{ end }}"
       usernamePrompt: LDAP Username
       userSearch:
         baseDN: "{{ getenv "LDAP_USER_BASE_DN" }}"

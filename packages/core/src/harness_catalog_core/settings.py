@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from pydantic import AnyHttpUrl, Field, SecretStr
+from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
@@ -44,6 +44,15 @@ class Settings(BaseSettings):
     public_url: AnyHttpUrl = Field(description="레지스트리 공개 URL = 토큰의 audience = RFC 9728 resource")
     database_url: SecretStr = Field(description="PostgreSQL 접속 문자열")
     fetch_interval_seconds: int = Field(default=60, ge=1, description="주기 fetch 간격(초)")
+
+    @field_validator("oidc_issuer", "public_url", mode="before")
+    @classmethod
+    def _no_trailing_slash(cls, v: object) -> object:
+        """issuer·공개 URL은 Dex(issuer·audience 클라이언트 id)와 레지스트리(iss·aud 검증, PRM resource)가 글자까지 같은 값을 봐야 한다.
+        끝 슬래시는 그 둘을 조용히 갈라놓으므로 입력 단계에서 거부한다(Codex 리뷰 2026-10-10)."""
+        if isinstance(v, str) and v.rstrip().endswith("/"):
+            raise ValueError("must not end with '/' (Dex and the registry must see one identical string)")
+        return v
 
     @classmethod
     def settings_customise_sources(

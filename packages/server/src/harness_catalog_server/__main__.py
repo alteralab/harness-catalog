@@ -15,6 +15,7 @@ from harness_catalog_core.settings import Settings
 from .adapters.pg import PgFactStore
 from .bootstrap import bootstrap, make_catalog
 from .migrate import migrate
+from .telemetry import configure_tracing
 
 DEFAULT_WORKDIR = "/var/lib/harness-catalog"
 
@@ -52,6 +53,7 @@ def main(argv: list[str] | None = None) -> int:
             store.close()
         print(f"ready={status.ready} commit={status.commit_sha} reasons={[str(r) for r in status.reasons]} degraded={list(status.degraded)} rejected={list(status.rejected)}")
         return 0 if status.ready and "main_rewound" not in status.degraded else 1
+    configure_tracing()   # OTEL_EXPORTER_OTLP_ENDPOINT가 있을 때만 스팬이 나간다
     app = bootstrap(settings, a.workdir)
     uvicorn.run(app.asgi, host=a.host, port=a.port, log_level=a.log_level)
     return 0
