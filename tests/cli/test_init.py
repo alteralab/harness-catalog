@@ -69,6 +69,7 @@ def test_init_github_url_gets_actions_workflow(tmp_path: Path) -> None:
     remote = bare(tmp_path, "gh.git")
     r = init_repository(str(remote), pin="1.2.3", host="github")
     assert ".github/workflows/check.yml" in r.written and ".gitlab-ci.yml" not in r.written
+    assert ".github/actions/code-repo-credentials/action.yml" in r.written  # 자격 주입은 로컬 composite action 하나(check·evals 잡이 공유)
     wf = git(remote, "show", "main:.github/workflows/check.yml")
     assert "@v1.2.3#subdirectory=packages/cli" in wf and "HARNESS_EVALS" in wf
 

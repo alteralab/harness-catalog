@@ -64,6 +64,7 @@ def template_files(host: str) -> Mapping[str, str]:
         out[".pre-commit-config.yaml"] = (root / ".pre-commit-config.yaml").read_text()
         if host == "github":
             out[".github/workflows/check.yml"] = (root / "github" / "check.yml").read_text()
+            out[".github/actions/code-repo-credentials/action.yml"] = (root / "github" / "actions" / "code-repo-credentials" / "action.yml").read_text()
         else:
             out[".gitlab-ci.yml"] = (root / "gitlab" / ".gitlab-ci.yml").read_text()
         skills_root = root / "skills"

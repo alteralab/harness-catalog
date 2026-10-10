@@ -22,7 +22,7 @@
 3. 저자에게 저장소 write, 병합·설정을 할 사람에게 admin을 줍니다. 저장소 read 이상 명단과 LDAP 그룹 `harness-readers`를 같게 유지합니다.
 4. Dex에 하네스 제품의 정적 클라이언트가 있는지, 첫 팀원이 `harness-readers`에 있는지 확인합니다(로그인 한 번으로 확인).
 5. 레지스트리를 띄우고 `/readyz`가 200인지 봅니다. 503이면 본문의 사유(`not_a_catalog`·`no_main_branch`·`repo_unreachable`·`layout_mismatch`)대로 1·2를 다시 봅니다.
-6. 코드 저장소 `alteralab/harness-catalog`가 비공개인 동안은 CI가 `harness-catalog check`를 설치할 수 있게 읽기 자격을 저장소(또는 조직) 시크릿에 넣습니다. 둘 중 하나입니다: `HARNESS_CATALOG_DEPLOY_KEY`(코드 저장소에 등록한 읽기 전용 deploy key의 개인 키 — `ssh-keygen -t ed25519`, `gh repo deploy-key add`, `gh secret set`으로 터미널에서 끝납니다. 만료 없음) 또는 `HARNESS_CATALOG_READ_TOKEN`(fine-grained PAT, Contents: read — GitHub 웹에서만 만들 수 있고 최대 1년 만료). 둘 다 있으면 토큰이 먼저입니다. 코드 저장소를 공개하면 필요 없습니다.
-7. CI evals(선택): git 호스트 변수 `HARNESS_EVALS=true`와 러너 `.env`의 자격(변수 이름은 코드 저장소 `.github/runner.env.example`)으로 켜고, `false`로 끕니다. 하네스 목록은 `HARNESS_EVALS_AGENTS`(기본 `claude-code codex`).
+6. 코드 저장소 `alteralab/harness-catalog`가 비공개인 동안은 CI가 `harness-catalog`를 설치할 수 있게 읽기 자격을 저장소(또는 조직) 시크릿 `HARNESS_CATALOG_DEPLOY_KEY`에 넣습니다 — 코드 저장소에 등록한 읽기 전용 deploy key의 개인 키(`ssh-keygen -t ed25519`, `gh repo deploy-key add`, `gh secret set`). 워크플로의 `.github/actions/code-repo-credentials`가 그것을 잡 환경으로만 건넵니다. 코드 저장소가 공개면 필요 없습니다.
+7. CI evals(선택): git 호스트 변수 `HARNESS_EVALS=true`와 러너 `.env`의 자격(변수 이름은 코드 저장소 `.github/runner.env.example`)으로 켜고, `false`로 끕니다. 하네스 목록은 변수 `HARNESS_EVALS_AGENTS`(JSON 배열, 기본 `["claude-code", "codex"]`; GitHub 전용 — GitLab은 `.gitlab-ci.yml`의 matrix 줄을 고칩니다).
 
 GitLab용 워크플로(`.gitlab-ci.yml`)는 문면대로 작성만 되어 있고 아직 실제로 돌린 적이 없습니다. GitHub Actions가 먼저입니다.

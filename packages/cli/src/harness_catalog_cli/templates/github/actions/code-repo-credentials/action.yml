@@ -1,0 +1,24 @@
+name: code repo credentials
+description: 코드 저장소(alteralab/harness-catalog)가 비공개인 동안 uvx가 git으로 받을 수 있게 읽기 전용 deploy key를 잡 환경(GIT_SSH_COMMAND·GIT_CONFIG_*)으로만 건넨다. 러너의 ~/.ssh·~/.gitconfig는 건드리지 않는다. 키가 비면 아무것도 하지 않는다(코드 저장소가 공개면 이 액션은 필요 없다).
+inputs:
+  deploy-key:
+    description: 코드 저장소에 등록한 읽기 전용 deploy key의 개인 키(시크릿 HARNESS_CATALOG_DEPLOY_KEY)
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - if: inputs.deploy-key != ''
+      shell: bash
+      env:
+        DEPLOY_KEY: ${{ inputs.deploy-key }}
+      run: |
+        key="$RUNNER_TEMP/harness-catalog-deploy-key"
+        printf '%s\n' "$DEPLOY_KEY" > "$key" && chmod 600 "$key"
+        echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" > "$RUNNER_TEMP/github-known-hosts"   # GitHub 공개 호스트 키(고정, keyscan 안 함)
+        {
+          echo "GIT_SSH_COMMAND=ssh -i $key -o IdentitiesOnly=yes -o UserKnownHostsFile=$RUNNER_TEMP/github-known-hosts"
+          echo "GIT_CONFIG_COUNT=1"
+          echo "GIT_CONFIG_KEY_0=url.git@github.com:alteralab/harness-catalog.insteadOf"
+          echo "GIT_CONFIG_VALUE_0=https://github.com/alteralab/harness-catalog"
+        } >> "$GITHUB_ENV"

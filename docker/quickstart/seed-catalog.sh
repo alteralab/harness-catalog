@@ -12,12 +12,13 @@ version=$(sed -n 's/^version *= *"\([^"]*\)".*/\1/p' /seed/cli-pyproject.toml | 
 version="${version#v}"
 work=$(mktemp -d)
 cp /seed/template/.harness-catalog "$work/.harness-catalog"
-mkdir -p "$work/skills" "$work/.github/workflows"
+mkdir -p "$work/skills" "$work/.github/workflows" "$work/.github/actions/code-repo-credentials"
 cp -R /seed/template/skills/. "$work/skills/"
 for f in README.md .pre-commit-config.yaml; do
   sed "s/v<판>/v$version/g" "/seed/template/$f" > "$work/$f"
 done
 sed "s/v<판>/v$version/g" /seed/template/github/check.yml > "$work/.github/workflows/check.yml"
+cp /seed/template/github/actions/code-repo-credentials/action.yml "$work/.github/actions/code-repo-credentials/action.yml"
 git -C "$work" init -q -b main
 git -C "$work" -c user.name=quickstart -c user.email=quickstart@harness-catalog.local add -A
 git -C "$work" -c user.name=quickstart -c user.email=quickstart@harness-catalog.local commit -q -m "quickstart seed: $(ls "$work/skills" | tr '\n' ' ')"

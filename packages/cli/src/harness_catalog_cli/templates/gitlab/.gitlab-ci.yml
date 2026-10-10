@@ -1,7 +1,20 @@
 # GitLab 판 — 문면대로 작성만 되었고 아직 실제로 돌린 적이 없다(README 참조). GitHub Actions 판이 먼저다.
+# 이 파일은 배선만 한다. 논리는 CLI `harness-catalog ci …`에 있다. 판을 올리려면 @v<판>을 바꾼다.
 stages: [check, evals]
 
+.code-repo-credentials:
+  # 코드 저장소가 비공개면 읽기 전용 deploy key(HARNESS_CATALOG_DEPLOY_KEY)를 잡 환경으로만 건넨다. 비어 있으면 아무것도 하지 않는다
+  before_script:
+    - |
+      if [ -n "${HARNESS_CATALOG_DEPLOY_KEY:-}" ]; then
+        printf '%s\n' "$HARNESS_CATALOG_DEPLOY_KEY" > /tmp/hc-key && chmod 600 /tmp/hc-key
+        echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" > /tmp/hc-known-hosts
+        export GIT_SSH_COMMAND="ssh -i /tmp/hc-key -o IdentitiesOnly=yes -o UserKnownHostsFile=/tmp/hc-known-hosts"
+        export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="url.git@github.com:alteralab/harness-catalog.insteadOf" GIT_CONFIG_VALUE_0="https://github.com/alteralab/harness-catalog"
+      fi
+
 check:
+  extends: .code-repo-credentials
   stage: check
   image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
   rules:
@@ -9,46 +22,23 @@ check:
     - if: $CI_COMMIT_BRANCH == "main"
   variables:
     GIT_DEPTH: 0
+  before_script:
+    # uv 이미지(slim)에는 git·ssh가 없다 — `uvx --from git+…`와 deploy key 경로에 둘 다 필요하다(Codex 리뷰 2026-10-10)
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends git openssh-client >/dev/null
+    - !reference [.code-repo-credentials, before_script]
   script:
-    - |
-      # 코드 저장소가 비공개면 읽기 자격: HARNESS_CATALOG_READ_TOKEN(PAT) 또는 HARNESS_CATALOG_DEPLOY_KEY(읽기 전용 deploy key 개인 키). 잡 환경으로만 건넨다
-      if [ -n "${HARNESS_CATALOG_READ_TOKEN:-}" ]; then
-        export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="url.https://x-access-token:${HARNESS_CATALOG_READ_TOKEN}@github.com/alteralab/harness-catalog.insteadOf" GIT_CONFIG_VALUE_0="https://github.com/alteralab/harness-catalog"
-      elif [ -n "${HARNESS_CATALOG_DEPLOY_KEY:-}" ]; then
-        printf '%s\n' "$HARNESS_CATALOG_DEPLOY_KEY" > /tmp/hc-key && chmod 600 /tmp/hc-key
-        echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" > /tmp/hc-known-hosts
-        export GIT_SSH_COMMAND="ssh -i /tmp/hc-key -o IdentitiesOnly=yes -o UserKnownHostsFile=/tmp/hc-known-hosts"
-        export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="url.git@github.com:alteralab/harness-catalog.insteadOf" GIT_CONFIG_VALUE_0="https://github.com/alteralab/harness-catalog"
-      fi
-    - curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz" | tar -xz -C /usr/local/bin gitleaks
-    - BASE=$( [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ] && echo "$CI_MERGE_REQUEST_DIFF_BASE_SHA" || { [ -n "$CI_COMMIT_BEFORE_SHA" ] && [ "$CI_COMMIT_BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && echo "$CI_COMMIT_BEFORE_SHA"; } || git rev-parse HEAD~1 )
-    - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog check . --rev HEAD --base "$BASE"
+    - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog ci check
 
 evals:
+  extends: .code-repo-credentials
   stage: evals
   rules:
     - if: $CI_COMMIT_BRANCH == "main" && $HARNESS_EVALS == "true"
   tags: [harness-catalog]
   parallel:
     matrix:
-      - AGENT: [claude-code, codex]   # GitLab은 변수로 matrix를 만들 수 없다 — 목록을 바꾸려면 이 줄을 고친다
+      - AGENT: [claude-code, codex]   # GitLab은 변수로 matrix를 만들 수 없다 — HARNESS_EVALS_AGENTS 변수는 GitHub 전용이고 여기서는 이 줄을 고친다
   variables:
-    HARNESS_SKILL_REF: $CI_COMMIT_SHA
-    HARNESS_CATALOG_NAME: $CI_PROJECT_NAME
     GIT_DEPTH: 0
   script:
-    - |
-      case "$AGENT" in
-        claude-code) { [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ] && [ "$CLAUDE_FORCE_OAUTH" = "1" ]; } || [ -n "$ANTHROPIC_API_KEY" ] || { echo "claude-code credentials missing"; exit 1; } ;;
-        codex) [ -n "$OPENAI_API_KEY" ] || { [ "$CODEX_FORCE_AUTH_JSON" = "1" ] && [ -f "${CODEX_AUTH_JSON_PATH:-$HOME/.codex/auth.json}" ]; } || { echo "codex credentials missing"; exit 1; } ;;
-        *) echo "unknown agent $AGENT"; exit 1 ;;
-      esac
-      [ -n "$LANGFUSE_PUBLIC_KEY" ] && [ -n "$LANGFUSE_SECRET_KEY" ] && [ -n "$LANGFUSE_HOST" ] || { echo "Langfuse keys missing"; exit 1; }
-    - |
-      harbor_run() { uvx --from "harbor==0.24.0" --with "harbor-langfuse @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/harbor-langfuse" harbor run "$@"; }
-      BASE=$( { [ -n "$CI_COMMIT_BEFORE_SHA" ] && [ "$CI_COMMIT_BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && echo "$CI_COMMIT_BEFORE_SHA"; } || git rev-parse HEAD~1 )
-      for d in $(git diff --name-only "$BASE" HEAD -- skills | cut -d/ -f1-2 | sort -u); do
-        [ -d "$d/evals" ] || continue
-        harbor_run --path "$d/evals" --agent "$AGENT" --env docker --skill "./$d" --plugin harbor_langfuse:LangfusePlugin
-        harbor_run --path "$d/evals" --agent "$AGENT" --env docker --plugin harbor_langfuse:LangfusePlugin
-      done
+    - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog ci evals --agent "$AGENT"
