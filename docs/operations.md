@@ -48,7 +48,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
    ```
 
    fine-grained PAT(Contents: Read)를 `HARNESS_CATALOG_READ_TOKEN`으로 넣어도 됩니다. 웹에서만 만들 수 있고 만료가 있습니다. 코드 저장소를 공개하면 둘 다 필요 없습니다.
-6. CI evals(선택)는 git 호스트 변수 `HARNESS_EVALS=true`와 self-hosted 러너 루트 `.env`의 자격으로 켭니다. 변수 이름은 [runner.env.example](runner.env.example)에 전부 있습니다. claude-code는 `CLAUDE_CODE_OAUTH_TOKEN`+`CLAUDE_FORCE_OAUTH=1` 또는 `ANTHROPIC_API_KEY`, codex는 `OPENAI_API_KEY` 또는 `CODEX_FORCE_AUTH_JSON=1`(+`CODEX_AUTH_JSON_PATH`), cursor-cli는 `CURSOR_API_KEY`, gemini-cli는 `GEMINI_API_KEY` 또는 `GEMINI_FORCE_OAUTH`, 그리고 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`. 하네스 목록은 `HARNESS_EVALS_AGENTS`(기본 `claude-code codex`). 변수가 없으면 evals 잡은 만들어지지 않고, 켰는데 자격이 비면 잡의 첫 단계가 그 이름을 적고 실패합니다.
+6. CI evals(선택)는 git 호스트 변수 `HARNESS_EVALS=true`와 self-hosted 러너 루트 `.env`의 자격으로 켭니다. 변수 이름은 [runner.env.example](../examples/runner.env.example)에 전부 있습니다. claude-code는 `CLAUDE_CODE_OAUTH_TOKEN`+`CLAUDE_FORCE_OAUTH=1` 또는 `ANTHROPIC_API_KEY`, codex는 `OPENAI_API_KEY` 또는 `CODEX_FORCE_AUTH_JSON=1`(+`CODEX_AUTH_JSON_PATH`), cursor-cli는 `CURSOR_API_KEY`, gemini-cli는 `GEMINI_API_KEY` 또는 `GEMINI_FORCE_OAUTH`, 그리고 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`. 하네스 목록은 `HARNESS_EVALS_AGENTS`(기본 `claude-code codex`). 변수가 없으면 evals 잡은 만들어지지 않고, 켰는데 자격이 비면 잡의 첫 단계가 그 이름을 적고 실패합니다.
 
 ## 2. 레지스트리 설치
 

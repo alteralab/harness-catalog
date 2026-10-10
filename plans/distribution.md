@@ -95,7 +95,7 @@
 1. `docker/compose.yml`: `registry`(D11 이미지, 설정값 여섯을 `.env`에서) + `postgres` + `dex`(D18 정적 사용자). D1 포트·볼륨, D12 healthcheck·재시작. `examples/synology-ldap/`: 오버레이와 LDAP 커넥터 설정(D4), README.
 2. 프록시 배치 메모(D9): 프록시가 두 종단(레지스트리·Dex)을 공개 URL로 넘기는 규칙을 README에 적는다. 프록시 자체 설정은 조직 것이라 이 저장소 밖이다.
 3. Dex 설정을 운영 값으로: issuer = 공개 URL, 클라이언트 셋의 리다이렉트 URI(pilot P0 실측값), PKCE 강제, 수명 1시간.
-4. `docs/`: 설치(빠른 시작·프록시 뒤)·설정값 여섯 참조·LDAP 변형 안내·CI evals 게이트 켜고 끄기(D21, `runner.env.example`).
+4. `docs/`: 설치(빠른 시작·프록시 뒤)·설정값 여섯 참조·LDAP 변형 안내·CI evals 게이트 켜고 끄기(D21). 러너 `.env` 견본은 설정 예시이므로 `examples/runner.env.example`(2026-10-10, docs/에서 옮김).
 5. V1·V4·V5 통과.
 
 ### distribution P3. 저장소 템플릿과 첫 카탈로그 저장소 (우산 P5 후반)
