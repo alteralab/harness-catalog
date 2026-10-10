@@ -59,9 +59,7 @@ services:
   # 카탈로그 저장소를 흉내 낸다: 이 저장소의 skills/ 둘과 init 템플릿으로 bare 저장소 하나를 볼륨에 심는다(한 번만, 멱등).
   catalog-init:
     image: alpine/git:2.49.1
-    entrypoint: ["/bin/sh", "/seed/seed-catalog.sh"]
-    environment:
-      HC_VERSION: ${HC_VERSION:-}   # 비우면 packages/cli/pyproject.toml의 version
+    entrypoint: ["/bin/sh", "/seed/seed-catalog.sh"]   # 템플릿에 박는 판은 packages/cli/pyproject.toml의 version
     volumes:
       - catalog:/catalog
       - ./docker/quickstart/seed-catalog.sh:/seed/seed-catalog.sh:ro
@@ -79,12 +77,11 @@ services:
       HC__OIDC_ISSUER: http://localhost:${DEX_PORT:-5556}/dex
       HC__PUBLIC_URL: http://localhost:${REGISTRY_PORT:-8000}/mcp
       HC__DATABASE_URL: postgresql://harness_catalog:${HC_DB_PASSWORD:-quickstart}@postgres:5432/harness_catalog
-      HC__FETCH_INTERVAL_SECONDS: ${HC__FETCH_INTERVAL_SECONDS:-10}
+      HC__FETCH_INTERVAL_SECONDS: "10"   # 빠른 시작은 짧게 고정(운영 기본 60)
       # 선택: 스팬을 Langfuse 등으로 보내려면 환경에서 넘긴다(.env.example의 관측 절). 비면 no-op
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
-      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-harness-catalog}
     volumes:
       - catalog:/catalog:ro
       - clone:/var/lib/harness-catalog

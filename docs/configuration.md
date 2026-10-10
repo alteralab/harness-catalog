@@ -4,6 +4,22 @@ harness-catalog의 설정 표면 전부를 층별로 적은 참조입니다. 층
 
 §1의 표는 `harness-catalog config docs`가 코드(`settings.py`)에서 생성합니다. 나머지 절은 손으로 씁니다.
 
+## 0. 운영자가 꼭 채우는 것
+
+이름은 많아 보여도 운영 설치에서 손으로 적는 것은 아래가 전부입니다. 그 밖은 기본값이거나, 스크립트가 만들거나, compose가 채우거나, 외부 도구(OTel·Harbor·각 하네스)가 정한 이름입니다.
+
+| 무엇 | 어디에 | 언제 |
+|---|---|---|
+| `REGISTRY_IMAGE` | `.env` | 항상 |
+| `HC__CATALOG_REPO_URL` · `HC__OIDC_ISSUER` · `HC__PUBLIC_URL` | `.env` | 항상 |
+| `git_deploy_key` | `${SECRETS_DIR}/git_deploy_key` (`make-secrets.sh`의 둘째 인자) | 항상 |
+| `LDAP_HOST` · `LDAP_BIND_DN` · `LDAP_USER_BASE_DN` · `LDAP_GROUP_BASE_DN` | `.env` | LDAP 오버레이를 쓰고 기본값(우리 NAS)과 다를 때 |
+| `ldap_bind_pw` | `${SECRETS_DIR}/ldap_bind_pw` | LDAP 오버레이를 쓸 때 |
+| `HC_PUBLIC_HOSTNAME` · `HC_HOST_TAILSCALE_IP` | `.env` | 프록시가 같은 호스트에 있어 hairpin이 필요할 때 |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` + `otlp_headers` 파일 | `.env` + `${SECRETS_DIR}/otlp_headers` | Langfuse로 스팬을 보낼 때 |
+
+빠른 시작은 아무것도 채우지 않습니다. 개발 compose는 비밀 넷(`POSTGRES_PASSWORD`·`HC_DB_PASSWORD`·`DEX_DB_PASSWORD`·`DEX_CI_RUNNER_SECRET`)을 직접 만들어 적습니다(운영과 같은 "임의값 생성" 습관을 유지하기 위해 기본값을 두지 않습니다).
+
 ## 1. 레지스트리 설정값 (`HC__*`)
 
 레지스트리 프로세스가 환경 변수로 읽습니다. 비밀은 `<이름>_FILE=<경로>`로 파일에서도 읽습니다(docker secrets). 필수 다섯 중 하나라도 비면 기동하지 않고 어느 것이 비었는지 말합니다. `HC__OIDC_ISSUER`·`HC__PUBLIC_URL`은 끝에 `/`를 붙이면 거부됩니다. Dex와 레지스트리가 글자까지 같은 값을 봐야 하기 때문입니다.
@@ -33,7 +49,7 @@ harness-catalog의 설정 표면 전부를 층별로 적은 참조입니다. 층
 | `OTEL_EXPORTER_OTLP_HEADERS` | | `k=v,k2=v2`. Langfuse는 `Authorization=Basic <base64(public_key:secret_key)>`. 개발·빠른 시작용 |
 | `OTEL_EXPORTER_OTLP_HEADERS_FILE` | | 같은 내용을 파일에서(운영 compose는 비밀 파일 `otlp_headers`). 비어 있으면 무시하고 위 변수를 쓴다 |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` | Langfuse는 gRPC를 받지 않는다 |
-| `OTEL_SERVICE_NAME` | `harness-catalog` | 스팬의 `service.name` |
+| `OTEL_SERVICE_NAME` | `harness-catalog`(코드 기본값) | 스팬의 `service.name`. compose·`.env.example`에는 없고 바꿀 때만 표준 변수로 준다 |
 
 스팬 하나는 도구 호출 하나(`tools/call <tool>`)이고 속성은 `langfuse.user.id`(토큰의 `sub`), `harness_catalog.skill`, `harness_catalog.sha`, `harness_catalog.query`(검색어, 2000자까지), `harness_catalog.result_count`입니다. 검색어가 기록에 남는다는 것이 "검색어에 비밀 금지"의 이유입니다.
 
@@ -61,7 +77,7 @@ compose 파일은 `.env`(같은 디렉토리)와 셸 환경에서 변수를 채�
 | `REGISTRY_IMAGE` | 예 | | `ghcr.io/alteralab/harness-catalog:vX.Y.Z`(판 태그) 또는 짧은 SHA, 또는 로컬 태그 |
 | `HC__CATALOG_REPO_URL` · `HC__OIDC_ISSUER` · `HC__PUBLIC_URL` | 예 | | §1 그대로. Dex의 issuer와 audience 클라이언트 ID도 이 둘에서 채워진다 |
 | `HC__FETCH_INTERVAL_SECONDS` | 아니오 | 60 | §1 |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` · `_PROTOCOL` · `OTEL_SERVICE_NAME` | 아니오 | §2 | 헤더는 변수가 아니라 비밀 파일 `otlp_headers` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` · `_PROTOCOL` | 아니오 | §2 | 헤더는 변수가 아니라 비밀 파일 `otlp_headers` |
 | `REGISTRY_PORT` | 아니오 | 8000 | 호스트 `127.0.0.1`에 여는 레지스트리 포트(프록시가 받는다) |
 | `DEX_PORT` | 아니오 | 5556 | 호스트 `127.0.0.1`에 여는 Dex 포트 |
 | `SECRETS_DIR` | 아니오 | `./secrets` | 비밀 파일 디렉토리(0700) |
@@ -101,21 +117,16 @@ postgres와 dex만 띄우고 비밀을 환경 변수로 넘깁니다(개발 전�
 | `POSTGRES_PASSWORD` · `HC_DB_PASSWORD` · `DEX_DB_PASSWORD` · `DEX_CI_RUNNER_SECRET` | `quickstart` | 공개된 값. 평가·데모 전용 |
 | `REGISTRY_IMAGE` | `harness-catalog:quickstart` | 없으면 이 저장소에서 빌드 |
 | `REGISTRY_PORT` · `DEX_PORT` | 8000 · 5556 | issuer·공개 URL은 이 포트로 `http://localhost:…`가 된다 |
-| `HC__FETCH_INTERVAL_SECONDS` | 10 | |
-| `HC_VERSION` | (비움 = `packages/cli/pyproject.toml`의 version) | 심는 카탈로그의 템플릿에 박을 판 |
 | `OTEL_*` | §2 | 선택 |
+
+fetch 주기는 10초로 고정이고, 심는 카탈로그의 템플릿에 박는 판은 `packages/cli/pyproject.toml`의 version입니다(둘 다 변수가 아닙니다).
 
 ## 5. Dex와 LDAP
 
-Dex 설정 파일(`docker/dex/config.yaml`, LDAP 판은 `examples/synology-ldap/dex/config.yaml`)은 gomplate로 환경 변수를 읽습니다. 아래 중 앞의 다섯은 **compose가 채우므로 직접 적지 않습니다.**
+Dex 설정 파일(`docker/dex/config.yaml`, LDAP 판은 `examples/synology-ldap/dex/config.yaml`)은 gomplate로 환경 변수를 읽습니다. 운영자가 적는 것은 `LDAP_*`과 hairpin 둘뿐입니다.
 
 | 변수 | 출처 | 뜻 |
 |---|---|---|
-| `DEX_ISSUER` | compose ← `HC__OIDC_ISSUER` | issuer |
-| `HC_PUBLIC_URL` | compose ← `HC__PUBLIC_URL` | audience 클라이언트 ID(`trustedPeers`로 하네스 클라이언트의 토큰 `aud`에 실린다) |
-| `DEX_DB_PASSWORD` / `_FILE` | compose | Dex 저장소 비밀번호 |
-| `DEX_CI_RUNNER_SECRET` / `_FILE` | compose | 기밀 클라이언트 `ci-runner` |
-| `DEX_EXPAND_ENV` | compose(`true`) | Dex 자체 `$VAR` 확장(저장소·커넥터 설정에서만) |
 | `LDAP_HOST` | `.env` | 기본 `192.168.3.95:636`(LDAPS) |
 | `LDAP_BIND_DN` | `.env` | 검색용 바인드 DN |
 | `LDAP_BIND_PW` / `LDAP_BIND_PW_FILE` | `.env` / 비밀 파일 | 파일이 있고 비어 있지 않으면 파일, 아니면 변수 |
@@ -125,6 +136,19 @@ Dex 설정 파일(`docker/dex/config.yaml`, LDAP 판은 `examples/synology-ldap/
 | `HC_PUBLIC_HOSTNAME` · `HC_HOST_TAILSCALE_IP` | `.env` | 오버레이의 hairpin: 레지스트리 컨테이너 안에서 공개 호스트 이름을 호스트 IP로 푼다 |
 
 고정된 규약이라 설정값이 아닌 것: 읽기 그룹 이름 `harness-readers`, 클라이언트 ID `claude-code`·`codex`·`cursor`·`ci-runner`, 토큰 수명(1시간).
+
+<details>
+<summary>자동 배선 — compose가 Dex 설정 파일에 채우는 변수(진단용, 직접 적지 않는다)</summary>
+
+| 변수 | 출처 | 뜻 |
+|---|---|---|
+| `DEX_ISSUER` | compose ← `HC__OIDC_ISSUER` | issuer |
+| `HC_PUBLIC_URL` | compose ← `HC__PUBLIC_URL` | audience 클라이언트 ID(`trustedPeers`로 하네스 클라이언트의 토큰 `aud`에 실린다) |
+| `DEX_DB_PASSWORD` / `_FILE` | compose | Dex 저장소 비밀번호 |
+| `DEX_CI_RUNNER_SECRET` / `_FILE` | compose | 기밀 클라이언트 `ci-runner` |
+| `DEX_EXPAND_ENV` | compose(`true`) | Dex 자체 `$VAR` 확장(저장소·커넥터 설정에서만) |
+
+</details>
 
 ## 6. 카탈로그 저장소 CI와 러너
 

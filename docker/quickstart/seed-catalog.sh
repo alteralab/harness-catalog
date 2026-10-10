@@ -8,10 +8,7 @@ if [ -d "$target" ]; then
   echo "catalog already seeded at $target ($(git -C "$target" rev-parse --short HEAD))"
   exit 0
 fi
-version="${HC_VERSION:-}"
-if [ -z "$version" ]; then
-  version=$(sed -n 's/^version *= *"\([^"]*\)".*/\1/p' /seed/cli-pyproject.toml | head -n 1)
-fi
+version=$(sed -n 's/^version *= *"\([^"]*\)".*/\1/p' /seed/cli-pyproject.toml | head -n 1)
 version="${version#v}"
 work=$(mktemp -d)
 cp /seed/template/.harness-catalog "$work/.harness-catalog"
