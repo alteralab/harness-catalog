@@ -62,4 +62,4 @@ wiki-install: ## OpenWiki의 Claude Code 배선(.claude/skills/openwiki, .mcp.js
 
 wiki-claims: ## 지금 브랜치가 바꾼 파일을 인용하는 OpenWiki claim — MR 올리기 전에 어느 페이지가 낡는지 본다(모델 없음)
 	@test -d openwiki/.claims || { echo "openwiki/ 가 없다 — Claude Code에서 'Initialize OpenWiki for this repository' 부터"; exit 0; }
-	@for f in $$(git diff --name-only $$(git merge-base origin/main HEAD) HEAD; git diff --name-only); do grep -l "\"$$f" openwiki/.claims/*.json 2>/dev/null; done | sort -u | sed 's|^|page claims citing changed files: |'
+	@for f in $$(git diff --name-only $$(git merge-base origin/main HEAD) HEAD; git diff --name-only); do grep -l "repo://$$f[\"#]" openwiki/.claims/*.json 2>/dev/null; done | sort -u | sed 's|^|page claims citing changed files: |'
