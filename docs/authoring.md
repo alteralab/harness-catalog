@@ -95,6 +95,7 @@ metadata:
 ## 5. evals 돌리기
 
 ```sh
+harbor run -p skills/<name>/evals -a oracle -e docker                                                                                   # 먼저: 모델 없이, solution/solve.sh로 태스크·검증기 자체를 확인
 harbor run --path skills/<name>/evals --agent claude-code --env docker --skill ./skills/<name> --plugin harbor_langfuse:LangfusePlugin   # 스킬 있이
 harbor run --path skills/<name>/evals --agent claude-code --env docker --plugin harbor_langfuse:LangfusePlugin                           # 없이
 ```

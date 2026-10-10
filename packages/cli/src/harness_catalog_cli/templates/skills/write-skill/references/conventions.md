@@ -42,7 +42,8 @@
 ## 6. evals — 최소 쌍
 
 - [ ] `evals/<case>/`가 둘 이상: 써야 하는 과제 하나, 쓰지 말아야 하는 과제 하나(`no-trigger-*`).
-- [ ] 케이스마다 `task.toml`·`instruction.md`·`environment/Dockerfile`·`tests/test.sh`. 검증기는 결과 파일·상태를 검사해 `/logs/verifier/reward.txt`에 `1` 또는 `0`을 쓴다.
+- [ ] 케이스마다 `task.toml`·`instruction.md`·`environment/Dockerfile`·`tests/test.sh`·`solution/solve.sh`. 검증기는 결과 파일·상태를 검사해 `/logs/verifier/reward.txt`에 `1` 또는 `0`을 쓴다. `solve.sh`는 검증기가 참으로 보는 끝 상태를 직접 만드는 Oracle용 스크립트다(Harbor 표준의 선택 디렉토리). 음성 케이스의 solve.sh는 `exit 0`이다.
+- [ ] 모델 없이 먼저 돈다: `harbor run -p skills/<name>/evals -a oracle -e docker` 로 전 케이스 reward 1(태스크가 풀리는 태스크인지, 검증기가 끝 상태를 받아들이는지). 2026-10-10 실측: 기본 스킬 둘의 넷이 각 1.0, 두 데이터셋 35초.
 - [ ] 템플릿:
   ```toml
   # task.toml (Harbor 0.24, schema 1.4)

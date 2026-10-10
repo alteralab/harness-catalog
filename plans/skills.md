@@ -178,7 +178,7 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 | V5 | 기존 디렉토리 거부 | 같은 이름의 개인 스킬을 먼저 두고 내려받기 지시 | 쓰지 않고 멈추며 충돌을 알린다 | 대기 |
 | V6 | 두 범위 낡음 감지 | 프로젝트·사용자 범위에 sha가 다른 두 사본을 두고 "새 판 있어?" | 낡은 쪽을 지목하고 합치기를 권한다 | 대기 |
 | V7 | 뼈대의 규약 | `write-skill`로 만든 뼈대가 V1을 통과하고, 생성된 예시 스크립트가 종료 코드 2·3·4를 각각 낸다(입력 없음·대상 없음·`PATH`에서 도구 제거) | 셋 다 관찰 | 대기 |
-| V8 | evals 쌍 | 두 스킬 디렉토리에 양성·음성 각 1의 Harbor 태스크 | `evals/*/{task.toml,instruction.md,environment/Dockerfile,tests/test.sh}` 넷씩, 음성은 `no-trigger-*`. `harbor run --env docker`로 넷이 돌고 양성은 스킬 있이 reward 1·없이 0, 음성은 있이·없이 둘 다 1 | 대기 |
+| V8 | evals 쌍 | 두 스킬 디렉토리에 양성·음성 각 1의 Harbor 태스크 | `evals/*/{task.toml,instruction.md,environment/Dockerfile,tests/test.sh}` 넷씩, 음성은 `no-trigger-*`. `harbor run --env docker`로 넷이 돌고 양성은 스킬 있이 reward 1·없이 0, 음성은 있이·없이 둘 다 1 | **부분 통과(2026-10-10)**: `-a oracle -e docker`로 넷 모두 reward 1.0·예외 0(solution/solve.sh 추가, Harbor 0.24.0, Docker Desktop 25). 태스크가 풀리고 검증기가 끝 상태를 받는다는 것까지. 모델 하네스(claude-code) 있이·없이 비교는 대기 |
 | V11 | 공유 규약 문장 | `conventions.md`의 공유 스크립트 절대로 만든 두 스킬 표본(패키지 참조형·복사형)에 `check` | 패키지 참조형은 `uv run --script`가 git 참조를 설치해 돌고, 복사형 둘의 내용이 다르면 `check`가 항목 10 경고를 내고 종료 0 | 대기 |
 | V9 | Langfuse 왕복 | 병합 뒤 두 스킬의 evals를 `harbor run --plugin harbor_langfuse`로 스킬 있이·없이(service P3 플러그인 뒤) | Langfuse에 dataset `<catalog>/pin-skill`·`<catalog>/write-skill`, 각 run 둘, 메타데이터 `sha`가 `list_skills`의 `sha`와 같고 `passed` score가 V8의 기대와 같다 | 대기 |
 | V10 | 규칙 게이트 | `purpose/agent-skill` 선언 뒤 `pre-commit run --all-files` | 그 축의 게이트가 SKILL.md 둘을 검사하며 한 번 돌았다 | 대기 |
@@ -202,3 +202,4 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 | 2026-09-26 | 설계 개정 반영 | 인증된 판: `pin-skill`의 기본은 인증 판(단계 3·5), 새 판 확인은 `certified_sha` 기준, 받는 동안 `sha`를 고정 | DESIGN §11 |
 | 2026-09-26 | Codex 교차 검증 1회 | 반영: 재다운로드 절차를 백업 이름 바꾸기로(단계 9, V4 세 지점), 도구 시그니처 사본 삭제(§1 표), 단계 번호를 우산 P4(작성)·P5(게시)로, R1·R5의 미래 조건절 삭제, 배치 그림의 PLAN.md 제거. 기각 없음 | 우산 §11 |
 | 2026-09-26 | PLAN 초판 | 스킬 둘의 사양(description 초안·단계)·판정 D1~D10·검증 V1~V10. 파일은 아직 없다 | 우산 §4 P4·P5 |
+| 2026-10-10 | evals에 `solution/solve.sh` + Oracle 실측 | 사용자 지적("Harbor를 대충 확인하고 구조를 잡은 것 아닌가"). 형식은 Harbor 0.24 문서·소스와 대조해 전부 일치했으나(schema 1.4·skills_dir·tests/test.sh·reward.txt·`--skill`), 한 번도 돌린 적이 없었고 Harbor가 권장하는 `solution/`이 없었다. 네 케이스에 solve.sh를 쓰고 `harbor run -a oracle -e docker`로 넷 reward 1.0(0 예외, 21s+14s). conventions.md §6에 solve.sh와 Oracle 선행 실행을 항목으로. dbt-agent-skills의 `scenario.md`는 Harbor 표준이 아니라 그쪽 자체 도구 파일이어서 들이지 않는다 | Harbor docs-mintlify/tasks/{overview,solution,skills}.mdx, src/harbor/models/task/config.py; 로컬 실측 |
