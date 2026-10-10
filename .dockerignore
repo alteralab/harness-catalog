@@ -6,7 +6,6 @@ plans/
 tests/
 tools/
 docker/
-examples/
 *.md
 __pycache__/
 # 개발 도구 — 이미지에 들어가면 안 된다 (Graft 코드 그래프, Claude Code 배선, npm)

@@ -3,7 +3,7 @@
 # D1의 예외 둘(개발 전용): PostgreSQL을 호스트 127.0.0.1에 연다(호스트의 서비스·시험이 붙는다), 비밀은 환경 변수로 넘긴다.
 # 정적 사용자(docker/dex/config.yaml)의 비밀번호는 공개된 값이다 — 이 파일을 127.0.0.1 밖에 노출하지 않는다.
 # 쓰는 법: cp docker/.env.example docker/.env && docker compose -f docker/compose.dev.yml up -d
-# LDAP 연합(우리 팀): -f docker/compose.dev.yml -f examples/synology-ldap/docker-compose.override.yml
+# LDAP 연합 오버레이(docker/synology-ldap/)는 운영 compose 전용이다 — 여기엔 registry 서비스가 없어 겹치면 config가 실패한다.
 # 프로젝트 이름을 고정한다. 기본값은 compose 파일의 디렉토리 이름(docker)이 되어 기존 볼륨(harness-catalog_*)과 갈린다.
 name: harness-catalog
 

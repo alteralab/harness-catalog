@@ -1,5 +1,5 @@
 # 개발 compose의 Dex: 정적 사용자(staticPasswords)와 정적 클라이언트. 시험·데모용이고 비밀번호는 공개된 값이다 — 127.0.0.1 밖에 노출하지 않는다.
-# 운영은 examples/synology-ldap/ 오버레이가 이 파일을 LDAP 커넥터 판으로 바꿔 끼운다. 빠른 시작 compose의 Dex 설정은 별도 단계에서 hashFromEnv로 쓴다.
+# 운영은 docker/synology-ldap/ 오버레이가 이 파일을 LDAP 커넥터 판으로 바꿔 끼운다. 빠른 시작 compose의 Dex 설정은 별도 단계에서 hashFromEnv로 쓴다.
 # 비밀은 <VAR>_FILE(파일 경로, docker secrets)이 있으면 그 파일에서, 없으면 <VAR> 환경 변수에서 읽는다(gomplate file.Read).
 # 환경 변수는 gomplate 문법으로 넣는다: 이미지의 entrypoint가 `dex serve <file>.yaml`의 파일을 gomplate로 먼저 렌더링한다(cmd/docker-entrypoint 실측).
 # Dex 자체의 달러-VAR 치환은 storage.config·connectors[].config·signer.config 안에서만 돈다(cmd/dex/config.go 실측) — issuer·staticClients에는 안 된다.

@@ -123,7 +123,7 @@ fetch 주기는 10초로 고정이고, 심는 카탈로그의 템플릿에 박�
 
 ## 5. Dex와 LDAP
 
-Dex 설정 파일(`docker/dex/config.yaml`, LDAP 판은 `examples/synology-ldap/dex/config.yaml`)은 gomplate로 환경 변수를 읽습니다. 운영자가 적는 것은 `LDAP_*`과 hairpin 둘뿐입니다.
+Dex 설정 파일(`docker/dex/config.yaml`, LDAP 판은 `docker/synology-ldap/dex/config.yaml`)은 gomplate로 환경 변수를 읽습니다. 운영자가 적는 것은 `LDAP_*`과 hairpin 둘뿐입니다.
 
 | 변수 | 출처 | 뜻 |
 |---|---|---|
@@ -161,7 +161,7 @@ Dex 설정 파일(`docker/dex/config.yaml`, LDAP 판은 `examples/synology-ldap/
 | `HARNESS_CATALOG_DEPLOY_KEY` | 시크릿 | 코드 저장소가 비공개일 때 읽기 전용 deploy key의 개인 키 |
 | `HARNESS_CATALOG_READ_TOKEN` | 시크릿 | 같은 용도의 fine-grained PAT(Contents: Read). 둘 다 있으면 토큰이 먼저 |
 
-evals 잡이 돌 self-hosted 러너의 루트 `.env`에는 하네스별 모델 자격과 Langfuse 키를 둡니다. 전체 목록은 [runner.env.example](../examples/runner.env.example)이고, 워크플로가 잡 안에서 정하는 `HARNESS_SKILL_REF`(스킬 원천의 커밋 SHA)·`HARNESS_CATALOG_NAME`(저장소 이름)은 `harbor-langfuse` 플러그인이 읽습니다.
+evals 잡이 돌 self-hosted 러너의 루트 `.env`에는 하네스별 모델 자격과 Langfuse 키를 둡니다. 전체 목록은 [runner.env.example](../.github/runner.env.example)이고, 워크플로가 잡 안에서 정하는 `HARNESS_SKILL_REF`(스킬 원천의 커밋 SHA)·`HARNESS_CATALOG_NAME`(저장소 이름)은 `harbor-langfuse` 플러그인이 읽습니다.
 
 코드 저장소(`alteralab/harness-catalog`)의 CI는 시크릿 `ALTERALAB_READ_TOKEN`(비공개 `altera-rules`를 받을 때만, 없으면 규칙 게이트를 건너뜀)을 봅니다.
 

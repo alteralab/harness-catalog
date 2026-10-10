@@ -23,7 +23,7 @@ skills/                            # 계획 정본은 plans/skills.md
 
 ## 1. 관할과 경계
 
-**이 PLAN이 소유하는 것.** 두 스킬의 frontmatter·본문·참조·evals, 그리고 `examples/catalog-template/README.md`의 "사용자 안내" 절의 **문장**(검색어에 비밀을 넣지 말라는 안내, 두 스킬의 이름과 한 줄 용도, `list_skills`의 sha로 새 판을 확인한다는 것). README 파일 자체와 운영자 체크리스트(브랜치 보호·deploy key·CI 선택)는 `plans/distribution.md`가 소유한다. 안내 절은 README에 한 번만 있고 이 PLAN은 그 절의 내용을 정한다 — 같은 문장을 SKILL.md에 다시 쓰지 않는다.
+**이 PLAN이 소유하는 것.** 두 스킬의 frontmatter·본문·참조·evals, 그리고 `packages/cli/src/harness_catalog_cli/templates/README.md`의 "사용자 안내" 절의 **문장**(검색어에 비밀을 넣지 말라는 안내, 두 스킬의 이름과 한 줄 용도, `list_skills`의 sha로 새 판을 확인한다는 것). README 파일 자체와 운영자 체크리스트(브랜치 보호·deploy key·CI 선택)는 `plans/distribution.md`가 소유한다. 안내 절은 README에 한 번만 있고 이 PLAN은 그 절의 내용을 정한다 — 같은 문장을 SKILL.md에 다시 쓰지 않는다.
 
 **이 PLAN이 구현하는 DESIGN의 계약.** 아래 넷은 DESIGN이 정한 것이고 이 PLAN은 그것을 지시문으로 옮길 뿐이다.
 
@@ -98,7 +98,7 @@ skills/                            # 계획 정본은 plans/skills.md
 
 **번들 파일.** `references/conventions.md` 하나 — 팀 규약의 단일 소유자(§3 D4). 점검표 형식이고 DESIGN §5.1 ②·③의 규약을 실행 가능한 문장으로 옮긴 것이다. 스크립트는 없다(§3 D3).
 
-### 2.3 README 사용자 안내 절 (examples/catalog-template/README.md 안)
+### 2.3 README 사용자 안내 절 (packages/cli/src/harness_catalog_cli/templates/README.md 안)
 
 문단 셋. ⑴ 등록 한 줄과 로그인 한 번(레지스트리 URL은 distribution가 채운다). ⑵ 두 스킬의 이름과 한 줄 용도, 새 판 확인은 `list_skills`의 sha. ⑶ 검색어는 팀 Langfuse의 도구 호출 스팬에 남는다 — 검색어에 비밀·개인 정보를 넣지 말 것. 팀 규약의 본문은 여기 다시 쓰지 않고 `write-skill`의 `references/conventions.md`를 가리킨다.
 

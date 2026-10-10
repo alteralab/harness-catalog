@@ -138,6 +138,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 │   ├── compose.dev.yml          #   개발: postgres · dex만
 │   ├── compose.quickstart.yml   #   빠른 시작: 전체를 기본값으로, 편집 없이
 │   ├── .env.example             #   설정값 견본 → docker/.env
+│   ├── synology-ldap/           #   우리 팀 변형: LDAP 연합 compose 오버레이 + Dex 설정 (운영은 compose.yml 위에 겹친다)
 │   ├── dex/                     #   Dex 설정 (gomplate, 정적 사용자)
 │   ├── postgres/                #   PostgreSQL 초기화 (DB·역할 둘)
 │   └── quickstart/              #   빠른 시작의 카탈로그 심기 스크립트
@@ -148,9 +149,6 @@ curl -fsS http://127.0.0.1:8000/readyz
 │   ├── operations.md            #   운영자: 설치·프록시·Dex/LDAP·런북
 │   ├── configuration.md         #   설정값 참조 (harness-catalog config docs 생성)
 │   └── development.md           #   개발자: 배치·시험·게이트·릴리스
-├── examples/
-│   ├── catalog-template -> ../packages/cli/src/harness_catalog_cli/templates
-│   └── synology-ldap/           #   Synology LDAP Server 연동 오버레이 (compose + Dex 설정)
 ├── packages/                    # uv 워크스페이스, lockstep 배포물 넷
 │   ├── core/                    #   harness-catalog-core: 모델·카탈로그 앱·검사 항목·git/검증 어댑터
 │   ├── server/                  #   harness-catalog-server: MCP 서버·OIDC·PostgreSQL·스케줄러·마이그레이션

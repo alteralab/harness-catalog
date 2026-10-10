@@ -1,7 +1,7 @@
 # 운영·빠른 시작 compose — registry + postgres + dex (plans/distribution.md D1·D2·D3·D10·D11·D12·D18).
 # 기동: cp docker/.env.example docker/.env && chmod 600 docker/.env && scripts/make-secrets.sh ./secrets [deploy_key.pem] && docker compose -f docker/compose.yml up -d
 # (.env의 값 + SECRETS_DIR의 비밀 파일 여섯. make-secrets.sh가 비밀 파일을 만들고 database_url을 hc_db_password와 맞춰 조립한다)
-# 우리 팀(Synology LDAP)은 오버레이를 겹친다: docker compose -f docker/compose.yml -f examples/synology-ldap/docker-compose.override.yml up -d
+# 우리 팀(Synology LDAP)은 오버레이를 겹친다: docker compose -f docker/compose.yml -f docker/synology-ldap/compose.override.yml up -d
 # 비밀은 파일로 넘긴다(D10): 값이 아니라 경로가 환경 변수다 — docker inspect에 값이 보이지 않는다.
 # 프로젝트 이름을 고정한다. 기본값은 compose 파일의 디렉토리 이름(docker)이 되어 기존 볼륨(harness-catalog_*)과 갈린다.
 name: harness-catalog
