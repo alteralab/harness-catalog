@@ -2,17 +2,17 @@ name: OpenWiki Update
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    # 위키 갱신 PR이 병합될 때 다시 깨어나지 않도록. 소스가 바뀐 병합만 돈다.
-    # AGENTS.md·CLAUDE.md의 OpenWiki 블록은 매 실행마다 다시 써지므로(실측: 첫 병합이 재발동) 함께 제외한다.
-    paths-ignore:
-      - "openwiki/**"
-      - "AGENTS.md"
-      - "CLAUDE.md"
-      - ".github/workflows/openwiki-update.yml"
+    inputs:
+      force:
+        description: "기준 커밋 이후 소스 변경이 없어도 모델을 돌린다"
+        type: boolean
+        default: false
+  schedule:
+    # 하루 한 번, 04:00 KST. 병합마다 돌리면 run당 고정 비용(계획·마무리)을 N번 내고 취소 낭비가 생겨 배치로 모은다.
+    # 신선도는 SessionStart 훅(openwiki-age.sh)과 CLAUDE.md의 "그 사이 바뀐 파일은 소스를 본다"가 맡는다.
+    - cron: "0 19 * * *"
 
-# 연속 병합이 겹치면 .last-update.json 기준 커밋이 갈린다. 한 번에 하나만, 뒤의 것이 이긴다.
+# 수동 실행과 스케줄이 겹치면 .last-update.json 기준 커밋이 갈린다. 한 번에 하나만, 뒤의 것이 이긴다.
 concurrency:
   group: openwiki-update
   cancel-in-progress: true
@@ -33,17 +33,45 @@ jobs:
           # update runs against an empty change summary.
           fetch-depth: 0
 
+      - name: Detect source changes since the wiki baseline
+        id: changed
+        # 기준 커밋(.last-update.json gitHead)과 HEAD 사이에 OpenWiki 산출물 밖의 변경이 없으면 모델을 부르지 않는다.
+        # 산출물: openwiki/**, AGENTS.md·CLAUDE.md의 OPENWIKI 블록(매 실행마다 다시 써짐), 이 워크플로 파일.
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          base=$(python3 -c 'import json; print(json.load(open("openwiki/.last-update.json"))["gitHead"])' 2>/dev/null || true)
+          if [ "$FORCE" = "true" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; echo "::notice::force=true — 변경 검사 없이 실행"; exit 0
+          fi
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; echo "::notice::기준 커밋을 찾지 못해 실행 (base='$base')"; exit 0
+          fi
+          changed=$(git diff --name-only "$base" HEAD -- . \
+            ':(exclude)openwiki' ':(exclude)AGENTS.md' ':(exclude)CLAUDE.md' \
+            ':(exclude).github/workflows/openwiki-update.yml')
+          if [ -n "$changed" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            printf '::notice title=OpenWiki update::%s 이후 소스 변경 %s개\n' "${base:0:7}" "$(printf '%s\n' "$changed" | wc -l | tr -d ' ')"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=OpenWiki update skipped::${base:0:7} 이후 소스 변경 없음 — 모델을 부르지 않음"
+          fi
+
       - name: Set up Node.js
+        if: ${{ steps.changed.outputs.run == 'true' }}
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
 
       - name: Install OpenWiki
+        if: ${{ steps.changed.outputs.run == 'true' }}
         # mermaid + jsdom are optional; they add high-fidelity validation of Mermaid diagrams. Remove if your wiki has none.
         run: npm install --global openwiki@0.6.1 mermaid@11.16.0 jsdom@29.1.1
 
       - name: Run OpenWiki
         id: openwiki
+        if: ${{ steps.changed.outputs.run == 'true' }}
         continue-on-error: true
         run: openwiki code --update --print
         env:
@@ -54,12 +82,12 @@ jobs:
           OPENWIKI_MODEL_ID: ${{ vars.OPENWIKI_MODEL_ID || 'claude-opus-5' }}
 
       - name: Remove transient OpenWiki run state
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.changed.outputs.run == 'true' }}
         run: rm -f -- openwiki/.run.json
 
       - name: List OpenWiki update paths
         id: paths
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.changed.outputs.run == 'true' }}
         # CLAUDE.md is listed only when present: git add fails on a missing path
         # and then stages nothing.
         run: |
@@ -69,7 +97,7 @@ jobs:
 
       - name: Create OpenWiki update pull request
         id: create-pr
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.changed.outputs.run == 'true' }}
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
           add-paths: ${{ steps.paths.outputs.list }}
