@@ -7,6 +7,16 @@
         "@nanonets/graft@0.21.1",
         "mcp"
       ]
+    },
+    "openwiki": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "openwiki@0.6.1",
+        "mcp",
+        "--host",
+        "claude"
+      ]
     }
   }
 }

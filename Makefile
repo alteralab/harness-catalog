@@ -3,7 +3,9 @@
 COMPOSE_QS  := docker compose -f docker-compose.quickstart.yml
 COMPOSE_DEV := docker compose -f docker-compose.dev.yml
 
-.PHONY: help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image graft graft-init
+
+.PHONY: mcp-pin
+.PHONY: help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image graft graft-init wiki-claims wiki-install
 
 help: ## 이 목록
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[1m%-16s\033[0m %s\n", $$1, $$2}'
@@ -48,4 +50,16 @@ graft: ## Graft 코드 그래프를 (다시) 만든다 — 판은 package.json�
 graft-init: ## Claude Code 배선을 다시 쓴다(init은 .mcp.json을 판 없이 쓰므로 뒤에 다시 고정한다). 전역 설정·statusLine은 건드리지 않는다
 	npm ci --silent
 	DO_NOT_TRACK=1 GRAFT_MCP_NPX=1 npx graft init --agents claude --no-global --no-statusline
-	python3 -c "import json,pathlib; p=pathlib.Path('.mcp.json'); d=json.loads(p.read_text()); v=json.load(open('package.json'))['devDependencies']['@nanonets/graft']; d['mcpServers']['graft']['args']=['-y','@nanonets/graft@'+v,'mcp']; p.write_text(json.dumps(d,indent=2)+'\n'); print('.mcp.json pinned to', v)"
+	$(MAKE) mcp-pin
+
+mcp-pin: ## .mcp.json의 graft·openwiki 서버를 package.json의 판으로 다시 고정한다(init 도구들이 판 없이 쓰므로)
+	python3 -c "import json,pathlib; p=pathlib.Path('.mcp.json'); d=json.loads(p.read_text()); dv=json.load(open('package.json'))['devDependencies']; d['mcpServers']['graft']={'command':'npx','args':['-y','@nanonets/graft@'+dv['@nanonets/graft'],'mcp']}; d['mcpServers']['openwiki']={'command':'npx','args':['-y','openwiki@'+dv['openwiki'],'mcp','--host','claude']}; p.write_text(json.dumps(d,indent=2)+'\n'); print('.mcp.json pinned:', dv)"
+
+wiki-install: ## OpenWiki의 Claude Code 배선(.claude/skills/openwiki, .mcp.json)을 다시 쓴다
+	npm ci --silent
+	npx openwiki integrations install claude --project . --force
+	$(MAKE) mcp-pin
+
+wiki-claims: ## 지금 브랜치가 바꾼 파일을 인용하는 OpenWiki claim — MR 올리기 전에 어느 페이지가 낡는지 본다(모델 없음)
+	@test -d openwiki/.claims || { echo "openwiki/ 가 없다 — Claude Code에서 'Initialize OpenWiki for this repository' 부터"; exit 0; }
+	@for f in $$(git diff --name-only $$(git merge-base origin/main HEAD) HEAD; git diff --name-only); do grep -l "\"$$f" openwiki/.claims/*.json 2>/dev/null; done | sort -u | sed 's|^|page claims citing changed files: |'

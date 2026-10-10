@@ -58,7 +58,7 @@ pre-commit install && pre-commit run --all-files
 
 ## Graft — 코드 그래프 컨텍스트
 
-이 저장소는 [Graft](https://github.com/trailhq/graft)(npm `@nanonets/graft`)를 Claude Code에 연결해 둡니다. tree-sitter로 심볼·호출 그래프를 만들어 세션 시작에 저장소 지도를, 프롬프트마다 관련 심볼을 넣고, 편집 뒤 영향 범위를 알리며, 질의 때마다 그래프를 작업 트리에 맞춥니다. 팀 PoC(team-kb/graft-poc, 2026-10) 결론대로 **구조 계층만** 씁니다. 모델 호출이 없고 키가 필요 없습니다. `graft build --deep`(외부 API 키로 요약 생성)은 쓰지 않습니다. "왜 이렇게 만들었나"는 DESIGN.md와 원장이 답하고, Graft는 "어디 있고 누가 부르나"를 답합니다.
+이 저장소는 [Graft](https://github.com/trailhq/graft)(npm `@nanonets/graft`)를 Claude Code에 연결해 둡니다. tree-sitter로 심볼·호출 그래프를 만들어 세션 시작에 저장소 지도를, 프롬프트마다 관련 심볼을 넣고, 편집 뒤 영향 범위를 알리며, 질의 때마다 그래프를 작업 트리에 맞춥니다. **구조 계층만** 씁니다. 모델 호출이 없고 키가 필요 없습니다. `graft build --deep`(외부 API 키로 요약 생성)은 쓰지 않습니다. "왜 이렇게 만들었나"는 DESIGN.md와 원장이 답하고, Graft는 "어디 있고 누가 부르나"를 답합니다.
 
 판은 `package.json`에 정확히 고정됩니다(`"@nanonets/graft": "0.21.1"`, lockfile 포함). 전역 설치가 아니라 저장소의 `node_modules`가 기준이고, `.mcp.json`의 MCP 서버도 `npx -y @nanonets/graft@0.21.1 mcp`로 같은 판을 가리킵니다. 올리는 것은 `package.json`의 판을 바꾸고 `npm install`로 lockfile을 갱신한 뒤 `make graft-init`을 다시 돌리는 명시 행위입니다.
 
@@ -74,6 +74,20 @@ npx graft check       # 그래프가 코드와 어긋났는지(훅이 자동으�
 협업에서는 그래프를 커밋하지 않고 각자 만듭니다. 같은 커밋이면 같은 그래프가 나오고(결정적, 1초), 브랜치를 옮기면 훅의 auto-sync가 자기 체크아웃에 맞춥니다. `graft init`의 훅은 그래프가 없을 때 만들어 주지 않으므로(실측) `.claude/helpers/graft-ensure.sh`를 SessionStart에 하나 더 두었습니다. `graft/`가 없으면 그 자리에서 만들고, `node_modules/`까지 없으면 `make graft`를 돌리라는 한 줄을 세션에 넣습니다.
 
 주의 둘. 훅 shim은 저장소 `node_modules`와 전역 설치 중 **더 새 판**을 고릅니다. 전역에 더 새 graft를 깔면 훅은 그것을 쓰므로, 고정을 지키려면 전역 설치를 두지 않거나 같은 판으로 둡니다. 그리고 `graft init`은 `.mcp.json`을 판 없이 쓰므로 직접 돌리지 말고 `make graft-init`을 씁니다(뒤에 다시 고정합니다). 사용자 설정의 statusLine(ccstatusline)을 가리지 않도록 `--no-statusline`으로 연결했고, `~/.claude`·`~/.claude.json`에는 아무것도 쓰지 않습니다. 텔레메트리는 이 머신에서 꺼져 있습니다(`graft telemetry disable`).
+
+## OpenWiki — 설계 이유를 읽는 위키
+
+Graft와 짝으로 [OpenWiki](https://github.com/langchain-ai/openwiki)를 씁니다. Graft는 찾는 색인, OpenWiki는 읽는 문서입니다. 위키는 `openwiki/` 아래 한국어 마크다운이고 **커밋됩니다**. 각 문장(claim)은 `file:line` 증거를 들고, update가 그 증거의 지문을 검사해 낡은 claim만 다시 씁니다. 판은 `package.json`에 `openwiki@0.6.1`로 고정되고 `.mcp.json`도 같은 판을 가리킵니다(최신 0.7.2는 node ≥ 22.22가 필요해 보류).
+
+- **읽기**는 당기기(pull)입니다. 에이전트가 필요할 때 `openwiki_search` → `openwiki_read`를 부릅니다. CLAUDE.md의 두 줄이 역할을 가릅니다. 위치·시그니처는 Graft나 소스, 이유·흐름은 OpenWiki.
+- **갱신**은 병합 직후 `main`에서 정해진 한 사람이 Claude Code 세션에서 돌립니다. "Update this repository's OpenWiki for changes since its last successful run". 깨끗한 작업 트리에서만. MR 안에서 돌리지 않습니다(사이드카와 `.last-update.json`이 갈립니다).
+- **신선도 신호**는 OpenWiki가 주지 않으므로 `.claude/helpers/openwiki-age.sh`(SessionStart)가 기준 커밋 대비 커밋 수를 한 줄 찍습니다.
+- MR을 올리기 전 `make wiki-claims`로 바꾼 파일을 인용하는 페이지를 봅니다(모델 없음, 몇 초).
+
+```sh
+make wiki-install     # 배선(.claude/skills/openwiki, .mcp.json)을 다시 쓸 때
+make wiki-claims      # 바꾼 파일을 인용하는 claim 페이지
+```
 
 ## 설계 문서와 원장
 
