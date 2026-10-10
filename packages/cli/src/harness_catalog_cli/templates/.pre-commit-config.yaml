@@ -6,6 +6,7 @@ repos:
       - id: harness-catalog-check
         name: harness-catalog check
         language: python
+        language_version: python3.12   # core·cli가 >=3.12. 없으면 pre-commit이 기본 python3(예: pyenv 3.11)로 환경을 만들어 설치가 실패한다(실측)
         entry: harness-catalog check --rev INDEX --base HEAD
         pass_filenames: false
         always_run: true
