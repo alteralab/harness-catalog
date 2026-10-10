@@ -52,18 +52,24 @@ def resolve_pin(pin: str | None, *, code_repo_url: str = CODE_REPO_URL) -> str:
 
 
 def template_files(host: str) -> Mapping[str, str]:
-    """상대 경로 → 내용. 호스트의 워크플로만 싣는다."""
+    """상대 경로 → 내용. 호스트의 워크플로만 싣고, 기본 스킬 둘(templates/skills/)은 파일 전부를 싣는다.
+
+    스킬 원본은 이 패키지 데이터 하나다(사본을 두지 않는다, C-DUP-2). 새 카탈로그는 init 직후부터 두 스킬이 검색된다(DESIGN §11 2026-10-10).
+    """
     base = files("harness_catalog_cli") / "templates"
     out: dict[str, str] = {}
     with as_file(base) as root:
         out[MARKER_PATH] = (root / ".harness-catalog").read_text()
-        out["skills/.gitkeep"] = ""
         out["README.md"] = (root / "README.md").read_text()
         out[".pre-commit-config.yaml"] = (root / ".pre-commit-config.yaml").read_text()
         if host == "github":
             out[".github/workflows/check.yml"] = (root / "github" / "check.yml").read_text()
         else:
             out[".gitlab-ci.yml"] = (root / "gitlab" / ".gitlab-ci.yml").read_text()
+        skills_root = root / "skills"
+        for p in sorted(skills_root.rglob("*")):
+            if p.is_file():
+                out[f"skills/{p.relative_to(skills_root).as_posix()}"] = p.read_text()
     return out
 
 

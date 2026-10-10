@@ -55,7 +55,7 @@
         init.py             #   `init <repo-url>`: clone(운영자 git 자격) → 호스트 판별 → 템플릿을 없는 것만 쓰고 → 커밋·push. 멱등
         check.py            #   `check [<root>] [--base <commit>]`: core.check → 항목 번호·경로·사유 출력, 종료 0/1/2
         config.py           #   `config list`(실효값·출처 env/file/default) · `config docs`(docs/configuration.md·.env.example 생성)
-        templates/          #   catalog-template 패키지 데이터(harness-catalog.toml, skills/.gitkeep, README, .pre-commit-config.yaml, github/)
+        templates/          #   카탈로그 템플릿 패키지 데이터(.harness-catalog, skills/{pin-skill,write-skill}, README, .pre-commit-config.yaml, github/·gitlab/)
     server/                 # 배포물 harness-catalog-server — 레지스트리 프로세스(MCP 서버 + 스케줄러 태스크). 컨테이너 이미지
       pyproject.toml        #   deps: harness-catalog-core==<판>, mcp, starlette, uvicorn, PyJWT[crypto], psycopg[binary,pool], yoyo-migrations, opentelemetry-sdk, opentelemetry-exporter-otlp-proto-http. [project.scripts] harness-catalog-server
       src/harness_catalog_server/
@@ -147,7 +147,7 @@
 0. 착수 조건: D8의 표지가 `plans/pilot.md`의 실측 기록으로 정해져 있다. 없으면 서비스 주체를 reader로 세우는 한 줄만 뒤로 두고 나머지를 먼저 한다.
 1. `app/check.py`: DESIGN §5의 검사 열을 순수 함수로. 입력은 검사할 트리(작업 트리 또는 커밋)·기준 커밋·git 어댑터(삭제 이력, 기준 커밋의 트리), 출력은 위반 목록(항목 번호·경로·사유). 기준 커밋이 없으면 5·9를 건너뛰고 그 사실을 출력에 적는다. P1의 인덱스 빌드가 이 함수를 부르도록 바꾼다(스킬 실패 → 인덱스 제외, 구조 실패 → 빌드 실패).
 2. `cli.py check [<root>] [--base <commit>]`: 1을 CLI로. `--base`는 항목 5·9의 기준 커밋(DESIGN §2.1: pre-commit은 HEAD, PR CI는 merge-base, main CI는 직전 커밋, 인덱스 빌드는 `index_state.commit_sha`). 얕은 클론이면 항목 5는 종료 2. 종료 0 통과 / 1 위반 / 2 검사기 실패(gitleaks 없음·얕은 클론 등). pre-commit 훅과 CI 워크플로가 이 명령을 부른다(CLI 패키지 데이터 `templates/`의 훅·워크플로 파일이 그렇게 적혀 있다).
-3. `cli.py init <repo-url>`: 운영자 git 자격으로 clone → URL에서 호스트 판별(GitHub·GitLab) → 패키지 데이터 `catalog-template/`에서 `.harness-catalog`·`skills/.gitkeep`·README·pre-commit 설정·그 호스트의 CI 워크플로를 없는 것만 쓰고(템플릿의 판 자리표 `<판>`은 cli 자기 판 `importlib.metadata.version("harness-catalog-cli")`로 채우되, 먼저 코드 저장소에 태그 `v<판>`이 있는지 `git ls-remote --tags`로 확인하고 없으면 종료 1. `--pin <ref>`는 확인 없이 그 ref — distribution D22) → 커밋·push. 표지가 있는데 `layout`이 다르면 멈춘다(종료 1). 두 번 돌리면 변경 0.
+3. `cli.py init <repo-url>`: 운영자 git 자격으로 clone → URL에서 호스트 판별(GitHub·GitLab) → 패키지 데이터 `templates/`에서 `.harness-catalog`·`skills/{pin-skill,write-skill}`·README·pre-commit 설정·그 호스트의 CI 워크플로를 없는 것만 쓰고(템플릿의 판 자리표 `<판>`은 cli 자기 판 `importlib.metadata.version("harness-catalog-cli")`로 채우되, 먼저 코드 저장소에 태그 `v<판>`이 있는지 `git ls-remote --tags`로 확인하고 없으면 종료 1. `--pin <ref>`는 확인 없이 그 ref — distribution D22) → 커밋·push. 표지가 있는데 `layout`이 다르면 멈춘다(종료 1). 두 번 돌리면 변경 0.
 4. `cli.py reindex --accept-rewind`: 규칙 3의 `main_rewound` 뒤 운영자가 명시적으로 인덱스를 새 `main`으로 다시 짓는 명령.
 6. `app/authz.py` 완성: 주체 셋(reader·그룹 없음·서비스) × 도구 넷 × 스코프.
 7. `packages/harbor-langfuse/`: 별도 배포물(`pyproject.toml`, `src/harbor_langfuse/plugin.py`), 서비스 이미지에 들어가지 않는다. Harbor `BaseJobPlugin` 구현. `on_job_start`에서 잡의 태스크 경로에서 스킬 이름과 `evals/` 케이스를 읽어 Langfuse dataset `<catalog>/<skill>`과 item(케이스, `input` = `instruction.md`)을 있으면 재사용·없으면 생성하고, dataset run(`run_name` = Harbor 잡 이름, `metadata` = `skill`·`sha`(주입한 스킬 원천의 ref)·`scenario_sha`(`evals/` tree)·`model`·`harness`(agent 이름)·`baseline`(스킬 원천 없음))을 연다. `on_job_end`에서 트라이얼마다 trace(입력 instruction, 출력 검증기 stdout 요약, 메타데이터 `trial_uri`·토큰·비용)와 run item, score `passed`(BOOLEAN, reward ≥ 1)를 만든다. 키는 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST` 환경 변수. Harbor의 `packages/harbor-langsmith/src/harbor_langsmith/plugin.py`(852줄, `_create_root_run`·`_create_feedback`·`_request` 재시도)를 본뜨되 ATIF 스텝은 그쪽도 올리지 않으므로 올리지 않는다. Langfuse SDK v3의 저수준 dataset run·score API 이름은 pilot Q14(e)가 실측한 뒤 쓴다.
@@ -201,7 +201,7 @@
 | V8 | degraded 읽기 | DB 컨테이너를 멈춘 채 도구 넷 호출과 `/readyz` | 넷 전부 응답(검색은 부분 일치), `/readyz` 200 + `degraded: ["db_unavailable"]`. 도구 응답에 `degraded` 필드가 없다 | 대기 |
 | V9 | 검사 열 | §5의 열 항목 각각을 위반한 표본 저장소·스킬 | `check`가 항목 번호와 경로·사유를 출력하며 종료 1(항목 9·10은 경고 출력 + 종료 0). 검사기(gitleaks)를 치우면 종료 2. 통과 표본은 종료 0 | 대기 |
 | V10 | 병합 반영 | 시험 저장소에 PR을 병합 | 우산 V3의 허용오차(`FETCH_INTERVAL_SECONDS` 두 주기) 안에 `search_skills`에 나오고 `sha`가 병합 커밋의 tree와 같다 | 대기 |
-| V11 | `init` 멱등·호스트별 | 빈 저장소(GitHub URL, GitLab URL 각각)에 `init` 두 번 | 첫 실행 뒤 표지·`skills/.gitkeep`·README·pre-commit 설정·그 호스트의 워크플로 파일이 있고, 두 번째 실행은 변경 0. `layout = 2` 표지가 있는 저장소에서는 종료 1 | 대기 |
+| V11 | `init` 멱등·호스트별 | 빈 저장소(GitHub URL, GitLab URL 각각)에 `init` 두 번 | 첫 실행 뒤 표지·기본 스킬 둘·README·pre-commit 설정·그 호스트의 워크플로 파일이 있고, 두 번째 실행은 변경 0. `layout = 2` 표지가 있는 저장소에서는 종료 1 | 대기 |
 | V12 | 세 자리 동일 판정 | 같은 표본을 pre-commit 훅(`check`), CI(`check`), 인덱스 빌드 세 경로로 | 셋의 위반 목록이 같다 | 대기 |
 | V13 | 은퇴 이름 | 스킬 디렉토리를 지운 PR 뒤 같은 이름의 디렉토리를 다시 넣은 PR | `check` 항목 5로 거부. 규율 위반으로 병합해도 인덱스 빌드가 그 스킬을 뺀다 | 대기 |
 | V14 | `replaced-by` | 없는 대상·이미 대체된 대상·자기 자신·순환 둘 | `check` 항목 6으로 넷 전부 거부. 유효한 대상은 통과하고 목록에 실린다 | 대기 |

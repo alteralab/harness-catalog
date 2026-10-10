@@ -63,7 +63,6 @@ services:
     volumes:
       - catalog:/catalog
       - ./quickstart/seed-catalog.sh:/seed/seed-catalog.sh:ro
-      - ../skills:/seed/skills:ro
       - ../packages/cli/src/harness_catalog_cli/templates:/seed/template:ro
       - ../packages/cli/pyproject.toml:/seed/cli-pyproject.toml:ro
 

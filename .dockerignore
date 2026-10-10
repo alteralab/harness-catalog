@@ -23,7 +23,6 @@ Makefile
 # Dockerfile이 쓰는 것은 pyproject.toml · uv.lock · packages/ 뿐이다
 .pytest_cache/
 docs/
-skills/
 scripts/
 altera-rules.yml
 .pre-commit-config.yaml

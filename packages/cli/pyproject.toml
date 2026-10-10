@@ -21,4 +21,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/harness_catalog_cli"]
-# templates/(카탈로그 저장소 템플릿)는 패키지 데이터로 함께 실린다; 원본은 이 디렉토리 하나다(예전의 examples/catalog-template 링크는 없다)
+# 카탈로그 저장소 템플릿(표지·README·pre-commit·CI·기본 스킬 둘)의 원본은 src/harness_catalog_cli/templates/ 하나다.
+# 루트에 링크나 사본을 두지 않는다. 실체를 루트에 두고 force-include로 끌어오는 방향은 uv build가 sdist를 거쳐
+# wheel을 만들 때 패키지 밖 경로가 없어 실패한다(2026-10-10 실측: "Forced include not found").

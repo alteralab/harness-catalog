@@ -1,6 +1,6 @@
 # skills 계획 — 카탈로그에 실리는 절차 스킬 둘
 
-**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/skills/`의 정본이다. 카탈로그 자체가 스킬로 실어 나르는 절차 둘 — `pin-skill`(사람의 내려받기)과 `write-skill`(스킬 뼈대와 팀 규약) — 그리고 카탈로그 README의 **사용자 안내** 절 내용을 관할한다. 설계의 정본은 `../DESIGN.md`(v3.3)이고 이 PLAN은 설계를 복제하지 않는다. 우산은 `../PLAN.md`이며 이 PLAN은 그 §4 P5 한 행을 편다.
+**상태: 초안 · 작성 2026-09-26.** 이 PLAN은 `~/workspace/harness-catalog/packages/cli/src/harness_catalog_cli/templates/skills/`(2026-10-10까지는 루트 `skills/`)의 정본이다. 카탈로그 자체가 스킬로 실어 나르는 절차 둘 — `pin-skill`(사람의 내려받기)과 `write-skill`(스킬 뼈대와 팀 규약) — 그리고 카탈로그 README의 **사용자 안내** 절 내용을 관할한다. 설계의 정본은 `../DESIGN.md`(v3.3)이고 이 PLAN은 설계를 복제하지 않는다. 우산은 `../PLAN.md`이며 이 PLAN은 그 §4 P5 한 행을 편다.
 
 ## 0. 한 장 요약
 
@@ -127,12 +127,12 @@ DESIGN이 정하지 않은 구현 선택만 적는다. 근거 등급은 우산 �
 1. `pin-skill/SKILL.md` — §2.1의 frontmatter와 단계 11 + 새 판 확인. 하네스 표는 본문에.
 2. `write-skill/SKILL.md`와 `references/conventions.md` — §2.2. 점검표는 DESIGN §5.1 ②·③에서 옮기되 문장은 실행형으로.
 3. 각자 evals 양성·음성 한 쌍(§3 D8).
-4. `skills-ref validate skills/pin-skill skills/write-skill` 로컬 통과.
+4. `skills-ref validate packages/cli/src/harness_catalog_cli/templates/skills/pin-skill …/write-skill` 로컬 통과.
 5. `altera-rules.yml`에 `purpose/agent-skill` 선언, 재실체화, `pre-commit run --all-files`로 그 축의 게이트를 한 번 완주(우산 §3-5, V9).
 6. Codex 독립 리뷰 한 번(우산 §3-6). 발견의 반영·기각을 §9에.
 7. README 사용자 안내 절 문장을 distribution에 넘긴다(§2.3). 파일은 distribution가 쓴다.
 
-**skills P2 게시.** (우산 P5. distribution P3의 첫 카탈로그 저장소가 생긴 뒤. 게시는 PR이고 이 두 스킬이 그 저장소의 첫 PR이다)
+**skills P2 게시.** (우산 P5. distribution P3의 첫 카탈로그 저장소가 생긴 뒤. 게시는 PR이었고 이 두 스킬이 그 저장소의 첫 PR이었다. 2026-10-10부터 새 카탈로그에는 `init`이 함께 쓰고(distribution D14 개정), 갱신만 PR이다)
 
 1. 첫 카탈로그 저장소(distribution P3)에 두 스킬을 PR로 올려 병합한다. 병합 커밋과 tree SHA를 §9에 적는다.
 2. `list_skills()`에 둘이 보이고 `search_skills("내려받아")`·`search_skills("스킬 만들자")`가 각각을 첫 후보로 낸다.

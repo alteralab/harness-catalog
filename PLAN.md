@@ -17,13 +17,13 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
   packages/                       #   uv 워크스페이스, 배포물 넷 lockstep — plans/service.md §2
     core/                         #     harness-catalog-core: 설정·모델·검사·git 읽기·validate. 서버 의존 없음
     cli/                          #     harness-catalog-cli: 명령 harness-catalog(init·check·config), 템플릿 패키지 데이터
+      templates/skills/           #       기본 스킬 둘 pin-skill·write-skill(원본, 각자 evals) — plans/skills.md. init이 새 카탈로그에 함께 쓴다(2026-10-10)
     server/                       #     harness-catalog-server: MCP 서버·스케줄러·pg·oidc·migrations, 이미지의 진입점
   tests/
     harbor-langfuse/              #     Harbor JobPlugin → Langfuse. 위 셋과 무관
   docker/                         #   compose 셋(compose.yml · compose.dev.yml · compose.quickstart.yml) + .env.example + 지원 파일(dex/config.yaml, postgres/init.sql) + synology-ldap/(우리 팀 LDAP 연합 오버레이 + Dex 설정). 카탈로그 저장소 템플릿은 packages/cli/…/templates/(패키지 데이터) — plans/distribution.md
   docs/                           #   설치·설정값 여섯·운영자 가이드·카탈로그 저장소 신설
   scripts/                        #   운영 셸 스크립트. 첫 파일과 함께 lang/bash 선언
-  skills/                         # 카탈로그에 실리는 절차 스킬 pin-skill·write-skill — plans/skills.md
   plans/pilot/                    # 실측 기록 rN.md — plans/pilot.md
   tools/pilot/                    # 측정 도구(계측 stub·질의 러너 등, 추적)
   research/                       # 원자료(전사본·받아 둔 문서). 비추적(.gitignore)
@@ -66,7 +66,7 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
 | **P2 인덱스 표·스팬** | service P2 | 마이그레이션(yoyo, 그림 3 DDL 그대로), PostgreSQL 어댑터, 인덱스 트랜잭션(규칙 3, `index_state` FOR UPDATE·자손 검사), 스케줄러(기동 1회 · fetch 간격 `FETCH_INTERVAL_SECONDS` 기본 60초), 도구 호출 스팬 속성(MCP 어댑터), DB 단절 시 degraded | testcontainers PostgreSQL에서 그림 3 DDL이 그대로 적용되고, 낡은 커밋의 빌드가 최신 인덱스를 되돌리지 않는 시험이 통과하며, 도구 넷 호출이 속성 규약대로 스팬을 내고, DB를 끊어도 `/readyz` 200 + `degraded`이고 읽기 넷이 답한다 |
 | **P3 검사·초기화·Langfuse 플러그인** | service P3 | `harness-catalog check`(§5 검사 열, 종료 코드, 인덱스 빌드와 공용), `harness-catalog init <repo-url>`(구조·CI·pre-commit·README, 멱등, 호스트별), `reindex --accept-rewind`, 인가 정책(reader), `packages/harbor-langfuse/`(Harbor JobPlugin → Langfuse dataset run·trace·score) | §5의 검사 열 각각을 위반한 표본이 `check`에서 항목 번호와 함께 거부되고 인덱스 빌드에서 같은 스킬이 빠지며, `init`이 빈 저장소를 완성된 카탈로그 저장소로 만들고 두 번째 실행에서 변경이 없으며, PR로 병합한 스킬이 `FETCH_INTERVAL_SECONDS` 두 주기 안에 `search_skills`에 나온다 |
 | **P4 카탈로그 스킬 작성** | skills P1 | `pin-skill`·`write-skill`(브랜치·커밋·PR 절차 안내) 작성과 로컬 검증, 팀 규약(종료 코드 2/3/4, PEP 723 + `uv run --script`, `metadata.requires-tools`, evals 최소 예시)을 `write-skill`의 `references/conventions.md`에, README 사용자 안내 절 문장. 게시는 아직이다(P5) | 두 스킬이 `skills-ref validate`를 통과하고 각자 양성·음성 evals 한 쌍이 있으며 `purpose/agent-skill` 게이트가 SKILL.md 둘을 검사하며 한 번 돌았다 |
-| **P5 배포·첫 카탈로그 저장소·게시** | distribution P2 · P3 · skills P2 | 이미지(다단계, git+gitleaks, CI가 한 번 빌드해 커밋 SHA 태그·digest 발행), `docker/`의 compose 셋(운영·개발·빠른 시작)과 `docker/synology-ldap/` 오버레이(Dex↔Synology LDAP, 그룹 `harness-readers`), 정적 클라이언트(하네스 셋 + CI 러너), 리버스 프록시 뒤 공개 URL, `packages/cli/src/harness_catalog_cli/templates/` 완성(표지·`skills/.gitkeep`·CI github/gitlab·README 체크리스트), `docs/` 초판, **첫 카탈로그 저장소 신설**(`harness-catalog init`), 그 뒤 두 스킬을 첫 PR로 올려 병합해 `list_skills`에 보이게 한다 | 새 VM에서 `.env`만 채우고 `docker compose up`으로 셋이 뜨고 `/readyz` 200, `init`으로 만든 저장소의 첫 PR CI가 두 스킬로 초록, deploy key(읽기 전용)·권한 체크리스트 전 항목 확인, 두 스킬이 `list_skills`에 보인다 |
+| **P5 배포·첫 카탈로그 저장소·게시** | distribution P2 · P3 · skills P2 | 이미지(다단계, git+gitleaks, CI가 한 번 빌드해 커밋 SHA 태그·digest 발행), `docker/`의 compose 셋(운영·개발·빠른 시작)과 `docker/synology-ldap/` 오버레이(Dex↔Synology LDAP, 그룹 `harness-readers`), 정적 클라이언트(하네스 셋 + CI 러너), 리버스 프록시 뒤 공개 URL, `packages/cli/src/harness_catalog_cli/templates/` 완성(표지·기본 스킬 둘·CI github/gitlab·README 체크리스트), `docs/` 초판, **첫 카탈로그 저장소 신설**(`harness-catalog init`), 두 스킬은 `init`이 함께 써 바로 `list_skills`에 보인다(2026-10-10 개정 — 첫 저장소는 PR #1로 넣었다) | 새 VM에서 `.env`만 채우고 `docker compose up`으로 셋이 뜨고 `/readyz` 200, `init`으로 만든 저장소의 첫 PR CI가 두 스킬로 초록, deploy key(읽기 전용)·권한 체크리스트 전 항목 확인, 두 스킬이 `list_skills`에 보인다 |
 | **P6 파일럿** | pilot P1 | §9의 나머지: 가정 셋(매 반복 검색 비용, 트라이그램 한국어 검색, 부하)과 하네스 몫 둘(`load_skill` 본문 잔존, 이름순 목록 한계), `pin-skill` 준수. 사용자 하나·루프 없이 세션 기반 측정 | §9 열한 항목 전부에 기록된 답(첫째는 §6-1의 결정). 파일럿 하네스 셋에서 `pin-skill` 지시대로 임시 디렉토리→대조→이름 바꾸기가 관찰됐다. 설계를 뒤집은 것은 DESIGN §11 행으로 |
 
 **v3.0 완료** = P0~P6 완료 조건 전부 + §9 시스템 검증 전 항목 통과. 그 뒤의 일(순위, 폐기 후보, 백업, Helm)은 이 PLAN에 단계가 없고 §7의 기각 사유가 현재 상태다.

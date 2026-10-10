@@ -153,6 +153,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 │   ├── core/                    #   harness-catalog-core: 모델·카탈로그 앱·검사 항목·git/검증 어댑터
 │   ├── server/                  #   harness-catalog-server: MCP 서버·OIDC·PostgreSQL·스케줄러·마이그레이션
 │   ├── cli/                     #   harness-catalog-cli: check·init·config, 카탈로그 저장소 템플릿
+│   │   └── templates/           #     카탈로그 저장소 템플릿 + 기본 스킬 둘(skills/pin-skill·write-skill, 각자 evals). init이 새 카탈로그에 함께 쓴다
 │   └── harbor-langfuse/         #   harbor-langfuse: Harbor 플러그인 → Langfuse
 ├── plans/                       # 실행 계획과 원장 (PLAN.md가 우산)
 │   ├── pilot/                   #   측정 결과 r1~r3 (Dex 그랜트, LDAP, 하네스 첫 접촉)
@@ -163,9 +164,6 @@ curl -fsS http://127.0.0.1:8000/readyz
 ├── scripts/
 │   ├── make-secrets.sh          #   운영 비밀 파일 여섯 생성 (멱등)
 │   └── dev-token.sh             #   기계 계정 토큰 (비밀번호 그랜트)
-├── skills/                      # 첫 카탈로그에 올린 메타 스킬 둘 (각자 evals 포함)
-│   ├── pin-skill/
-│   └── write-skill/
 ├── tests/                       # pytest (core는 가짜 어댑터, adapters는 testcontainers, http는 실제 서버)
 ├── tools/
 │   └── pilot/                   #   Dex 그랜트 실측 · 하네스 첫 접촉 캡처 stub

@@ -51,7 +51,12 @@ def test_init_refuses_repo_without_main(tmp_path: Path) -> None:
 def test_init_twice_is_idempotent(tmp_path: Path) -> None:
     remote = bare(tmp_path, "catalog.git")
     first = init_repository(str(remote), pin="deadbeef", host="gitlab")  # 로컬 경로는 호스트가 없다
-    assert set(first.written) == {".harness-catalog", "skills/.gitkeep", "README.md", ".pre-commit-config.yaml", ".gitlab-ci.yml"}
+    base = {".harness-catalog", "README.md", ".pre-commit-config.yaml", ".gitlab-ci.yml"}
+    skills = {w for w in first.written if w.startswith("skills/")}
+    assert set(first.written) - skills == base
+    # 기본 스킬 둘이 init과 함께 들어간다(DESIGN §11 2026-10-10). .gitkeep은 더 쓰지 않는다
+    assert {"skills/pin-skill/SKILL.md", "skills/write-skill/SKILL.md"} <= skills and "skills/.gitkeep" not in skills
+    assert all(w.startswith(("skills/pin-skill/", "skills/write-skill/")) for w in skills)
     assert listing(remote) == set(first.written)
     second = init_repository(str(remote), pin="deadbeef", host="gitlab")
     assert second.written == ()
