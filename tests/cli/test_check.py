@@ -43,4 +43,6 @@ def test_check_name_reuse_against_base(catalog_repo: CatalogRepo) -> None:
 
 def test_version_flag() -> None:
     r = runner.invoke(app, ["--version"])
-    assert r.exit_code == 0 and r.output.strip() == "0.1.0"
+    from importlib.metadata import version
+
+    assert r.exit_code == 0 and r.output.strip() == version("harness-catalog-cli")  # 판은 pyproject가 정본이다(lockstep)
