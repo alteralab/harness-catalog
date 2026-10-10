@@ -5,8 +5,11 @@ on:
   push:
     branches: [main]
     # 위키 갱신 PR이 병합될 때 다시 깨어나지 않도록. 소스가 바뀐 병합만 돈다.
+    # AGENTS.md·CLAUDE.md의 OpenWiki 블록은 매 실행마다 다시 써지므로(실측: 첫 병합이 재발동) 함께 제외한다.
     paths-ignore:
       - "openwiki/**"
+      - "AGENTS.md"
+      - "CLAUDE.md"
       - ".github/workflows/openwiki-update.yml"
 
 # 연속 병합이 겹치면 .last-update.json 기준 커밋이 갈린다. 한 번에 하나만, 뒤의 것이 이긴다.
