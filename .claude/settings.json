@@ -38,6 +38,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "sh \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graft-ensure.sh\"",
+            "timeout": 60000
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graft-hooks.cjs\" session-start",
             "timeout": 8000
           }
@@ -66,5 +75,13 @@
       "Bash(graft-dev:*)",
       "Bash(node dist/cli.js:*)"
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graft-statusline.cjs\""
+  },
+  "subagentStatusLine": {
+    "type": "command",
+    "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graft-statusline.cjs\""
   }
 }
