@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ec5cb0055cfb355ea09501ac1a833da3e2c7c3e174879e38d2d6a54afd635811",
+  "pageVersion": "sha256:37cfd8e5f0879a37c08ebf7b31da2faaa7c360f771fa5e798403fbbd122e3fc3",
   "claims": [
     {
       "id": "claim_80bef60686a640d987007e1999345072",
-      "statement": "The Catalog app depends only on the three ports ContentStore, SkillValidator and FactStore, and serves reads from a single immutable in-memory IndexSnapshot that each build replaces wholesale.",
+      "statement": "The Catalog app depends only on the three ports ContentStore, SkillValidator and FactStore, and serves reads from a single immutable in-memory IndexSnapshot that each build replaces wholesale; archive-cache work uses a separate _archive_lock so it never contends with the snapshot lock.",
       "evidence": [
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L53-L70",
-          "version": "repo-lines-v1:sha256:f19ae15db5ad35b53964eb1cfeb92d3ec05e8ca685f9e7f1e97cf8c5fb3d3cc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3M2MyZDdhNWJjZjFjM2JlMTE4YzFhMDMxYmUyZWU5ZjZlNzdjMmE0ZjFmNDRiYjNkOGRjMDE3YjhiZjI2NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxMjBkNDhkYmYyYjgwMjRjZWZiZGRmZjY0YWQ0MmY4MjlmMGE1MDEwM2E4NjA0OGY0ODFkM2Q4NDc1MzMzM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjODJlZjdjMmE1YTdhNzFiMzY1NTY4NzA1N2M5NzIzNmNkMjZiNjkyNWEzYWYxYjI0NjMwOGY3Y2U1Yzg3ZmQifQ"
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L82-L96",
+          "version": "repo-lines-v1:sha256:141f08f28aedabba044dfd07ed0f227dc22b166829755d41c7b82e9649f874ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3M2MyZDdhNWJjZjFjM2JlMTE4YzFhMDMxYmUyZWU5ZjZlNzdjMmE0ZjFmNDRiYjNkOGRjMDE3YjhiZjI2NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZjk1NDgzNWRmYWM4ZDEwYmZjODY5ZmIzMzRhZDVjNzU2ZmMzM2Y1MTZhNDBlOGQ0MGMyZGQ3OTliNmViZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MzJlM2VjZmNlMTkwMzcxZDlmZDExMDQyNDY2ZjI3ZGRiYTNkMzNmYzliNmEzM2M4ODU5NmM5OWIyNDliZjEifQ"
         },
         {
           "resource": "repo://packages/core/src/harness_catalog_core/model.py#L157-L172",
-          "version": "repo-lines-v1:sha256:756c15a93054e30c59d80f5af0222d3dc44b213ca8f7c52d73d942173b8beadf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMjhjNDkxOWMwN2QyNDdlNzI5NDY1MjBiZWFiZmFmZGE2YzI0NzJmZTNjYmQ0NGIzZWE2N2NmZTg2ZGY2OTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwY2UzZjI0YWI0N2MyZjVhOWQzMzdmMzc3ZWQ4NTczZmE1NjU4NDA3NjQwMmYxYWYwNTRhM2RlZDYxOTQ2MmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhZmM3ODE1ODcxYThlZDA4NjYwMmNhNDY0ZmUwOTk0M2U1YmU5NDhiYTRkY2MxYTQyYmNkZTM4YWRiODIxODIifQ"
+          "version": "repo-lines-v1:sha256:2fce1bc1e1f383ef990f92592ce75bfb9c9e01ae660f42cb812398a8c4a9fd4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzM2I5ZGZiYmUzYjdhZWZiZWFhNGNlZDRjZTUzYTY2NDNmZWQzNWYxZTY4MDFlZWZiM2I5N2VlYzgwN2IxOWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MDQ5N2E4YWI5NzJlNzM5NDVkOTQwZGFmZTMyMDRiYjhlYmJlY2RiMjQ4Y2EwMzdjMTBlNzU3OGYxMjc3YWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0ZGUxNjhjODJlOTFkOTdiMDg0ZjdiZWE2NjY2YjE5ODAzODlkZGRkNGJiZDdhYTQyNjM2NWQ0NzVjZTFlZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNDcwMjk2ZWJlNmMxZmM5OTlkNmVmOGMzMWU3MWRmZmVlODhmOWZjM2Q1NjcwM2RmNTc5Zjg3ZjA1NmYwODQifQ"
         }
       ]
     },
@@ -21,11 +21,11 @@
       "statement": "rebuild never moves the served index backwards: when the fetched main commit is not a descendant of the previous commit it leaves the snapshot untouched and records main_rewound in degraded, unless accept_rewind=True skips the generation check.",
       "evidence": [
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L124-L135",
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L154-L165",
           "version": "repo-lines-v1:sha256:b847032e464c4274cacae68fe2a3c0dc6a23e6b0fb03854b0743f53c63f49a07:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NjA1OWM2NDAyOTMwNzI4NDFiYWM0NWEwYmE3ZTI5OTY1OTUxMGFkNDJmYzQ3NGEwM2QwMjFiZmUzNTA5NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0YWUwNDhiZjdkNDUzYTk4OTFlYjkyOGM0MjA2YTcyNWUyOTE0MTc1MWNlMmJmMTNmZDEwYjUxMDNkYjk4ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0MzdjYjRkOWYwZGQyY2RiZTRhMTBhYzJjYzhmMTc3M2QzYmY3ZTUxMzE4MjAwMjRjZjk4NDA2YzUyMzYwZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3ODNiMzgxYTBlYWE1ZDJhYTY0OWZlZjJhOWY3MzcwNmQ2ZWYyYzBjYjA0NTg4MGVlMDJmNDE4ZDhjMzI2MzQifQ"
         },
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L72-L106",
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L102-L136",
           "version": "repo-lines-v1:sha256:a8d31713a25f41315c359156d74ee34c242f58fb040e6915aa6e58d244b51357:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllZTQ1ZTAyZWNkNjU4NjRjNzc4NTYxZmNmOWNhMWEzMzZjMTYyNzNiMjdkMDliZmZjYTUyMjg5ZDQwNDgxMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkNmMzNWUwYzgwYzE0NWJjOTcxNWQ3Y2E5MjkzZmQ2MjdlYTlhZjFmMTNkMmUxOWMyMzQ4OWQwMTg4MmEzMmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4N2QyOTgxZmUzZmQ3NGI5NWFkODVmZjZmZmI4OTk4MjUwNzhlMzk3OGQ0ZDg0MWM0MTRmODM4YjViZDI5NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmMmJhYzIwODMyZTJhNDBiNWI4ZWM3OWIxODBhZmE4ZGZiNWVlNWZlZmFiZDAyNTE2ZjdhNDM4NjQ2ODVjYjgifQ"
         }
       ]
@@ -35,11 +35,11 @@
       "statement": "When the fetched commit equals the previous one, rebuild skips re-checking skills and only re-synchronises the database (_resync), clearing db_unavailable or main_rewound as the FactStore outcome dictates.",
       "evidence": [
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L108-L122",
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L138-L152",
           "version": "repo-lines-v1:sha256:0bdbd76f617eed001df88ff8c2487fc1e017d1d683b205344019b34c87664575:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmYTY1NDg5MmFkMmM3Y2YyNzNhZTVkZTcyM2MxNDBkMjkzZDYxYTQ5ZDk0NjA2OWZkZDM4N2M5Njg1NDgzNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0YWUwNDhiZjdkNDUzYTk4OTFlYjkyOGM0MjA2YTcyNWUyOTE0MTc1MWNlMmJmMTNmZDEwYjUxMDNkYjk4ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNTk4ODRiNmExMDI4OTY2OGE1ZWMyZTM4NzJlM2ZiNmQ4NTMwNGI1OGI2NmFiY2RiMGNlZDc5ZWM3YzZlZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwZDMzM2E4MjI2MjUwYTJhMTNjZTk3NTQ5ZGY4N2YwMzhhNjg3ZTU4NTUyMzRiODFhMDBlYzY5NWM4NmEzYjIifQ"
         },
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L92-L95",
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L122-L125",
           "version": "repo-lines-v1:sha256:6235fa3f83dc15af40ecbbb2b6289fd5f577184b37f12e15248711f7074baa81:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQ2YzM1ZTBjODBjMTQ1YmM5NzE1ZDdjYTkyOTNmZDYyN2VhOWFmMWYxM2QyZTE5YzIzNDg5ZDAxODgyYTMyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIwMzdlYmE3Zjk1OWNmYTU2ZmNkYzM5OWI1YWVmMDk2MjI2NjAwNDBlYzBiZTAwMWM5OTU2MmY5ZTIyM2UyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDE5Y2Q1NDdhNWJlYWFjNjRkOWU1YTRmNGNhYTIyODA0N2VmZTNiOGU3ZDJiYzlkNDUzMTE0OWJiYWQ3MzQ0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjE2YWU0OTM0MmQxZGMwODU1MzA1MTdmNmNlZmU4ZTVkY2EwNmUxZWU1YzY0NmYxNGExNzQ1Yzg5NzgwMWI5NCJ9"
         }
       ]
@@ -49,7 +49,7 @@
       "statement": "A checker failure (checker_failed) keeps the previous snapshot and only marks the status degraded; skills with errors are excluded from the index and reported in rejected while the rest are indexed.",
       "evidence": [
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L137-L152",
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L167-L182",
           "version": "repo-lines-v1:sha256:036b5ed0eb98c3d038fd581c2f14dbeb60b7ae786a32372bc3a662f75a9ebe59:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiOTZlNWNkMTg5NTAxZTdlMGQ2NDE4ODY5ZDdjMDBmMmNiNzg0ZWQ1NjhjNjlhMjhiODQ2ZTM1YTdhY2NhZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjViNWIwNzZiYWQ3YmVmNTJjZjBhMDJjN2Y3OTYxMDUyMWJmZDU0MmExMDczOGQ1N2Q0NzQzODRlZjc4YTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1YjYzZmY1ZmE0NDMzMzBiMjI0MmUzZTQzZTg4ZmZlNDZjZDk5ODczMmQ2NDFmM2JhNTRhYWIwZGJhMjJlMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1MjE3NDdkMTcwYTI2ZWY4ZTE5NTA1MTUzMDg5M2UyM2EwZWMwZjZmMTg2NjlmNDY3NTIxNzRmYzhhNmRlZTYifQ"
         }
       ]
@@ -59,11 +59,11 @@
       "statement": "After building, the snapshot is written to the FactStore under a descendant check: REPLACED means in sync, UNAVAILABLE keeps serving from memory with db_unavailable degraded, and STALE leaves even the in-memory snapshot unchanged.",
       "evidence": [
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L153-L168",
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L183-L198",
           "version": "repo-lines-v1:sha256:09ebde1be397a046c6ef6204855d4482b2a1a0a9a335091de2ebf7d899a361e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZjMzNjM5OTVhNzY3MmY4NWNlZWQ0ZjNjYTk5ZDFhNDU2NjdkNDFlZDQ3M2U2MDJjNjRkODk5NDNjMDYzYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0YWUwNDhiZjdkNDUzYTk4OTFlYjkyOGM0MjA2YTcyNWUyOTE0MTc1MWNlMmJmMTNmZDEwYjUxMDNkYjk4ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjYTRkODUxN2RmNzFkMjliMDBjYTQ2NjhjYzhiNTk5MzRkN2E1ZmVlZDc0MmYxOGNhODczN2NkZjJjNDcwOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzMTU5ZDdhYjg3MmExZDU2MjFjYmEwNmM0MmUwOTYzY2RlMWRjYWE4MTk2ZTg3ZGE1NjBkNjFhNTRmODBjMDUifQ"
         },
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/model.py#L54-L60",
+          "resource": "repo://packages/core/src/harness_catalog_core/model.py#L64-L70",
           "version": "repo-lines-v1:sha256:ac95fa4efc169f9968a51ceb98c1bc0c1a5bb56bfa91d87a3825211d7a793480:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZiODQ5MjU2YzFhYjM4YTgxNmJiZTM0ODZjNDcwYmE3NGZlMzBiMzE1NTkyMmMyZThmZWIwNjgwNWVkNTJlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzE0MmNiNDZhYjRkYjhmMTBmN2RmNDJhMWRkZjg0OGZmM2IyODMwNGMxYThjMzg2MWZhYzFmNWMwMDFiMWY1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRiYWZiMmVmMzM0NzNkMjE3YTQyYzg0NmYxNDgxNGE4ZDM0M2UzOTllMjNiMDhjYzljZDQzM2RmZTA0YjhlNyJ9"
         }
       ]
@@ -73,26 +73,30 @@
       "statement": "Readiness reasons are repo_unreachable, no_main_branch, not_a_catalog, unsupported_layout and layout_mismatch; repository-level structure violations make the catalog not ready, whereas skill-level violations only exclude that skill.",
       "evidence": [
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L170-L184",
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L200-L214",
           "version": "repo-lines-v1:sha256:c5be60c1250871b02326f4852778c09d82397aff024cf849d5caab8b486574a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3OTdkOGFiOGUyY2VkMDAyMjQwNmE5MGVmOWVmOTlhMzg1YjVjZWYzYmJlZWIwNWU4NWQ1MzZmMDFmZWRlYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiYTk1M2FmOWM2YzMyOTA0YWI4OGQ1ZDFmNDY0MWM0MTc5NjY3Mjc5M2VmYmJjZjIwODI3MmE4M2EwMmIwNWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyNmEwMDRhNmI2ZTA1Y2IxZWYyN2JmMTI3N2JjNzI1OWRhMDc0OWE3ZDRkM2MyMmJiNTk2OWRkMjE3ZjQyMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0ZjQ3NDdmMDE3MTc2NzUxMGRkZjliN2NjZWQwMGViMjdlMzc0MDk0MDYxN2UyODFkNzllOTU3NGMzYzRjY2YifQ"
         },
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/model.py#L31-L39",
+          "resource": "repo://packages/core/src/harness_catalog_core/model.py#L41-L49",
           "version": "repo-lines-v1:sha256:bc72059a13e1ca8971c500e81d4e2a7e44bfe79e705d616d6f1c76d2258ae45d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU1MWM1Nzk0N2EwYjdhNTRkZjkwODZmZTIyYjNlZWViYmYwZDZlOTE0MTQ2NDEyN2QzZDQxZmVhNjJmMmIwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTllODU0N2Y2YzFhNTc4MWIzOTNlN2YzNjk3YTFhZjdkZjgxNjRjNTFlYTQ2MjIwODA0NmVkOTg0ZmJmYzIxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQ3NjNmMjY0ZGFiNGI1ZjUwYWQ4MWNkZTVkOTYwZWQ4ZjYxNTdhM2U0OTc4MWQ4ZjFmNThlODkzNjFiMDExNiJ9"
         }
       ]
     },
     {
       "id": "claim_699716d0d1be43ea9691a3aec5324863",
-      "statement": "search_skills enforces a 2000-character query limit and limit 1..20 (default 10), and load_skill/get_skill_file enforce a 64-character name, a 1 MB file size, symlink rejection (path_rejected) and resolve a requested sha through the content store's main history, returning unknown_version when it cannot be found.",
+      "statement": "search_skills enforces a 2000-character query limit and limit 1..20 (default 10); load_skill, get_skill_file and get_skill_archive enforce a 64-character name and resolve a requested sha through the content store's main history (unknown_version when absent); get_skill_file rejects symlinks (path_rejected) and files over 1 MB (input_limit); the four limits are injected through Limits.",
       "evidence": [
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L204-L262",
-          "version": "repo-lines-v1:sha256:958bf0758fb6efa37c98cedb0d3b64c1117d93f8a7c4ee9c8ec94d01284bc315:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NjNkNzk2ZDBhMjc5NWE5MjE3YzMyYjk2NzQyZjk4ZmEzYWQ4ZThmMjBjYTYxMWU2NjEyYTJkNWFmMjZkZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiNmVjZTRkOWU1Njc1MjFiNzNlMmM5MjU3ZTU2YTY3Y2MyM2FjNWE4NDc3NzAxYzc1OTRkMGMwZDIyNWMyNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0YTVjMjgwNmRhYmIwM2ZmYzY0NDFiM2ZhNmZiODgwNzEyZDhiM2E4NTY1OGZmZjY2ODVmYjdhYWU5ZGQ2NzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhYTc5ZWQ4ZjkzZDUyNGExYWUzMjkwNzcyMmViNDUzMjQwMzNkMmNmNWUxNTdlY2QwMjc1OTcwMWIzNjdiMTAifQ"
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L234-L262",
+          "version": "repo-lines-v1:sha256:fbc3f432f6dfcc913857f2df66a19dfdd050d8a21f7bbcbdd95b8bd92989f361:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NjNkNzk2ZDBhMjc5NWE5MjE3YzMyYjk2NzQyZjk4ZmEzYWQ4ZThmMjBjYTYxMWU2NjEyYTJkNWFmMjZkZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5OTNjNGQwZGE3NmExNDdlYTNhMGQwOTM1ZmM5YzUzYWRmYjdlODA4MzZmNzI1NzkxMDhiYjYzMjU4NzViMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0YTVjMjgwNmRhYmIwM2ZmYzY0NDFiM2ZhNmZiODgwNzEyZDhiM2E4NTY1OGZmZjY2ODVmYjdhYWU5ZGQ2NzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3NGUxMDAxZDFhOWY1NTlmMTVlMjI5ZGFiNWMzZWExNmI3ZTE2YWQ0ZDJlMDRiYjk3NjczYjY2NmY4MjY4YzgifQ"
         },
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L35-L48",
-          "version": "repo-lines-v1:sha256:525e03cac3ab9d882bfbb894d12f11d35fe00727d7364e10f512ff94edcd9845:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMzlkMmMyYzE5NDc4Y2ViYTdhZTJiMWExNThkMGVkNzMzN2M1YzQzNDQxYjVlNWU0MTM0MGFhNDBiNzE3ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0MDExYzhlMWNjYjRkNjEwOTc1NGMxYmI2NWM3ZGViNmVlODQ0OTM1M2Q3N2JhODNhYWI2Y2FiZGNhY2U3YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyZGE0OGU2YTRkZDI3NmIyNGRlZGQzYmRhMDY4YmUzNjZiMzAxNTY0YTJmY2Y5ZGIyYzM4MTFiNzVhNWQ2YzcifQ"
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L338-L356",
+          "version": "repo-lines-v1:sha256:8697e198ecf4c1f2963db9f3dffbae96e182692a58c362109e4999024de9c806:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNmMwZDVhYmYyNTQ2NDBlYzEzYWQ0NWY5YzQ5YmNhOTJmNTYxYjM4NmEzOTM1MDlhYjE3Zjc3Nzc0ZTM2ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxYWJjZDBjYzY5MTNkNGY1MWViMjFlNGY1YWZjMmU5MGY4NmQzNmE0NTBiYjQyY2IwNWM2ZjNlMGQ3MDZmOGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjNjIzNDM4M2Y0OTYzZjBiODM5ZmFjMzBmNTI5MTJkNDljOWQ5OWNkOTAxMTY1NDMyYTJlNGY5NmIyYzA5ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1OWE2MWJkN2UwZThjOTkxNmZiYWEwNjgzMjBjZWNlOTliOWU0ZmM2ZjE1YWEwOWEwNmQxZTNlYmJlZTM4YTgifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L41-L58",
+          "version": "repo-lines-v1:sha256:5b94ea75a4733e4188011574438d6783f4490799f5cbf018c42827c5c5e9d982:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMzlkMmMyYzE5NDc4Y2ViYTdhZTJiMWExNThkMGVkNzMzN2M1YzQzNDQxYjVlNWU0MTM0MGFhNDBiNzE3ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZGZkYTdmMGQ4NGIwNjNmNjdkMmZkMzQ0OWY5NDI2OTUzNTRlOGNkNGVmNWI1ZDNlYzcxZmMxMDliMmU1MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0MDExYzhlMWNjYjRkNjEwOTc1NGMxYmI2NWM3ZGViNmVlODQ0OTM1M2Q3N2JhODNhYWI2Y2FiZGNhY2U3YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwNGFhODBmMTg1NGExMTQyYTQyMjg1OGU0NWNlNmVmZTFjMzJkNzg1YTI1MGVlMzM0ZDM0MTdiZjM3MDBjZDAifQ"
         }
       ]
     },
@@ -101,7 +105,7 @@
       "statement": "Reads before the first successful build fail with not_found (index not built yet) because every read path starts from _ready_snapshot.",
       "evidence": [
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L194-L203",
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L224-L233",
           "version": "repo-lines-v1:sha256:6405209aa63a8951ab2489603ff3c07d8988cfdc190e1580adbbba56c0bef9f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhNDg1NmRlMWQyMWFlOTU5YTk2MzM5OGRjYzg0YjgxMWVmYmYxOTVlNDNlY2ZmOTQ4ZTQ2OTEzZGM1ODIxYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkODc4NGI5Y2NiYmJlZTRhZGMwMTQzYWQ1NmExMWE5NDhjMmZhNTM1ZTEwZGY1YTlkMThhNGFkODQ4ZmNmZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMGMyYWJkNjhiNjU2M2Y3OGJhMjg3ODQ0YmFjYzFmZTUwYTAwODY2ZjE4MGM4MTJkZjg1M2JkNmViYTk3YmQifQ"
         }
       ]
@@ -115,10 +119,24 @@
           "version": "repo-lines-v1:sha256:9fe5578844c86f65bb40711c7dfc7df44c6a4246001af660e2293192df297e82:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZjVjMjExZGFmNDc2YWM4Yzc0NzhiZTg4MTdjN2U5MDc0MzlhYzQxMzk3NmFmY2QyYzRlOGQ2ZTA1MjllZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3Y2IyYTJkOTEwMzNhZmE0MDAwNWY2YjBmYzQ5Yjg3ODZiYmNmNjNkODMxNjJjZGY5NWFjOWNlMGFkNzhiODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyZTMxYzgzYTAwODFjYmZkM2QyNmVjY2ZlY2U1YzEyNjM4ZjliMTRjYzcyODcyMWY3MWUxYWI4N2M3ZjIyYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3ZmIyZjE3OThhNzkyODQwODI2ZGQxZDI2NWRlNmQxN2NiODU0M2EzOTg5NDk1M2VmY2M0YjNmZjNjN2Q0NmIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9ac058a06f0f427d9cd8a5458a29fee7",
+      "statement": "get_skill_archive builds or reuses workdir/archives/<tree>.tar through ContentStore.archive_skill, validates a reused cache against a 'v2 <sha256>' sidecar and the 20 MB archive_bytes limit, touches the file's mtime on every issue, and evict_archives removes tars older than the retention (TTL + leeway + 60 s) with candidates scanned outside the lock and re-checked under it.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L277-L336",
+          "version": "repo-lines-v1:sha256:484c0ba7292cd4d1cfd5f04befbb763bde8eec6874d1643e5247a31c45723940:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZWJlMTE2Y2YzZjFiM2M4NzM1MzEwMWE5OGRjYzJhOGMzY2IyYmZlN2Q3MGE2ZjU2NThlYmU2Yjg5MThiNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNWViMDc1N2FlYTVkYjllMTI5ZDU0NWQ2NDVkMWY1ZTg1YTJkM2NmMmU2NDg3MjkxNzY3M2Y0NDAyNjUwOGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2ZGUxMzA2NzdkODM1NDJkOGExMmZmOTg1YzJhNTViNzUxYzcyODhiZGU4ODNkM2NlNTYyYzU0YTY0YzhiZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiZGFiMWNkOTM3MGQzMjcxMmZkMGFhN2M2M2RiNGY3OTE2YTYxZjA5ODdjY2QzMmNiNjU5NWZjMjI0MDY4ODQifQ"
+        },
+        {
+          "resource": "repo://tests/core/test_archive.py#L27-L112",
+          "version": "repo-lines-v1:sha256:082042506f09dc299ba5251340cdca9a4412997c639a42f00f88463c8f57562a:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlOWQ0ZjJmYmExMDQ4MmNmYjk5YmEyYzkzODgxMGNmMWUwM2Q3MDZhNDczMWNkNmZjZDE4YmY4NzA2MzY0ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhOGM5MTc4Mzk5YmY1M2I3Y2ZiOGJmMmU0ZTM4MDBkOGRhZGY0ZmUyMWUwZGViOGY5NDZiNzA5OWNhZjg4NDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmNzhiYzMwNWVhNTcwYjExMzEwMmQ1Njc3YTBjY2FiMWY2MTI5MTdkZGIyZTg5NGI2NWZhM2QxMjUzMjY5MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.1",
-    "at": "2026-10-10T11:24:40.987Z"
+    "at": "2026-10-10T16:35:35.587Z"
   }
 }

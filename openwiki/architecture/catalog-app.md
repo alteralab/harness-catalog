@@ -1,24 +1,26 @@
 ---
 type: architecture
-title: Catalog app — fetch, check, index, and the status machine
+title: Catalog app — snapshot, rebuild, read paths, archive cache — fetch, check, index, and the status machine
 description: How the Catalog app fetches main, runs the checks and builds the index snapshot; the ready/degraded status and its reason codes; the generation rule that refuses a rewound main and accept_rewind; resolving a past version by sha; limits on the read paths.
 tags: [catalog, index, rebuild, readiness, rewind, hexagonal]
-verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-10T11:24:40.987Z
 sources:
   - id: openwiki-source-85a76422b73202924b7addfe
     resource: repo://packages/core/src/harness_catalog_core/catalog.py
   - id: openwiki-source-34f586c6418c2d86d226045c
     resource: repo://packages/core/src/harness_catalog_core/model.py
+  - id: openwiki-source-373cc192d3e934375abc9e1f
+    resource: repo://tests/core/test_archive.py
   - id: openwiki-source-ef613a68c4cecbb1abcfb8a8
     resource: repo://tests/core/test_catalog.py
-generated: { by: "claude-code", at: "2026-10-10T11:24:40.987Z" }
+generated: { by: "claude-code", at: "2026-10-10T16:35:35.587Z" }
+verified:
+  - by: openwiki/0.6.1
+    at: 2026-10-10T16:35:35.587Z
 ---
 
 # Catalog app
 
-`Catalog` is the **application** of the hexagonal structure. It knows neither git nor PostgreSQL, only the three ports (`ContentStore`, `SkillValidator`, `FactStore`). It does two things: periodically fetch `main`, check it and build an index snapshot (`rebuild`), and answer reads from that snapshot (`list_skills`, `search_skills`, `load_skill`, `get_skill_file`). The scheduler drives the former, the MCP tool adapter the latter.
+`Catalog` is the **application** of the hexagonal structure. It knows neither git nor PostgreSQL, only the three ports (`ContentStore`, `SkillValidator`, `FactStore`). It does two things: periodically fetch `main`, check it and build an index snapshot (`rebuild`), and answer reads from that snapshot (`list_skills`, `search_skills`, `load_skill`, `get_skill_file`, `get_skill_archive`). The scheduler drives the former (and, since 2026-10-11, the archive-cache eviction), the MCP tool adapter and the archive route the latter.
 
 ## One snapshot, replaced wholesale
 
@@ -58,19 +60,24 @@ Every read starts from `_ready_snapshot`; without a snapshot it is `not_found` (
 - `search_skills` rejects a query over 2,000 characters or a `limit` outside 1..20 (default 10) with `input_limit`. Ranking comes from `FactStore.search`; without a database a plain containment search over the snapshot stands in.
 - `load_skill(name, sha)` and `get_skill_file(name, path, sha)` enforce a 64-character name; an unknown name is `not_found`. When `sha` (the skill directory's tree hash) is given, `ContentStore.resolve_version` finds the commit in `main` history whose tree matches. If none does, the result is `unknown_version`. This is what makes a pinned old version readable at any time.
 - A file that is a symbolic link is `path_rejected`; over 1 MB is `input_limit`; paths are capped at 1,024 characters. Text comes back as `text`, binary as `base64`.
+- `get_skill_archive(name, sha)` resolves the version the same way and returns an `ArchiveInfo` (name, tree, commit, cache path, size, sha256) for a tar of the whole version. The tar is built by `ContentStore.archive_skill` into `workdir/archives/<tree>.tar` and reused while a `v2 <sha256>` sidecar validates it; a tar larger than 20 MB is `input_limit`. The build, validation and hashing are serialized under a separate `_archive_lock`, independent of the snapshot lock, and every issue touches the file's mtime. Signing and HTTP delivery are not the app's concern — see [Archive download](archive-download.md).
 
-The three limits (`query_chars`, `file_bytes`, `max_limit`) are injected through `Limits`, so tests substitute small values.
+The four limits (`query_chars`, `file_bytes`, `max_limit`, `archive_bytes`) are injected through `Limits`, so tests substitute small values.
+
+## The archive cache
+
+`evict_archives(now, retention_seconds)` is the one maintenance path besides `rebuild`: it deletes cached tars (and their sidecars) whose mtime is older than the retention, which defaults to the token TTL plus leeway plus 60 seconds (7 minutes) — the point after which no download token for the file can still verify. Candidates are scanned outside the lock and re-checked under it before unlinking, so an issue that just refreshed a file's mtime wins. The scheduler calls it every tick; bootstrap calls it with retention 0 at startup. Because the tar bytes are deterministic (the adapter pins the archive mtime to the commit time), an evicted version is simply rebuilt byte-identically on the next request.
 
 ## Invariants
 
 - The served version never moves backwards. A rewind is accepted only by an explicit operator command.
 - A checker failure never produces a new version, by the same principle that makes secret scanning fail-closed.
 - A repository-level violation means not ready; a skill-level violation means that skill is excluded. One bad skill does not take the catalog down.
-- The app never drives a clock. `rebuild` is a function; the scheduler sets the cadence; tests call the function without a clock.
+- The app never drives a clock. `rebuild` and `evict_archives` are functions (`evict_archives` takes `now` as a parameter); the scheduler sets the cadence; tests call the functions without a clock.
 
 ## Tests
 
-`tests/core/test_catalog.py` drives the app through fake adapters: the not-ready state, structure reasons, exclusion and reporting of rejected skills, past-version resolution and `unknown_version`, path/size/input limits, a lost database as degraded rather than unready, rewind refusal and `accept_rewind`, skipping a rebuild on the same commit, and using the database commit as the base on first start, each as one test.
+`tests/core/test_catalog.py` drives the app through fake adapters: the not-ready state, structure reasons, exclusion and reporting of rejected skills, past-version resolution and `unknown_version`, path/size/input limits, a lost database as degraded rather than unready, rewind refusal and `accept_rewind`, skipping a rebuild on the same commit, and using the database commit as the base on first start, each as one test. `tests/core/test_archive.py` covers the archive cache: creation and reuse with the sidecar, `not_found`/`unknown_version`/`input_limit`, rebuild on a corrupt, oversized or old-format cache, eight concurrent issues agreeing with the served bytes, and eviction by last-issue time.
 
 ## Related
 
@@ -78,3 +85,4 @@ The three limits (`query_chars`, `file_bytes`, `max_limit`) are injected through
 - [GitStore](git-content-store.md) — fetch, ancestor check and history resolution
 - [PostgreSQL index](index-store.md) — the `replace_index` transaction and `STALE`/`UNAVAILABLE`
 - [Scheduler and operational surface](scheduler-and-ops.md) — cadence, backoff, `/readyz`, `reindex`
+- [Archive download](archive-download.md) — the token, the route and pin-skill on top of `get_skill_archive`

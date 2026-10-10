@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a10977b04a4b0d3619a1c5b8127737306f3d5a328e70bf82d813da1e5c9d5689",
+  "claims": [
+    {
+      "id": "claim_21d6fba2671c4b75b2bd0a277ae4b2d9",
+      "statement": "The catalog CI templates are wiring only: the GitHub workflow's check job runs one `harness-catalog ci check` line and the evals job one `harness-catalog ci evals --agent` line (matrix from the JSON repository variable HARNESS_EVALS_AGENTS), and the GitLab template does the same via a hidden credentials job, so the logic lives in the pinned CLI rather than in per-repository YAML that init never rewrites.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/github/check.yml#L1-L39",
+          "version": "repo-lines-v1:sha256:30fb7bd3106e3021972e49be6ff52debdcf63b12e31197fbefeaf36974b20c2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmZGM0MzY5MzQyNDZmMTQyNTNiZDhmODcxNTJkMjc2NzBlNzJhMDM4Nzk2OGMxN2E4ZjE5NjI5N2ZkNDI4NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMjdmZWYxZjM1YTY1MjUyNmJhNTg2MTcwMmIwMDNjZjQ4OGRlYzgxOTc5OWQ5ZTMyMWY3NjVkZDg1OTY0OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/gitlab/.gitlab-ci.yml#L1-L44",
+          "version": "repo-lines-v1:sha256:fd05347ef98387ec2a8721ea7509cf0278b4532c198c8bf82f9423e873a840f1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5ZGUzMTAyNGQzYmNhMGMyMjBkOTg4ZjAzYWIyNTM4ZThhZDRkOThjNWVkNmRjMzUxODIxNGNlMTQ2YWJhMDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZWE1ZmY0MTdiZTNmZTk1NzVkMmE0MDc2ZjcxMGFkYTQ5ZGQ4NzZmYTEzMWRlYzk5MDM1NWI0MWRkMDY0ZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://plans/distribution.md#L72-L72",
+          "version": "repo-lines-v1:sha256:bd59f56a28f04ef7a91f7624c2c82d402f34eca071a68e775c1227e608c05dc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQ1OWY1NmEyOGYwNGVmN2E5MWY3NjI0YzJjODJkNDAyZjM0ZWNhMDcxYTY4ZTc3NWMxMjI3ZTYwOGMwNWRjOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQ1OWY1NmEyOGYwNGVmN2E5MWY3NjI0YzJjODJkNDAyZjM0ZWNhMDcxYTY4ZTc3NWMxMjI3ZTYwOGMwNWRjOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRiYWJiNmU2OTliYzc3YTAyN2NjNmIxNjZmMGZiZmJlYTAwYWM5ZjYxYzkyYzAwNGNjOTlmNzkwZmRlZTI0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ3NGNmMWQwNTIzNmE1MzVmNzRjNjBkMDU5ZjVjNTRlYTQ5ZGFlODE3NTE5ZmY1MGEyZmNhZDAyMTY2YzQwYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b9f1728e106b4882b693d10d5b8335f3",
+      "statement": "ci.base_commit selects the base for history checks fail-closed: a GitHub pull request uses merge-base with origin/<base ref> or errors; a push uses the first of CI_MERGE_REQUEST_DIFF_BASE_SHA, the event payload's before, or CI_COMMIT_BEFORE_SHA, mapping a zero SHA to the empty tree and fetching an unknown SHA from origin once before refusing; with a CI marker present and no candidate it raises CIError, and only a local run falls back to HEAD~1 or HEAD.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/ci.py#L14-L17",
+          "version": "repo-lines-v1:sha256:5b6c28a6f353ee628cc58fa85643fc0f71faa9f8ffb818afe2d18aff6ff80c00:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZiM2UyNzg4OTVhOGY3YzMxODgyNDk2ZGM3Y2I2ODQxMzcxNGRjOWI2MTI1MmNjMjVmNDM5OWZkZjBiNzdhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTI2MTJiZjgzYjRiNTQ5MGYxMTM1MGI0ZDExN2ZiZWFkZjExODYyM2MyNDIzYmEwMTYyYThiN2VkOTQ0NmI5NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzZjOGFjZTRhZjBmODQ4ZTg1YWZjNjEzODAxYWRkMjYzZjgxMmM0MWRiODkzZmYwZTUxY2QxNTdiNzhiZDllMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjA4MGRkNWUxMGIxZTJjNmFlMDA3YWVmMjg4ZGYxYjU5ZjFmZDAyOGYwNzc1YjUxMGEwZTQ4MDI0MTQ1MGVkYSJ9"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/ci.py#L52-L98",
+          "version": "repo-lines-v1:sha256:840b213c4e9e59239f37d25efc682a9678729714140e3129193ec680fdb7a5aa:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOWNkZjVmY2I4ZDU2N2NlOTgwOWE3MjZjNzMzOTdmZTQwOTUwMTgxZmRhN2RiZmU4YjQ5ZDI5NTQzYzdhOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NjgyOTZlYzE0YmQxNjI4YTg5NGIyZjg1OTllODVmMzdkMzgzMTJmYWUxMzhkZmZjNGNkMjE2ZTBlNTYzMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NmU5NzI2ZDQyNGQwZDZhY2M4NjE5ZGRiZjY5OGUwOTdjMGZkNWVjYjdiMTUyMTVlYWIyYmU2MGJiZmUzMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyNzkzN2NmMWJiZWIzNTUyYjdlM2JhMWY3YWY0NDE3YTc1YTQ5YTU4YmVhNmFmMjNlNWNkOTY2NWEwNDQ3OTIifQ"
+        },
+        {
+          "resource": "repo://tests/cli/test_ci.py#L37-L112",
+          "version": "repo-lines-v1:sha256:32f3c908b6e5a62d38023314e3969ed3cb4c3025dd551405b7e96a55fc4f4b76:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5MmZiN2FjMTY4ZmE1MzZmZjZjYWIyN2NiZWExZTdlNDRkYzkwNjVmZGM2MzlhOGZmMTFjZDRmM2FiMWFjMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZTE5OTY3NGMwOGY4ZWMxODNhNjU0ZGE3YWI1OTI4YjE2YjQwMDFhYWE4MjdhZjk5NTcyODU2ZGFkNmU3YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3M2FmYTg2MzZlNGRjYzcyNzk3MmMwZDQ3ZTMxNGZkZWFjYzIwZWEyNGFlOTA0NGVlYWQzNGE4ZGY1YWMxNjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_825742ae2f6648f7917691fd4ef2150b",
+      "statement": "ci evals exits 1 when the harness's credentials (per the Harbor agent variable table) or the three Langfuse variables are missing, exits 2 when the base or diff cannot be determined, and otherwise runs two harbor jobs per changed skill with an evals/ directory — with --skill and as a baseline — pinned to harbor 0.24.0 and the harbor-langfuse plugin at the CLI's own tag, continuing after failures and exiting 1 if any failed.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/__main__.py#L103-L134",
+          "version": "repo-lines-v1:sha256:ec75f241b7e2edc3bafc4584cb5790e5ee4993c5965b32371bcdc02441f97c71:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYTFlMzU3MTM0NTI4NjQxNjE1MjljMmVlMjllMWE5ZTdkMDQzZmMzMjYzZmRlNGFkYTdlMGVlMzliZWNlNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNmI5MjVkMTY4MTlkMWZhZDMzNTlmMTQ2YTY4MzdkZjJiMjRmMWVlNzg2ODUxNjk3ZjgzMjRiOTA3OWM3OWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxZWZiYWFhOWVhZGVjNmY0ODJiODcyNzhjMjM0MzQ1ZThkZWRlMzQ0NWU1N2UyNTQ4NzVhYTRiMzNhYTE1ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2MzYyOTAxZjU1N2Y4Yzg2OGJhN2IzYjgxYzUzMzc3YWQ3MWI5MTIxOWQ5MGZmZTZkYTY0OTczZjc3ZWNkZTgifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/ci.py#L101-L181",
+          "version": "repo-lines-v1:sha256:522a570cacf6e41e9b0f5a666a050a88a15f4bc701fa2a2f30da5cc30a4cde85:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkNTJmZDRlMzZjZDZjOWM5YjAxY2VmYTgyMmQ4YzVkMDcwZWIwMzJjYjBkMGJiYWIxY2MwMmE3ZDlkYmVjNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkODBiOTkwNTIxZjRmNTk3Yzg1YTRjNDgwNDM3NGMxMDkwOTFkNDVkYzdjODU0OTRjMmJmNWJlZWNiZDM3ZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzNzI3MzYwYTlmNjEwNWY3ODc4YWZhZjhhOTFiMjcyMmNmMDUwODQ0NDI1NjIwNTEyYzFmNWU1M2FiY2U4ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/cli/test_ci.py#L126-L209",
+          "version": "repo-lines-v1:sha256:10149bb7c98e81dabc0cc971605309ac309465d51767bd5eba68857cb0964064:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYjkxNmZmNGI3MWI2ZDQ4MGY4OWQ2ZGQ4NDQ2NWRiZjg3YjQwMGFiZjZlZDdmNmFlYjM0OGE2MzUxNWFjZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0Y2NiNzYwNWNmNmE0NThkMDQwODY0Y2RiNzgyNTZhNDFiMDQyNDQwMzJjOTBiODk0ZmI1ODg4M2I2Y2VmNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzMDlhMTUwYjE0YjQ2M2Q1YjVhZGE2ZmM5MWJmMmYyNTg0NTNkNTQ0NzQyM2YyYTI3MWEyMDU4YWM4NTAxOTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_78d39abb8e014c0397696e5130729812",
+      "statement": "The only shell left in the templates is the deploy-key credentials step (a local composite action on GitHub, a hidden before_script job on GitLab) because the CLI cannot install its own prerequisite while the code repository is private; it exports GIT_SSH_COMMAND and an insteadOf rewrite to the job environment only, does nothing when the secret is empty, and the GitLab check job additionally installs git and openssh-client.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/github/actions/code-repo-credentials/action.yml#L1-L24",
+          "version": "repo-lines-v1:sha256:97a4a74b4c1b761fd6508ffe11266ce7b8d7115c16361f177ae97bd9a7f4adec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYWI3YTI4ZWMyYTJlN2M0MWJiNWUwOTQyYTNhNWQxOGQ0NjJhYjlhNjFiYzk0OTBjNTczZmIyOWZiM2I5YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1ZDQ4MDMwZjljNTFlNzhiZjZiOTZhZTY1ZDc1MGZhMjM4Zjk5NjY0YTU3MWNkYzVjNzEyYzQ3ZjgyOWVkMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/gitlab/.gitlab-ci.yml#L5-L30",
+          "version": "repo-lines-v1:sha256:3f28523f5434f16133b8ede8bf5c69e877b9638a7d6a4615296898a487f7ff72:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3NzVjMDEwNWU4NDUzM2JiNTA3MzAwOTI4ODk2ZDBjOTY1ZTVmZDdkZjFmYmFhN2MwMDhhMTgxYWYxNzFmYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZmExNTgwYjQxMmYyOGJkYzFkZGVjODIzNWY4YTZkYzJiYzU3YzI0MTMzNzFmMWQ2NWRjNTJmMmEyMmYwZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZmU3NGUzODM4NzJhZTNhNmU0MjAzOTc3ZWU1NWMwMTQ5Yzc0YzUwMzE2YmI5NzFkZjZkOTRjMDk4ZTM2M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMTk1MWUwY2RlZTMxODBhZDRiZWVlZGMzOWYyOTMwYjBhNjE2YTI2YzA1YWFhMTNjNDUwMjk1MzRkMWRmMWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0dc6971561f24384b7562a5c4ede8b48",
+      "statement": "init writes only missing files — marker, README, pre-commit config, the host workflow plus the GitHub credentials action, and the two base skills from the CLI package data — substituting its own version for the v<판> placeholder, so a second run writes nothing and the catalog pins the tag it was created from.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/init.py#L54-L103",
+          "version": "repo-lines-v1:sha256:524723ff1a34da4076e8d0a423da5123917268ce958c91cb8483bbc51e366718:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzYjRiMTgyM2MyMGMwZjFiOTdlMGQ5ZjczMzVlMjgxNmVhYjZkOTUzZmIyZDg3MmEzODA5YzgyYjZiYWNhY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyNjAzZWIxOThhMDZiZDdkOTEyMWVlYzYyMjEwYmI5MjJjNzY0Mjc2ZjU1YjdjNzJlNGFlYmU4YmEyN2NkNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4YzRlMzZkZWZiYTQzMWU4MjdiMzBjNzQ2ZDAzYWQ5NGExOGYzNGNhMDM5MjY2ZDQyZWFkMGNkZjg5MWFkZDYifQ"
+        },
+        {
+          "resource": "repo://tests/cli/test_init.py#L51-L75",
+          "version": "repo-lines-v1:sha256:d472eb72544e241b29aabe2d34d497b32f6f9b409c61ad44d8563324bd7a0747:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyNGQyMjVkNTQyZGU0Y2UwN2E1MTU2ZTFjZjAzYWVjYjU5NTYyODk2YjgyMTdkMDJmZWViYTdhMDIwYzA2YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2N2NmYTBkNWJmOGY2NjM5NmEzMjI5MGEwOTI1NzNjMzJkZjZlZjdkYmIxZTA2MjIxNTk0MGM0N2UzZGI3M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmOWE2MTMyMzc2ZjM2ZTE5NWFlYWMyYzUwYTQ5MjQxNjZhYThhODAxMTMyNDUyMmQ4YWIxNmI1NmQ2NmY4ZGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ca28b0b0bec49d2905b0a8932900f0d",
+      "statement": "check obtains gitleaks through ensure_gitleaks: PATH is used only when the version equals the pinned 8.30.1, otherwise a checksummed download is installed atomically into the user cache with a hash sidecar; failure to obtain a trustworthy binary is exit 2.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/__main__.py#L41-L65",
+          "version": "repo-lines-v1:sha256:5518f899bfda0133b0b620ec238228a48da4be868427dd82b5d5b6b33246dd9a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZjJiNzg3M2UwYzVjYmE1YWEzMGRkMDM2ZjY4ZmFkMjkyMWVmZGE0NzcwZGI1ODA4Njc1MWQ4ZDAzMjgxYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1NDEyNzMwOWZkZTJiZWUxOWQzODY1MWRkOWU5ZmJiZmQzM2E5MGM2Yjc1ODk4NjY4MzM3N2U1YmNjNzUyOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczYjBkNzA0ZDUwODUwYzA0NWY0MzAyYzYyMmZiNDM3YTlhYmRlYmE0YjllZThlZWQ2YmRkZGZiNTYxMGI4YWMifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/gitleaks.py#L108-L136",
+          "version": "repo-lines-v1:sha256:15cb5c411fe83dc669005f8e276bb452afa60eccc27bd63adab94eca4b36e15d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkMjJmODIwOGVhODRiMmJlYzZhMTUyOTU1OWFlZmE5ZTcxMTMzODNjZjNlYzNjYjJhYTBhMTM5NjhlNDJmY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0Mzk2MDVhOGViMzNkYTAxOWJiMWEwYmIyYjM1Mjc0OGY4N2I4MTdmOGVhNGZmMjk3YzViMDI5YTk5MjliNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjNjhmODFkOWE5Zjg1ZGVjODJiMzFjMWM4NDhlMDc5OGJhMGEwMGEzYzI0NjEzODcxODJhMDFjZDMyNzYxNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/cli/test_gitleaks.py#L24-L101",
+          "version": "repo-lines-v1:sha256:1b7f6dd95a9c09fa7828d80f080655fd4c8a3749653e4f0d89480c53f0a1afea:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMjc2ZTM2MGNkN2E5YjQwMWE1MDZiMjhkMmRiMjMxOTZkYTFhYTQwZjkwNmZkNDRjNGRjMTJmYmM0ZmY0MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NWFiNzU0MTEwMmI0OTJhOGQ0NzNkODZlMjM4ZjY5ZDYwYWU1OTZlNThkNDZlMTY3ZWZlMTRlZjIzMDc0ODYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwYTlkZmFkNTRiNzMzMWI2YmM1OWEwYzc1ODJmMWFlYjg1MjFmOWY0ZWM4MzgyNDhiNDk5NzlmNzFkZWY5YzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T16:35:35.587Z"
+  }
+}

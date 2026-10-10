@@ -1,32 +1,44 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3ac371533185d8f254edd0a906b95b1919429eb15a58f54ce556e822076489f9",
+  "pageVersion": "sha256:c5fc705a62358314bb67f0652359d704a437f75f415825ae1bbc4a6bd7c14ffa",
   "claims": [
     {
       "id": "claim_87fb9c83eff44a1b8f0a795486da0df5",
-      "statement": "Production compose runs registry, postgres and dex; the registry reads its two secrets and the OTLP header from /run/secrets files, waits for postgres and dex to be healthy, and is health-checked on /healthz; postgres is probed for both databases plus the pg_trgm extension and dex on its /healthz/ready endpoint.",
+      "statement": "Production compose docker/compose.yml runs registry, postgres and dex; the registry reads its two secrets and the OTLP header from /run/secrets files, waits for postgres and dex to be healthy, and is health-checked on /healthz; postgres is probed for both databases plus the pg_trgm extension and dex on its /healthz/ready endpoint.",
       "evidence": [
         {
-          "resource": "repo://docker-compose.yml#L39-L59",
-          "version": "repo-lines-v1:sha256:5c3bf0a3f747e15bd532412095d4cd41a70cbb4642f8b5ba4d8e258497faeb38:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwZjhkYzgzYTlkMTA3NzQxZTUzNjRhZTBjZjZmNDg1OTU3MDIyMDkwMzExMjIwYWFmOTAxOGI4NzcwZmUxNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MzFlMjYwMzk4YWQ2MTA5MTRkZmMyOGYwNDhkMzkyNjRiYTdkNTAzMjc4ZGQyZjhiYjFjNGMxNGI0OTlkOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhNjJkMjQwMzA1NzJiZjQwMGQ0M2E1MDY1ODgwOTA0OWM3MDlkNmM3ZWFkYzIxMzQxNjljMDk3ZTNkYjcxZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZjk5ZGJmYjI3MGJhOWFhZTEwZGU3NzIwZWZiZWU5MzFiZDkwMmI5OGRmZDY1ZjcyZTM1MTNiN2U3Yjk0NmMifQ"
+          "resource": "repo://docker/compose.yml#L10-L40",
+          "version": "repo-lines-v1:sha256:d5f962ed45aa4ccc0af6b2e4970673c83a6a9dd65da77417096207d2cca66933:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczNmFkNDJlNDk0Y2EwNWM2NzE3NjI2YmM5YzIwNDg0ZTU2OTJjNDkyMjBkYjM1Yzg2NGIxMTI5ZGI3MDNmZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MzFlMjYwMzk4YWQ2MTA5MTRkZmMyOGYwNDhkMzkyNjRiYTdkNTAzMjc4ZGQyZjhiYjFjNGMxNGI0OTlkOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5Yjk1MGEzZWYyNjMwYWY2MWIyMzg5NTYwMjBiNTNhMTllMTlhZmY0NTRkYWZjMzNjMjc1MDBkMzE4Y2JkZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiMjMxODg2ZTY5ZjliMzJlYzZmMmUxNTdhNTdkMGFjMTVhMDcxMmFmN2IwZjBiYWRmODUwMjcwZDE4NzI0MTMifQ"
         },
         {
-          "resource": "repo://docker-compose.yml#L61-L85",
-          "version": "repo-lines-v1:sha256:4a6a1cefd0be376d9ae8fd7f693053240e93272d3b8b03a8b9559a731045b161:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZmFiMjY2YTFjYWJlZjQ3MTk5ZjE3ZDUyZjNmZDA3YWVkMWIyOTc4MDhiYzNhYzdlZWI0NDJmOGU5MGYwMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MzFlMjYwMzk4YWQ2MTA5MTRkZmMyOGYwNDhkMzkyNjRiYTdkNTAzMjc4ZGQyZjhiYjFjNGMxNGI0OTlkOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxMzdhNzc4YTM0MjE0YTQ1NDgwYmQ2MmJiZmRmNGNlMDQ5YTljODFmY2NmMDI4OTI1NWJjMTgxNWQ1ZDFlYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllMDg4M2E4MmNhMzZkMmUzYWE2ODU5MGZmNzVlYjc5ZjY3Y2RlMzM4NTExODk4OGY0Y2VhNTc3NDc2ZGRlZjUifQ"
+          "resource": "repo://docker/compose.yml#L42-L62",
+          "version": "repo-lines-v1:sha256:7c32974da2614fd9529c98f7b6eaa88051ad5f6ed1e6af9798fd37e057a7a938:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwZjhkYzgzYTlkMTA3NzQxZTUzNjRhZTBjZjZmNDg1OTU3MDIyMDkwMzExMjIwYWFmOTAxOGI4NzcwZmUxNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MzFlMjYwMzk4YWQ2MTA5MTRkZmMyOGYwNDhkMzkyNjRiYTdkNTAzMjc4ZGQyZjhiYjFjNGMxNGI0OTlkOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhNjJkMjQwMzA1NzJiZjQwMGQ0M2E1MDY1ODgwOTA0OWM3MDlkNmM3ZWFkYzIxMzQxNjljMDk3ZTNkYjcxZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZjk5ZGJmYjI3MGJhOWFhZTEwZGU3NzIwZWZiZWU5MzFiZDkwMmI5OGRmZDY1ZjcyZTM1MTNiN2U3Yjk0NmMifQ"
         },
         {
-          "resource": "repo://docker-compose.yml#L7-L37",
-          "version": "repo-lines-v1:sha256:d5f962ed45aa4ccc0af6b2e4970673c83a6a9dd65da77417096207d2cca66933:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczNmFkNDJlNDk0Y2EwNWM2NzE3NjI2YmM5YzIwNDg0ZTU2OTJjNDkyMjBkYjM1Yzg2NGIxMTI5ZGI3MDNmZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MzFlMjYwMzk4YWQ2MTA5MTRkZmMyOGYwNDhkMzkyNjRiYTdkNTAzMjc4ZGQyZjhiYjFjNGMxNGI0OTlkOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkZWFmOTU0NDk4Mzg3ODk4YTlkNTE1OTUwYjVlYWNmNDQwYTVhMjAzMmFmOTA4YmRlY2MzM2IwNzU5OThjNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiMjMxODg2ZTY5ZjliMzJlYzZmMmUxNTdhNTdkMGFjMTVhMDcxMmFmN2IwZjBiYWRmODUwMjcwZDE4NzI0MTMifQ"
+          "resource": "repo://docker/compose.yml#L64-L88",
+          "version": "repo-lines-v1:sha256:4fd5c07cc1ec7897f32f63e3ecb284b538490e52623e0b6491ab1350d956581f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZmFiMjY2YTFjYWJlZjQ3MTk5ZjE3ZDUyZjNmZDA3YWVkMWIyOTc4MDhiYzNhYzdlZWI0NDJmOGU5MGYwMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MzFlMjYwMzk4YWQ2MTA5MTRkZmMyOGYwNDhkMzkyNjRiYTdkNTAzMjc4ZGQyZjhiYjFjNGMxNGI0OTlkOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxMzdhNzc4YTM0MjE0YTQ1NDgwYmQ2MmJiZmRmNGNlMDQ5YTljODFmY2NmMDI4OTI1NWJjMTgxNWQ1ZDFlYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllMDg4M2E4MmNhMzZkMmUzYWE2ODU5MGZmNzVlYjc5ZjY3Y2RlMzM4NTExODk4OGY0Y2VhNTc3NDc2ZGRlZjUifQ"
         }
       ]
     },
     {
       "id": "claim_de52baab2ebf45e08b1efa8f7b215ea5",
-      "statement": "The development compose starts only postgres and dex, binds their ports to 127.0.0.1, passes secrets as plain environment variables as a documented development-only exception, and expects the registry to run on the host.",
+      "statement": "The development compose docker/compose.dev.yml starts only postgres and dex, binds their ports to 127.0.0.1, passes secrets as plain environment variables as a documented development-only exception, and expects the registry to run on the host against the same docker/.env.",
       "evidence": [
         {
-          "resource": "repo://docker-compose.dev.yml#L1-L24",
-          "version": "repo-lines-v1:sha256:884b545a849d2603a56bcb1ed9d5ba711a579dd65336d1dfa91548c1f0e57b76:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ZWEyMmU3ZDU0YTRmYTEwYjNiOGZkNDUxNmRkY2VlZjM4YTU1MmRkMzY1N2FhZWVmNzgzY2JlZTJkMGQyNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNjgyYzY3ZmQ2YThmMTY3NTU2OTk5NzQ3NDk0YzY1NjI5YmE0NzRkNTQyMGFiYzdjY2M0NmVkYmJlZjAxMDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2YmIxOTRhYTdmNTFhYmIwYTJkZTRjZjVkYTdmNjYxYzcyYTJmOGExZWM1YzMwZTIwOTRhNjY5MGJjMTAxZTgifQ"
+          "resource": "repo://Makefile#L29-L30",
+          "version": "repo-lines-v1:sha256:c968d9d411f257ba562ba90d9be5f45381165f44023010c37528eaeed36fe715:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjFjOWNmNjdmNDU3MGMzOTY5ODJlYTNkMGUzMzYyMmFhMTliN2MzNWRmYzI0OGNiM2U2MmI0NjcyM2Q2NmJkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTdiYTQ4M2MwNWY4ZmFjMWJiZjQ0Yzg2ZWEzYThlZWQ2OWFjNDM3MzEwOTNjZTVhZGRkZDAyYTEyOGRhNzY2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTIzMjUyN2EzZWE1Mjg0Zjc3ZjQ2ZWUyYTAzYTQ1NzIwZDE1MGQyNjY2ZWZmNDk5ZTA4M2FkYmU5ODg0OTY3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjY5NjAxOTk3NjMxYjdiZTQ5YThkYmJiMDQ3NjY3YzMzZjhlMmFkMGEwNGQ4YmYzNGEyMzI1YWU0YzYxZWUwYiJ9"
+        },
+        {
+          "resource": "repo://docker/compose.dev.yml#L1-L8",
+          "version": "repo-lines-v1:sha256:9e634c001cd63b47af6d70c553695c90930d033ce4cb2c76b2730a09d5d8fdc9:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODVlYTIyZTdkNTRhNGZhMTBiM2I4ZmQ0NTE2ZGRjZWVmMzhhNTUyZGQzNjU3YWFlZWY3ODNjYmVlMmQwZDI2YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGMxOWJlY2Y0NjFiZmFlOGQwZGI3MjgzZWY1OWE3Nzk1YWU3ZjJkYWU4MjliZjQzYTE1MzExNDljZTgyYTA1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRjNDJlMmMwZTAyNjNlZmJkYTZkNDg0NWRhMTUzOWUyOWZhMjhhNDZhN2NjMzEyNGQ3ZTY0YTM0MWI1Nzg1NSJ9"
+        },
+        {
+          "resource": "repo://docker/compose.dev.yml#L13-L24",
+          "version": "repo-lines-v1:sha256:d94291a819bccd5874b2b4f92845500027e635da1e9c1da0501110cd9cb712bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNzQ2MzM0ZmRiZDY1MTMyMzlmMTMyNmRiOGI2MTI3NTdiNWIzMmMwODA4YjUwODFhOTkzN2Y2NTMzYjhkYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjMzUyNmI5MTJlMGNmNjMwOTI3MWE5NGNlYjRmYmI1OTI0YTFjMTIzMGUwYWVjZTYzNmUwMTU5ZDJkZDU5ZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViMGQzMmNjYTQzMmVkMTJjYzE2MzlhYWZmNGVhNTE2OTQ0MDY0MzBkNmRmMzViY2VmNTA0M2YzODMwMDFmODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxOGQ3YmRlZDU5Y2ZmZDZhMzdmMGJlOGQ1NjU5ZTI2YTkwZmI2ZGMxOWY4ZDcxMjVjZDQ0MWRlNmY4N2Q2ZWEifQ"
+        },
+        {
+          "resource": "repo://docker/compose.dev.yml#L36-L45",
+          "version": "repo-lines-v1:sha256:f70b6f2170d05a7b932e55b49136bc0efda0915c40733334a5b7b38641b49359:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNzQ2MzM0ZmRiZDY1MTMyMzlmMTMyNmRiOGI2MTI3NTdiNWIzMmMwODA4YjUwODFhOTkzN2Y2NTMzYjhkYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNzc1ZTVlZWVmMmE3MzJkNWExYWZmZjM3ZTFmMTYzYjZmZTk3NzhjZGUxNjEyN2ZjODhkNWZiZDBiNWFjY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmMjM0OTE4ZWMzZjUyNjAyM2Y4MDAzMzRmYzE4ZGRjMTc1ZGRhZjZlNDI4OWIxNjNkYjBkYjM1NmNlYjY3ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiNmMyOGUxZmY2YjMxM2IwYjE1YjM5MmE0ZGY0YWYyMzExMWIyNjY1ODU4NDJhZWE2MzQzYmY4MjlkMWE2OGQifQ"
         }
       ]
     },
@@ -45,8 +57,12 @@
       "statement": "The PostgreSQL init script reads *_FILE or plain variables to create the roles and databases on first start, and the SQL is mounted outside initdb.d so the entrypoint does not execute it twice.",
       "evidence": [
         {
-          "resource": "repo://docker-compose.yml#L49-L53",
-          "version": "repo-lines-v1:sha256:756afb192ddc5d9820ffe8fc382dd2198ba5340058ff2967967ca86928f4e29f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJjOWMyMmU5MGE0NDc0NTQwZDI4NTJmZjNkMDhmZTc0MDI5ODRmNTMyMjg4ZmI2MjNlZWViZmM0OGUyODg2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjBjNWVhYTkxZTgxMmJkMzYzNGNlYmI1Yzk1NjBhNWMyNzBmNjRkNDU5OWJhMWJiMmFhNTA5ZDkwODdkZDFjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQ1NWFkMjI2ODY3Y2NjZTIzOTYyZmFmYjMyOWY5YmU4NzA3YTVlMmZkOGVmMThmMGI1ZjljOTcwYTQxYzkzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWYzNTYyNDY0MWQ4YWRjNjRkYjAyNjhhZTVjZDExZWIzYTMxZThlMWJlNGU5MjE4ZWRkOTA4YzRlYjZiMzhkMSJ9"
+          "resource": "repo://docker/compose.dev.yml#L18-L22",
+          "version": "repo-lines-v1:sha256:f3c51148bd4bb2b0faeb2dad5e032ef1b5107978f8609d3385c7f6aaac5b36be:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEzZjRkOTY2MWU5ZDJjM2UxYTI4OWU1ODMyMjk5YmVhMTRjZGI2NGJmODg2NjFkZjcxN2IxMmZhMDJkMDExZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjMzYTIzYzJiYjM5YjUzYWY2MTE2Y2Q1OTQ5YmMyMDE4MWQ5Yzc1ZTlhY2MwMzExMGMzMzUwZDcwMDBkMTUyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTFkMDBjNDg0MDc5YjE0ODRkOWI2MDdiMWM2NTUxZjhiM2VmNDhlODM1YzMxMjhiNmY1M2I2NTQzMjFiMGRhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDM0MzljMDFiODIyNGJkNjM5NTg4MmJkMWZmNWU5Y2E1ZGIzZjRjNWZkOGFiNTEyNWI3MjI0YWI5YjRjNzkyNiJ9"
+        },
+        {
+          "resource": "repo://docker/compose.yml#L53-L56",
+          "version": "repo-lines-v1:sha256:fcf5247532ef7b00968a9796006a5c85f6befa6ed63947600e9f095e61b5cbf7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEzZjRkOTY2MWU5ZDJjM2UxYTI4OWU1ODMyMjk5YmVhMTRjZGI2NGJmODg2NjFkZjcxN2IxMmZhMDJkMDExZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjMzYTIzYzJiYjM5YjUzYWY2MTE2Y2Q1OTQ5YmMyMDE4MWQ5Yzc1ZTlhY2MwMzExMGMzMzUwZDcwMDBkMTUyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzc0ZTE5MjA1YWNmZWMxNDAzOGNlOTcwYzA2NzVkZThjNzY0MTQ2YzM3N2ZjNDE1ZGJjZGFmODE5Nzk5YjVjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWYzNTYyNDY0MWQ4YWRjNjRkYjAyNjhhZTVjZDExZWIzYTMxZThlMWJlNGU5MjE4ZWRkOTA4YzRlYjZiMzhkMSJ9"
         },
         {
           "resource": "repo://docker/postgres/init.sh#L1-L21",
@@ -56,25 +72,25 @@
     },
     {
       "id": "claim_1c975c078f4e406888302efa4e98aba4",
-      "statement": "The Synology LDAP overlay swaps Dex's config for the LDAP connector variant, adds the ldap_bind_pw secret and LDAP_* variables, and adds an extra_hosts entry on the registry mapping the public hostname to the host's Tailscale IP so the registry can reach the issuer at its public name from inside the container (hairpin).",
+      "statement": "The Synology LDAP overlay docker/synology-ldap/compose.override.yml is layered on the production compose only: it swaps Dex's config for the LDAP connector variant, adds the ldap_bind_pw secret and LDAP_* variables, and adds an extra_hosts entry on the registry mapping the public hostname to the host's Tailscale IP (hairpin); it cannot be combined with the development compose because that file has no registry service.",
       "evidence": [
         {
-          "resource": "repo://examples/synology-ldap/docker-compose.override.yml#L1-L27",
-          "version": "repo-lines-v1:sha256:ec1524637edf84999420e86511940317dc1be12b330ce4191aadaa2eb6e53925:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ODEwMTM2MjU0OTlhN2VhMDY4NTI5MTBmMTk1ZDUwMGUyY2ZjOGU1ZjVjYmVmNDM1OWY0YzhjYjJiMThiNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMGNlNDE4NWVlZjY4ZDg2NDQ1MGM5MTI1MDBmNmRiMDE0MzJjNDE2MjI2MjE4OGM5ZWNkMjdjOTQ1NzQwNzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://docker/synology-ldap/compose.override.yml#L1-L27",
+          "version": "repo-lines-v1:sha256:293d66a7fcda94588d93dfe36895f1788fef45a67331e5b9a3d549973cdbc181:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ODEwMTM2MjU0OTlhN2VhMDY4NTI5MTBmMTk1ZDUwMGUyY2ZjOGU1ZjVjYmVmNDM1OWY0YzhjYjJiMThiNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NGJjZjAyNzJmYTU4OTI5ODIyZjM2OTIxMjE5YTliNmI0ZTE4MWY2YzBlMjdhZjUzOTlkYmRkN2JhNjRhOWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_a85b6cf7c6784bf8a73c837e8bb8303b",
-      "statement": "The image is multi-stage: a builder installs only the server package with uv from pyproject.toml, uv.lock and packages/, and the runtime stage adds git, openssh-client and the gitleaks binary and runs as a non-root user; .dockerignore keeps tests, docs, compose files and developer tooling such as node_modules, graft and .claude out of the build context.",
+      "statement": "The image is multi-stage: a builder installs only the server package with uv from pyproject.toml, uv.lock and packages/, and the runtime stage adds git (required at 2.42 or newer for git archive --mtime), ca-certificates, openssh-client and the gitleaks binary and runs as a non-root user; .dockerignore keeps tests, docs, the docker/ directory, secrets, openwiki and developer tooling such as node_modules, graft and .claude out of the build context.",
       "evidence": [
         {
-          "resource": "repo://.dockerignore#L1-L35",
-          "version": "repo-lines-v1:sha256:545b2f98ac59d7708e3f9e855aeb2a72b649ada3f69dfacaf42756c02a503ade:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMDNmMTZmYzVhZDhiZTcwZDZlMDQ5MWZhMmUwMjliYzRhMzFmNWIwZGU2ZDRhZGY4ZTdkZDcwOWQyMzg0MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiYmM2ZDAyZDkzNDFhOWM4NGYxM2JlMzllMDkzNTg3N2EzZjlmZDU0YjkzOTJlOTQwNzYwZWFmYzBlY2RiNTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.dockerignore#L1-L30",
+          "version": "repo-lines-v1:sha256:f46c8c31cb723f0e8e05c2687617dbb2d1f135e77fa8fc0e716170f659f35317:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMDNmMTZmYzVhZDhiZTcwZDZlMDQ5MWZhMmUwMjliYzRhMzFmNWIwZGU2ZDRhZGY4ZTdkZDcwOWQyMzg0MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiYmM2ZDAyZDkzNDFhOWM4NGYxM2JlMzllMDkzNTg3N2EzZjlmZDU0YjkzOTJlOTQwNzYwZWFmYzBlY2RiNTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://Dockerfile#L1-L33",
-          "version": "repo-lines-v1:sha256:ce544a2a9d1fd267e4fcf91d57b00a0ca3901bc40aea2124d522b57d4eef537f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYmQxOTAyYzc3ZmMxN2I0MmMzZGE3N2EwNzRiOWIxYWVlZmIyZTg5NzNlNmQ5MjViODgyYmNiYWE5ZDMyMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhMDM3YWJjZGQzYjI1ODAyNzQ4ZDgyZjg4NTc1ZTgyYjIzNTJjM2Y3NDMwYzQ0YTBkOTI5MjgyODY5YzdjYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://Dockerfile#L1-L34",
+          "version": "repo-lines-v1:sha256:0227d41a37eb6783e684d79d5e3b3b167a80a0e645e3d07e25c8000403414439:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYmQxOTAyYzc3ZmMxN2I0MmMzZGE3N2EwNzRiOWIxYWVlZmIyZTg5NzNlNmQ5MjViODgyYmNiYWE5ZDMyMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhMDM3YWJjZGQzYjI1ODAyNzQ4ZDgyZjg4NTc1ZTgyYjIzNTJjM2Y3NDMwYzQ0YTBkOTI5MjgyODY5YzdjYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -93,40 +109,80 @@
       "statement": "The quickstart puts the registry in Dex's network namespace (network_mode: service:dex) so that one issuer URL, http://localhost:5556/dex, is valid for both the host browser and the registry container, with Dex's service publishing both ports; a welcome container in the same namespace prints the URLs, demo users and the claude mcp add command once the registry is healthy.",
       "evidence": [
         {
-          "resource": "repo://docker-compose.quickstart.yml#L1-L16",
-          "version": "repo-lines-v1:sha256:5dd353e6efe8b2ea83504ab32896956f3d6e29d96519ee515219b3656a9e479f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZGUxZGE4ZDIzNDliOGI3ZWFkNzBlNTlhNjU1OTZlYjMxN2JlMTZkYzkxNTg5YWZiMzExYWFiOWZlZDBmNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNzNmY2NkYzk5ZWE4MzU5NjdjN2RlZTdlZmJlZDFmM2NhODcyNjBkOTI5MzE4NTBmZGQ2NmRhOGNiMTJmMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyYWFhMGJiOWYwYjZmY2FkMTQ3Y2JhMzE1NDY0MDY4ZTUwODEzMjJjYjJkOGEyZDc1OGY1OWZmMDYzMTkyNzAifQ"
+          "resource": "repo://docker/compose.quickstart.yml#L1-L14",
+          "version": "repo-lines-v1:sha256:b704344ab9e8c7d50aec69b47358a3aa439b9fdd7f6221cfedf7ec92d017cfa5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZGUxZGE4ZDIzNDliOGI3ZWFkNzBlNTlhNjU1OTZlYjMxN2JlMTZkYzkxNTg5YWZiMzExYWFiOWZlZDBmNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkOGVmZmI3ODkzMTllNWE5ODdlNmRlYTk2NDAxZTNkYzY1MzFjZTQ5YjhhNjhmOTE1Mjg1ZmRjNjcwYjNmYmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0YzQyZTJjMGUwMjYzZWZiZGE2ZDQ4NDVkYTE1MzllMjlmYTI4YTQ2YTdjYzMxMjRkN2U2NGEzNDFiNTc4NTUifQ"
         },
         {
-          "resource": "repo://docker-compose.quickstart.yml#L46-L48",
-          "version": "repo-lines-v1:sha256:e4bae6e0f76c6c00c1adec3edcd7bdc792e372a043b0aa227257b0e9a8b1448b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMxNmVkMjM5YTM2NTFiNTA3OWMwZTRlN2YwNzg0NGVhMzI5Yzg3NjI4YmY5ZmNjNDYzNjc3MzNmNWUxZTkzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOThkNGQ4ZTQyNDkxMmU0NmEyM2NlNTc1OWQ0MjMyZjU1ODgzOWE4YWExNjFiYWNkZDRiNTM4MGQ1OTFmNzY0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTE0NGViZGE0YWRmOTAxZmNlNTQ2NjJjNjg3MzkyNDVhNTZjNmZhODk2Njc4YTE1NjhmN2VkMzA4NzhhOGJhMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2I2YzI4ZTFmZjZiMzEzYjBiMTViMzkyYTRkZjRhZjIzMTExYjI2NjU4NTg0MmFlYTYzNDNiZjgyOWQxYTY4ZCJ9"
+          "resource": "repo://docker/compose.quickstart.yml#L100-L124",
+          "version": "repo-lines-v1:sha256:0fa35c3e312266b83142aab6533c5a8201c619b75c72cce882460bcd6f92953c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxYjUyMTU4YjU2YmE5MzMyYjVjYTQzMGJjMDA1MTk4OGE0MjJhZDlhMmVmMTg2ZDZjMjc4N2VmNzZjYjk2MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNzg0MmMzMWQ4OGNlZTI0ODY2MGYxZWMwNjVmODAzZWUwOGZiNGIwYzM4YTVjOTMyNzgwYjYwYjllN2Y3OWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmMjZkYjlmOWYzMzJkMDc1ZjA1ODNkZGJkZmMzZWJjOGFmYTA2MjVlMDNmMGRiMDMwYzMwNjkyMTQ5NDE3YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMzQ2ZGFjZTQyNjQwZDE5NGMyY2EzMzFmNTZjNTA2NWFjZTUxYzk5MjM1MWJjMDNkMTJmNGUzOGQyNTgyMzAifQ"
         },
         {
-          "resource": "repo://docker-compose.quickstart.yml#L70-L97",
-          "version": "repo-lines-v1:sha256:a2ca8660cdb8c0ec1d9a7cd8beaa0e96295fd1352e89c232496c9c9c42e7b0f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczNmFkNDJlNDk0Y2EwNWM2NzE3NjI2YmM5YzIwNDg0ZTU2OTJjNDkyMjBkYjM1Yzg2NGIxMTI5ZGI3MDNmZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMjk0Y2U5ZTE2NmI3N2M5NmY3OWU4YWE1MmZiN2E2YzI1YmFlOWY3MTZmNTA0NjllZDIyNTI1NWQwMTJhODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MThiZWJlYTA3MjVkMDFmNDEyMDhmMjU0ODI2NzQ5Njg0ZGRlZDE2NGYwMGJkNjVlOTFmOWZlYmRjNjE1ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmMjZkYjlmOWYzMzJkMDc1ZjA1ODNkZGJkZmMzZWJjOGFmYTA2MjVlMDNmMGRiMDMwYzMwNjkyMTQ5NDE3YjgifQ"
+          "resource": "repo://docker/compose.quickstart.yml#L46-L48",
+          "version": "repo-lines-v1:sha256:e4bae6e0f76c6c00c1adec3edcd7bdc792e372a043b0aa227257b0e9a8b1448b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMxNmVkMjM5YTM2NTFiNTA3OWMwZTRlN2YwNzg0NGVhMzI5Yzg3NjI4YmY5ZmNjNDYzNjc3MzNmNWUxZTkzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOThkNGQ4ZTQyNDkxMmU0NmEyM2NlNTc1OWQ0MjMyZjU1ODgzOWE4YWExNjFiYWNkZDRiNTM4MGQ1OTFmNzY0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGI1NWYwZGZjY2UwYmE2N2Q3YmJiZGYxMjMwZGNjM2RjYjc5ODMyOGQwMDg1M2QxZmU4NjU5MGNjYTcxMDU1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2I2YzI4ZTFmZjZiMzEzYjBiMTViMzkyYTRkZjRhZjIzMTExYjI2NjU4NTg0MmFlYTYzNDNiZjgyOWQxYTY4ZCJ9"
         },
         {
-          "resource": "repo://docker-compose.quickstart.yml#L99-L123",
-          "version": "repo-lines-v1:sha256:c429caf0605639fd11dcb098acc5e4865bf8635e8a66e25e3e043450938d1cd8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MzFlMjYwMzk4YWQ2MTA5MTRkZmMyOGYwNDhkMzkyNjRiYTdkNTAzMjc4ZGQyZjhiYjFjNGMxNGI0OTlkOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3OGE3MmQ5ZWQyYWZiZDRjZTZhNTAxNmQ4MmRmYTE5MGQ0YjUxN2Q0NmE5ZjI5MjI3MjIwYTk2OGZmYzJkM2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiYzMzMjc1M2ZhM2E0Y2MwZDNkYTM5NGZiNjg3NmY1OTM1OTMzODZhOGI0MjJmMjkxZDlmNzk3ZWY3OGY3ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlOTg3MjMyNmE1Nzc4YzYyMTM0NjgxOGVlNjU3NjAyMzUyMzdmYzAyZjgwY2MyZmUyOWE2ZGUzZTA0ODY3MzEifQ"
+          "resource": "repo://docker/compose.quickstart.yml#L69-L98",
+          "version": "repo-lines-v1:sha256:c6e219a6208efd5382a6713c762a3ec04b94a04edf2b6b0f4decfa22f5e4c024:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczNmFkNDJlNDk0Y2EwNWM2NzE3NjI2YmM5YzIwNDg0ZTU2OTJjNDkyMjBkYjM1Yzg2NGIxMTI5ZGI3MDNmZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MzFlMjYwMzk4YWQ2MTA5MTRkZmMyOGYwNDhkMzkyNjRiYTdkNTAzMjc4ZGQyZjhiYjFjNGMxNGI0OTlkOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3MDQ4OWE3NGNiZjJjNWUzNTVlNTQxZDMwYjMwODIxZTk5YTRiYTI2ZWYyYzJiYWExODNhYzI4OGU4MDM1YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmNjc5MjQ2YTk0NjAxNGVkNDNjNGQ3NjA1OWNiNDJiOWE0Y2U1YTllNDJiODVmNTgyNDc3NzZhZjU5MzU2N2EifQ"
         }
       ]
     },
     {
       "id": "claim_36f5850aa0694955b5fed0e0965c3f01",
-      "statement": "The quickstart's catalog-init container seeds a bare repository on a named volume from this repository's skills/ and the CLI templates, pinning the templates to the CLI package version, exits idempotently when the repository already exists, and the registry fetches it over file://.",
+      "statement": "The quickstart's catalog-init container seeds a bare repository on a named volume from the CLI package's template directory (marker, the two base skills, README, pre-commit, GitHub workflow and credentials action), pinning the templates to the CLI package version, exits idempotently when the repository already exists, and the registry fetches it over file://.",
       "evidence": [
         {
-          "resource": "repo://docker-compose.quickstart.yml#L60-L69",
-          "version": "repo-lines-v1:sha256:aac5c73ec1ccf330d484f5c33fadaca56d0cc12c97743d15145553dd078818d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMmIzNmExNWE4ODZhOWE4MTZmZGE3OWMwYjhlYzE0YjlmMjdlNTk4MjQ1NTg1ZGJhMjA5YWVjOWI5ODhhZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4MWFhMTE3M2U4YjdhNTZiZTI5NjhjODg5Y2FhZTc5MmQ0ODQwYmI0NDI0MTQxNGQxYmEwODJlN2ZiMTg4ZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1OGJkYWFiMTJkMDkyMDJmNGJlYzc5NWFkMjg5ZTgzNGZmZDkyY2ZhMGYzZmE0MzVkZWI3ZWI5ZjNhM2U5Y2QifQ"
+          "resource": "repo://docker/compose.quickstart.yml#L59-L67",
+          "version": "repo-lines-v1:sha256:aa40458ec4a2cbbe4ce153f98959747c5e68862311eeb9fc381c0ed182721953:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU3NjA1MTQyMzk4NjA3NjQ3NmVkMmMyY2RhY2M4YTg0MDliNmM0ZWRmNDU1YzNkY2M0ZDI3ZGEzZDY1Zjg4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5OGIzMDVlZWE4YjIyYjNkMjhmMDliMDgzYTEyOTAxNWQxMjU1ODc5ODljMjAzNWRiZWY5YzUzODVlOWFjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzEzN2E3NzhhMzQyMTRhNDU0ODBiZDYyYmJmZGY0Y2UwNDlhOWM4MWZjY2YwMjg5MjU1YmMxODE1ZDVkMWVhYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWIyNDI5NWIwNTE0ZmNkOTc2MDMyNWZlZTBkYjM2YWY5NTBkOTQ1YTNjODUyY2M1YmVhNzIxOTRlYmZiMjBlZiJ9"
         },
         {
-          "resource": "repo://docker/quickstart/seed-catalog.sh#L1-L26",
-          "version": "repo-lines-v1:sha256:eb54419b519ba925685d849cc42b6d050dbc033690db3ee358e11b275062ed17:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MDc2ZDNkMjhkMjFlMDIwMTJiMjBlYWY3ZGJmNzU0MDlhNjI3NzEzNDQzOTAyNWYyODJlMzY4ZTMzMDVhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3MWU4ZDkzZjg3NDBlMjJkNjIyZTUxYThjNjVmM2JlNWM1OTMxNDhjNTlkYTA5YTVkZGIzZmNiODU2MzkwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://docker/quickstart/seed-catalog.sh#L1-L27",
+          "version": "repo-lines-v1:sha256:23f8963f9753952aeeec396ce64f77d86eb1161ba1421e8f8cd1efd91655185f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MDc2ZDNkMjhkMjFlMDIwMTJiMjBlYWY3ZGJmNzU0MDlhNjI3NzEzNDQzOTAyNWYyODJlMzY4ZTMzMDVhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3MWU4ZDkzZjg3NDBlMjJkNjIyZTUxYThjNjVmM2JlNWM1OTMxNDhjNTlkYTA5YTVkZGIzZmNiODU2MzkwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_80fc9bfcffcd4acea30710cf45df0d70",
+      "statement": "The production and development compose files pin name: harness-catalog because moving them into docker/ would otherwise change the Compose project name to the directory name and orphan the existing pgdata and clone volumes, while the quickstart is a separate project harness-catalog-quickstart; all commands therefore name the file with -f docker/compose.yml.",
+      "evidence": [
+        {
+          "resource": "repo://DESIGN.md#L1085-L1085",
+          "version": "repo-lines-v1:sha256:9a026406a6b65ea5e40adab5e20fbeb968603136bd690b97a4c88238630bc8bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWEwMjY0MDZhNmI2NWVhNWU0MGFkYWI1ZTIwZmJlYjk2ODYwMzEzNmJkNjkwYjk3YTRjODgyMzg2MzBiYzhiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWEwMjY0MDZhNmI2NWVhNWU0MGFkYWI1ZTIwZmJlYjk2ODYwMzEzNmJkNjkwYjk3YTRjODgyMzg2MzBiYzhiZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTFiZGFlZTE3YWU4OWIwMGY3ZDZlN2FlMDBkNTYyZTMwODQzZDc4NjlhZjUwYjhlNGZkZDU2MjVjYjMzMWU0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjZiNmNiYjU3YzlhNTFjZjBkYzNiNjJkNWNjMzZhMzM3YTlmMmMzMjhkMzVhNDQ0NTQyNjQ0Yzk5YmNhNTk3ZSJ9"
+        },
+        {
+          "resource": "repo://docker/compose.dev.yml#L5-L8",
+          "version": "repo-lines-v1:sha256:d74d239393b4ede2ef1f8b826a16458b48549501e79d68dee58d5c047becea94:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmUzYjNhODQ4N2I4NWQ2ZjhkMTNmMGJlMzdiMDg0ZDA5YWI3YTVmN2IxNDMwZGU0MmE5MmMyNWQxMGY0YWVjOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGMxOWJlY2Y0NjFiZmFlOGQwZGI3MjgzZWY1OWE3Nzk1YWU3ZjJkYWU4MjliZjQzYTE1MzExNDljZTgyYTA1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjA3NTQxYTllNDQ2NzRjZWMzYzQ0ODI5MjEzZjNkNDc0MGE3Nzk3NDJlODYxYWM5YjNkMmVhNzhkNmNlNWFmMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRjNDJlMmMwZTAyNjNlZmJkYTZkNDg0NWRhMTUzOWUyOWZhMjhhNDZhN2NjMzEyNGQ3ZTY0YTM0MWI1Nzg1NSJ9"
+        },
+        {
+          "resource": "repo://docker/compose.quickstart.yml#L14-L14",
+          "version": "repo-lines-v1:sha256:7d8effb789319e5a987e6dea96401e3dc6531ce49b8a68f915285fdc670b3fba:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Q4ZWZmYjc4OTMxOWU1YTk4N2U2ZGVhOTY0MDFlM2RjNjUzMWNlNDliOGE2OGY5MTUyODVmZGM2NzBiM2ZiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Q4ZWZmYjc4OTMxOWU1YTk4N2U2ZGVhOTY0MDFlM2RjNjUzMWNlNDliOGE2OGY5MTUyODVmZGM2NzBiM2ZiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2QzNzEwMDcwNjE4NTdlYThiY2M5M2EyZDM4NGYxYmE4YThiNmE0ZDVlZGY2ZmMzOTc5MTI0MWVmYWU3YTk1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRjNDJlMmMwZTAyNjNlZmJkYTZkNDg0NWRhMTUzOWUyOWZhMjhhNDZhN2NjMzEyNGQ3ZTY0YTM0MWI1Nzg1NSJ9"
+        },
+        {
+          "resource": "repo://docker/compose.yml#L1-L7",
+          "version": "repo-lines-v1:sha256:c83acb105a51d307011ed8c315d39d80d0f6848cc45ffa372198a34d928285a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmUxM2QzZmMwOTQ2YmQxZjMyMWUzMjNjNWJhOGFmNGFmODQ3NTdiMWFmYjY0YzI3NmIxNWM3MzliMTQ1NzIxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGMxOWJlY2Y0NjFiZmFlOGQwZGI3MjgzZWY1OWE3Nzk1YWU3ZjJkYWU4MjliZjQzYTE1MzExNDljZTgyYTA1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTcyM2U1ZTQ1NjA3ZTk4NDRjZTE4NzIwZWVhZjNmM2E4Mjc2NzJjNzhiMWJiNDM4MGMyOTI4M2U3NzViN2Q0NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_758a9fa332a041f6b29536bd3be709b3",
+      "statement": "The archive download route is registered at /mcp/archive/{name}/{tree}.tar ahead of the MCP mount, under the /mcp prefix the proxy already forwards, so the three documented proxy paths (/mcp, /.well-known/oauth-protected-resource, /dex) need no fourth mapping for downloads.",
+      "evidence": [
+        {
+          "resource": "repo://docs/operations.md#L81-L97",
+          "version": "repo-lines-v1:sha256:576e50eeb46fc3a53f00d8f92f99f55c39b0bee0b9c0cdce082b5c04e57fc7c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlMDMxODlmYTQzZTYyYzMxODkxMjUyMjc0YmEwNmNjNGE4Y2E2Njk5NDY1NDgyNzRiOTUxNWUyN2U0ZTAzMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4MjFhMzRjNzg2MDViOTJhM2EwMGY0NjVjMzIyMTMzMWRlMjdlZWFiNjU4YWViNmQ5YmYzMDQ2ZGNmNDE5ZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkMDhmNDk0ZjRlM2FmZWZhYmY0NzIwZWU1MDc4YjBiZWRkNTJlM2U5MzdiZjExZWIyOWM2MjU0MDZjNTRjODcifQ"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L104-L104",
+          "version": "repo-lines-v1:sha256:a172532f9ae5c99475d487ed41d3c0d1f6c7d8174866de5006945f5753de14c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE3MjUzMmY5YWU1Yzk5NDc1ZDQ4N2VkNDFkM2MwZDFmNmM3ZDgxNzQ4NjZkZTUwMDY5NDVmNTc1M2RlMTRjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE3MjUzMmY5YWU1Yzk5NDc1ZDQ4N2VkNDFkM2MwZDFmNmM3ZDgxNzQ4NjZkZTUwMDY5NDVmNTc1M2RlMTRjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTY5ZGRmNGY1MGRjMGRmNjczMWNmM2YzZTE2Y2U2YzZmODFiMDM2NGQxM2RkYmY4NTdjOWYyNWQxNWVkYWNiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQwZWU5YTlkMzA4MzNlODBjOWQ4MTEwMmVjNjg5YWE5ZDc2NWE3ODg3MmQyM2Q3ZmEyMDNjZTJiM2EwYjA4MyJ9"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/archive_route.py#L21-L21",
+          "version": "repo-lines-v1:sha256:666b6bf2561291c4ce6b4d9e64de7437904b89e7991824e762ea2707f97f918b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY2YjZiZjI1NjEyOTFjNGNlNmI0ZDllNjRkZTc0Mzc5MDRiODllNzk5MTgyNGU3NjJlYTI3MDdmOTdmOTE4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY2YjZiZjI1NjEyOTFjNGNlNmI0ZDllNjRkZTc0Mzc5MDRiODllNzk5MTgyNGU3NjJlYTI3MDdmOTdmOTE4YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQ5MzhjODg4MTRlMjkyN2I1YTQwYjVkN2YzZDg4YzBiOTEzMGY5MzMzOTIwNGVmMDY3NDUwNWFkY2Y0NTI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmYzZjNlZDg0YzIxZDgzZmZlNzNjMjZlNTI4NzI4MWMxYmU1ZDdlNWVlYTJmMGQwOWViMDRhNTI2NzU4MGM3MiJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.1",
-    "at": "2026-10-10T11:24:40.987Z"
+    "at": "2026-10-10T16:35:35.587Z"
   }
 }

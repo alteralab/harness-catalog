@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fdb02d6cf24043b20983b5fa7b6a551da6f2f7008adac5dcac8e4f2c1e7650c4",
+  "pageVersion": "sha256:c5aa99c1f61bafb4907893369f73999e9fc13a351b69c431b1475382072443ec",
   "claims": [
     {
       "id": "claim_61cbd566bedd4348b9499857a709a255",
@@ -17,18 +17,18 @@
       "statement": "The lifespan opens the PostgreSQL pool, starts the migration task and the scheduler in one task group, and on shutdown sets the stop event and waits for both tasks before closing the pool and the git store.",
       "evidence": [
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L76-L96",
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L81-L101",
           "version": "repo-lines-v1:sha256:f57d982d011efd3a35d0463583161ad096f7bc4ce1f1c66d3f921cb8d907c71e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmY2U1NzE3ZWE0Mjg3ZThmYTMyNzU1NDIwNWRkNDQ1NWNiMzBmODVhNTE5MjZmYWQyMjUzZTMyMWFjMjNjYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5MjQ2M2RmNzM4NzRhODhiNDAwY2YyZmRhMmU1NjE0N2FjNWU0MTc3YzVhYzcxNmNjZGNkNDgzOTNjNzFlOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYmZiNjkwMTI0MDg3YTc5MDg2OTU1Y2I4YmE4ZGQxNmJhOTRkYzMyMWIxMjAyNDA2Mzg5ZGRkZTcyNzc0ZmQifQ"
         }
       ]
     },
     {
       "id": "claim_15cd212f1d38408899ddb04afbfb38e0",
-      "statement": "The fetch loop sleeps interval × backoff between rebuilds, where backoff doubles on failure up to 16 and resets to 1 on success; only fetch failures (reasons) and checker_failed/rebuild_failed degradations count as failures, not rejected skills or a lost database, and an exception from rebuild is logged rather than ending the loop.",
+      "statement": "Each scheduler tick first calls catalog.evict_archives and then catalog.rebuild in a worker thread, then sleeps interval × backoff until the stop event; backoff doubles on failure up to 16 and resets to 1 on success, where only fetch failures (reasons) and checker_failed/rebuild_failed degradations count as failures, not rejected skills or a lost database, and an exception from rebuild is logged and counted as a failure rather than ending the loop.",
       "evidence": [
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/driving/scheduler.py#L39-L74",
-          "version": "repo-lines-v1:sha256:3237db301de6d182f79140d54224e055de722eb80a554dd2798c43547be4889a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4OTVhNTVhMjM2YTgyMzRmZTRlYzkxY2FhYjA0MjNiMTQ2NTM5YTU4MzhjOTJmOGM1MWVkOWIwMWI0YWJiMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNDQ5MzI3ODE0OTRlYmI0ZGIyYjhkYmYwN2Y3Y2ZkYzAzNWRiNzY5MDdjYTVmYzdkZjk5OTFlYWVmNmEwZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5ZWFjMWY5MGY3NDE5ZDEyMTM5YjI1NGQ0ZDExMDBiMDc2ZGU0N2JhYTQyOWIwZjA5MjNmOTIwOWQ0ZmEzOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/scheduler.py#L39-L75",
+          "version": "repo-lines-v1:sha256:bf084959d110baf55c8c699f86d0af4ac5ea5bdfd0f926d933fb9d052b96fb8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4OTVhNTVhMjM2YTgyMzRmZTRlYzkxY2FhYjA0MjNiMTQ2NTM5YTU4MzhjOTJmOGM1MWVkOWIwMWI0YWJiMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNDQ5MzI3ODE0OTRlYmI0ZGIyYjhkYmYwN2Y3Y2ZkYzAzNWRiNzY5MDdjYTVmYzdkZjk5OTFlYWVmNmEwZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5ZWFjMWY5MGY3NDE5ZDEyMTM5YjI1NGQ0ZDExMDBiMDc2ZGU0N2JhYTQyOWIwZjA5MjNmOTIwOWQ0ZmEzOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -57,7 +57,7 @@
       "statement": "reindex applies migrations, builds the catalog with the same settings, enables the fact store, calls rebuild(accept_rewind=flag), prints the status and exits 0 only when the catalog is ready and main_rewound is not among the degradations.",
       "evidence": [
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L72-L78",
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L102-L108",
           "version": "repo-lines-v1:sha256:f22c0afd704b8e2ed3c6574394c521dcec5605810cf3e54b2a80332b9873a48b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWVlNDVlMDJlY2Q2NTg2NGM3Nzg1NjFmY2Y5Y2ExYTMzNmMxNjI3M2IyN2QwOWJmZmNhNTIyODlkNDA0ODEyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk4ZTIzMmMxNDkzMmExODhjZWIwY2QwZDc5ODBhODRmNTU0NWUwMzhiYWI1Y2M3YjM0OTViZjUxZWNhYmNmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzg3ZDI5ODFmZTNmZDc0Yjk1YWQ4NWZmNmZmYjg5OTgyNTA3OGUzOTc4ZDRkODQxYzQxNGY4MzhiNWJkMjk1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjc2Y2QzZGE0ZjM5N2M5ZjI4NzBmNmEwMjc5NDdiOGUxMGZiMWYzMWJjZmVmNzAyNzkyYjcwZTNkZDQ2YmU1MSJ9"
         },
         {
@@ -65,10 +65,28 @@
           "version": "repo-lines-v1:sha256:404e63b58e188c3f5e83570cd283560b0dfdbd0973aceca3c6889227424bb92f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmOGY4ZmQ4Yjg2M2JkOGJhNDJlZTgwNGUxOTE5MDg3Njc4NzIxY2EyNzVkMGVjMTQ2NTkyNGNlMDA1MDIxZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWJlN2MzNTZkMDgzMjY3NjM5ZTUyYTY3YjAwMmRiN2ExZTEyNTQwODY5YjBjNzM5OTY4ZmE5YjIyOTNiNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmZjY0NzVlNmNhYTAzOTlkYmYwZDQ3NWQyY2IzMDIxM2FkNGE0NjRmYWE2Zjc2NzRmODk5NDEyZmFiYTdjOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5MjE1NDFjNTRiMDQ2OGM5M2I4ODQ2MzhhNmQ1ZDFhMzJkMjBjZTRmOWZmMGZkNzM5MzYzOWQzOTRhZDQzZjEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_51c32ff4bf344407983aaf82457048b0",
+      "statement": "Archive-cache eviction runs in two places: bootstrap creates the process-lifetime ArchiveSigner key and immediately calls evict_archives with retention 0 because no earlier token can verify against the new key, and the scheduler calls evict_archives at the top of every tick with the default retention so a cached tar is deleted only after its last issue time plus the token lifetime, leeway and a minute have passed.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L319-L336",
+          "version": "repo-lines-v1:sha256:3b9e05be12784b4d5b502a444596a64f56a0eecd02b45849415fe3acc7a59c6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Y2ZhZDIxMWY2YTExOGZiODVlNTI5ZjAwNjc3MTA4ZjcyNDUyYmQyYTRiNDUxZDI0OGFhYTBiODdlNzY5NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNWViMDc1N2FlYTVkYjllMTI5ZDU0NWQ2NDVkMWY1ZTg1YTJkM2NmMmU2NDg3MjkxNzY3M2Y0NDAyNjUwOGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliYjUyNjczMDQzZjkxYmQ4Mjk0OTNmN2FkMWJiMzUxOWZiZjhmYWI2ODdhM2Q1Njc1ODAyYjFkZjExNTRiNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiZGFiMWNkOTM3MGQzMjcxMmZkMGFhN2M2M2RiNGY3OTE2YTYxZjA5ODdjY2QzMmNiNjU5NWZjMjI0MDY4ODQifQ"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L75-L76",
+          "version": "repo-lines-v1:sha256:e8f8495a0ec013a16795a582c14d0585b8ef5aca0863d1c9bf329d6620bea5cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZlMzRhY2Q2MzEyYmZhYmM1OTU4YThmNzQ1ODhhMjU0YWQ5NmMzYjRkNjEzZWQzYzBlN2U1Zjg2NDRjNWM4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI5NmUxNWQ3YjI3YmJhMTk1NDE2MTRhYjdjNTNmM2ZmMDQxZTM5OWY0MjE1YzVlYTFkMmI3ZWY2NTIxZjBjMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTM5NTg3NjkzMmQxNWVmMDQwZDA4ZTk1YTliYTAxMzU2N2ZhZWYwZmIyMDBlZjE2NWRkNzdjYzNkN2U5OWJlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjkyMTM1YTBmNWZlYTNmYzlhZjMwZjZhZmU3NDI2ZGU2OTAwZmY5NzEyNjczYWJiZTAwY2JiMTZjYzMzNDE1ZCJ9"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/scheduler.py#L64-L65",
+          "version": "repo-lines-v1:sha256:24c9b1bd143dc47ebb8b1919579bc9399bc7cbdc6ce8d4355f635f61f1e0ba72:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDYyNDkwZDNkMGNlNzJlYzYwN2YyYjEzOThjZTVlZTUwYTRjMDYxMWE2YWRlYTMwNDE2YTg3NjRmNGE0MDg0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhjMTcxNDZiNjIxNTY1ODFhOGIyZDU3ZjE2YmJmODAyZjM3MDJiMjlmMDZjMWEzZWE0MTU4NWNmYWY5ZjRmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTQ2ZjMzOThkNTI0MDNhNjhlMzEyYTAwNDZiOWE4ZTI1Mzk3NjE4NTg3ZjU3NzYwZTQyNjUyMjllOGY1MjFlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzgwYmM2ZTMwNDI2ZGY2ZWE2MTMzNDA2ZjRjNWZkMTQ5ZWU5NTM4NjQ2YjY2OTY2MzU3YjMzNDY0YzJhZjdmNSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.1",
-    "at": "2026-10-10T11:24:40.987Z"
+    "at": "2026-10-10T16:35:35.587Z"
   }
 }

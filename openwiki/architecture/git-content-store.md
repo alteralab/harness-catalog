@@ -1,21 +1,23 @@
 ---
 type: architecture
-title: GitStore — bare clone, fetch, deploy key, history resolution
+title: GitStore — clone, read, history, archive — bare clone, fetch, deploy key, history resolution
 description: How the ContentStore adapter obtains and reads the catalog repository. The two modes (registry with a bare clone and a read-only deploy key; CLI reading a working repository in place), why safe.directory is delivered through a private global git config, how a past version is found in main history, and where it fails closed.
 tags: [git, content-store, adapter, deploy-key, history]
-verified:
-  - by: openwiki/0.6.1
-    at: 2026-10-10T11:24:40.987Z
 sources:
   - id: openwiki-source-849176cfe2a21dc2733885fb
     resource: repo://packages/core/src/harness_catalog_core/adapters/git.py
   - id: openwiki-source-26ec5196a784179afea72f39
     resource: repo://packages/core/src/harness_catalog_core/check.py
+  - id: openwiki-source-acef09f92c7cde014b7bcb4d
+    resource: repo://packages/core/src/harness_catalog_core/ports.py
   - id: openwiki-source-343c3014e84cd4cd16294a7d
     resource: repo://tests/adapters/test_git_history.py
   - id: openwiki-source-6ef6c6646b1605cce25a7f69
     resource: repo://tests/adapters/test_git.py
-generated: { by: "claude-code", at: "2026-10-10T11:24:40.987Z" }
+generated: { by: "claude-code", at: "2026-10-10T16:35:35.587Z" }
+verified:
+  - by: openwiki/0.6.1
+    at: 2026-10-10T16:35:35.587Z
 ---
 
 # GitStore
@@ -45,7 +47,11 @@ Git refuses to read a repository owned by another uid ("dubious ownership"). The
 
 - `list_skill_trees(commit)` lists the trees directly under `skills/` at that commit and, for each, the last commit that touched it (so an index entry knows its own commit).
 - `read_blob(revision, path)` and `list_tree(tree_sha)` read without a checkout; `list_tree` reports blob sizes and marks symbolic links with kind `link`, which item 7 of the checks uses.
-- `export_tree(tree_sha, dest)` extracts a tree with `git archive` into a temporary directory; this is where the validator and gitleaks run, and where pin-style exports come from. Extraction uses the tar `data` filter so archive entries cannot escape the destination.
+- `export_tree(tree_sha, dest)` extracts a tree with `git archive` into a temporary directory; this is where the validator and gitleaks run. Extraction uses the tar `data` filter so archive entries cannot escape the destination.
+
+## Archiving one version for download
+
+`archive_skill(commit, name, dest, max_bytes)` (2026-10-11) produces the tar that the archive download serves. It differs from `export_tree` in three deliberate ways. First, it is **byte-deterministic**: it reads the commit time with `git show -s --format=%ct` and runs `git archive --format=tar --mtime=@<that time> <commit>:skills/<name>` with `-c tar.umask=0022 -c core.attributesfile=/dev/null`, because a bare tree-ish would be stamped with the generation time (measured: two archives two seconds apart hashed differently) and umask or `export-ignore` attributes from the host would also leak into the bytes. The same version therefore always yields the same SHA-256, which is what lets the server rebuild an evicted cache without invalidating a descriptor already handed out. Second, it is **bounded and streamed**: stdout goes chunk by chunk into a `mkstemp` file in the destination directory, exceeding `max_bytes` kills the child and raises `ArchiveTooLarge`, stderr is written to a temporary file (a pipe could deadlock when git is verbose), and the child is killed and reaped on every exceptional path. Third, only a complete file is published, by `os.replace`, so a reader never sees a partial tar. Git failures (unknown commit or skill) are `GitError`, a `ContentError`. The registry's private global config (the `safe.directory` file above) stays in effect for this call; only the byte-affecting settings are pinned with `-c`.
 
 ## History: retired names and past versions
 
@@ -65,9 +71,10 @@ Git refuses to read a repository owned by another uid ("dubious ownership"). The
 
 ## Tests
 
-`tests/adapters/test_git.py` builds a real repository in a temporary directory and covers fetch/list/read/export, history and version resolution, and the unreachable and no-main cases; `tests/adapters/test_git_history.py` proves the shallow-clone fail-closed path both at the adapter and through the CLI (exit code 2 with "shallow" in the output).
+`tests/adapters/test_git.py` builds a real repository in a temporary directory and covers fetch/list/read/export, history and version resolution, the unreachable and no-main cases, and `archive_skill` (two archives hash identically, every member's mtime equals the commit time, the cap raises `ArchiveTooLarge`, a bad name or commit is `ContentError`, and no temporary file is left behind); `tests/adapters/test_git_history.py` proves the shallow-clone fail-closed path both at the adapter and through the CLI (exit code 2 with "shallow" in the output).
 
 ## Related
 
 - [Catalog app](catalog-app.md) — how fetch results, ancestor checks and version resolution are used
 - [Deployment](../operations/deployment.md) — where the deploy key comes from and how the quickstart mounts a seeded bare repository
+- [Archive download](archive-download.md) — the token and route built on `archive_skill`

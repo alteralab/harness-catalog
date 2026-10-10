@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c3937bedfd1ec7e7f823a5aacd39abd43876a1857b23d420d8b3c16e89150464",
+  "pageVersion": "sha256:a37a01f27764651e1fb86a12989e213f7a3443debcdb8dcc1a42ffbc5860699e",
   "claims": [
     {
       "id": "claim_31dfdd8f5ec5483bad941bb8dd173b8c",
-      "statement": "Core tests drive the Catalog application through one fake per port (FakeStore, FakeValidator, MemoryFacts) defined in tests/core/fakes.py, with MemoryFacts switchable to unavailable and FakeValidator told which skills to reject, so the status machine is covered without git, a database or a clock.",
+      "statement": "Core tests drive the Catalog application through one fake per port (FakeStore, FakeValidator, MemoryFacts) defined in tests/core/fakes.py; FakeStore also implements archive_skill by writing a real tar under the max_bytes cap, MemoryFacts is switchable to unavailable and FakeValidator is told which skills to reject, so the status machine and the archive cache are covered without git, a database or a clock.",
       "evidence": [
         {
-          "resource": "repo://tests/core/fakes.py#L12-L125",
-          "version": "repo-lines-v1:sha256:018e62069115353c7fec150b2315625e619b40d1d37b94b99a26fd0bc2f2ead1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlNzM2Y2JmYWI1MTY4ZGMzYWZjNzk5ZGM1NzU1OTdiMGM4OWQ0Mjg3M2QzOWNmMWRkMWJkODY4OWJhMGE5NjVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyNGMyZjgxMDI2MWQ5NmE4ZmVlNjk1MTBiMjVmZGNiZWMwZGIzZDNlMGNlYzVlNGMzMDBlYjRhMGI0MjMxMmZkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0NzJhZDgxMTA1ZjA2NTc4YWFmNjZiYTgxMDM5YmRlNDQyY2QyZWNhZDA0ZTY2NmVhZjNlMjA4ZTk4MTQ4MWZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://tests/core/fakes.py#L12-L148",
+          "version": "repo-lines-v1:sha256:303f004685b0e746db5f759278c493f706adcd2625db022c6332807d29dc0f2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlNzM2Y2JmYWI1MTY4ZGMzYWZjNzk5ZGM1NzU1OTdiMGM4OWQ0Mjg3M2QzOWNmMWRkMWJkODY4OWJhMGE5NjVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyNGMyZjgxMDI2MWQ5NmE4ZmVlNjk1MTBiMjVmZGNiZWMwZGIzZDNlMGNlYzVlNGMzMDBlYjRhMGI0MjMxMmZkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0NzJhZDgxMTA1ZjA2NTc4YWFmNjZiYTgxMDM5YmRlNDQyY2QyZWNhZDA0ZTY2NmVhZjNlMjA4ZTk4MTQ4MWZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         },
         {
           "resource": "repo://tests/core/test_catalog.py#L109-L176",
@@ -62,7 +62,7 @@
     },
     {
       "id": "claim_c04d5496abea4394a0e5c1bd29cd5abf",
-      "statement": "Pre-commit runs the altera-rules gates (declared surfaces, ruff, ast-grep, shellcheck) pinned at a tag, and CI runs pyright strict and pytest on every PR, running the rule gates only when a token for the private rules repository is available and otherwise skipping them with a warning.",
+      "statement": "Pre-commit runs the altera-rules gates (declared surfaces, ruff with --config pyproject.toml, ast-grep, shellcheck) pinned at a tag, and CI runs pyright strict and pytest on every PR, running the rule gates only when a token for the private rules repository is available and otherwise skipping them with a warning.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/ci.yml#L9-L41",
@@ -70,7 +70,11 @@
         },
         {
           "resource": "repo://.pre-commit-config.yaml#L1-L9",
-          "version": "repo-lines-v1:sha256:82f9877c2f839548d1ef85acc8977f3b1dc0683f654ca2a72d0daf6b83f65cde:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWExMTBkYjVhOTM1N2NkYTFkNzgyMTZjZGMwYmY4YjI1NWUzMzhjYmMxZjMyN2UwZGYwOGNmYzc3MzkxZGRlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRkZGZmYWM0NzRhNGYxNmRmNTE1Y2RhYjk5NGI0YTdmY2NlMmQ4ZDFhNDdiYWY0NTcwOTcxNTg3ZTE3OWJjNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "version": "repo-lines-v1:sha256:b8ca7796015348e448f03821300a2ea25275c3e7573974df429794d163b54ab0:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWExMTBkYjVhOTM1N2NkYTFkNzgyMTZjZGMwYmY4YjI1NWUzMzhjYmMxZjMyN2UwZGYwOGNmYzc3MzkxZGRlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRkZGZmYWM0NzRhNGYxNmRmNTE1Y2RhYjk5NGI0YTdmY2NlMmQ4ZDFhNDdiYWY0NTcwOTcxNTg3ZTE3OWJjNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://pyproject.toml#L51-L58",
+          "version": "repo-lines-v1:sha256:d5b3ca7435df6c04e64c1ba43c3dbbf10558cdc8b970c262df0fc21c427c024d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0NWZhYjg2YjEyMWRjODViNGY3ODY3MzM5YTEzZmVlODA0YzhhMDJmNDcxMDY1NzJmMmJmMDY2NGQ1OTUxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhkODVhZTk5YmU2NmY0NzY5NmQ3MGM5Y2ZkNTg2YzgyNmJmODNkYTljMzI3OGFlNzRlNzI5Nzk1Zjc3N2FmMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGVjYTllOWU4YTMzNDRiYTU1YWZhZjZkMGY2NWIyMzAxMTU5ZmVkYmI1MTU0YWM1NWU0YWU0MjA5YzkwMjE3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjg0YjJiZmMyYTgyMjRmMzE3MGZkZmY2N2MyOWVkMDUxOTE5NWViMzQyMTQwOTQxMjM0MzM4YTgxZmNkZTQ5ZCJ9"
         }
       ]
     },
@@ -83,10 +87,82 @@
           "version": "repo-lines-v1:sha256:cc1043062b421afcc2ce3b92bf38668d2165a83775d56cd4ccd62329c8e7c726:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNmMzY2YjliZDlhOGQwZjM0MGEyYmMwYmUxZTIyZWVhMjA1NjhkZDc4YTQ1MjgxYjcyMWIzMGYyMmQwODdmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZjY2JkMjg3YTM1MWY4N2U2MzEzZGI4NDk5ZWIyNDc0MWU2ZWQ0OWM5MjNlOTQ1NWJlOTZkNGY1NDcyZmVlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDk3ZDUzYmE2YzEzMDEwN2ZhODlkOTdjYTQ1MTg2NTY1ZTQwYzMzNjAxY2RlZjM2YTQ3OWRkZDk2NWY4OTI2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmFjNGY0MWQzNTAzZjRkYjdlZDdjZWE5ZWNjNDhjOGMwNzcxNmYzZjk1ZWJkMDJhMzBhZDE5NDdlZDU0M2VkYiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_fd9de4f057bb4145b6ad18fabd4a430f",
+      "statement": "The archive download is tested at every layer: the signer's mint/verify, tamper, wrong-target, far-future and restart cases in tests/core/test_archive_token.py; cache reuse, corrupt-or-oversized rebuild, concurrent mints, error mapping and eviction by last issue time in tests/core/test_archive.py; byte-deterministic, capped and clean tar production in the git adapter test; and the descriptor-then-download flow with header token only and an empty 403 without it against the real server process.",
+      "evidence": [
+        {
+          "resource": "repo://tests/adapters/test_git.py#L73-L73",
+          "version": "repo-lines-v1:sha256:06509bb8b4030a48df9b392c75c7189726ae8487418d87a3072b202ed1bae0c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1MDliYjhiNDAzMGE0OGRmOWIzOTJjNzVjNzE4OTcyNmFlODQ4NzQxOGQ4N2EzMDcyYjIwMmVkMWJhZTBjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY1MDliYjhiNDAzMGE0OGRmOWIzOTJjNzVjNzE4OTcyNmFlODQ4NzQxOGQ4N2EzMDcyYjIwMmVkMWJhZTBjNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjFhMjAxNTAyZWY3ZTQ3OTg5Y2Q1ZjgzODJhMWQzMWY1MzUxNDBkMDNmZjI0NDI2MmIzZDA0NDYxZmNkZGNjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjU3OGY3YzgzMzdjOTRiYmE0M2Y0NzliZDlkOWZiMWFlZmZkYmZkMWRhNDI3ZWVjYWFlYzc1NDUwYTYyZmRlOCJ9"
+        },
+        {
+          "resource": "repo://tests/core/test_archive.py#L27-L100",
+          "version": "repo-lines-v1:sha256:beca68fdfcbf503acec3e17948d6db15dd0aa94962525de1bb4236c7dd9d4c7c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlOWQ0ZjJmYmExMDQ4MmNmYjk5YmEyYzkzODgxMGNmMWUwM2Q3MDZhNDczMWNkNmZjZDE4YmY4NzA2MzY0ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5ZDNhZWJkY2ZhNTk2YzI2MzliZWMxOTEyNGM0MmQ4M2ZkZTJmOGFlNmJjYmY0ZjRjYjVjZDc4ZTA0ZWNkMWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmNzhiYzMwNWVhNTcwYjExMzEwMmQ1Njc3YTBjY2FiMWY2MTI5MTdkZGIyZTg5NGI2NWZhM2QxMjUzMjY5MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MWY3ODA5ZGYxZjA1ZDhiOWE5YmNhMWI0MzBmNjA0MjU0ZTg1Y2EzNDM4YjI3M2I1ZDJmYzEwMGRkNjdiNDAifQ"
+        },
+        {
+          "resource": "repo://tests/core/test_archive_token.py#L13-L41",
+          "version": "repo-lines-v1:sha256:25fcb50019d7c34e238eb8e3b62e399502d3b30cee3167ebd4bcf3b5a4dcb4ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzYTk2NDQ1MGFkN2FmYzMzMTAyMzUzODdhMzc5YWYwZGI1N2M0MDRlN2NhYTEyMDlkYTQxYjgxMDdlNzEwNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZThhYTI2OWEyNzBmZmFhZDE5YjRhMGM3NzUxOTUyZjdlNjBjYWU0NzI3MzJmOWM4YzJkNjY1MWU4ZTdiMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiM2JlODI1YTJjYmM0MGYzM2EzZGNmZjdmY2E0NzE4NTFlNzljOWMyZDhhMDE4ODdhYjhhMjJjMTVkNTI5MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlZGIwODI2NDhmNjZkNjY4M2RjZjE3Y2E5ZTMzMjA5MWY3ZGE5MDE0YjNmY2YxNzRiMWQyOTA1NDdmN2U3NTIifQ"
+        },
+        {
+          "resource": "repo://tests/http/test_server.py#L142-L142",
+          "version": "repo-lines-v1:sha256:56da6de8d5a95e973552b4f36f648b1ea552644e50ce8d564e13c6d101521697:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZkYTZkZThkNWE5NWU5NzM1NTJiNGYzNmY2NDhiMWVhNTUyNjQ0ZTUwY2U4ZDU2NGUxM2M2ZDEwMTUyMTY5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZkYTZkZThkNWE5NWU5NzM1NTJiNGYzNmY2NDhiMWVhNTUyNjQ0ZTUwY2U4ZDU2NGUxM2M2ZDEwMTUyMTY5NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWNlZmUwMjY2MjBjYzBmNTllNTU3MjMxMDk4NjlhZmM3Y2FhOTg0ODkzYzgzMzJlYzIyNTU4ZmQ3MmJkODI4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDM3MzJjOTQ0OGM3MTY5M2IzYTUzNWQwMTViZDc3ZDYyMGQwZjAzNDVmMWY2ZWE1NGJkYTUwZmMwMDQ4NzUxMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6f3ca8c71d434ea7ad45cf932e81ed7f",
+      "statement": "The CI logic that left the workflow YAML is unit-tested in tests/cli/test_ci.py (merge-base for pull requests, event before for pushes, empty tree on branch creation, one fetch of an unreachable before, fail-closed under CI markers, changed-skill discovery, credential table, evals plan and exit codes) and tests/cli/test_gitleaks.py (PATH binary only on version match, checksum-verified cached download, mismatch or malformed archive as unavailable, check exiting 2), while tests/cli/test_scaffold.py runs write-skill's scaffold.py as a script for creation, idempotence and argument validation.",
+      "evidence": [
+        {
+          "resource": "repo://tests/cli/test_ci.py#L37-L211",
+          "version": "repo-lines-v1:sha256:0195aa6d71a6ef0d17868cef3ebcf0cfef4263e207c44b67120dcabb113b8541:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhOTJmYjdhYzE2OGZhNTM2ZmY2Y2FiMjdjYmVhMWU3ZTQ0ZGM5MDY1ZmRjNjM5YThmZjExY2Q0ZjNhYjFhYzI1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyYTIzZWYwNmM5M2YzMThhMjQzOGU2ZWM4MzU0MGFlOWY1NjExYTdkY2M4YzJhMDRjYjhjZGMyNzRlMTVkMzBhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmMmUxOTk2NzRjMDhmOGVjMTgzYTY1NGRhN2FiNTkyOGIxNmI0MDAxYWFhODI3YWY5OTU3Mjg1NmRhZDZlN2FiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5YTdlMzRlYzA0ZmUzMWMzNjUwY2E2ODMzNTIzMTY3NzkzNTVmNTRiYWY4YjA2NzNiNzMwMGFlOGE0YjE2MDdmIn0"
+        },
+        {
+          "resource": "repo://tests/cli/test_gitleaks.py#L24-L82",
+          "version": "repo-lines-v1:sha256:80bd5a07c3d6e54f1140d7e5622928184b9498bd297099eb93aa5d8ec04df965:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMjc2ZTM2MGNkN2E5YjQwMWE1MDZiMjhkMmRiMjMxOTZkYTFhYTQwZjkwNmZkNDRjNGRjMTJmYmM0ZmY0MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyNWM2YjhjM2FjYWY2NTk5YmJlMTdjMGRjN2Y4MTJhMzBkOTNjZjIwMzljZDYzNGUwZTkyMDM3ZTY5MjQ3MDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwYTlkZmFkNTRiNzMzMWI2YmM1OWEwYzc1ODJmMWFlYjg1MjFmOWY0ZWM4MzgyNDhiNDk5NzlmNzFkZWY5YzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4ZmYxYmU4MTNiYzAwYTc2NDJiYjZiNTVmODhlZTA3YmQwOGM0OWJjMjZjNDI0MTdiZDA2MTc4YzMyNWZhNGYifQ"
+        },
+        {
+          "resource": "repo://tests/cli/test_scaffold.py#L15-L33",
+          "version": "repo-lines-v1:sha256:438b0742b91b42184d46f0cb2f41aa402041c377fee518bdf9b86160f15931b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZTAxYmUyNWJkMzg1ZDNlZWY1OTc3ZWY2ZjI0MmI2MTZkYjc1YmRjM2Q5OGM0YWUyMWZiMDRhYmQwODhlM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MjkxMWQwOTk2NzA3MmVlMzFiZTdlZTcwODBhNjMxNzgyOTBlYmExZTg1MmIwZGRiNTU3NzlkYzAwYTE4YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2ZjFiNzc1MDZhYTc4YWFiZTE4YmI2MjE4MmIwMzIyNGNiZDc0NDE1OTE1NzYxNDNlNzViYzJjYmM1ZWI1YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhYzE2ZGM1Yjc0MzBhYjg2MDk0YmRiNzU4OTVkY2QzODAxNGFkMGM0ZDIxZTYyYWQ1Y2I3ZDU2YTg3ODIzOTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a1d61f153d44ba0aa9e3057911eef74",
+      "statement": "The suite collects 106 tests of which 9 carry the pg marker; the http marker is declared in pyproject.toml but no test currently carries it, so the HTTP server suite runs in the default selection and needs only a free port.",
+      "evidence": [
+        {
+          "resource": "repo://pyproject.toml#L35-L39",
+          "version": "repo-lines-v1:sha256:5e31e3771e4d307fb9693d6340e5cf85f56931585977ca6ae7b93e7ae006fe16:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDEwODVhZDA5MDQyNTcxMWFkYjRmMTVmMjhlMjVjMTcxMDc5MmMxZDQ1ZGE3Mzk0ZWU5MTJlMDM4MTkwNDU5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjM1YzBjZjM1NDMwZTBkOTM3OWU1YzNmMTE2YWY1ZDUzYzY1ZDhkODhjZWUwYzhkZmZhN2Y5MGI2MGEzMDk2ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg1NDI5MzA0ZmMwMmI0NDRjYzMyN2MxODA4Nzk5NGRiYjBkNmI3YzZmNGMyYjEyZGIzN2Q5NDU5NDVmYjUzNyJ9"
+        },
+        {
+          "resource": "repo://tests/http/test_server.py#L82-L142",
+          "version": "repo-lines-v1:sha256:cd7d9d57c181936a0dda30a905712f8f3a480b119d0d7e84828bf32a95663e17:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NTkyMmM4YTExM2UxMWU5NjBhZDU5MzkxNzc3NzVmN2QwODAyZTgyNThiZThhMjg5NjU4Mzc2ZjIxYmY4ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZGE2ZGU4ZDVhOTVlOTczNTUyYjRmMzZmNjQ4YjFlYTU1MjY0NGU1MGNlOGQ1NjRlMTNjNmQxMDE1MjE2OTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3MmUxZjdkYzMwODAyYTdlMzlmMGM3NDE1MGQ5OGNkOTIzN2Y2ZjI5ZDI5ODcyODViMWIxZmUwNDU0MTZiZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzNzMyYzk0NDhjNzE2OTNiM2E1MzVkMDE1YmQ3N2Q2MjBkMGYwMzQ1ZjFmNmVhNTRiZGE1MGZjMDA0ODc1MTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2df62d1666d840038a8ab827f231f07a",
+      "statement": "The shipped evals are verified outside pytest with Harbor's Oracle agent, which runs each eval's self-contained solution/solve.sh inside the eval's environment image and then the pytest verifier, proving task, image and verifier consistent without a model; Oracle accepts no --skill, so solve.sh cannot rely on the skill.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/skills/pin-skill/evals/pin-project-scope/solution/solve.sh",
+          "version": "repo-file-v1:sha256:d456de2606246b9bae7c4d25bf106c1f1a8119328ee5e7384d6072a1b3dab7b5"
+        },
+        {
+          "resource": "repo://plans/skills.md#L113-L113",
+          "version": "repo-lines-v1:sha256:85cb6be22b652470373d666c2bade20142549adc86e4b987d5fded29a735ba96:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODVjYjZiZTIyYjY1MjQ3MDM3M2Q2NjZjMmJhZGUyMDE0MjU0OWFkYzg2ZTRiOTg3ZDVmZGVkMjlhNzM1YmE5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODVjYjZiZTIyYjY1MjQ3MDM3M2Q2NjZjMmJhZGUyMDE0MjU0OWFkYzg2ZTRiOTg3ZDVmZGVkMjlhNzM1YmE5NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzEyZDMxOWYwN2I4OGIyMDBmMzI0YjZkODM1ODRjZGZkYzU3YmUyNDg5NDdmYjVjOTI4Njc3NDE2YTFjZWUyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWMzZTY2NTBkOTkxZTVhMTEwNzlmODY5MjNiMmNhYTYwZTk0Yjg5MTYzZDk4OTViNTEwM2MxNDcwOTNjZTY5YiJ9"
+        },
+        {
+          "resource": "repo://plans/skills.md#L122-L122",
+          "version": "repo-lines-v1:sha256:d133ced625a771072ee62ef0a7768556ae24636b6a8c1a7d1847da785c6cd3a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDEzM2NlZDYyNWE3NzEwNzJlZTYyZWYwYTc3Njg1NTZhZTI0NjM2YjZhOGMxYTdkMTg0N2RhNzg1YzZjZDNhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDEzM2NlZDYyNWE3NzEwNzJlZTYyZWYwYTc3Njg1NTZhZTI0NjM2YjZhOGMxYTdkMTg0N2RhNzg1YzZjZDNhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTZlOTQ0YzRhNzI1ZWJlOGQwMjMxMWIwNzE2MWFjYWRmNmUzYTk5OTkzYTdiZTRiNDBhMDUyZDYyMmNjOGQ0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ3NGNmMWQwNTIzNmE1MzVmNzRjNjBkMDU5ZjVjNTRlYTQ5ZGFlODE3NTE5ZmY1MGEyZmNhZDAyMTY2YzQwYyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.1",
-    "at": "2026-10-10T11:24:40.987Z"
+    "at": "2026-10-10T16:35:35.587Z"
   }
 }

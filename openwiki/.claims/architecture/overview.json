@@ -1,42 +1,42 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4f992f531a5faed4b7733c34aac3b55144b0dc7af8a6215b00f4822564a7106f",
+  "pageVersion": "sha256:77c8bce1a3621230f8f9c1c99d1cb0dc2ac29243459a8a3cde0197259eb3832c",
   "claims": [
     {
       "id": "claim_d0f081d6994c42d6be35d838b4dea1ce",
-      "statement": "The application layer depends on exactly three protocols (ContentStore, SkillValidator, FactStore) and the Catalog is constructed with one implementation of each plus a working directory.",
+      "statement": "The application layer depends on exactly three protocols (ContentStore, SkillValidator, FactStore) and the Catalog is constructed with one implementation of each plus a working directory and limits; ContentStore now also includes archive_skill for a deterministic per-version tar.",
       "evidence": [
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L53-L66",
-          "version": "repo-lines-v1:sha256:57462edd218220e057f11948da83f8388ec4bb78fc2b6bd1954c1a96c49a32c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3M2MyZDdhNWJjZjFjM2JlMTE4YzFhMDMxYmUyZWU5ZjZlNzdjMmE0ZjFmNDRiYjNkOGRjMDE3YjhiZjI2NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxMjBkNDhkYmYyYjgwMjRjZWZiZGRmZjY0YWQ0MmY4MjlmMGE1MDEwM2E4NjA0OGY0ODFkM2Q4NDc1MzMzM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MzJlM2VjZmNlMTkwMzcxZDlmZDExMDQyNDY2ZjI3ZGRiYTNkMzNmYzliNmEzM2M4ODU5NmM5OWIyNDliZjEifQ"
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L82-L96",
+          "version": "repo-lines-v1:sha256:141f08f28aedabba044dfd07ed0f227dc22b166829755d41c7b82e9649f874ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3M2MyZDdhNWJjZjFjM2JlMTE4YzFhMDMxYmUyZWU5ZjZlNzdjMmE0ZjFmNDRiYjNkOGRjMDE3YjhiZjI2NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZjk1NDgzNWRmYWM4ZDEwYmZjODY5ZmIzMzRhZDVjNzU2ZmMzM2Y1MTZhNDBlOGQ0MGMyZGQ3OTliNmViZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MzJlM2VjZmNlMTkwMzcxZDlmZDExMDQyNDY2ZjI3ZGRiYTNkMzNmYzliNmEzM2M4ODU5NmM5OWIyNDliZjEifQ"
         },
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/ports.py#L12-L75",
-          "version": "repo-lines-v1:sha256:1b68a2fa22ece8db4475b85bd04505b182feae018a030bca10f791c11fe2fff9:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ODFmNGVhZWNhZWQzYzZhODM5NmY3Y2FkMjlkZmFhYjQ2MGIzMDZlYTI2NzIxZTAxYTFmMTRlYTJmYTEwYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5NjgzMjI5NjA2NDM0ODE4MWE3OTI1YjJjMDI2NTZlZTYzNzNkNzZjMTBlYzA2MGE5MjU4M2Q5YTg5MDVjYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlM2Q4NGY0YjFlMmUzZmM2NmJiYzRkNThjYmZmY2YzNGM3M2UzNjc1NmNjYmNiNGQzOWMzOTIxYWUxZmQ3MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNDJhNDk5ZTVmMjVjYWY1NThmNWMwZGU4Y2U1M2FlMzE3Yjk5NWFiNWEyYzQxOTJmNjRjZjI3ZTc4ZjhmYzgifQ"
+          "resource": "repo://packages/core/src/harness_catalog_core/ports.py#L12-L84",
+          "version": "repo-lines-v1:sha256:cb8c6bfca53a8d9b1d022483a5e7acafa9174ba257944b4795f2f9c50556d5d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ODFmNGVhZWNhZWQzYzZhODM5NmY3Y2FkMjlkZmFhYjQ2MGIzMDZlYTI2NzIxZTAxYTFmMTRlYTJmYTEwYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4YTY4ZjU2MmY1ODVkYzNkMWFhYzc4OTE3MGQzMGFiYmEyMThlYzZhOTBhZTY0OTIxZGUzNDhmOGIzZWNhYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlM2Q4NGY0YjFlMmUzZmM2NmJiYzRkNThjYmZmY2YzNGM3M2UzNjc1NmNjYmNiNGQzOWMzOTIxYWUxZmQ3MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2MjBkODVkZTRlZDdhYjgwMjFiNGE4ZGQ0ZmExNWVjNTE5MjVjZGZjY2RlMTgwNTg5NWE0YzhhM2MzYmE0OGMifQ"
         }
       ]
     },
     {
       "id": "claim_4ae14283abcf451ba0db06b1a5e46162",
-      "statement": "bootstrap is the configurator: make_catalog builds GitStore, SkillsRefValidator and PgFactStore (or a no-op store) from the settings and wires the Catalog; bootstrap then builds the MCP app and a Starlette lifespan that starts the migration task and the scheduler in a task group and stops them on shutdown.",
+      "statement": "bootstrap is the configurator: make_catalog builds GitStore, SkillsRefValidator and PgFactStore (or a no-op store) from the settings and wires the Catalog; bootstrap then creates the process-lifetime ArchiveSigner, clears the archive cache, builds the MCP app with that signer, and a Starlette lifespan that starts the migration task and the scheduler in a task group and stops them on shutdown.",
       "evidence": [
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L59-L101",
-          "version": "repo-lines-v1:sha256:45c057293cc3adf43256f3dddbfc41a29a3afeb346816f9ab06fa9d3dc63d643:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYzM2N2UzNDVkMmQ1MDk5NTBiNGQ3MzQ2MjI1MWYzMmI3NGFlOTlhNmU3YzFmYzYxNzc2YTljNDQxMjUyODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZTUxY2FjNWEzYWYxNTAzNmRjZDYyMmJlNDc2OWFhZWY0ZDkzY2U3MGU4Yzk5NDQ5NDI1OWQxMzNiZWRkMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5M2NhNTY2OTU1M2FhYTNiZDFiYTJjY2NmNGIzMzFjMWQyMDRkZjkzZTVjM2UxM2E5YzVkMDM1YTQxZDcyYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L62-L107",
+          "version": "repo-lines-v1:sha256:7d955459f83bc6340a58963b3864df6ffac3548bdbc9d5eb124dca66751cf004:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYzM2N2UzNDVkMmQ1MDk5NTBiNGQ3MzQ2MjI1MWYzMmI3NGFlOTlhNmU3YzFmYzYxNzc2YTljNDQxMjUyODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZTUxY2FjNWEzYWYxNTAzNmRjZDYyMmJlNDc2OWFhZWY0ZDkzY2U3MGU4Yzk5NDQ5NDI1OWQxMzNiZWRkMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5M2NhNTY2OTU1M2FhYTNiZDFiYTJjY2NmNGIzMzFjMWQyMDRkZjkzZTVjM2UxM2E5YzVkMDM1YTQxZDcyYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_49ebaedf6c484232942a05f5b11a384a",
-      "statement": "The code repository is a uv workspace of four packages at the same version; harness-catalog-cli and harness-catalog-server each depend on harness-catalog-core and expose the console scripts harness-catalog and harness-catalog-server respectively.",
+      "statement": "The code repository is a uv workspace of four packages at the same version (0.2.0); harness-catalog-cli and harness-catalog-server each depend on harness-catalog-core==0.2.0 and expose the console scripts harness-catalog and harness-catalog-server respectively.",
       "evidence": [
         {
           "resource": "repo://packages/cli/pyproject.toml#L1-L16",
-          "version": "repo-lines-v1:sha256:77a6b712451429557ee0caa2377ceb8248fe902d39f152baa7e32f1bbcd4c57a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMmE4MWMzODM2ZWRlZjJkMGJhMTFkMjM1M2ZiNmRhYmM3NzcxNTBhN2NhODNlYTBkOWU5YTcwMzEzZmVhYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNmY0NTE5OWM1ZWViMzllNjVhNWIyNTZjNTEwZDYwNmUwZjU3NjAyMTkyYTRkYTcyZjk0NTU0YzE1ZmU3MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MDViZGVkMDY0NDAxOTgyODQ5MGIxZDU2YzkwNmE0OGE5OGMyMDNiZTE2OTAzYjRmZjUyMDJiOTU0ZmI2YWUifQ"
+          "version": "repo-lines-v1:sha256:140742e7de06b2f5c549e78b69407d148fcd2327efa61b5285dfa72b4ab1c14c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMmE4MWMzODM2ZWRlZjJkMGJhMTFkMjM1M2ZiNmRhYmM3NzcxNTBhN2NhODNlYTBkOWU5YTcwMzEzZmVhYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNmY0NTE5OWM1ZWViMzllNjVhNWIyNTZjNTEwZDYwNmUwZjU3NjAyMTkyYTRkYTcyZjk0NTU0YzE1ZmU3MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MDViZGVkMDY0NDAxOTgyODQ5MGIxZDU2YzkwNmE0OGE5OGMyMDNiZTE2OTAzYjRmZjUyMDJiOTU0ZmI2YWUifQ"
         },
         {
           "resource": "repo://packages/server/pyproject.toml#L1-L23",
-          "version": "repo-lines-v1:sha256:c0d0f5d926e36f7f31157d769e361d5ceda40cad3664aa059071b7a79d3e92fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMmE4MWMzODM2ZWRlZjJkMGJhMTFkMjM1M2ZiNmRhYmM3NzcxNTBhN2NhODNlYTBkOWU5YTcwMzEzZmVhYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNmY0NTE5OWM1ZWViMzllNjVhNWIyNTZjNTEwZDYwNmUwZjU3NjAyMTkyYTRkYTcyZjk0NTU0YzE1ZmU3MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MDViZGVkMDY0NDAxOTgyODQ5MGIxZDU2YzkwNmE0OGE5OGMyMDNiZTE2OTAzYjRmZjUyMDJiOTU0ZmI2YWUifQ"
+          "version": "repo-lines-v1:sha256:0d645aa73af32b0eb1eb5c81778dfb9814dc81d4f8139d0085a08a7b574a5abd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMmE4MWMzODM2ZWRlZjJkMGJhMTFkMjM1M2ZiNmRhYmM3NzcxNTBhN2NhODNlYTBkOWU5YTcwMzEzZmVhYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNmY0NTE5OWM1ZWViMzllNjVhNWIyNTZjNTEwZDYwNmUwZjU3NjAyMTkyYTRkYTcyZjk0NTU0YzE1ZmU3MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MDViZGVkMDY0NDAxOTgyODQ5MGIxZDU2YzkwNmE0OGE5OGMyMDNiZTE2OTAzYjRmZjUyMDJiOTU0ZmI2YWUifQ"
         },
         {
           "resource": "repo://pyproject.toml#L1-L20",
@@ -46,27 +46,27 @@
     },
     {
       "id": "claim_17681283953346eab6af3053e29ec51a",
-      "statement": "The container image installs only the server package and its dependencies from pyproject.toml, uv.lock and packages/, runs as a non-root user with git, ssh and gitleaks present, and starts harness-catalog-server serve by default.",
+      "statement": "The container image installs only the server package and its dependencies from pyproject.toml, uv.lock and packages/, runs on python:3.12-slim with git (2.42 or newer, required for git archive --mtime), openssh-client and the pinned gitleaks binary, and starts harness-catalog-server serve with /var/lib/harness-catalog as the working directory.",
       "evidence": [
         {
-          "resource": "repo://Dockerfile#L1-L33",
-          "version": "repo-lines-v1:sha256:ce544a2a9d1fd267e4fcf91d57b00a0ca3901bc40aea2124d522b57d4eef537f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYmQxOTAyYzc3ZmMxN2I0MmMzZGE3N2EwNzRiOWIxYWVlZmIyZTg5NzNlNmQ5MjViODgyYmNiYWE5ZDMyMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhMDM3YWJjZGQzYjI1ODAyNzQ4ZDgyZjg4NTc1ZTgyYjIzNTJjM2Y3NDMwYzQ0YTBkOTI5MjgyODY5YzdjYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://Dockerfile#L1-L34",
+          "version": "repo-lines-v1:sha256:0227d41a37eb6783e684d79d5e3b3b167a80a0e645e3d07e25c8000403414439:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYmQxOTAyYzc3ZmMxN2I0MmMzZGE3N2EwNzRiOWIxYWVlZmIyZTg5NzNlNmQ5MjViODgyYmNiYWE5ZDMyMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhMDM3YWJjZGQzYjI1ODAyNzQ4ZDgyZjg4NTc1ZTgyYjIzNTJjM2Y3NDMwYzQ0YTBkOTI5MjgyODY5YzdjYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_ca8c664c35fb49e4a9672f243dd5c16a",
-      "statement": "Operational routes /healthz and /readyz are mounted beside the MCP app at /, so one process serves tools, liveness and readiness.",
+      "statement": "One Starlette application serves everything: /healthz, /readyz and the archive route are plain routes registered before the MCP app mounted at /, so tools, liveness, readiness and downloads come from one process and the archive route is never intercepted by the MCP auth middleware.",
       "evidence": [
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L97-L101",
-          "version": "repo-lines-v1:sha256:72c954f4052b59626734d6eadb930d7c2832bc0c5a7f00159771c5c90847f019:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNhODA3ZmU2NDA4NDJjNTdhMmU3ZGFjMjg2MDY3M2EwOWY5YzY5MmM4YmZkYTkzMDU5YTJiNzI2MTk4YzJiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVlNTFjYWM1YTNhZjE1MDM2ZGNkNjIyYmU0NzY5YWFlZjRkOTNjZTcwZThjOTk0NDk0MjU5ZDEzM2JlZGQxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTcyNjJlMTAxMzZmYjI0MjJhYzNhZWYwMTc3OGEzOTc3NTJlMzM1MjM2MDAwNDNkOGZhZGQxOGI0NjNmYjI0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L102-L106",
+          "version": "repo-lines-v1:sha256:527188b962348f885da87aa992b0fa014829aa3f7576810d8b640444a495ca90:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNhODA3ZmU2NDA4NDJjNTdhMmU3ZGFjMjg2MDY3M2EwOWY5YzY5MmM4YmZkYTkzMDU5YTJiNzI2MTk4YzJiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBjMWYxODhmMTQyZWQ3YTgyNDY4MGIyMDcxNzJjNTUxOWJjNjE0YTQ4ZmRhN2NmMTY3ZWRiOGRkZjc5OTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTcyNjJlMTAxMzZmYjI0MjJhYzNhZWYwMTc3OGEzOTc3NTJlMzM1MjM2MDAwNDNkOGZhZGQxOGI0NjNmYjI0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGVlNTFjYWM1YTNhZjE1MDM2ZGNkNjIyYmU0NzY5YWFlZjRkOTNjZTcwZThjOTk0NDk0MjU5ZDEzM2JlZGQxOSJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.1",
-    "at": "2026-10-10T11:24:40.987Z"
+    "at": "2026-10-10T16:35:35.587Z"
   }
 }

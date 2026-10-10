@@ -1,14 +1,18 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ce3d87902e7542eaf2792185dbbcd94ef56ff9a49be86445dde88af0e5af9af6",
+  "pageVersion": "sha256:f716b122c9a5f625fd1eb59dcfca36dc95e7d7da57f1510858afee4e800330ce",
   "claims": [
     {
       "id": "claim_17a8480c15bd43ddaa39a79f060c6163",
-      "statement": "check_commit is the single implementation of the ten check items shared by the CLI (pre-commit hook and CI) and the registry's index build: it checks repository structure, then each skill, then skill pairs, and history items only when a base commit is given.",
+      "statement": "check_commit is the single implementation of the ten check items shared by the CLI (pre-commit hook, `check`, and `ci check`) and the registry's index build: it checks repository structure, then each skill, then skill pairs, and history items only when a base commit is given.",
       "evidence": [
         {
-          "resource": "repo://packages/cli/src/harness_catalog_cli/__main__.py#L36-L62",
-          "version": "repo-lines-v1:sha256:8ed796b292dc398ac7c7763230a640c3c57a01f8dc1cfd52455f1a59b7cf83c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NDhiZGVjZGIwZmVhZDY4M2YwY2I4NjVkNmM5YThiZDcyYTMxNzZhYThjOWY5YWM2ZWU5ZWU3ODhkYjY1NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1NDEyNzMwOWZkZTJiZWUxOWQzODY1MWRkOWU5ZmJiZmQzM2E5MGM2Yjc1ODk4NjY4MzM3N2U1YmNjNzUyOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3NGU3ZTJmZTE4NWI5Y2QyODAyOTgzYTI4OWMwNmQxMDIxMDBmZGYyZjg3ZTYzMGZiNzhiNDJmNjBiZTcyN2EifQ"
+          "resource": "repo://packages/cli/src/harness_catalog_cli/__main__.py#L41-L74",
+          "version": "repo-lines-v1:sha256:ffafa5c4003e7c73849e2b7e10c9802f8e9a008baebebd28fe38dd7ab9c885e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZjJiNzg3M2UwYzVjYmE1YWEzMGRkMDM2ZjY4ZmFkMjkyMWVmZGE0NzcwZGI1ODA4Njc1MWQ4ZDAzMjgxYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5Y2Y5ZTQ4ZGM4NDU1OTgzZmRmNTJmNTQ2MmZkNjFkYmY5ZTJkOTkzMDNmYmI0ODBjNjI4N2MyNjdlY2E1OWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1NDEyNzMwOWZkZTJiZWUxOWQzODY1MWRkOWU5ZmJiZmQzM2E5MGM2Yjc1ODk4NjY4MzM3N2U1YmNjNzUyOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2NDc4MmUzNTdjNDU1OTRhZTYxMGM5MzYzMzNjOTQ0OTA3YzQ1OTA3ZTYyNWIxNDZhZTY5ZGMwYjZkZmQzZTIifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/__main__.py#L91-L100",
+          "version": "repo-lines-v1:sha256:3b2a430faeabb17b56b489091d16bdeb0e0c3880c7f04c5832ade274d8461a17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1OGZlODJkMWE3NjY5NDhiZGNlZmRjNzM2ZmYwMDdmMTNlNzJlYzlkMjMzMjAzZWUwYTM1YTU1MjBkNzA3NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMjJhZmMzNjY2OWNjNzJjNzBiZDlmZDA0OWYwNWMzY2IzODA0MTI0MWNjZDE1ZDZhY2VmYjk2NGQ0ZTA2ZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwMDc0YjlmZGFjN2ZhOGJhYzQ3ZTM1OWFmOWI0ZWMwMDc0ZjY2MzcxZjkzNjhiMDg4YTNjMDU4NzcwZjQzNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhNjc1YWYwNTEyZTA2NjliMmJhODExNWNlOTg4ZDllNmFjMjRmYWZhOTFlNDc0MWM5N2I4MWM4M2Q4M2UzYjcifQ"
         },
         {
           "resource": "repo://packages/core/src/harness_catalog_core/check.py#L171-L196",
@@ -93,18 +97,62 @@
       "statement": "Retired-name detection requires full history: on a shallow clone GitStore.deleted_skill_names raises ContentError instead of returning an empty set, so the catalog CI template fetches with full depth.",
       "evidence": [
         {
-          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/github/check.yml#L17-L20",
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/github/check.yml#L14-L17",
           "version": "repo-lines-v1:sha256:9c74fa0626d6718e14e59bb04bf486d4fdf52fa485e399e5f4b93e8408a0a9b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjA3YTk1MzlkMjk2MDY3ZDRlMjhmZTdlNmUyZGEwZmRmMGFhNzdjODQ0OTMzMzZlOTE1MjAxYmIxMDQyYmI5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODdhZTMyYmEzYTJkYTQ4NDIzYzYwNTg1ODRiOTEwMDk4NWY0ZGJlMjBlZmZjMjYyYjNjOWI4ZTY0YmY2MjU2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWYxN2U0ODdkNDMyNjE5ZWQ1YTYxZjNhN2UzMTNiMWZhZGFlNTBiMDZjYTQ1MTBlYjk4M2VjOGIxMWE4NjcyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODRmMWUwOWUxNjhjZmUyOWQwMGU1OWRlNzJjOTE4MThlNGE1MWM3NGUxOTU1YWNmNzRhMjY4YzlhOGNjMGI1MyJ9"
         },
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L164-L171",
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L165-L172",
           "version": "repo-lines-v1:sha256:ae8252d5e8a821646c0a7ab688e07b69595a40cbcf546442d7af6d5de1f26010:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhlMDhkMmQ0ODAzZWE2MzBjN2Y3ZDg5NDEyMjBjNjYzMjI0NWZlMTczYjBkNmFjYTUxN2NmMjU5OThkMTgwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGE0OTllOGMzNmYyMDZjOWRlNTE4OWJlYjk3NjE0YTQ1ZjQ0NmEyMWJjYWIyNzE1MmU5NjZhOWJlNmNhYWZjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTE1ZWQ4NGM2M2FjZjRhMzI0NTljMWZhMjU0YzIwNTJjZmIyMDk5N2Q3NmFjNWUzNjcwOGI2YmE2MGM5NGVmZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_255bc5de3b2440eabec34ee5e9028e73",
+      "statement": "The CLI acquires gitleaks itself before checking: a PATH binary is used only when `gitleaks version` equals the pinned 8.30.1, otherwise the pinned release is downloaded, verified against compiled-in SHA-256 checksums, installed atomically into the user cache with a hash sidecar and reused; any failure to obtain a trustworthy binary is exit 2 (checker failed), never a skipped item 4.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/__main__.py#L51-L55",
+          "version": "repo-lines-v1:sha256:7497a7a2627255353cb4d685b2f6d527323c4c68d6cfc58bb5efe939ac4953cd:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU2OWNiMDkyODBlZTA3ODE5NDVlNDhkNDA0MWJkMmRmYWFlNjkxYWQyZWFiZjVkM2NiYTA4NDZjNzIxNmNhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFhZjAzMzcxNTYwNzczZjJiOWUzNjRjOTQyMjQ0OTJjNDdjNTU5YmJlNmQ5NTEzMjYwYmU2NDhmYjAzZTg3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjM5MDBhMzhmZDQ4NzQ3MDZiY2IzMjhkODI2MGZkZDM1MTU3MDA4ODU2YjQyNTc1Y2ZmMGE4MzE2ZDRlYTM2MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzFhNGEyYTRhOTY0MTQzZjVkZjY3NDJlNjYxYTFlODQ1N2U0NGVjZWJkMTM5OGE3NzBiYjQxZTYxODBkNjhmNyJ9"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/gitleaks.py#L108-L136",
+          "version": "repo-lines-v1:sha256:15cb5c411fe83dc669005f8e276bb452afa60eccc27bd63adab94eca4b36e15d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkMjJmODIwOGVhODRiMmJlYzZhMTUyOTU1OWFlZmE5ZTcxMTMzODNjZjNlYzNjYjJhYTBhMTM5NjhlNDJmY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0Mzk2MDVhOGViMzNkYTAxOWJiMWEwYmIyYjM1Mjc0OGY4N2I4MTdmOGVhNGZmMjk3YzViMDI5YTk5MjliNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjNjhmODFkOWE5Zjg1ZGVjODJiMzFjMWM4NDhlMDc5OGJhMGEwMGEzYzI0NjEzODcxODJhMDFjZDMyNzYxNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/gitleaks.py#L21-L31",
+          "version": "repo-lines-v1:sha256:f3b3810c8005c530c388eba6cf1615f970eb5acb746eb3b08b99c8a254cfb3e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NmE0ODUwM2ZmMTc2MjJlNjY0ZjNmYjRlZmRiNmY5OGU5NThiODQ3MWY0MDU1OGY3ODIyOWJmZTJmNGEwMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwMzc3MDY1N2VlZDg1MDkwZDZhMDk3ZTA5M2M1ZTAwMjc3YzliYjYzNjE2ZGNmODZhMGY0NGRjMWEwYjgxYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzMmIxYzFmZDVhZGZjMzE4YmM3YmI2MjRhOTliOWNkZDIzMDJhNTVkZmNkNjk1ODI1ZDM1YTQ1ODRjNWFmMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2MDA2ZThiNDNjN2Q4OWM3NzY4NDUxYWZkNWYxYTZmY2QwMzk5YTczYjNhMzE5OTJkM2ViZmJjZGYzMWY1MmQifQ"
+        },
+        {
+          "resource": "repo://tests/cli/test_gitleaks.py#L24-L101",
+          "version": "repo-lines-v1:sha256:1b7f6dd95a9c09fa7828d80f080655fd4c8a3749653e4f0d89480c53f0a1afea:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxMjc2ZTM2MGNkN2E5YjQwMWE1MDZiMjhkMmRiMjMxOTZkYTFhYTQwZjkwNmZkNDRjNGRjMTJmYmM0ZmY0MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NWFiNzU0MTEwMmI0OTJhOGQ0NzNkODZlMjM4ZjY5ZDYwYWU1OTZlNThkNDZlMTY3ZWZlMTRlZjIzMDc0ODYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwYTlkZmFkNTRiNzMzMWI2YmM1OWEwYzc1ODJmMWFlYjg1MjFmOWY0ZWM4MzgyNDhiNDk5NzlmNzFkZWY5YzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_af3cc1355ca24a1d9366d68eb82638ad",
+      "statement": "In CI the base commit for items 5 and 9 is derived by `harness-catalog ci check` from the host environment (PR merge-base, or the pre-push commit fetched from origin if missing); when a CI marker is present but no base can be determined the command exits 2 instead of narrowing to HEAD~1, and a branch-creation push uses the empty tree as base so `ci check` runs with base=None, skipping items 5 and 9 while running everything else.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/__main__.py#L91-L100",
+          "version": "repo-lines-v1:sha256:3b2a430faeabb17b56b489091d16bdeb0e0c3880c7f04c5832ade274d8461a17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1OGZlODJkMWE3NjY5NDhiZGNlZmRjNzM2ZmYwMDdmMTNlNzJlYzlkMjMzMjAzZWUwYTM1YTU1MjBkNzA3NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMjJhZmMzNjY2OWNjNzJjNzBiZDlmZDA0OWYwNWMzY2IzODA0MTI0MWNjZDE1ZDZhY2VmYjk2NGQ0ZTA2ZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwMDc0YjlmZGFjN2ZhOGJhYzQ3ZTM1OWFmOWI0ZWMwMDc0ZjY2MzcxZjkzNjhiMDg4YTNjMDU4NzcwZjQzNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhNjc1YWYwNTEyZTA2NjliMmJhODExNWNlOTg4ZDllNmFjMjRmYWZhOTFlNDc0MWM5N2I4MWM4M2Q4M2UzYjcifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/ci.py#L68-L98",
+          "version": "repo-lines-v1:sha256:3f1ed8923a8b842c3aa03af47b1b131f47f2e40b9dec1138228942e15f86fb60:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzMDFkM2MxNWY3MjdhY2VhMGIwODY4NTFiMzk3NDkzMDcyZWM0YWNiYmQ0YjJhNThlY2I5MjIzY2JhNTAzODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NjgyOTZlYzE0YmQxNjI4YTg5NGIyZjg1OTllODVmMzdkMzgzMTJmYWUxMzhkZmZjNGNkMjE2ZTBlNTYzMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0MWY3OWQyZGNmZTY0Y2UxZjA3MjRlYTAzYjU3ZTk0NGI4MGJiMDUwNDBmOTFmODYyMzk3YTFkZTRlMGYyZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyNzkzN2NmMWJiZWIzNTUyYjdlM2JhMWY3YWY0NDE3YTc1YTQ5YTU4YmVhNmFmMjNlNWNkOTY2NWEwNDQ3OTIifQ"
+        },
+        {
+          "resource": "repo://tests/cli/test_ci.py#L211-L227",
+          "version": "repo-lines-v1:sha256:2b4c94690ccccdb0aa25be0bb64929ce3c6ade2a19fabb2a31d71c2b7d81fd97:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhMjNlZjA2YzkzZjMxOGEyNDM4ZTZlYzgzNTQwYWU5ZjU2MTFhN2RjYzhjMmEwNGNiOGNkYzI3NGUxNWQzMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4ZDkyMDFmM2E2NDYzZjc3MTFmMjQ2MDMyN2RjMDlhNGQxNzI5NThjNDA2MWRiNmMwMjdlMTc0MGE1ZWNhNDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiNTEyNTIwNDFmNTcyOWJmMzM3ZDYyNzExYjUwMmI1NWM4MGZmZGU2OTJkMmUzYWM4ZDE4NGQzNGMxNTQ1N2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/cli/test_ci.py#L37-L112",
+          "version": "repo-lines-v1:sha256:32f3c908b6e5a62d38023314e3969ed3cb4c3025dd551405b7e96a55fc4f4b76:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5MmZiN2FjMTY4ZmE1MzZmZjZjYWIyN2NiZWExZTdlNDRkYzkwNjVmZGM2MzlhOGZmMTFjZDRmM2FiMWFjMjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZTE5OTY3NGMwOGY4ZWMxODNhNjU0ZGE3YWI1OTI4YjE2YjQwMDFhYWE4MjdhZjk5NTcyODU2ZGFkNmU3YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3M2FmYTg2MzZlNGRjYzcyNzk3MmMwZDQ3ZTMxNGZkZWFjYzIwZWEyNGFlOTA0NGVlYWQzNGE4ZGY1YWMxNjYifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.1",
-    "at": "2026-10-10T11:24:40.987Z"
+    "at": "2026-10-10T16:35:35.587Z"
   }
 }

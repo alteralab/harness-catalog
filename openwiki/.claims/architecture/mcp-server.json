@@ -1,18 +1,22 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:68fce9edb5a1b80db7664b39ee57434685763663a309acc9f01f65999e919ed6",
+  "pageVersion": "sha256:9610b0ea07333e4a606913aed875ae77e17491cece194d1492352479624d2eb0",
   "claims": [
     {
       "id": "claim_de534f9f4afe474990c800f53518e89e",
-      "statement": "The MCP app is mounted at /mcp as a stateless Streamable HTTP application with JSON responses, built from MCPServer with the auth settings and token verifier supplied by bootstrap.",
+      "statement": "The MCP app is mounted at /mcp as a stateless Streamable HTTP application with JSON responses, built from MCPServer with the auth settings, token verifier and archive signer supplied by bootstrap; the archive route is registered before that mount so the MCP auth middleware never handles it.",
       "evidence": [
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L67-L74",
-          "version": "repo-lines-v1:sha256:6b6bdc013675b8d3a202260f0a9a0f4e27df93a81ed53a1766f0f8ac1313431b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODcyZTcxNjIzM2NjNzQwYTI4OGViZTJlMmE2Yjg0MDgxZjA3N2M4MTE3MzNkNGJlZTZhYzgzZjUzMWYxYjIyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWYzZDhhZjU2OWZhYzIxNjU5MjMzMzA5MWUwNWI1NDJhYTY4ZGU4Y2MyZjViMDUyNDQyZWI3YWU1MWY4MWIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzcyODg2NzcwNjk0MDUxZDNjNGZjMDdiNjkzNjQxZmY5MzIxZDJjYjkwZjU5OGRiMWU5ZjJmOTk0YmEzNjczNCJ9"
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L103-L104",
+          "version": "repo-lines-v1:sha256:d9a68d74b7ec36e88f8b4902af6d28e71670f6a6f9bdf880ff326196153f37ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODM0ZWM3MzFlMjA0MjhlYzk0NDdjY2VkM2JmM2Q0Yzg1NDQyMjI3NjdmNzQ5MGJiM2Q3OTZiNWQ1YjdhMTkxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE3MjUzMmY5YWU1Yzk5NDc1ZDQ4N2VkNDFkM2MwZDFmNmM3ZDgxNzQ4NjZkZTUwMDY5NDVmNTc1M2RlMTRjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2JkMGFjMTRiOWE2OGI0NGNlNjBkZjY5MTVhOTU0YjQyN2IxZDNkZjM4ZTc5YmZiNTQ5MjI5ODJkNjdjYTRmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQwZWU5YTlkMzA4MzNlODBjOWQ4MTEwMmVjNjg5YWE5ZDc2NWE3ODg3MmQyM2Q3ZmEyMDNjZTJiM2EwYjA4MyJ9"
         },
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L109-L118",
-          "version": "repo-lines-v1:sha256:b72445be8ba8912c3e0352459f2b774c11a1b83174c6d661b005b7b7b820ce4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZGMxZmViMmViNjg2MDAyYWViYjNhMmVjNzBhZjUwZDEwMmE2MTBlNjFmMTlmYjQ1NjIxZGY1NmY1Nzc1MDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MjZjNWViOGFiYTNhODliODAyYTVmOTYyNGM3NDNhZDM5MDMyMWU0MDZjMTNkODMzNjQ5MDEyZmRkYjNjM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMWRkYmRjMmY5MTJjMDc2YmIxM2ZhNGVmYzNjYWUyZjUzOGNmZTVmMTEyYzFjYmMzNWY1NDZmMTg0MDZhNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L70-L78",
+          "version": "repo-lines-v1:sha256:4420195a0b74101474dca289cd7900abe2f60d08041650cd73ff2c2854bfd6a6:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODcyZTcxNjIzM2NjNzQwYTI4OGViZTJlMmE2Yjg0MDgxZjA3N2M4MTE3MzNkNGJlZTZhYzgzZjUzMWYxYjIyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ4ZTVkZTRjNTUyM2ExZWRjOTVlMGFhZmU4NTI0MDAxMzNhZWFiMjNhYTg2ZDhkMzQ2MmY4MDQ0YmY2MmU3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWYzZDhhZjU2OWZhYzIxNjU5MjMzMzA5MWUwNWI1NDJhYTY4ZGU4Y2MyZjViMDUyNDQyZWI3YWU1MWY4MWIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODViYjk5YWQzMGNmOGZiZWNkZTdhZjhjMDI5YjkzN2IyZjY5YjkwY2QzYTU1YjdiZDcwOWJiNjQwYWFmOGNhMyJ9"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L133-L144",
+          "version": "repo-lines-v1:sha256:b44a603f100bec649da38d1d4cb9f823a7942c075eb216c68512ede5c32ab7bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NDMwZmFmZGNkZjQwNjE5YWEwNWQ0NDVkMjkyMTg2NWY4OTI2NGEwYWQyYzA4NTgyNTM2ZjVmZjY1YTMzOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MjZjNWViOGFiYTNhODliODAyYTVmOTYyNGM3NDNhZDM5MDMyMWU0MDZjMTNkODMzNjQ5MDEyZmRkYjNjM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMWRkYmRjMmY5MTJjMDc2YmIxM2ZhNGVmYzNjYWUyZjUzOGNmZTVmMTEyYzFjYmMzNWY1NDZmMTg0MDZhNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -21,30 +25,34 @@
       "statement": "Every tool follows the same order: resolve and authorise the principal, run the synchronous catalog method in a worker thread, convert CatalogError into an is_error tool result carrying {code, detail}, and return the payload both as JSON text content and as structured_content.",
       "evidence": [
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L30-L37",
-          "version": "repo-lines-v1:sha256:8f69541961e6c087e0cabbb2a3deda2d4cfa6956cbb5abed4ab89cc66fcdb598:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBhNjQ4MWViYmJhOTRmZjJjMmI0NGI4MTIwMTc2MjY2ZDY3NzRmMzYzMzQ0YTllMWQ5NDBlMDMzOWFmYjU1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTc2Yjg2YTkwNjQyMDA5YTBjZGU0ZTE2NmE0NTQzODA1YjRhZWNkNzhjMTViYzc2MjViYjNkODdmODJjZWQwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWIxN2I2Y2E5NzUzNzI1NzYxOWQ1MjkyMzUzYzg3MzgwZjVlYTY0N2NkYjRmY2ViODBhNjQ5YzRmMjdlYzdhMSJ9"
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L32-L37",
+          "version": "repo-lines-v1:sha256:6a2c6abfdb4df374de20b27f3f7b89cdb2889ef843dfd5b9eebd88c49d2da137:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBhNjQ4MWViYmJhOTRmZjJjMmI0NGI4MTIwMTc2MjY2ZDY3NzRmMzYzMzQ0YTllMWQ5NDBlMDMzOWFmYjU1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNlNzRkNTRmMDViMzJmMzE5NzQ2NzBhODk3N2JkY2RhMTAxZDE5NmUyZjBmMWVhMzRmMmU4NmYxMTg5ZWY5NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTc2Yjg2YTkwNjQyMDA5YTBjZGU0ZTE2NmE0NTQzODA1YjRhZWNkNzhjMTViYzc2MjViYjNkODdmODJjZWQwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2QwNzY3YzJjZjY5ZGQ0YTcyMTkyM2ZhOWZmNDBhOThkMjkwNDNhZWEwYWIzMWQzNmYxNTMwNDFiY2Y5MTc5MiJ9"
         },
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L49-L108",
-          "version": "repo-lines-v1:sha256:05532a0679c21f64e8b839c6bb4c5c2e70a321d567a272f15f1397dd8f7f89bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMGFlYzU4YTY0ODllZDljYjMwMDc5NWYyYjc3ODRkNTYzNGY1MDMyNGJjZjg1MDNhMTRmMTQzMTMwNmIzNmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkOGU5ZGNmYmJiNmIxNzE4OTFlZGNmYjkxMjJiMWEyMTI4NjQ5NTNjYjk1YTAxZGQzNDA2MGFhNmVhNzI0NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiNzFhYTA1Y2Y5ZGM1NDg2ZTIyZGNjYzA2NjA5M2IzOTYxZWQxNWJkYjNkMzIwZDMzMDM3ODlhZjU1OTBhZjkifQ"
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L53-L130",
+          "version": "repo-lines-v1:sha256:ba9ba787b7418ae5c1a607783044e0d477ea87d17e9d9c96aebdc58ada61aca3:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMGFlYzU4YTY0ODllZDljYjMwMDc5NWYyYjc3ODRkNTYzNGY1MDMyNGJjZjg1MDNhMTRmMTQzMTMwNmIzNmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYmNiYjI4OWZjMTBjMjkxMGEyODg0YTVlYzk2YjgxYzY1YTNlMTNiYmI4NjFmMDYyNjY2Yzg0MjA3MjFmYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNWZhYzg2ODA2NGY5OGQ2OGU1ZDk3MjBjNTJiMWI0ZWQ4MDdjYjcxZWY1OWJmMDBjNTAzNWUyNmZkYmUwNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1MzJiOWE5NmYxZTg5NWYwYmMwNzU1ZjUwMGViMzUxNWQ5NzBkNDlmNTBlMTAwZGMxOTA4NDc2ZjNjZDA0ZTYifQ"
         }
       ]
     },
     {
       "id": "claim_38a7518049ba46f5a126cd2757d5e9dc",
-      "statement": "load_skill returns the SKILL.md body with sha, commit, metadata, the file list, has_scripts and fetched_at; get_skill_file returns path, size, sha, blob and either text or base64; list_skills and search_skills return the skill listing plus fetched_at.",
+      "statement": "load_skill returns the SKILL.md body with sha, commit, metadata, the file list, has_scripts and fetched_at; get_skill_file returns path, size, sha, blob and either text or base64; get_skill_archive returns a download descriptor (uri, method, headers, expires_at, mimeType, size, sha256, digest) instead of bytes; list_skills and search_skills return the skill listing plus fetched_at.",
       "evidence": [
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L39-L41",
-          "version": "repo-lines-v1:sha256:2711608c0fe6d5c277d56f518aadcae11b6fa8db7a6a06405af03e60f010c5ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2JjN2VhMzViNjcyZGFkODUyMzg0ZTFmNWRlNjRlZWEyM2QxNTg4Y2YwZjkyOTdjZmU5NWFjNzU3NmI4NmI1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2QwNzY3YzJjZjY5ZGQ0YTcyMTkyM2ZhOWZmNDBhOThkMjkwNDNhZWEwYWIzMWQzNmYxNTMwNDFiY2Y5MTc5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDNlZmY1MWIzZDQ2MDgyZjgyZGFmMTkxNGM4YzQ4NTllNTY3NjNmMTg1NDYwNWFiMDk4MWFmN2YxZGI3M2MzNyJ9"
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L41-L50",
+          "version": "repo-lines-v1:sha256:8856e441e72e1b9447b75ffa6e573e13bc075c601dffd50e5e44d43b0fbfea1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYzdlYTM1YjY3MmRhZDg1MjM4NGUxZjVkZTY0ZWVhMjNkMTU4OGNmMGY5Mjk3Y2ZlOTVhYzc1NzZiODZiNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1M2U4NWM3NWQzZmVjMjNlNGIzYzMzMWJlNTNmZmQ2NjY4MTJkOTQ2YzFmYmI5Mjc3ODUwOGZmOGMxMWU2OGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkMDc2N2MyY2Y2OWRkNGE3MjE5MjNmYTlmZjQwYTk4ZDI5MDQzYWVhMGFiMzFkMzZmMTUzMDQxYmNmOTE3OTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MDU5Mzg5YjgxN2YyZTY4MWJlMDhjZjk2OGQxY2EzODEwZWI4YWMyNjgyZjM1NDUzYWZiNDliZGE1Zjg4NmEifQ"
         },
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L83-L108",
-          "version": "repo-lines-v1:sha256:d0ee5197144e8b49cba664e740c0c775d27fb026afe0920cefc3f163b702bc60:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMzYyZGI5NjJhZjNmOWE0NmM4MTEyNTBlZDBiNDE4MGFjNzExNGY4N2ExNmUyMzMwZjA4NGYwZDMyYzhjNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZDU4ZjA1YjAxZjA2NDAwZDBlMWMzMmIyYzE2OGFkMTk3M2Q0N2E2OWFlNmQxYmQzMDI2YTRmMjUzM2IyODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiNzFhYTA1Y2Y5ZGM1NDg2ZTIyZGNjYzA2NjA5M2IzOTYxZWQxNWJkYjNkMzIwZDMzMDM3ODlhZjU1OTBhZjkifQ"
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L87-L130",
+          "version": "repo-lines-v1:sha256:d5afa133a5ab7e8feaf09681045ef3d96f97ca82ad77c16d898677cea167aa5f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMzYyZGI5NjJhZjNmOWE0NmM4MTEyNTBlZDBiNDE4MGFjNzExNGY4N2ExNmUyMzMwZjA4NGYwZDMyYzhjNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYmNiYjI4OWZjMTBjMjkxMGEyODg0YTVlYzk2YjgxYzY1YTNlMTNiYmI4NjFmMDYyNjY2Yzg0MjA3MjFmYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZDU4ZjA1YjAxZjA2NDAwZDBlMWMzMmIyYzE2OGFkMTk3M2Q0N2E2OWFlNmQxYmQzMDI2YTRmMjUzM2IyODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1MzJiOWE5NmYxZTg5NWYwYmMwNzU1ZjUwMGViMzUxNWQ5NzBkNDlmNTBlMTAwZGMxOTA4NDc2ZjNjZDA0ZTYifQ"
         },
         {
           "resource": "repo://tests/http/test_server.py#L103-L117",
           "version": "repo-lines-v1:sha256:ea9e325bbee70e546c9222e0dfdd578a3a609f9793b302d37b2d444d37c73423:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4YWEzY2UwODc4OWZlOGNiYTgwMzEyYWM2N2M2YTIxODg4M2EzMGQ4NDUwNGI4MGFkYjg0NTAxYzI5Y2UwZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2NDc1MzEyOWI1YmZiN2JjODRhZDBlYzU1OTc2ZmEyYTU3ODJiYTAzNmYyYzM4ODFjYmI3NjQyNmZjNDc4MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiNDNkMjcwNTc4YzZkNmVkY2UwZGJhZTE2MDI1NjZkOGNjNDlmMzUxNjRhNjgxN2NjNGQ1MWI4M2RiODA1YTYifQ"
+        },
+        {
+          "resource": "repo://tests/http/test_server.py#L142-L174",
+          "version": "repo-lines-v1:sha256:d15163e14480dc883df7550e64bb625d1929140eb0cb422ffb18e650a0270687:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZGE2ZGU4ZDVhOTVlOTczNTUyYjRmMzZmNjQ4YjFlYTU1MjY0NGU1MGNlOGQ1NjRlMTNjNmQxMDE1MjE2OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZWZlMDI2NjIwY2MwZjU5ZTU1NzIzMTA5ODY5YWZjN2NhYTk4NDg5M2M4MzMyZWMyMjU1OGZkNzJiZDgyOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -53,7 +61,7 @@
       "statement": "The error-code vocabulary returned in tool results is not_found, unknown_version, not_a_member, input_limit and path_rejected, defined once in the core model.",
       "evidence": [
         {
-          "resource": "repo://packages/core/src/harness_catalog_core/model.py#L12-L20",
+          "resource": "repo://packages/core/src/harness_catalog_core/model.py#L13-L21",
           "version": "repo-lines-v1:sha256:0a916180789a546ab18c4cf44414f36b5c096e6cb9cbce703011c451ac9241b1:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjRhMjc1ODM5OWYwZmEyZTk2NGRiOTcyYTY0MWE0MmYxMTk4NzZjMjg5Mzc4ZWZhYThkM2IxMDZhMDg2YzAzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzhiYjg0YjNhMDU5ZWU1YWVmYTE5ZDgyZjViMjdjYjhhMmUwYjM0MTM1NzI2MjMyZDA3YTE1Yzc5NTU4NWEyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDI0MzRmZjVhZGFiOTBkYjI0MjRkMzY4ZDhlNDE0MWZjZTMzMGQxZDBlYjNmZGVjNmEyYTA1MDlhYTRkZThkNyJ9"
         }
       ]
@@ -63,15 +71,15 @@
       "statement": "Each tool annotates the SDK's per-call server span: langfuse.user.id on every call, harness_catalog.query (printable characters, truncated to 2000) and harness_catalog.result_count on search, result_count on list, and harness_catalog.skill/harness_catalog.sha on load_skill and get_skill_file; an in-memory exporter test asserts these attributes.",
       "evidence": [
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L23-L28",
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L25-L30",
           "version": "repo-lines-v1:sha256:579184fb700b46b972ec19ed6893180bdbf641342d1b56e3f695174713cc3dad:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ZmM2I5MjFlNmE5MGJlYzNhYzliYzY0ZjdjNzY1YjkxYmNmMGU0ZTBjOTUyZWRiY2Y1Nzk0NTU1NjI3ODYwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWM1MjI1YzhhYzU5MzA1MjdhZWQ0ODdmOGFjYWM1YTVkYWViZWJiMmUyNjUwNGJjZDI2ZmJkMDExYmNkN2VlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOThhZGFmNmVkNDk0NTU4NWJiNjBkOGYyNDYwYjdmMzQxZmFkYjA5ZTkzODBjZDY4MjgxODgzOWQ1NWU2Yjg1MCJ9"
         },
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L53-L53",
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L57-L57",
           "version": "repo-lines-v1:sha256:638a23c2769c12c4c3e108797da4b047f29f5f1fc75de8692ea3dc52113ae9e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjM4YTIzYzI3NjljMTJjNGMzZTEwODc5N2RhNGIwNDdmMjlmNWYxZmM3NWRlODY5MmVhM2RjNTIxMTNhZTllOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjM4YTIzYzI3NjljMTJjNGMzZTEwODc5N2RhNGIwNDdmMjlmNWYxZmM3NWRlODY5MmVhM2RjNTIxMTNhZTllOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQzNDcxYTczOTg5ODU4YWI2ZGVkMGU4MmI4YzhjNThmMWFjNDYxMzc5NDg4ZDkzNGExMzkxYWY4YTAxZDNiNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWFmYjUyYzcwZTFhYmQ2OThiODNjZWZhNDBhMDg1M2ZiZWE1ZjAwMzUzNmJlMmEzOThmYTIxYTY0NmE2ZTllZSJ9"
         },
         {
-          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L67-L80",
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L71-L84",
           "version": "repo-lines-v1:sha256:b13d53cd51c62fe7e2a3cc6dbe36639304d7892995979f93c52073e96042d53e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI1NjQ0OThhZDVkY2Y3MWNjZWRmMGMzNmMwZDE4MmViMTlhZTBiMDM0OGEzZTgyYzA5NjlkY2U1ZTQ1YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzMjA3MzE1Y2Q5OTE4Y2E1YWVhOTM0NDg1MTk1YWU3M2QwMjgwZTJjMjUwNTNlYjg2MzdmMWI3MDFmYzgxM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0MzAxYTU3MzViM2VjYWE2NjFlYWVhZWIwNDliOTRkNzI5NmZkMjc1NjVhOTRmNGJlYmU4YTY3YmViNmQyZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1ZmIzMGRjYzhhMGVjNjFhYmYyY2YxYTE0NWE2Y2UyMmQ1YTBmZGY2ZDgzYTE4MTkxNDY4NmMwNmQ4MGRmNzYifQ"
         },
         {
@@ -107,6 +115,6 @@
   ],
   "verification": {
     "by": "openwiki/0.6.1",
-    "at": "2026-10-10T11:24:40.987Z"
+    "at": "2026-10-10T16:35:35.587Z"
   }
 }

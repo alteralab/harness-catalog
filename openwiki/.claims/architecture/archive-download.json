@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f8d1a5e4b734b8e61b114efdd5453eadeb5158c6d103dca9054823098fe85dee",
+  "claims": [
+    {
+      "id": "claim_71caa4e8cc5047a0b1832c09cf574a37",
+      "statement": "get_skill_archive is the fifth read tool: it is authorized by the same harness-readers group rule as the other four, resolves the version with the shared _resolve, and returns only a download descriptor (uri, method, X-Harness-Archive-Token header, expires_at, mimeType, size, sha256, digest) so skill bytes never enter the model context.",
+      "evidence": [
+        {
+          "resource": "repo://DESIGN.md#L455-L455",
+          "version": "repo-lines-v1:sha256:01bee96b3cbd2c10c31d99954c700f7ac40907de6204b8ed1ad7a502185a8388:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiZWU5NmIzY2JkMmMxMGMzMWQ5OTk1NGM3MDBmN2FjNDA5MDdkZTYyMDRiOGVkMWFkN2E1MDIxODVhODM4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiZWU5NmIzY2JkMmMxMGMzMWQ5OTk1NGM3MDBmN2FjNDA5MDdkZTYyMDRiOGVkMWFkN2E1MDIxODVhODM4OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjdmNGE1NWZjMzI5NzNhZTdlOTM4OWZhOWNmODQ2ODM0ODFjMjBkYWViNmY5YjExMmU4MjFjZTdhNjU4ZTJmMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDg5ODU3NDJjYTNkZTQ4OTRkYzVlZWVkZGZjMzQzNjAzYzBmMTMwMDYwNWE5NDA0YmFkYzQ5YjFjMjY5NmM4MiJ9"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/authz.py#L10-L35",
+          "version": "repo-lines-v1:sha256:05a66f636909242ea198bd10680d8450ed3f89474eff4e46e661642ebc19f275:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxOTJlNjA4OTAyZTQ5ZDJhNWM4NjA4MjUwNjJkZjUwYWRjNDA1NjEzYTViNTcyYWQwODIwOGE3NzcxYmFiNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMjc4ZTJiZjE3ODY1YTFhMjY4YjQzNWQ0MWYzNWQ3NGJmMGY4NzY5ZjIxZTQ3NTI1ZDZiODFmNjg3OTRiOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzZWEwMDM3MDNmMWJlMTZkOWRjMmZjNDdmZjIzYTI1NTY4OTIzZGVlNmVjOTEwY2VmOGIyY2Q1NjRmZjEyMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/mcp_tools.py#L101-L120",
+          "version": "repo-lines-v1:sha256:516a256c607f3b8c596cbab4c5e37645aab7c83fcffd692aaa8094cf1c2b0e0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiY2U0MDRjNTdlM2U1MGNjNzVjODdiZmI5YzhjZmUzMjFiNjhlNWEzNzc3NjdlNjU4ZTMxYzEzOGYxNTE1MjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwMWI2MGFjYzBmZGRiMmUzZmViNjRkZmUwYzY0OWNiOTJiN2VmZTViMThmZWMxNWVkMTQxOTg0NGQzOTA2NTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjOGY4NGI3MmI1NzAwMWMzMDJkN2RiYTk5ZGIzYWJlNTU0YTNmMDU5YTM4Y2I3YTA2ZDUzMmQ4OGVhYjRlMmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_19df466a1d5f4f92a2a3323b41ec6ce5",
+      "statement": "The archive token is HMAC-SHA256 over 'v1:<name>:<tree>:<exp>' with a 300-second TTL; verify checks canonical name/tree, exact token grammar, the window now < exp <= now + ttl + 60 and a constant-time signature comparison, and every failure is the same False.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/archive_token.py#L16-L62",
+          "version": "repo-lines-v1:sha256:13ba498a445f621285b00c1718f697817d20042580ebfa5dd0384a42ff195e06:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5YmE3YTc1YWZjNDA3MGNmNGZjZWIwMTQ1NWEwZGI1ZGJjZGVkZTk4MjdiNmZjOTQyOThiZmQyYWRiNmU4YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExMWYwODVkMDU5NjU1MTA3NmE4NDExNzhjNjExYzA4NWJiYTRiODY5MzdlNmJjNTJmZDA3NjViMzFiNWZmZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5ZTFiYjg0MjkwYTUyNWFhOTZhNzRlOGNmYzc4YmYwZWJlOWQwM2JjYzQyMTViYzZjN2UyNTUyMGJmNDNlNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bcffc465c9ad4bbdac6d5e785f61de59",
+      "statement": "The route GET /mcp/archive/{name}/{tree}.tar carries the credential in a request header rather than the URL, answers every verification failure with an empty 403, maps not_found/unknown_version to 404 and input_limit to 413, re-raises other errors, and serves the cached tar with FileResponse plus Cache-Control: private, no-store.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/archive_route.py#L21-L48",
+          "version": "repo-lines-v1:sha256:c1763c6eff01893a0236e5dba41ae9115da7b36ef60ce65ecd94af9c45d02b19:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2NmI2YmYyNTYxMjkxYzRjZTZiNGQ5ZTY0ZGU3NDM3OTA0Yjg5ZTc5OTE4MjRlNzYyZWEyNzA3Zjk3ZjkxOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzMTA4M2RlYTk3NTE5MjQwOGMzNDFmMzZhYzYzNjIxOWM2NDUyYmQxYTMyOTFlZmM4ZjJlNGRhYzY0MzNkZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkOTM4Yzg4ODE0ZTI5MjdiNWE0MGI1ZDdmM2Q4OGMwYjkxMzBmOTMzMzkyMDRlZjA2NzQ1MDVhZGNmNDUyNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_04c3ea7859b947599dcc6fa976afcd02",
+      "statement": "The archive route is registered before the MCP Mount(\"/\") in bootstrap, because the MCP app would otherwise answer every /mcp/... request with its 401 challenge; the signing key is a process-lifetime random 32-byte value created at bootstrap, and the archive cache is wiped at startup since the new key invalidates every outstanding token.",
+      "evidence": [
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L104-L104",
+          "version": "repo-lines-v1:sha256:a172532f9ae5c99475d487ed41d3c0d1f6c7d8174866de5006945f5753de14c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE3MjUzMmY5YWU1Yzk5NDc1ZDQ4N2VkNDFkM2MwZDFmNmM3ZDgxNzQ4NjZkZTUwMDY5NDVmNTc1M2RlMTRjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE3MjUzMmY5YWU1Yzk5NDc1ZDQ4N2VkNDFkM2MwZDFmNmM3ZDgxNzQ4NjZkZTUwMDY5NDVmNTc1M2RlMTRjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTY5ZGRmNGY1MGRjMGRmNjczMWNmM2YzZTE2Y2U2YzZmODFiMDM2NGQxM2RkYmY4NTdjOWYyNWQxNWVkYWNiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQwZWU5YTlkMzA4MzNlODBjOWQ4MTEwMmVjNjg5YWE5ZDc2NWE3ODg3MmQyM2Q3ZmEyMDNjZTJiM2EwYjA4MyJ9"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L75-L76",
+          "version": "repo-lines-v1:sha256:e8f8495a0ec013a16795a582c14d0585b8ef5aca0863d1c9bf329d6620bea5cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZlMzRhY2Q2MzEyYmZhYmM1OTU4YThmNzQ1ODhhMjU0YWQ5NmMzYjRkNjEzZWQzYzBlN2U1Zjg2NDRjNWM4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI5NmUxNWQ3YjI3YmJhMTk1NDE2MTRhYjdjNTNmM2ZmMDQxZTM5OWY0MjE1YzVlYTFkMmI3ZWY2NTIxZjBjMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTM5NTg3NjkzMmQxNWVmMDQwZDA4ZTk1YTliYTAxMzU2N2ZhZWYwZmIyMDBlZjE2NWRkNzdjYzNkN2U5OWJlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjkyMTM1YTBmNWZlYTNmYzlhZjMwZjZhZmU3NDI2ZGU2OTAwZmY5NzEyNjczYWJiZTAwY2JiMTZjYzMzNDE1ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f2b44663d5b417d96e361150e0ebb2c",
+      "statement": "GitStore.archive_skill produces a byte-deterministic tar by running git archive with --mtime pinned to the commit time plus -c tar.umask=0022 and -c core.attributesfile=/dev/null, streams stdout to a mkstemp file with a byte cap (ArchiveTooLarge kills the child), sends stderr to a temporary file, reaps the child on every exit path and only os.replace-s a complete file into place.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/adapters/git.py#L193-L241",
+          "version": "repo-lines-v1:sha256:94eba5920d5840dca1211b8ba057d1fcf149acfb90b843017d21053307d40816:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliOTUyODc5MGI3NGVjZDZhYTY4OWFmZWMzMmRiYWM5ZTg4ZjFjMzhlZjMwNjU2Zjk1ZmY0MDJjNGY3ZTRhNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNjFjZTliMTJjOGMxZGQwOWU3MTcwMWUzNzU3Mjk3OGU1MWU3YTQ3ZDA4ZDAwYzEwM2JkODE2NmU3NTFjNzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4NTVkYzEwMWQ1OTRkZWJkYjhiYzZmN2NkNzk4MTA1ZTJiOGJkMjAzM2VhYmI2YTI5YWE5OTBjMDEyMGE5YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyYzMyYTViMGVjZjRiMDQ0ZWU3NDRmMGEyNGZlZDdiMTZlOGNiZWI0Y2M4ODk5NjI3ZjBmYjlhY2MwZGJiMTUifQ"
+        },
+        {
+          "resource": "repo://tests/adapters/test_git.py#L73-L104",
+          "version": "repo-lines-v1:sha256:54f6640231c42683dd883d1a1ff3e555fb601d65f3cfec3385ff36a39183c157:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NTA5YmI4YjQwMzBhNDhkZjliMzkyYzc1YzcxODk3MjZhZTg0ODc0MThkODdhMzA3MmIyMDJlZDFiYWUwYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxYTIwMTUwMmVmN2U0Nzk4OWNkNWY4MzgyYTFkMzFmNTM1MTQwZDAzZmYyNDQyNjJiM2QwNDQ2MWZjZGRjYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_56bb7d5ca5534a6ea068c59807ab86a9",
+      "statement": "Catalog.get_skill_archive caches workdir/archives/<tree>.tar with a 'v2 <sha256>' sidecar, serializes check/build/hash under a dedicated archive lock, reuses the cache only when size is within the 20 MB limit and the format version and SHA-256 match, and touches the file's mtime on every issue.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L277-L317",
+          "version": "repo-lines-v1:sha256:6758143e46572226985e71b0c73de3259e3b5e442f9f4678d202caff6e18db4c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZWJlMTE2Y2YzZjFiM2M4NzM1MzEwMWE5OGRjYzJhOGMzY2IyYmZlN2Q3MGE2ZjU2NThlYmU2Yjg5MThiNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmYTM3NmQ3NzY0MDEyMDIwNzQ5MTUwYTEwY2I0NDJiODc1OTc3ZDFjNjkyNmM1MGU0ZWE3YzNiNDFiNDI1MWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2ZGUxMzA2NzdkODM1NDJkOGExMmZmOTg1YzJhNTViNzUxYzcyODhiZGU4ODNkM2NlNTYyYzU0YTY0YzhiZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzZDM0YzRhOThkZDcwYTFhZjMwZWE1YjU5OGM4ZWJmNzJkNGI4N2EwOTNiN2M2NGIzY2MyMDBmNTM0OGQ1MmYifQ"
+        },
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L45-L58",
+          "version": "repo-lines-v1:sha256:e4e75dcd422aa67ee94d1af9b5ab294c03cee2c3cc2f6d959fe23ba8b43a5c6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjYzQ3ODY0NGUxMzAwOTJlOWQyNjBkOWQwODYwNzUzYmMwMWFmZjkwZjU0YjM2YjUyNGVlMDg2ZDNjMmRmMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZGZkYTdmMGQ4NGIwNjNmNjdkMmZkMzQ0OWY5NDI2OTUzNTRlOGNkNGVmNWI1ZDNlYzcxZmMxMDliMmU1MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNzdjYTYxNWRlM2I5YTQ1MGY0NDFiZGVkNzA3NDdlYWI5MTZmZDNjZWU1MzgyNzMyNDA4M2RhNDVkYTE4ZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwNGFhODBmMTg1NGExMTQyYTQyMjg1OGU0NWNlNmVmZTFjMzJkNzg1YTI1MGVlMzM0ZDM0MTdiZjM3MDBjZDAifQ"
+        },
+        {
+          "resource": "repo://tests/core/test_archive.py#L27-L98",
+          "version": "repo-lines-v1:sha256:986d4b92784e6940159aee2643a816ae87d003cd7351bc4e63176784028bf177:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlOWQ0ZjJmYmExMDQ4MmNmYjk5YmEyYzkzODgxMGNmMWUwM2Q3MDZhNDczMWNkNmZjZDE4YmY4NzA2MzY0ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmNzhiYzMwNWVhNTcwYjExMzEwMmQ1Njc3YTBjY2FiMWY2MTI5MTdkZGIyZTg5NGI2NWZhM2QxMjUzMjY5MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4OWE3NTc3YjExMDQ5NmQwOTljNTMwYjFmNzg2NDg0ZDE4NjEzYWI4NWZiNmE1ZWEzYmZlMjU3ZmYyMmY4MTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_267a5e83ccf54b54b480dcac59a3d0d1",
+      "statement": "Archive cache eviction is time-based and off the request path: evict_archives removes tars whose mtime is older than TTL + leeway + 60 seconds (7 minutes), the scheduler calls it at the top of every fetch tick, and bootstrap calls it with retention 0 at startup; disk usage is bounded by versions requested in the last seven minutes times 20 MB.",
+      "evidence": [
+        {
+          "resource": "repo://packages/core/src/harness_catalog_core/catalog.py#L319-L336",
+          "version": "repo-lines-v1:sha256:3b9e05be12784b4d5b502a444596a64f56a0eecd02b45849415fe3acc7a59c6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Y2ZhZDIxMWY2YTExOGZiODVlNTI5ZjAwNjc3MTA4ZjcyNDUyYmQyYTRiNDUxZDI0OGFhYTBiODdlNzY5NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNWViMDc1N2FlYTVkYjllMTI5ZDU0NWQ2NDVkMWY1ZTg1YTJkM2NmMmU2NDg3MjkxNzY3M2Y0NDAyNjUwOGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliYjUyNjczMDQzZjkxYmQ4Mjk0OTNmN2FkMWJiMzUxOWZiZjhmYWI2ODdhM2Q1Njc1ODAyYjFkZjExNTRiNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiZGFiMWNkOTM3MGQzMjcxMmZkMGFhN2M2M2RiNGY3OTE2YTYxZjA5ODdjY2QzMmNiNjU5NWZjMjI0MDY4ODQifQ"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/bootstrap.py#L76-L76",
+          "version": "repo-lines-v1:sha256:b296e15d7b27bba19541614ab7c53f3ff041e399f4215c5ea1d2b7ef6521f0c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI5NmUxNWQ3YjI3YmJhMTk1NDE2MTRhYjdjNTNmM2ZmMDQxZTM5OWY0MjE1YzVlYTFkMmI3ZWY2NTIxZjBjMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI5NmUxNWQ3YjI3YmJhMTk1NDE2MTRhYjdjNTNmM2ZmMDQxZTM5OWY0MjE1YzVlYTFkMmI3ZWY2NTIxZjBjMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzRiYmVkZDc5ZjdiYjEwMWZjNDAyNTRiMDg2ZmRhOGYyMzYxODE4ZDM5YWI0M2JjNjM1N2Q4YWE4NmM4M2UxYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjkyMTM1YTBmNWZlYTNmYzlhZjMwZjZhZmU3NDI2ZGU2OTAwZmY5NzEyNjczYWJiZTAwY2JiMTZjYzMzNDE1ZCJ9"
+        },
+        {
+          "resource": "repo://packages/server/src/harness_catalog_server/driving/scheduler.py#L64-L65",
+          "version": "repo-lines-v1:sha256:24c9b1bd143dc47ebb8b1919579bc9399bc7cbdc6ce8d4355f635f61f1e0ba72:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDYyNDkwZDNkMGNlNzJlYzYwN2YyYjEzOThjZTVlZTUwYTRjMDYxMWE2YWRlYTMwNDE2YTg3NjRmNGE0MDg0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhjMTcxNDZiNjIxNTY1ODFhOGIyZDU3ZjE2YmJmODAyZjM3MDJiMjlmMDZjMWEzZWE0MTU4NWNmYWY5ZjRmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTQ2ZjMzOThkNTI0MDNhNjhlMzEyYTAwNDZiOWE4ZTI1Mzk3NjE4NTg3ZjU3NzYwZTQyNjUyMjllOGY1MjFlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzgwYmM2ZTMwNDI2ZGY2ZWE2MTMzNDA2ZjRjNWZkMTQ5ZWU5NTM4NjQ2YjY2OTY2MzU3YjMzNDY0YzJhZjdmNSJ9"
+        },
+        {
+          "resource": "repo://tests/core/test_archive.py#L100-L112",
+          "version": "repo-lines-v1:sha256:826ff7fa118e060cd9f5155b9b50e98b919a3eea5cc761bba54d6b3ca424d311:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5ZDNhZWJkY2ZhNTk2YzI2MzliZWMxOTEyNGM0MmQ4M2ZkZTJmOGFlNmJjYmY0ZjRjYjVjZDc4ZTA0ZWNkMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhOGM5MTc4Mzk5YmY1M2I3Y2ZiOGJmMmU0ZTM4MDBkOGRhZGY0ZmUyMWUwZGViOGY5NDZiNzA5OWNhZjg4NDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmNTIwMjNkZjk3OGQzZDRhODcxMDM0NzhmZjRjMDVhMmY3MTViNWY5M2Y1NDRjNzUwNDFjODJjMDZhMjkxNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ee3b752d97904f64823b93cdd4a1fefc",
+      "statement": "pin-skill downloads one tar via the descriptor (curl with the header token to a file), compares size and SHA-256 with the descriptor before extracting, compares the extracted file set with load_skill's list, and retries a 403 once with a fresh descriptor; get_skill_file remains for single-file reads.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/skills/pin-skill/SKILL.md#L33-L43",
+          "version": "repo-lines-v1:sha256:dce084ee12659c7362a4029bb38948a4743c63e706e5c9029315c9820bf62b8d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OTdmNzI0MmVhZWI0NWE5MTM0NzVhMzU3MGRlNGQ4MmYyOGQ4YmZkYTA2ZGRlMzZlODE0NmMzMzZhZGE2ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjODlhMTk2MDg5YjM5MDQ5ODZjODc3NjFiNzA5ZDA4M2MyN2MwZWRmODllODcxMzkyYmFkN2EzMzY5NWFlODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0OTZmMGEwMThjMDIxMTZiOGQ4N2Q2ZDcyNTYyMDk2NzQwMjhjOGJjY2EyM2EyMTg0Mzc2NjExZjRjZWY1NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNmIxZDhhZWU3NWE3NzkwOTRjZjIwMWVlMTcxOGFiMzE2YjIxYWM3ZTdiZDllMWE3MGY2YTBlNjY3ZGRmODMifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/skills/pin-skill/SKILL.md#L63-L65",
+          "version": "repo-lines-v1:sha256:c32c18029a2958d388a7dd4e1c175e0160bcdd0bde1114dad787294c8a271066:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODBkZmFiMzFkZDdjZjA1NDc5ZDE2NzNkODYwMGY4YTY0ZTQ3MWJlNDlkYTkxOTdlYWIzOTIyYmMwMTI0Yzc2MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGZiMGRiMTNjMWZkOGZhZGJmZDE0YjAxYzY5NjA2ZTc0Yjc5OWYyZjAwMTE2NzRmNGIyZTAxMzZjZDk5N2IzZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjhiZjM0OGU2ODlmNDkxZGIyNGRiMmU3NmJmZWM0MTU5MmRlMWY5NjliMDRmZDhhZGQ4Zjc3NDYyOGI3Yzk1MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDM1ZmNhOTNkNTVlNDAzYzczNjRhNDA2MDlhNGRmMzA4NTc0Y2U3NDg4NzY1NTYzOGVjYzRiYTYwYzI1YjdkNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f8b49c9a8c3549f3b232c5f41a76eb2c",
+      "statement": "The HTTP integration test proves the end-to-end contract against a real server: descriptor, download with only the header, extracted file set equal to load_skill.files, matching size and sha256, empty 403 without WWW-Authenticate for no token, tampered token and another tree, replay within TTL allowed, not_a_member for outsiders and unknown_version for an unknown sha.",
+      "evidence": [
+        {
+          "resource": "repo://tests/http/test_server.py#L142-L174",
+          "version": "repo-lines-v1:sha256:d15163e14480dc883df7550e64bb625d1929140eb0cb422ffb18e650a0270687:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZGE2ZGU4ZDVhOTVlOTczNTUyYjRmMzZmNjQ4YjFlYTU1MjY0NGU1MGNlOGQ1NjRlMTNjNmQxMDE1MjE2OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZWZlMDI2NjIwY2MwZjU5ZTU1NzIzMTA5ODY5YWZjN2NhYTk4NDg5M2M4MzMyZWMyMjU1OGZkNzJiZDgyOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-10T16:35:35.587Z"
+  }
+}

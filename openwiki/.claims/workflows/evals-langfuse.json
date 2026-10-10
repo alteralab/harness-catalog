@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:29e9b66ec64866f988ccace3d9a9f88baeb2db804962c96408e7fb5d85f94ba9",
+  "pageVersion": "sha256:b1dc0ea6d9d39a8867582ae35e542f59eb8f5cab10ad9a37d538858926475b65",
   "claims": [
     {
       "id": "claim_372ac1bb1b9d4867861cb2a184b01cdf",
@@ -60,27 +60,81 @@
     },
     {
       "id": "claim_701ec616cba94d9dac06922354034a94",
-      "statement": "The catalog CI template creates the evals jobs only on a push to main when the repository variable HARNESS_EVALS is true; an agents job converts the space-separated HARNESS_EVALS_AGENTS (default claude-code codex) into a JSON matrix; the evals job first fails if the harness's model credentials or the three Langfuse keys are missing, then runs harbor run with and without the skill for each changed skill, passing HARNESS_SKILL_REF and HARNESS_CATALOG_NAME.",
+      "statement": "The catalog CI template's evals job runs only on a push to main when the repository variable HARNESS_EVALS is true, takes its matrix directly from the JSON-array variable HARNESS_EVALS_AGENTS (default [\"claude-code\", \"codex\"]), and consists of checkout, uv, the deploy-key credential action and a single harness-catalog ci evals --agent call from the pinned CLI tag; GitLab lists the agents in parallel.matrix because it cannot build a matrix from a variable.",
       "evidence": [
         {
-          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/github/check.yml#L59-L134",
-          "version": "repo-lines-v1:sha256:b8431739181bbc14e5b33853ea56cb41242e095d6a088b591eebb256a40df270:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNGIxNDI2OWQzYzIzODVhOGUyMDQyNzFkZjMyNWQ3ZjZkYjI5YWY5YmZhOWE2NTg1OGQ0NjEzMDMxNDI2MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MTMzM2RmNjZkNTk1YzYyMjM3NDEyZTdkMTYwN2I1Y2ZiMDExNDdmMGYzYTlkYjdiN2FjNGU3MjljNDNkMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyYzliOTVhYjdhNzc1YjE0NWMxMGViM2I2OTVjNjEyZTg5Y2IyYzIyMGIxOTU0ZmQ5YjE0ODRkMjA2ODBiMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/github/check.yml#L23-L39",
+          "version": "repo-lines-v1:sha256:7834385d6ad0f62ebfb2cddf9678dc17441032b26c8401e46fc1bcd392f51958:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5ODFkNDQyNDNmYjM0NzVjZjgxMmYzMWY5Mjc0YmQ2OGRjZWI4OTk4NTU5NDM3NTRiMTdhMjY3M2NjNzk4YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMjdmZWYxZjM1YTY1MjUyNmJhNTg2MTcwMmIwMDNjZjQ4OGRlYzgxOTc5OWQ5ZTMyMWY3NjVkZDg1OTY0OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmNDA5MWFhNWFkZjQ1N2NjN2U3MjJiNTA1Yjg0YTk5NzljNzJiMzZhNzU1OThhM2Q0NGFlZjExMWJhNDQzYTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/gitlab/.gitlab-ci.yml#L32-L44",
+          "version": "repo-lines-v1:sha256:5b6c069e0fa319b7adec452d276a1a7c1ea3ff12799cc95e45b6c8ebb6c425a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjYjkxZThlOTk0N2Q5NWQzNzk3YWQyMDc0ZWI3ZjNmMTA2N2Y3NzVlOWYzYzM3YTQyOGMzZWVjNmIwZmUzZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZWE1ZmY0MTdiZTNmZTk1NzVkMmE0MDc2ZjcxMGFkYTQ5ZGQ4NzZmYTEzMWRlYzk5MDM1NWI0MWRkMDY0ZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhZmI4NGE5ODZhYWM2NzgzM2Y2NGQ4MGE2ODAxMzY5NDcwNjNlNGRlOGU5ODE2OTZiMGJlMTk2MDdhMjhkN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_8b42ff7a8c194e55b23ae132ec484556",
-      "statement": "The self-hosted runner's root .env template lists, per harness, the credential variable names that Harbor's agent implementations read, plus the three Langfuse variables.",
+      "statement": "The self-hosted runner's root .env template, kept in the code repository as .github/runner.env.example, lists per harness the credential variable names that Harbor's agent implementations read plus the three Langfuse variables; the real file lives only on the runner machine.",
       "evidence": [
         {
-          "resource": "repo://docs/runner.env.example#L1-L26",
-          "version": "repo-lines-v1:sha256:f6d5aee515ebf8588932693b88b070a9511810943ce438f453ea21f20bfe49e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YWQ0OGM1N2RlMzBlNjJmNGVhNzRiZDQ5MjBhOTJhOTliNTQ2NGU1MDFkNTk1YWZmZGQ0MmRhY2RmMjZjOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkYzVhMmVmNjI2ODJkYmU1NGIzMTU2YTNiZTdjMDA3ODBkMzllZTE3MTc4YTMwMDU4YmFmZmYwYmQyNGJjZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.github/runner.env.example#L1-L26",
+          "version": "repo-lines-v1:sha256:3a212202621a3a753b382e8f119ff18dc2c37577fc4f923098640a1bc0c388f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YWQ0OGM1N2RlMzBlNjJmNGVhNzRiZDQ5MjBhOTJhOTliNTQ2NGU1MDFkNTk1YWZmZGQ0MmRhY2RmMjZjOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkYzVhMmVmNjI2ODJkYmU1NGIzMTU2YTNiZTdjMDA3ODBkMzllZTE3MTc4YTMwMDU4YmFmZmYwYmQyNGJjZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_34e647dfcabd467995b97b887b4d33d3",
+      "statement": "harness-catalog ci evals checks credentials before anything else — missing_credentials applies a per-harness table (claude-code: OAuth token with CLAUDE_FORCE_OAUTH=1 or ANTHROPIC_API_KEY; codex: OPENAI_API_KEY or CODEX_FORCE_AUTH_JSON=1 with auth.json; cursor-cli and gemini-cli their keys) and missing_langfuse requires the three Langfuse keys — exiting 1 with the missing item named, exits 2 when the base commit or diff cannot be determined, and does nothing when no skill changed.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/__main__.py#L103-L135",
+          "version": "repo-lines-v1:sha256:c3ebd379d941d6ed793c4cd25b464ec7866c0f259e5576c4dcdadc9f0956882d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYTFlMzU3MTM0NTI4NjQxNjE1MjljMmVlMjllMWE5ZTdkMDQzZmMzMjYzZmRlNGFkYTdlMGVlMzliZWNlNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxZWZiYWFhOWVhZGVjNmY0ODJiODcyNzhjMjM0MzQ1ZThkZWRlMzQ0NWU1N2UyNTQ4NzVhYTRiMzNhYTE1ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjNTZkM2NhMDhjMDY5NjE4MDAxNzE3MDNhZjU5MWE0NWViZDNlMTNlOTM0N2EyM2MxOTFiZjQxNzZhMzk0MTkifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/ci.py#L109-L135",
+          "version": "repo-lines-v1:sha256:c803d44fc7baa162cb00afde0f7139f505d12f78c9d7fce621b6c05480ca9c1f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllYWQyMTViZTgwODkwYzU2NDZlNjYxNzdiZjYzNjI2NTY1MTc1MDAwMzYyNDI2YjBmOTJlNzQ4NzhiMDRjNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0OGM2NWMyZDA4Zjc4ODNjMzI1NGJjMTA1MDVkNTU4NDdlMmYxZmI5YWVkMjIyY2M0MmRkZWRjMTI2MDZhMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwYThkOTJkMDk1NDQwZTZiNGZmYTI1YjQ2MWEwYzYzZTkyZTE4Y2EyOGU4NDdiODk1ZWUxMDkwYzZhMWE2ODAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_69ef8b677e4f405ea1e1c7c16f45f051",
+      "statement": "For each changed skill directory that has evals/, evals_plan produces two harbor jobs in deterministic order (with --skill and without, the baseline), each invoking uvx --from harbor==0.24.0 with the harbor-langfuse plugin pinned to the same code-repository tag as the CLI; harbor_env sets HARNESS_SKILL_REF to HEAD and HARNESS_CATALOG_NAME from the host's repository name; run_plan runs every job even after a failure and returns the failure count, and --dry-run prints the commands instead.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/__main__.py#L120-L135",
+          "version": "repo-lines-v1:sha256:094e557e00001f2e16a3758a1da03ec8faf1353e059a96a084f4f5c6c2638721:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkM2M1YThmN2NiOWNjYzJmNDgyMDc0ZDJkZGE1MjA4N2RkZTEwNzE0NWRiNjE4NTNlMTRiMzcxYTE5MGE1ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmOGNkN2YwMTE0ZTJmZDMxMzc5MmJmNzFjM2RlZjk1NDhhOTc4ZDdhNjkyNDNlMzJjMGM5NDIwNDNlYjdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjNTZkM2NhMDhjMDY5NjE4MDAxNzE3MDNhZjU5MWE0NWViZDNlMTNlOTM0N2EyM2MxOTFiZjQxNzZhMzk0MTkifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/ci.py#L137-L180",
+          "version": "repo-lines-v1:sha256:d793f2949bf5360c171850b94c062c3c92c1d2c422d585945f016c57fb1500a7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkM2RlMGFlYzA3M2JlNzFiYmFjNGMzMWVmN2FjNTYzYjRhODY0ZDFlOTNiZjE1MTU1NTdlZmU0ZTI1OTg3ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1M2ZiMmM0YWZiMDYxYWRmMzBjZTU4M2I5MTE5YTg2NTY0MmY5N2NjZTY2ODlmNzFkMTk1ODgzNzk2MTAxMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5ZDQwOTllM2UxZWYzNzI4MmUwYmRmN2ZmYmEwMzZjNjhmYjBkMDg2NmFlZGNlMWUzMzY3Nzg0MDNkY2JkMmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkODBiOTkwNTIxZjRmNTk3Yzg1YTRjNDgwNDM3NGMxMDkwOTFkNDVkYzdjODU0OTRjMmJmNWJlZWNiZDM3ZTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4849df8201c141c19aa1aa9382b91784",
+      "statement": "Each eval case follows Harbor's official skeleton with one deviation: task.toml (schema 1.4, skills_dir=/skills, timeouts), instruction.md, an environment image that pre-installs pytest 8.4.1 and pytest-json-ctrf 0.3.5 because the verifier has no network, tests/test.sh that runs pytest with a CTRF report and writes reward 1/0 from the exit code, tests/test_outputs.py holding all assertions, and a self-contained solution/solve.sh for the Oracle agent.",
+      "evidence": [
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/skills/pin-skill/evals/pin-project-scope/environment/Dockerfile#L1-L6",
+          "version": "repo-lines-v1:sha256:6164544db0c9f93d623ff8b0ecf380f4122bc9e8b2488693c30e2c16fb57fcb2:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmU5MDQwYjZjMTZiNjVlMzk0MjllMTNmZmYxODk5ZmFmZTNjODA0MmU3NDYxY2Q0N2JjOWZjZGViZTBkNTM3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDdlZGU1NWMyYzQ2Njk5ODU4ZDdkZjhjNDJkZmE0MzU2M2UwZmFiY2ZlNjQyNTE4YzU4MmJjZjk3ODQ4MDkzZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/skills/pin-skill/evals/pin-project-scope/task.toml#L1-L18",
+          "version": "repo-lines-v1:sha256:9f559c8dcfc5c7b3f68186dc1335ba64e7d546237213f93c16e6e14d052cfb52:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMDQyYzcxOTNlZGUwMDlhY2NmYTI1YmZiYWUxZTcyOGM5YWNmMmNkNWQzNjlhMGY1NjE1OGIxNjVjNzM5ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczY2FiOTVmZTIxNzhkNmQ3YjY0NDA3ZDk0ODRlYTMyNmYyNWU2ZmI2ZDdhNGU2MDg1MDFkZDk3MDMzZGYwMTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/skills/pin-skill/evals/pin-project-scope/tests/test.sh#L1-L11",
+          "version": "repo-lines-v1:sha256:2b7e34c932c066b37e4925ab6fe4350f9f744a4e4e5747d5209aa0169075aaa3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://packages/cli/src/harness_catalog_cli/templates/skills/write-skill/references/conventions.md#L42-L48",
+          "version": "repo-lines-v1:sha256:c4e5d8db2182dfff78f0356995e2c4c456d7fcad210a74c9c6e14b1701127a8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmZkOTVkMTU5NDcxMDlhMjkyNDhjZDM0NDE2NTcxMGIyMTdkNGFjZWU4YjI0ZjU3ZDk2NDdlYTBiZjg3OTMyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzU1ODlmMTA1ZTNiOTI1NDc1MmIxMzNhNzM5NjliMGVhMjVhMzI0ZWUzMWY5ZWY2ZWJkZGZkOWY2ODFiMmNkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQwY2Y5YzM5Y2U2NzNkODQyNzRhZWQ2ZTkxZmQyY2ViYzcwZWIyZjU5ODcxNjZhYTc5YjZlYzM1MWY4MjhkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzMwNDdhMzM4ZjA1NzJkNWJjZTFkN2Y4MDM2N2M0MzI5OTI3NjdiNWZhMDQ0YzYzNGJmNWQ4OGVmZjAzMWFmYyJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.6.1",
-    "at": "2026-10-10T11:24:40.987Z"
+    "at": "2026-10-10T16:35:35.587Z"
   }
 }
