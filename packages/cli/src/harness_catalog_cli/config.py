@@ -37,15 +37,29 @@ def effective_values() -> tuple[EffectiveValue, ...]:
     return tuple(out)
 
 
+GENERATED_BEGIN = "<!-- generated: harness-catalog config docs — 이 표만 생성된다. 바깥은 손으로 쓴다 -->"
+GENERATED_END = "<!-- /generated -->"
+
+
 def render_docs(settings_cls: type[BaseSettings] = Settings) -> str:
-    """docs/configuration.md의 본문: 표 하나."""
-    lines = ["# 설정값", "", "레지스트리 프로세스가 읽는 환경 변수. 비밀은 `<이름>_FILE=<경로>`로 파일에서도 읽는다.", "", "| 변수 | 필수 | 기본값 | 뜻 |", "|---|---|---|---|"]
+    """docs/configuration.md의 생성 구역: 레지스트리 설정값 표 하나(표식 포함)."""
+    lines = [GENERATED_BEGIN, "", "| 변수 | 필수 | 기본값 | 뜻 |", "|---|---|---|---|"]
     for field_name, field in settings_cls.model_fields.items():
         env = f"{ENV_PREFIX}{field_name.upper()}"
         required = "예" if field.is_required() else "아니오"
         default = "" if field.is_required() else str(field.default)
         lines.append(f"| `{env}` | {required} | {default} | {field.description or ''} |")
+    lines += ["", GENERATED_END]
     return "\n".join(lines) + "\n"
+
+
+def merge_docs(existing: str | None, generated: str) -> str:
+    """손으로 쓴 본문은 두고 표식 사이만 바꾼다. 파일이 없거나 표식이 없으면 제목 + 생성 구역으로 새로 만든다."""
+    if existing and GENERATED_BEGIN in existing and GENERATED_END in existing:
+        head = existing[: existing.index(GENERATED_BEGIN)]
+        tail = existing[existing.index(GENERATED_END) + len(GENERATED_END) :].lstrip("\n")
+        return head + generated + ("\n" + tail if tail else "")
+    return "# 설정값\n\n레지스트리 프로세스가 읽는 환경 변수. 비밀은 `<이름>_FILE=<경로>`로 파일에서도 읽는다.\n\n" + generated
 
 
 def render_env_example(settings_cls: type[BaseSettings] = Settings) -> str:

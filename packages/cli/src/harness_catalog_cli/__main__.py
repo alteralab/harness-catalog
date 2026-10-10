@@ -14,7 +14,7 @@ from harness_catalog_core.adapters.validate import SkillsRefValidator
 from harness_catalog_core.check import check_commit
 from harness_catalog_core.model import ContentError
 
-from .config import effective_values, render_docs, render_env_example
+from .config import effective_values, merge_docs, render_docs, render_env_example
 from .init import InitError, init_repository
 
 app = typer.Typer(add_completion=False, help="harness-catalog: 카탈로그 저장소의 검사와 초기화")
@@ -89,7 +89,8 @@ def config_list() -> None:
 def config_docs(out_dir: Path = typer.Option(Path("docs"), "--out-dir", help="configuration.md를 쓸 디렉토리")) -> None:
     """docs/configuration.md를 설정 정의에서 생성하고 .env.example용 절을 표준 출력에 낸다."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "configuration.md").write_text(render_docs())
+    target = out_dir / "configuration.md"
+    target.write_text(merge_docs(target.read_text() if target.exists() else None, render_docs()))
     print(render_env_example(), end="")
 
 

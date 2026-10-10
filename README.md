@@ -122,7 +122,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 | [docs/using.md](docs/using.md) | 팀원 | 등록, 로그인, 찾기·적재, 곁에 두기(pin), 기계 계정, 문제 해결 |
 | [docs/authoring.md](docs/authoring.md) | 스킬 저자 | 스킬의 모양, 팀 규약, 올리는 절차, 검사 항목, evals, 갱신·은퇴 |
 | [docs/operations.md](docs/operations.md) | 운영자 | 구성, 카탈로그 저장소 신설, 설치, 프록시, Dex·LDAP, 런북 |
-| [docs/configuration.md](docs/configuration.md) | 운영자 | 레지스트리 설정값 참조(생성 문서) |
+| [docs/configuration.md](docs/configuration.md) | 운영자 | 설정 표면 전체의 참조: 레지스트리 설정값(생성), 관측, compose 변수·비밀 파일, Dex·LDAP, CI·러너 |
 | [docs/development.md](docs/development.md) | 개발자 | 배치, 개발 환경, 시험, 게이트, 릴리스 |
 | [DESIGN.md](DESIGN.md) | 모두 | 설계와 결정의 근거 |
 | [PLAN.md](PLAN.md), `plans/` | 개발자 | 실행 계획, 측정 결과, 결정 원장 |
