@@ -5,7 +5,7 @@ description: Task-routing map for this wiki. Which page answers which kind of qu
 tags: [quickstart, navigation, routing]
 verified:
   - by: openwiki/0.6.1
-    at: 2026-10-10T12:19:13.361Z
+    at: 2026-10-10T12:35:52.268Z
 sources:
   - id: openwiki-source-80aabf5d700807c9b44ae3e8
     resource: repo://.claude/helpers/openwiki-age.sh
@@ -33,7 +33,7 @@ sources:
     resource: repo://PLAN.md
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.1", at: "2026-10-10T12:19:13.361Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-10-10T12:35:52.268Z" }
 ---
 
 # Quickstart — where to look for what
@@ -75,4 +75,6 @@ This wiki explains **why and how** harness-catalog works. Reading it is pull-bas
 
 Identifiers, paths, commands and error codes are verbatim from the code. "Design says" points at `DESIGN.md`; "measured" points at `plans/pilot/r*.md`. Human-facing operating guides live in `docs/` (Korean) — using, authoring, operations, configuration, development — and are not duplicated here.
 
-These pages are generated, not hand-written. `.github/workflows/openwiki-update.yml` runs `openwiki code --update` on merges to `main` that touch source (`openwiki/**` and the workflow itself are `paths-ignore`d), with `OPENWIKI_PROVIDER: anthropic` and the model from the repository variable `OPENWIKI_MODEL_ID` (default `claude-opus-5`), and opens a pull request on branch `openwiki/update`; the baseline recorded in `openwiki/.last-update.json` only advances once that PR is merged. The toolchain is pinned to `openwiki@0.6.1` in `package.json` and `.mcp.json`. Before raising an MR, `make wiki-claims` lists the pages whose claims cite files the current branch changed (no model, a few seconds).
+These pages are generated, not hand-written. `.github/workflows/openwiki-update.yml` is triggered by `workflow_dispatch` and by `push` to `main`, with four `paths-ignore` entries — `openwiki/**`, `AGENTS.md`, `CLAUDE.md` and the workflow file itself — so that merging a wiki update does not wake the workflow again: the `OPENWIKI` blocks in `AGENTS.md`/`CLAUDE.md` are rewritten on every run, and the first merge was measured to re-trigger it. `concurrency: openwiki-update` with `cancel-in-progress: true` keeps overlapping merges from splitting the baseline commit; the later run wins. The checkout uses `fetch-depth: 0`, because `openwiki code --update` diffs `HEAD` against the commit it last documented and a shallow clone hides that commit, leaving the run with an empty change summary. The job installs `openwiki@0.6.1` globally (together with optional `mermaid` and `jsdom`, which add high-fidelity validation of Mermaid diagrams), runs `openwiki code --update --print` with `OPENWIKI_PROVIDER: anthropic`, the `ANTHROPIC_API_KEY` secret and the model from the repository variable `OPENWIKI_MODEL_ID` (default `claude-opus-5`), removes the transient `openwiki/.run.json`, and opens a pull request on branch `openwiki/update` through `peter-evans/create-pull-request`. The generation step is `continue-on-error: true`: a `failure` outcome still opens that PR, preserving only the pages completed before the failure, and a final step re-raises the failure with `exit 1`. The baseline recorded in `openwiki/.last-update.json` only advances once the PR is merged.
+
+Do not run an update by hand inside an MR — the generated sidecar and the baseline commit split. Only run one from a clean `main`, and only when CI is blocked. The toolchain is pinned to `openwiki@0.6.1` in `package.json` and `.mcp.json`; `make wiki-install` rewrites that wiring (`.claude/skills/openwiki`, `.mcp.json`) and re-pins it. Before raising an MR, `make wiki-claims` lists the pages whose claims cite files the current branch changed (no model, a few seconds).
