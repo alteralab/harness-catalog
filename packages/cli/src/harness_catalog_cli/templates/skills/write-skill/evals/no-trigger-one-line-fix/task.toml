@@ -16,3 +16,4 @@ timeout_sec = 600.0
 
 [verifier]
 timeout_sec = 120.0
+environment_mode = "shared"   # 검증기가 에이전트 컨테이너의 끝 상태를 직접 본다. 분리 모드(separate)면 artifacts 선언과 tests/Dockerfile이 필요하다

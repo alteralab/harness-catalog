@@ -12,8 +12,9 @@
   --script    scripts/<x.py>에 PEP 723 머리와 종료 코드(2 입력·3 대상 없음·4 도구 없음) 골격을 쓴다
 있는 파일은 건드리지 않는다(멱등). 만든 파일을 한 줄씩 찍는다. 종료 코드: 0 성공 · 2 입력 오류.
 판단은 여기 없다 — 내용(설명·과제 문장·검증 조건·절차)은 에이전트가 TODO 자리에 쓴다. 규약 문면은 references/conventions.md.
-검증기는 `harbor tasks init`의 공식 뼈대 그대로다 — bash 진입점 tests/test.sh가 pytest로 tests/test_outputs.py를 돌려 CTRF 보고와 reward 0/1을 쓴다.
-다른 점은 pytest와 uv를 이미지에 미리 넣고(검증 때 네트워크 없음) 레지스트리용 `skills_dir`를 두는 것이다.
+검증기의 인터페이스와 보고 형식은 `harbor tasks init`의 공식 뼈대를 따른다 — bash 진입점 tests/test.sh가 pytest로 tests/test_outputs.py를 돌려 CTRF 보고와 reward 0/1을 쓴다.
+이미지는 다르다: python:3.12-slim + git + uv(스킬 스크립트 규약) + pytest 미리 설치(검증 중 PyPI 내려받기 없음 — network_mode는 기본 public이다) + `/skills` + WORKDIR /work.
+검증기는 공유 모드(`[verifier] environment_mode = "shared"`)를 명시한다 — 에이전트 컨테이너의 끝 상태를 직접 본다.
 """
 
 from __future__ import annotations
@@ -89,21 +90,26 @@ timeout_sec = 600.0
 
 [verifier]
 timeout_sec = 120.0
+environment_mode = "shared"   # 검증기가 에이전트 컨테이너의 끝 상태를 직접 본다. 분리 모드(separate)면 artifacts 선언과 tests/Dockerfile이 필요하다
 """
 
 INSTRUCTION_MD = "TODO 사용자가 실제로 할 한 문장. 과제의 입력과 끝 상태가 드러나게.\n"
 
-DOCKERFILE = """FROM python:3.12-slim
+DOCKERFILE_HEAD = """FROM python:3.12-slim
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
-COPY --from=ghcr.io/astral-sh/uv:0.11.8 /uv /usr/local/bin/uv
-RUN uv pip install --system --no-cache pytest==8.4.1 pytest-json-ctrf==0.3.5   # 검증기(tests/test_outputs.py). Harbor 공식 뼈대와 같은 판
+# uv는 스킬 스크립트 규약(`uv run --script`) 때문에 있어야 한다. 검증 도구(pytest·pytest-json-ctrf)는 Harbor 0.24 뼈대와 같은 판을 미리 넣는다 —
+# 검증 중 PyPI 내려받기를 없애 검증 예산과 결정성을 지키기 위해서다(Harbor PR #2596, Terminal-Bench check-verifier-tooling-baked). network_mode는 기본 public이라 네트워크가 없는 것은 아니다.
+# PyPI에서 받는다: GHCR의 uv 이미지(COPY --from)는 self-hosted 러너에서 pull denied가 난 적이 있다(루트 Dockerfile과 같은 이유).
+RUN pip install --no-cache-dir uv==0.11.8 pytest==8.4.1 pytest-json-ctrf==0.3.5 && uv --version
+RUN mkdir -p /skills   # task.toml의 skills_dir. Harbor가 주입 때 만들기도 하지만 문서("이미지에 있게 하라")를 따른다
 WORKDIR /work
-# TODO 과제의 시작 상태(파일·저장소)를 여기서 만든다
 """
+# 실린 기본 스킬 둘의 evals Dockerfile도 이 머리로 시작한다(tests/cli/test_scaffold.py가 검사) — 과제의 시작 상태만 그 뒤에 더한다.
+DOCKERFILE = DOCKERFILE_HEAD + "# TODO 과제의 시작 상태(파일·저장소)를 여기서 만든다\n"
 
 TEST_SH = """#!/bin/bash
-# Harbor 공식 뼈대(harbor tasks init)의 검증기 진입점: /tests/test_outputs.py를 pytest로 돌려 종료 코드로 reward 0/1을 쓴다.
-# pytest·pytest-json-ctrf는 environment/Dockerfile이 미리 넣는다(검증 때 네트워크 없음). CTRF 보고는 /logs/verifier/ctrf.json.
+# Harbor 공식 뼈대(harbor tasks init)와 같은 검증기 진입점: /tests/test_outputs.py를 pytest로 돌려 종료 코드로 reward 0/1을 쓴다.
+# pytest·pytest-json-ctrf는 environment/Dockerfile이 미리 넣는다(검증 중 PyPI 내려받기 없음 — 공식 뼈대는 검증 때 설치한다). CTRF 보고는 /logs/verifier/ctrf.json.
 set -u
 mkdir -p /logs/verifier
 cd /work || exit 1

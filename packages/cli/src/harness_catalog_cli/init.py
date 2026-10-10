@@ -69,8 +69,9 @@ def template_files(host: str) -> Mapping[str, str]:
             out[".gitlab-ci.yml"] = (root / "gitlab" / ".gitlab-ci.yml").read_text()
         skills_root = root / "skills"
         for p in sorted(skills_root.rglob("*")):
-            if p.is_file():
-                out[f"skills/{p.relative_to(skills_root).as_posix()}"] = p.read_text()
+            rel = p.relative_to(skills_root)
+            if p.is_file() and "__pycache__" not in rel.parts:  # 스크립트를 import한 흔적(.pyc)은 템플릿이 아니다
+                out[f"skills/{rel.as_posix()}"] = p.read_text()
     return out
 
 
