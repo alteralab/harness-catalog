@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import base64
+import hashlib
+import os
 import tempfile
+import time
 import threading
 from collections.abc import Mapping
 from datetime import UTC, datetime
@@ -11,9 +14,12 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import NamedTuple
 
+from .archive_token import DEFAULT_TTL_SECONDS, LEEWAY_SECONDS
 from .catalog_file import MARKER_PATH, MarkerError, parse_marker
 from .check import check_commit, structure_findings
 from .model import (
+    ArchiveInfo,
+    ArchiveTooLarge,
     SUPPORTED_LAYOUT,
     CatalogError,
     ContentError,
@@ -36,6 +42,11 @@ MAX_QUERY_CHARS = 2000
 MAX_NAME_CHARS = 64
 MAX_PATH_CHARS = 1024
 MAX_FILE_BYTES = 1_000_000
+MAX_ARCHIVE_BYTES = 20_000_000  # 스킬 한 판의 tar 상한(실제 바이트). 넘으면 input_limit
+# 캐시 tar 보존: 토큰 수명 + 검증 여유 + 60초. 그 뒤로는 어떤 토큰도 유효하지 않으므로 지워도 안전하다(필요하면 같은 바이트로 다시 만든다)
+ARCHIVE_RETENTION_SECONDS = DEFAULT_TTL_SECONDS + LEEWAY_SECONDS + 60
+# 캐시 사이드카의 형식 판. 생성 규칙(mtime·umask·속성 고정)이 바뀌면 올린다 — 옛 규칙으로 만든 캐시는 적중하지 않는다
+ARCHIVE_FORMAT_VERSION = "v2"
 DEFAULT_LIMIT = 10
 MAX_LIMIT = 20
 
@@ -44,10 +55,28 @@ class Limits(NamedTuple):
     query_chars: int = MAX_QUERY_CHARS
     file_bytes: int = MAX_FILE_BYTES
     max_limit: int = MAX_LIMIT
+    archive_bytes: int = MAX_ARCHIVE_BYTES
 
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+def _mtime(path: Path) -> float:
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return float("inf")
+
+
+def _size_and_sha256(path: Path) -> tuple[int, str]:
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("rb") as f:
+        while chunk := f.read(1 << 16):
+            digest.update(chunk)
+            size += len(chunk)
+    return size, digest.hexdigest()
 
 
 class Catalog:
@@ -63,6 +92,7 @@ class Catalog:
         self._status = Status(ready=False)
         self._db_synced = False  # 마지막 스냅샷이 사실 저장소에도 반영됐는가
         self._lock = threading.Lock()
+        self._archive_lock = threading.Lock()  # 캐시 tar의 확인·생성·해시를 직렬화한다(동시 발급이 서로의 기술자를 깨지 않게)
 
     # ---- For operating ----
     def status(self) -> Status:
@@ -243,6 +273,67 @@ class Catalog:
             props = self._inspect_tree(tree, name).properties
             metadata = props.metadata if props is not None else MappingProxyType({})
         return SkillBody(name, body.decode("utf-8", errors="replace"), tree, commit, metadata, files, self._ready_snapshot().fetched_at)
+
+    def get_skill_archive(self, name: str, sha: str | None = None) -> ArchiveInfo:
+        """스킬 한 판의 tar를 작업 디렉토리 캐시(`archives/<tree>.tar` + `.sha256` 사이드카)에 만들어(있고 온전하면 재사용) 경로·크기·sha256을 돌려준다.
+
+        같은 판은 언제 만들어도 같은 바이트(어댑터가 mtime을 커밋 시각으로 고정)라 캐시가 없어지면 다시 만들어도 기술자의 sha256이 맞는다.
+        발급마다 파일 mtime을 갱신해 evict_archives가 "마지막 발급 뒤 보존 시간" 기준으로 지운다. 인증·서명·전송은 서버 어댑터의 몫(DESIGN §11 2026-10-11).
+        """
+        entry, tree, commit = self._resolve(name, sha)
+        archives = self._workdir / "archives"
+        dest = archives / f"{tree}.tar"
+        side = archives / f"{tree}.tar.sha256"
+        with self._archive_lock:
+            info = self._cached_archive(entry.name, tree, commit, dest, side)
+            if info is None:
+                try:
+                    self._store.archive_skill(commit, entry.name, dest, max_bytes=self._limits.archive_bytes)
+                except ArchiveTooLarge as e:
+                    raise CatalogError(ErrorCode.INPUT_LIMIT, f"{name!r} version {tree} is larger than {e.max_bytes} bytes as a tar") from e
+                except ContentError as e:
+                    raise CatalogError(ErrorCode.NOT_FOUND, f"{name!r}: cannot archive {tree}: {e.detail}") from e
+                size, digest = _size_and_sha256(dest)
+                side.write_text(f"{ARCHIVE_FORMAT_VERSION} {digest}\n")
+                info = ArchiveInfo(entry.name, tree, commit, dest, size, digest)
+            os.utime(dest, None)
+            return info
+
+    def _cached_archive(self, name: str, tree: str, commit: str, dest: Path, side: Path) -> ArchiveInfo | None:
+        """캐시 적중 조건: 파일과 사이드카가 있고, 크기가 상한 안이고, sha256이 사이드카와 같다. 아니면 None(다시 만든다)."""
+        if not (dest.is_file() and side.is_file()):
+            return None
+        if dest.stat().st_size > self._limits.archive_bytes:
+            return None
+        try:
+            version, _, recorded = side.read_text().strip().partition(" ")
+        except OSError:
+            return None
+        if version != ARCHIVE_FORMAT_VERSION:
+            return None
+        size, digest = _size_and_sha256(dest)
+        if digest != recorded:
+            return None
+        return ArchiveInfo(name, tree, commit, dest, size, digest)
+
+    def evict_archives(self, *, now: float | None = None, retention_seconds: int = ARCHIVE_RETENTION_SECONDS) -> int:
+        """마지막 발급(mtime) 뒤 retention_seconds를 넘은 캐시 tar와 사이드카를 지운다. 스케줄러가 주기마다 부르고, 기동 때는 retention 0으로 전부 지운다. 지운 파일 수를 돌려준다."""
+        archives = self._workdir / "archives"
+        if not archives.is_dir():
+            return 0
+        cutoff = (time.time() if now is None else now) - retention_seconds
+        removed = 0
+        candidates = [tar for tar in archives.glob("*.tar") if _mtime(tar) <= cutoff]  # 훑기는 lock 밖에서
+        for tar in candidates:
+            with self._archive_lock:  # 발급이 방금 mtime을 갱신했을 수 있으니 lock 안에서 다시 보고 지운다
+                try:
+                    if tar.stat().st_mtime <= cutoff:
+                        tar.unlink()
+                        Path(str(tar) + ".sha256").unlink(missing_ok=True)
+                        removed += 1
+                except OSError:
+                    pass
+        return removed
 
     def get_skill_file(self, name: str, path: str, sha: str | None = None) -> FileContent:
         _, tree, _ = self._resolve(name, sha)

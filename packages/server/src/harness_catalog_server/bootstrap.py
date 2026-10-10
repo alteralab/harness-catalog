@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import secrets
 from collections.abc import AsyncGenerator, Callable
 from pathlib import Path
 from typing import NamedTuple
@@ -13,6 +14,7 @@ from starlette.routing import Mount, Route
 
 from harness_catalog_core.adapters.git import GitStore
 from harness_catalog_core.adapters.validate import SkillsRefValidator
+from harness_catalog_core.archive_token import ArchiveSigner
 from harness_catalog_core.catalog import Catalog
 from harness_catalog_core.model import IndexOutcome, IndexSnapshot
 from harness_catalog_core.settings import Settings
@@ -20,6 +22,7 @@ from harness_catalog_core.settings import Settings
 from .adapters.oidc import JwtTokenVerifier, discover_jwks_uri
 from .adapters.pg import PgFactStore
 from .driving.mcp_tools import build_server
+from .driving.archive_route import ARCHIVE_PATH, make_archive_route
 from .driving.ops import healthz, make_readyz
 from .driving.scheduler import run_migrations, run_scheduler
 
@@ -69,7 +72,9 @@ def bootstrap(settings: Settings, workdir: Path, *, jwks_uri: str | None = None,
     issuer = str(settings.oidc_issuer).rstrip("/")
     public_url = str(settings.public_url).rstrip("/")
     verifier = JwtTokenVerifier(issuer, public_url, jwks_uri or discover_jwks_uri(issuer))
-    server = build_server(catalog, issuer=issuer, public_url=public_url, verifier=verifier)
+    signer = ArchiveSigner(secrets.token_bytes(32))  # 프로세스 수명 키: 복제본 하나 전제, 재기동이 곧 회전(DESIGN §11 2026-10-11)
+    catalog.evict_archives(retention_seconds=0)  # 새 키라 옛 토큰은 전부 403 — 캐시 tar는 쓸모가 없다
+    server = build_server(catalog, issuer=issuer, public_url=public_url, verifier=verifier, signer=signer)
     mcp_app = server.streamable_http_app(streamable_http_path="/mcp", stateless_http=True, json_response=True, host="0.0.0.0")  # noqa: S104
 
     @contextlib.asynccontextmanager
@@ -95,7 +100,8 @@ def bootstrap(settings: Settings, workdir: Path, *, jwks_uri: str | None = None,
             store.close()
 
     asgi = Starlette(
-        routes=[Route("/healthz", healthz), Route("/readyz", make_readyz(catalog)), Mount("/", app=mcp_app)],
+        # 아카이브 라우트는 MCP Mount("/") 앞에 있어야 한다 — 뒤에 두면 /mcp/... 전부를 MCP 앱이 먼저 받아 401을 낸다
+        routes=[Route("/healthz", healthz), Route("/readyz", make_readyz(catalog)), Route(ARCHIVE_PATH, make_archive_route(catalog, signer)), Mount("/", app=mcp_app)],
         lifespan=lifespan,
     )
     return App(asgi, catalog, facts)

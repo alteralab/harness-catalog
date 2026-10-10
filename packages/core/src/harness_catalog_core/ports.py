@@ -44,6 +44,14 @@ class ContentStore(Protocol):
         """tree를 디렉토리로 풀어 놓는다(검증기가 파일 시스템을 읽으므로)."""
         ...
 
+    def archive_skill(self, commit: str, name: str, dest: Path, *, max_bytes: int) -> int:
+        """커밋 commit의 `skills/<name>` 트리를 tar로 dest에 쓰고 바이트 수를 돌려준다. 항목 mtime은 그 커밋의 시각으로 고정해(`--mtime`)
+        같은 판은 언제 만들어도 같은 바이트다(tree-ish만 주면 git은 생성 시각을 쓴다 — Codex 리뷰 실측 2026-10-11).
+
+        쓰는 동안 max_bytes를 넘으면 ArchiveTooLarge, 그 밖의 실패는 ContentError. 부분 파일을 남기지 않는다(임시 파일 뒤 교체).
+        """
+        ...
+
     def is_ancestor(self, ancestor: str, descendant: str) -> bool:
         """ancestor 커밋이 descendant의 조상(또는 같은 커밋)인가. 세대 검사의 재료."""
         ...

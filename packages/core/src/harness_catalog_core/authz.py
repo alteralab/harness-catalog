@@ -7,7 +7,7 @@ from typing import Any, NamedTuple
 
 from .model import HARNESS_READERS, ErrorCode, Principal
 
-READ_TOOLS = frozenset({"list_skills", "search_skills", "load_skill", "get_skill_file"})
+READ_TOOLS = frozenset({"list_skills", "search_skills", "load_skill", "get_skill_file", "get_skill_archive"})
 
 
 class Decision(NamedTuple):

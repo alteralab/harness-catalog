@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -67,3 +68,37 @@ def test_local_mode_resolves_index(catalog_repo: CatalogRepo) -> None:
     git(catalog_repo.path, "add", "-A")
     tree = store.resolve("INDEX")
     assert tree != catalog_repo.head and any(t.name == "staged" for t in store.list_skill_trees(tree))
+
+
+def test_archive_skill_is_deterministic_capped_and_clean(tmp_path: Path, catalog_repo: CatalogRepo) -> None:
+    import hashlib
+    import io
+    import tarfile
+
+    import pytest
+
+    from harness_catalog_core.model import ArchiveTooLarge, ContentError
+
+    store = GitStore(tmp_path / "work" / "clone", str(catalog_repo.path))
+    head = store.fetch()
+    tree = next(t for t in store.list_skill_trees(head) if t.name == "yt-subs")
+    a = tmp_path / "a.tar"
+    n = store.archive_skill(head, "yt-subs", a, max_bytes=10_000_000)
+    assert n == a.stat().st_size > 0
+    with tarfile.open(fileobj=io.BytesIO(a.read_bytes())) as tar:
+        names = {m.name for m in tar.getmembers() if m.isfile()}
+    assert names == {e.path for e in store.list_tree(tree.tree_sha) if e.kind != "tree"}
+    b = tmp_path / "b.tar"  # 결정성은 아래 "항목 mtime == 커밋 시각" 단언이 잡는다(tree-ish만 주면 생성 시각이 들어가 어긋난다 — 실측). 시간을 기다릴 필요가 없다
+    store.archive_skill(head, "yt-subs", b, max_bytes=10_000_000)
+    assert hashlib.sha256(a.read_bytes()).hexdigest() == hashlib.sha256(b.read_bytes()).hexdigest()
+    with tarfile.open(fileobj=io.BytesIO(a.read_bytes())) as tar:
+        commit_time = int(subprocess.run(["git", "-C", str(catalog_repo.path), "show", "-s", "--format=%ct", head], capture_output=True, text=True, check=True).stdout.strip())
+        assert {m.mtime for m in tar.getmembers()} == {commit_time}
+    with pytest.raises(ArchiveTooLarge):
+        store.archive_skill(head, "yt-subs", tmp_path / "c.tar", max_bytes=100)
+    with pytest.raises(ContentError):
+        store.archive_skill(head, "does-not-exist", tmp_path / "d.tar", max_bytes=10_000_000)
+    with pytest.raises(ContentError):
+        store.archive_skill("f" * 40, "yt-subs", tmp_path / "e.tar", max_bytes=10_000_000)
+    assert sorted(p.name for p in tmp_path.glob("*.tar")) == ["a.tar", "b.tar"]  # 실패 때 임시 파일을 남기지 않는다
+

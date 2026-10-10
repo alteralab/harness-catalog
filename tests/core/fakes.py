@@ -72,6 +72,29 @@ class FakeStore:
     def is_ancestor(self, ancestor: str, descendant: str) -> bool:
         return ancestor == descendant or (ancestor, descendant) in self.ancestors
 
+    def archive_skill(self, commit: str, name: str, dest: Path, *, max_bytes: int) -> int:
+        import io
+        import tarfile
+
+        from harness_catalog_core.model import ArchiveTooLarge, ContentError, ReadyReason
+
+        treeish = f"{commit}:skills/{name}"
+        if name not in self.skills:
+            raise ContentError(ReadyReason.REPO_UNREACHABLE, f"no such treeish {treeish}")
+        buf = io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w") as tar:
+            for path, data in sorted(self.skills[name].items()):
+                info = tarfile.TarInfo(path)
+                info.size = len(data)
+                info.mtime = 1_700_000_000  # 결정적
+                tar.addfile(info, io.BytesIO(data))
+        data = buf.getvalue()
+        if len(data) > max_bytes:
+            raise ArchiveTooLarge(treeish, max_bytes)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(data)
+        return len(data)
+
     def export_tree(self, tree_sha: str, dest: Path) -> None:
         for name, files in self.skills.items():
             if self.tree_of(name) == tree_sha:

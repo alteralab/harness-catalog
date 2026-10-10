@@ -1,4 +1,5 @@
 # harness-catalog-server 이미지: python:3.12-slim + git + gitleaks, 다단계. 런타임 하나, 아티팩트 하나.
+# git은 2.42 이상이어야 한다(`git archive --mtime` — 아카이브 바이트를 결정적으로; python:3.12-slim(trixie)의 git은 2.47).
 # 빌드 컨텍스트는 저장소 루트. 태그는 CI가 커밋 짧은 SHA로 단다(docker/·plans 참조).
 ARG PYTHON_IMAGE=python:3.12-slim
 ARG GITLEAKS_IMAGE=zricethezav/gitleaks:v8.30.1

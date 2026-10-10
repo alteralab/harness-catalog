@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
@@ -17,6 +18,15 @@ class ErrorCode(StrEnum):
     NOT_A_MEMBER = "not_a_member"
     INPUT_LIMIT = "input_limit"
     PATH_REJECTED = "path_rejected"
+
+
+class ArchiveTooLarge(Exception):
+    """tar를 만들다 바이트 상한을 넘었다 — 어댑터가 올리고 앱이 input_limit로 바꾼다."""
+
+    def __init__(self, treeish: str, max_bytes: int) -> None:
+        super().__init__(f"archive of {treeish} exceeds {max_bytes} bytes")
+        self.treeish = treeish
+        self.max_bytes = max_bytes
 
 
 class CatalogError(Exception):
@@ -235,3 +245,15 @@ class Status:
     fetched_at: datetime | None = None
     built_at: datetime | None = None
     rejected: tuple[tuple[str, str], ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class ArchiveInfo:
+    """스킬 한 판의 tar(DESIGN §11 2026-10-11). path는 서버 작업 디렉토리 안의 캐시 파일; size·sha256은 그 파일의 실제 바이트."""
+
+    name: str
+    sha: str  # 판 = tree SHA
+    commit: str
+    path: Path
+    size: int
+    sha256: str

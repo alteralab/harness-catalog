@@ -137,3 +137,38 @@ def test_machine_account_reads_by_group(server: tuple[str, FakeIssuer]) -> None:
     res = result_of(call_tool(base, svc, "list_skills", {}))
     assert "structuredContent" in res and not res.get("isError")
     assert json.loads(res["content"][0]["text"])["skills"]
+
+
+def test_archive_descriptor_then_download_without_bearer(server: tuple[str, FakeIssuer], tmp_path: Path) -> None:
+    """다섯째 도구: 기술자(uri·헤더 토큰·크기·sha256) → 헤더만으로 GET → tar가 load_skill의 파일 목록과 같다. 자격은 URL에 없다."""
+    import hashlib
+    import io
+    import tarfile
+
+    base, issuer = server
+    token = issuer.token(sub="user-1", aud=base + PUBLIC_PATH, groups=["harness-readers"])
+    body = result_of(call_tool(base, token, "load_skill", {"id": "yt-subs"}))["structuredContent"]
+    d = result_of(call_tool(base, token, "get_skill_archive", {"id": "yt-subs", "sha": body["sha"]}))["structuredContent"]
+    assert d["sha"] == body["sha"] and d["digest"] == f"git-tree:{body['sha']}" and d["mimeType"] == "application/x-tar"
+    assert d["uri"] == f"{base}{PUBLIC_PATH}/archive/yt-subs/{body['sha']}.tar" and "?" not in d["uri"]  # 자격은 URL 밖
+    header_name, header_value = next(iter(d["headers"].items()))
+    assert header_name == "X-Harness-Archive-Token" and header_value.startswith("v1.")
+    r = httpx.get(d["uri"], headers=d["headers"], timeout=10)
+    assert r.status_code == 200 and r.headers["content-type"].startswith("application/x-tar")
+    assert r.headers["cache-control"] == "private, no-store" and int(r.headers["content-length"]) == d["size"]
+    assert len(r.content) == d["size"] and hashlib.sha256(r.content).hexdigest() == d["sha256"] == r.headers["x-harness-archive-sha256"]
+    with tarfile.open(fileobj=io.BytesIO(r.content)) as tar:
+        names = sorted(m.name for m in tar.getmembers() if m.isfile())
+    assert names == sorted(f["path"] for f in body["files"])
+    # 라우트는 MCP Mount보다 앞: 토큰 없음·변조·다른 판은 전부 빈 403(401 챌린지가 아니다)
+    no_token = httpx.get(d["uri"], timeout=10)
+    assert no_token.status_code == 403 and no_token.content == b"" and "www-authenticate" not in no_token.headers  # 빈 403, 챌린지 없음(MCP 401이 아니다 = 라우트가 Mount 앞)
+    bad = {header_name: header_value[:-1] + ("A" if header_value[-1] != "A" else "B")}
+    assert httpx.get(d["uri"], headers=bad, timeout=10).status_code == 403
+    assert httpx.get(f"{base}{PUBLIC_PATH}/archive/yt-subs/{'f' * 40}.tar", headers=d["headers"], timeout=10).status_code == 403
+    assert httpx.get(d["uri"], headers=d["headers"], timeout=10).status_code == 200  # TTL 안 재사용은 허용
+    outsider = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["users"])
+    assert result_of(call_tool(base, outsider, "get_skill_archive", {"id": "yt-subs"}))["structuredContent"]["code"] == "not_a_member"
+    unknown = result_of(call_tool(base, token, "get_skill_archive", {"id": "yt-subs", "sha": "e" * 40}))["structuredContent"]
+    assert unknown["code"] == "unknown_version"
+

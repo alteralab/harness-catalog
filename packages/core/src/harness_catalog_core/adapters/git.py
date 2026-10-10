@@ -8,11 +8,12 @@ import shlex
 import shutil
 import subprocess
 import tarfile
+import tempfile
 import threading
 from collections.abc import Mapping
 from pathlib import Path
 
-from ..model import ContentError, ReadyReason, SkillTree, TreeEntry
+from ..model import ArchiveTooLarge, ContentError, ReadyReason, SkillTree, TreeEntry
 
 MAIN_REF = "refs/remotes/origin/main"
 
@@ -188,6 +189,56 @@ class GitStore:
             return proc.returncode == 0
         # 1 = 자손 아님. 그 밖(객체 없음·손상)은 되감기로 오인하지 않고 fail-closed
         raise ContentError(ReadyReason.REPO_UNREACHABLE, f"merge-base failed: {proc.stderr.decode(errors='replace').strip()}")
+
+    def archive_skill(self, commit: str, name: str, dest: Path, *, max_bytes: int) -> int:
+        """`git archive --format=tar --mtime=@<commit time> <commit>:skills/<name>`을 파일로 스트리밍한다(git ≥ 2.42).
+
+        상한을 넘으면 프로세스를 죽이고 임시 파일을 지운다. stderr는 파일로 받아 파이프 교착이 없고, 어떤 경로로 나가도 자식을 회수한다(Codex 리뷰 2026-10-11).
+        """
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with self._lock:
+            when = self._text("show", "-s", "--format=%ct", "--end-of-options", commit).strip()
+            if not when.isdigit():
+                raise GitError(["show", commit], "no commit time")
+            fd, tmp = tempfile.mkstemp(prefix=".archive.", suffix=".tar", dir=dest.parent)
+            total = 0
+            proc: subprocess.Popen[bytes] | None = None
+            try:
+                with tempfile.TemporaryFile() as err, os.fdopen(fd, "wb") as out:
+                    fd = -1
+                    # 바이트가 환경에 매이지 않게: tar.umask·속성 파일(export-ignore 등)·전역/시스템 설정을 고정한다
+                    proc = subprocess.Popen(
+                        ["git", "-C", str(self._dir), "-c", "tar.umask=0022", "-c", "core.attributesfile=/dev/null",
+                         "archive", "--format=tar", f"--mtime=@{when}", "--end-of-options", f"{commit}:skills/{name}"],
+                        stdout=subprocess.PIPE, stderr=err, env=self._env(),  # _env()의 GIT_CONFIG_GLOBAL(safe.directory)은 그대로 — 바이트에 걸리는 설정은 -c로 고정했다
+                    )
+                    assert proc.stdout is not None
+                    streamed = False
+                    try:
+                        while chunk := proc.stdout.read(65536):
+                            total += len(chunk)
+                            if total > max_bytes:
+                                raise ArchiveTooLarge(f"{commit}:skills/{name}", max_bytes)
+                            out.write(chunk)
+                        streamed = True
+                    finally:
+                        proc.stdout.close()
+                        if not streamed and proc.poll() is None:
+                            proc.kill()  # 상한 초과·쓰기 실패·취소 — 어느 쪽이든 자식을 기다리지 않고 바로 끝낸다
+                        rc = proc.wait(timeout=60 if not streamed else 600)
+                    if rc != 0 and streamed:
+                        err.seek(0)
+                        raise GitError(["archive", f"{commit}:skills/{name}"], err.read().decode(errors="replace"))
+                os.replace(tmp, dest)
+                return total
+            except BaseException:
+                if fd != -1:
+                    os.close(fd)
+                if proc is not None and proc.poll() is None:
+                    proc.kill()
+                    proc.wait(timeout=60)
+                Path(tmp).unlink(missing_ok=True)
+                raise
 
     def export_tree(self, tree_sha: str, dest: Path) -> None:
         with self._lock:

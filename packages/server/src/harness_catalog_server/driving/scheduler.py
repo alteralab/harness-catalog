@@ -61,6 +61,7 @@ async def run_scheduler(catalog: Catalog, interval_seconds: int, stop: anyio.Eve
     backoff = 1
     while not stop.is_set():
         try:
+            await anyio.to_thread.run_sync(catalog.evict_archives)  # 토큰 수명이 지난 캐시 tar 정리(DESIGN §11 2026-10-11)
             status = await anyio.to_thread.run_sync(catalog.rebuild)
         # ast-grep-ignore: handler-swallows-failure — 장기 실행 루프: 실패는 백오프 배수와 /readyz의 degraded로 전파된다
         except Exception:  # noqa: BLE001 — 장기 실행 루프는 죽지 않는다; 사유는 로그로, 다음 주기에 다시 시도
