@@ -79,11 +79,11 @@
       "completedRunId": "0119a6ac-f386-4a5c-a6c7-14f394228a84"
     },
     "/openwiki/quickstart.md": {
-      "pageVersion": "sha256:644c82c52684b7fe0740a3c23adec13d60ed9ec450b4ab10dc8bbf2afbde59c7",
+      "pageVersion": "sha256:718771e0486fe39c2a26e02988b4d04431c0198de1a77c12aa03e41f3b1b246a",
       "completedBy": "openwiki/0.6.1",
-      "completedRunId": "60d7d17e-ff25-4e2f-843d-80c23ac7572f",
-      "gitHead": "76f4a191be23937aae20505350f678562e26d8dc",
-      "sourceFingerprint": "sha256:433b14956f6334744271805870197269136b803b82f57df8b666c505bc95f2bd"
+      "completedRunId": "37b03442-cc7f-41f3-822c-d7a130907aa8",
+      "gitHead": "867cb93a64a3c8919b35d2e3e62c3d436ee0530d",
+      "sourceFingerprint": "sha256:9748845ed14a4696f0a5d784f5d9ad2717a919bd9dad6805ef55acbfe3bf6a54"
     },
     "/openwiki/testing/test-strategy.md": {
       "gitHead": "5c472414dfa556656e894fbc85bab716de550104",
