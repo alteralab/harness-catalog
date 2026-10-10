@@ -12,7 +12,7 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
   DESIGN.md                    # 설계 정본 (v3.2). 설계 변경은 여기 §11에 행을 더한다
   PLAN.md                         # 이 문서 — 경계·순서·공통 규약·시스템 검증
   plans/                          # 구성 요소 계획 넷: service.md · distribution.md · skills.md · pilot.md
-  REVIEW.md, altera-rules.yml, ruff.toml   # 규약 설치 (2026-09-26, common·lang/python·review)
+  REVIEW.md, altera-rules.yml      # 규약 설치 (2026-09-26, common·lang/python·review). ruff 설정은 pyproject.toml [tool.ruff] (2026-10-10 통합)
   pyproject.toml  uv.lock  Dockerfile      # 루트 pyproject는 워크스페이스 선언(배포물 아님), 잠금 하나, 이미지 하나 — plans/service.md
   packages/                       #   uv 워크스페이스, 배포물 넷 lockstep — plans/service.md §2
     core/                         #     harness-catalog-core: 설정·모델·검사·git 읽기·validate. 서버 의존 없음
@@ -54,7 +54,7 @@ harness-catalog/                  # 코드 저장소 하나. 카탈로그(스킬
 2. **식별자.** 각 PLAN의 판정은 `D1…`, 검증은 `V1…`, 실측 기록은 `r1…`이고 PLAN 안에서만 유일하다. 다른 PLAN의 것을 가리킬 때는 `plans/service D3`처럼 경로를 붙인다.
 3. **설계와의 관계.** DESIGN에 이미 있는 결정은 PLAN의 판정 원장에 다시 올리지 않는다. PLAN의 판정은 "설계가 정하지 않은 구현·운영 선택"과 "실측이 설계를 뒤집은 것"만이다. 후자는 DESIGN §11 행이 먼저다.
 4. **진행 상태.** 각 PLAN의 진행 원장(마지막 절)이 정본이고, 이 우산의 §11은 단계 완료만 적는다.
-5. **규칙 게이트.** altera-rules `common`·`lang/python`·`review`가 설치되어 있고 `altera-ruff`(`ruff.toml`이 base를 extend)·`altera-ast-grep` 훅이 걸려 있다(2026-09-26). 파이썬 게이트 둘은 파이썬 소스가 0이라 아직 한 파일도 검사한 적이 없고, `packages/*/src/` 또는 `tools/`의 첫 파이썬 커밋이 첫 완주다(C-GATE-1). `scripts/`의 첫 셸 스크립트에서 `lang/bash`를, `skills/`의 첫 SKILL.md에서 `purpose/agent-skill`을 선언한다. 선언마다 그 축의 게이트를 한 번 완주시킨다.
+5. **규칙 게이트.** altera-rules `common`·`lang/python`·`review`가 설치되어 있고 `altera-ruff`(`pyproject.toml`의 `[tool.ruff]`가 base를 extend)·`altera-ast-grep` 훅이 걸려 있다(2026-09-26). 파이썬 게이트 둘은 파이썬 소스가 0이라 아직 한 파일도 검사한 적이 없고, `packages/*/src/` 또는 `tools/`의 첫 파이썬 커밋이 첫 완주다(C-GATE-1). `scripts/`의 첫 셸 스크립트에서 `lang/bash`를, `skills/`의 첫 SKILL.md에서 `purpose/agent-skill`을 선언한다. 선언마다 그 축의 게이트를 한 번 완주시킨다.
 6. **교차 검증.** 판정 원장에 행을 더하거나 단계를 완료로 올리기 전에 Codex 독립 리뷰를 한 번 받는다(DESIGN이 여섯 차례 그렇게 했다). 발견은 반영·기각을 사유와 함께 해당 PLAN 진행 원장에 적는다.
 7. **비밀.** deploy key·클라이언트 시크릿·DB 접속값은 저장소에 없다. compose는 `.env`를 읽고 `.env`는 gitignore다. 예시는 `docker/.env.example`.
 8. **배치는 오픈소스 공통 골격.** 이 저장소는 어디서든 설치되는 패키지로 만든다(사용자 결정 2026-09-26, DESIGN §11). 저장소 자체는 비공개(`alteralab` 다른 저장소와 같다)로 시작하고 공개 여부는 별도 결정이다. 골격을 따르는 이유는 공개가 아니라 설치 가능성이다. 그래서 소스 배치는 설계가 인용한 오픈소스 여섯(Dex·Langfuse·MCP registry·Gitea·DataHub·Polaris, 2026-09-26 `gh api` 실측)의 공통 골격을 따른다 — Dockerfile은 루트(빌드 컨텍스트), compose 셋과 그 지원 파일·`.env.example`은 `docker/`(2026-10-10 사용자 결정으로 루트에서 옮김, DESIGN §11), 파이썬 패키지는 `src/`, 예시 설정은 `examples/`, 문서는 `docs/`, 스크립트는 `scripts/`, Helm은 `helm/`(지금 없음). 계획 문서는 `plans/`에 모아 소스 배치에 종속시키지 않는다(REVIEW.md V-REC-1의 적용 경로 `plans/**`와 같다). 실측 기록 `rN.md`는 `plans/pilot/`에 추적하고, 측정 도구는 `tools/pilot/`에 추적하며, 원자료(전사본·받아 둔 문서)는 `research/`에 두되 추적하지 않는다(사용자 결정 2026-09-26). 우리 팀의 Synology LDAP 변형은 `examples/synology-ldap/`이고 기본 compose는 Dex 정적 사용자로 어느 머신에서나 뜬다.

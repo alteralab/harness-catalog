@@ -27,7 +27,6 @@ docs/
 skills/
 scripts/
 altera-rules.yml
-ruff.toml
 .pre-commit-config.yaml
 CLAUDE.md
 openwiki/

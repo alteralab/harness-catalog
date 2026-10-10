@@ -45,3 +45,17 @@ venv = ".venv"
 reportMissingTypeStubs = false  # skills_ref에 py.typed가 없다
 typeCheckingMode = "strict"
 pythonVersion = "3.12"
+
+# ruff — altera-rules가 조항에 귀속한 룰 집합을 상속한다; 그 외는 켜지 않는다.
+# 규칙 저장소는 이 저장소의 형제 체크아웃(../altera-rules)으로 기대한다. 커밋 훅(altera-ruff)이 이 파일을 --config로 받는다.
+[tool.ruff]
+extend = "../altera-rules/gates/ruff/base.toml"
+
+# extend-per-file-ignores: per-file-ignores로 쓰면 base의 면제를 통째로 덮어쓴다 (syntopicon에서 실측).
+[tool.ruff.lint.extend-per-file-ignores]
+# 배포물 둘의 진입점은 출력 층이다 — 찍는 것이 일이다 (plans/service.md §2 — server: serve/reindex, cli: init/check/config).
+"packages/server/src/harness_catalog_server/__main__.py" = ["T201", "T203"]
+"packages/cli/src/harness_catalog_cli/__main__.py" = ["T201", "T203"]
+# 실측 도구는 관측값을 JSON 줄로 찍는다 (plans/pilot.md §3).
+"tools/pilot/*.py" = ["T201"]
+

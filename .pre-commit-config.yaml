@@ -4,6 +4,6 @@ repos:
     hooks:
       - id: altera-rules-declared
       - id: altera-ruff
-        args: ["--config", "ruff.toml"]
+        args: ["--config", "pyproject.toml"]
       - id: altera-ast-grep
       - id: altera-shellcheck
