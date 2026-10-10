@@ -172,6 +172,8 @@ curl -fsS http://127.0.0.1:8000/readyz
 ├── docker-compose.dev.yml       # 개발: postgres · dex만
 ├── docker-compose.quickstart.yml # 빠른 시작: 전체를 기본값으로, 편집 없이
 ├── Makefile                     # make help — 자주 치는 명령의 이름
+├── package.json                 # 개발 도구 고정(Graft 0.21.1). 배포물 아님, 이미지에 안 들어감
+├── .mcp.json · .claude/         # Graft의 Claude Code 배선(훅·skill·MCP). docs/development.md
 ├── pyproject.toml               # 워크스페이스 루트 (배포물 아님)
 ├── uv.lock
 ├── altera-rules.yml             # 규칙 게이트 표면 선언

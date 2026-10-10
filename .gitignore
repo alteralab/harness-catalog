@@ -4,3 +4,7 @@ research/
 var/
 __pycache__/
 secrets/
+node_modules/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

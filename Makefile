@@ -3,7 +3,7 @@
 COMPOSE_QS  := docker compose -f docker-compose.quickstart.yml
 COMPOSE_DEV := docker compose -f docker-compose.dev.yml
 
-.PHONY: help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image
+.PHONY: help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image graft graft-init
 
 help: ## 이 목록
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[1m%-16s\033[0m %s\n", $$1, $$2}'
@@ -40,3 +40,12 @@ check: gates typecheck test ## 게이트 + 타입 + 시험 (CI와 같다)
 
 image: ## 레지스트리 이미지를 로컬 태그로 빌드한다
 	docker build -t harness-catalog:current .
+
+graft: ## Graft 코드 그래프를 (다시) 만든다 — 판은 package.json에 고정(npm ci로 받는다). 이미지와 무관
+	npm ci --silent
+	npx graft build
+
+graft-init: ## Claude Code 배선을 다시 쓴다(init은 .mcp.json을 판 없이 쓰므로 뒤에 다시 고정한다). 전역 설정·statusLine은 건드리지 않는다
+	npm ci --silent
+	DO_NOT_TRACK=1 GRAFT_MCP_NPX=1 npx graft init --agents claude --no-global --no-statusline
+	python3 -c "import json,pathlib; p=pathlib.Path('.mcp.json'); d=json.loads(p.read_text()); v=json.load(open('package.json'))['devDependencies']['@nanonets/graft']; d['mcpServers']['graft']['args']=['-y','@nanonets/graft@'+v,'mcp']; p.write_text(json.dumps(d,indent=2)+'\n'); print('.mcp.json pinned to', v)"

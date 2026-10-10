@@ -56,6 +56,23 @@ pre-commit install && pre-commit run --all-files
 
 템플릿(`packages/cli/.../templates/`)을 바꾸면 이미 만들어진 카탈로그 저장소에는 반영되지 않습니다. `init`은 없는 파일만 쓰기 때문입니다. 그 저장소의 워크플로 파일은 손으로 갱신합니다.
 
+## Graft — 코드 그래프 컨텍스트
+
+이 저장소는 [Graft](https://github.com/trailhq/graft)(npm `@nanonets/graft`)를 Claude Code에 연결해 둡니다. tree-sitter로 심볼·호출 그래프를 만들어 세션 시작에 저장소 지도를, 프롬프트마다 관련 심볼을 넣고, 편집 뒤 영향 범위를 알리며, 질의 때마다 그래프를 작업 트리에 맞춥니다. 팀 PoC(team-kb/graft-poc, 2026-10) 결론대로 **구조 계층만** 씁니다. 모델 호출이 없고 키가 필요 없습니다. `graft build --deep`(외부 API 키로 요약 생성)은 쓰지 않습니다. "왜 이렇게 만들었나"는 DESIGN.md와 원장이 답하고, Graft는 "어디 있고 누가 부르나"를 답합니다.
+
+판은 `package.json`에 정확히 고정됩니다(`"@nanonets/graft": "0.21.1"`, lockfile 포함). 전역 설치가 아니라 저장소의 `node_modules`가 기준이고, `.mcp.json`의 MCP 서버도 `npx -y @nanonets/graft@0.21.1 mcp`로 같은 판을 가리킵니다. 올리는 것은 `package.json`의 판을 바꾸고 `npm install`로 lockfile을 갱신한 뒤 `make graft-init`을 다시 돌리는 명시 행위입니다.
+
+```sh
+make graft            # npm ci + graft build — 처음 clone한 뒤 한 번(그래프는 graft/ 에, git 무시)
+make graft-init       # Claude Code 배선(.claude/settings.json 훅·helpers·skill, .mcp.json)을 다시 쓸 때
+npx graft ask "where is the token audience verified"   # CLI로 바로 물을 때
+npx graft check       # 그래프가 코드와 어긋났는지(훅이 자동으로 맞추므로 보통 OK)
+```
+
+커밋되는 것은 배선뿐입니다: `.claude/settings.json`·`.claude/helpers/*.cjs`·`.claude/skills/graft/SKILL.md`·`.mcp.json`·`.ignore`·`package.json`·`package-lock.json`. `graft/`(그래프 캐시)와 `node_modules/`는 git에도 Docker 빌드 컨텍스트에도 들어가지 않습니다(`.gitignore`·`.dockerignore`). 레지스트리 이미지는 python 기반이라 node 자체가 없습니다.
+
+주의 둘. 훅 shim은 저장소 `node_modules`와 전역 설치 중 **더 새 판**을 고릅니다. 전역에 더 새 graft를 깔면 훅은 그것을 쓰므로, 고정을 지키려면 전역 설치를 두지 않거나 같은 판으로 둡니다. 그리고 `graft init`은 `.mcp.json`을 판 없이 쓰므로 직접 돌리지 말고 `make graft-init`을 씁니다(뒤에 다시 고정합니다). 사용자 설정의 statusLine(ccstatusline)을 가리지 않도록 `--no-statusline`으로 연결했고, `~/.claude`·`~/.claude.json`에는 아무것도 쓰지 않습니다. 텔레메트리는 이 머신에서 꺼져 있습니다(`graft telemetry disable`).
+
 ## 설계 문서와 원장
 
 설계 계약을 바꾸는 변경은 코드보다 DESIGN.md §11의 결정 행이 먼저입니다. 실행 계획은 PLAN.md(우산)와 `plans/{service,distribution,pilot,skills}.md`이고, 각 문서의 원장 절에 날짜·내용·근거를 남깁니다. 측정 결과(Dex 그랜트, LDAP, 하네스 첫 접촉)는 `plans/pilot/r1~r3.md`에 있습니다. 구현 단계마다 Codex 적대 리뷰를 걸어 반영했고 그 기록도 원장에 있습니다.
