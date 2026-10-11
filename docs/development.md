@@ -52,7 +52,7 @@ make release VERSION=0.3.2          # 판 넷+내부 핀 → uv lock → pip 경
 make deploy HOST=mini TAG=<짧은 SHA>   # 운영 호스트에서 pull → REGISTRY_IMAGE 교체 → registry up -d → readyz 대기 → 마이그레이션 출력
 ```
 
-손으로 하지 않습니다. 태그 전에 워크스페이스 밖의 새 venv에 네 패키지를 `uv pip install`로 설치해 보는 단계가 핵심입니다 — 카탈로그 저장소의 pre-commit·CI는 uv 워크스페이스가 아니라 태그에서 pip로 설치하므로, 내부 핀(`harness-catalog-core==<판>`)이 어긋나면 그 길에서만 깨집니다(v0.3.0 실측). `--dry-run`은 파일을 고치고 설치 실측까지만 합니다. 배포 스크립트의 기본값(저장소 경로·docker 경로·LDAP 오버레이)은 우리 운영 호스트 값이고 인자로 바꿉니다(plans/distribution.md D25).
+손으로 하지 않습니다. 태그 전에 워크스페이스 밖의 새 venv에 네 패키지를 **pip**로 설치해 보는 단계가 핵심입니다(uv pip는 로컬 디렉토리를 핀보다 우선해 이 어긋남을 잡지 못합니다 — 실측) — 카탈로그 저장소의 pre-commit·CI는 uv 워크스페이스가 아니라 태그에서 pip로 설치하므로, 내부 핀(`harness-catalog-core==<판>`)이 어긋나면 그 길에서만 깨집니다(v0.3.0 실측). `--dry-run`은 파일을 고치고 설치 실측까지만 합니다. 배포 스크립트의 기본값(저장소 경로·docker 경로·LDAP 오버레이)은 우리 운영 호스트 값이고 인자로 바꿉니다(plans/distribution.md D25).
 
 
 의존성은 `pyproject.toml` 다섯과 PEP 723 스크립트 머리 모두 `==`로 고정합니다. 올리는 것은 값을 바꾸고 `uv lock`을 돌리는 명시 행위입니다.

@@ -10,7 +10,7 @@
 
 왜 스크립트인가(plans/distribution.md D25): 손으로 하는 릴리스가 세 번 어긋났다 — 시험의 하드코딩 판(v0.2.0), 커밋 실패 뒤 옛 커밋에 태그(v0.3.0),
 내부 핀 미갱신으로 태그에서 pip 설치 불가(v0.3.0). uv 워크스페이스 안에서는 로컬 소스가 핀을 덮어써 마지막 결함이 드러나지 않으므로,
-카탈로그의 pre-commit·CI가 쓰는 길 그대로 — 워크스페이스 밖의 새 venv에 `uv pip install <네 패키지 디렉토리>` — 설치해 본 뒤에만 태그를 단다.
+카탈로그의 pre-commit·CI가 쓰는 길 그대로 — 워크스페이스 밖의 새 venv에 pip로 `<네 패키지 디렉토리>`를 — 설치해 본 뒤에만 태그를 단다(uv pip는 이 어긋남을 통과시킨다 — 실측).
 종료 코드: 0 성공 · 2 입력·전제 오류 · 1 단계 실패(어느 단계인지 stderr).
 """
 
@@ -70,12 +70,15 @@ def set_versions(version: str) -> list[Path]:
 
 
 def install_like_pip(tmp: Path) -> None:
-    """워크스페이스 밖의 새 venv에 네 패키지 디렉토리를 한 번에 설치한다 — 카탈로그 pre-commit과 같은 해석 경로. 내부 핀이 어긋나면 여기서 실패한다."""
+    """워크스페이스 밖의 새 venv에 네 패키지 디렉토리를 **pip**로 한 번에 설치한다 — 카탈로그 pre-commit과 같은 해석기. 내부 핀이 어긋나면 여기서 실패한다.
+
+    `uv pip install`은 로컬 디렉토리 요구를 핀보다 우선해 어긋남을 통과시킨다(2026-10-11 실측: core==0.0.1 핀에도 종료 0). pip는 ResolutionImpossible로 실패한다.
+    """
     venv = tmp / "venv"
-    run("uv", "venv", "-q", str(venv))
+    run("uv", "venv", "-q", "--seed", str(venv))  # --seed: pip를 넣는다
     python = venv / "bin" / "python"
     dirs = [str(ROOT / "packages" / name) for name in PACKAGES]
-    run("uv", "pip", "install", "-q", "--python", str(python), *dirs)
+    run(str(python), "-m", "pip", "install", "-q", *dirs)
     out = run(str(venv / "bin" / "harness-catalog"), "--version", capture=True)
     print(f"release: installed OK — {out.strip()}", file=sys.stderr)
 
