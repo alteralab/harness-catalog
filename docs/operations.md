@@ -122,6 +122,9 @@ Dex에 등록된 클라이언트는 다음과 같습니다. 바꾸려면 설정 
 
 ## 런북
 
+**새 판 올리기.** 코드 저장소에서 `make release VERSION=X.Y.Z`(태그·이미지), CI가 끝나면 `make deploy HOST=mini TAG=<짧은 SHA>`. 둘 다 스크립트 하나이고 손으로 하지 않습니다(plans/distribution.md D25). 배포 스크립트는 `/readyz`가 ready이고 `db_unavailable`이 없을 때까지 기다린 뒤 적용된 마이그레이션을 찍습니다.
+
+
 **`/readyz`가 503일 때.** 본문의 `reasons`를 봅니다.
 
 | 사유 | 뜻 | 조치 |

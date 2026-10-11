@@ -5,7 +5,7 @@ COMPOSE_DEV := docker compose -f docker/compose.dev.yml
 
 
 .PHONY: mcp-pin
-.PHONY: help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image graft graft-init wiki-claims wiki-install
+.PHONY: release deploy help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image graft graft-init wiki-claims wiki-install
 
 help: ## 이 목록
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[1m%-16s\033[0m %s\n", $$1, $$2}'
@@ -63,3 +63,11 @@ wiki-install: ## OpenWiki의 Claude Code 배선(.claude/skills/openwiki, .mcp.js
 wiki-claims: ## 지금 브랜치가 바꾼 파일을 인용하는 OpenWiki claim — MR 올리기 전에 어느 페이지가 낡는지 본다(모델 없음)
 	@test -d openwiki/.claims || { echo "openwiki/ 가 없다 — Claude Code에서 'Initialize OpenWiki for this repository' 부터"; exit 0; }
 	@for f in $$(git diff --name-only $$(git merge-base origin/main HEAD) HEAD; git diff --name-only); do grep -l "repo://$$f[\"#]" openwiki/.claims/*.json 2>/dev/null; done | sort -u | sed 's|^|page claims citing changed files: |'
+
+release: ## 판 하나를 낸다: 판 넷+내부 핀 → lock → pip 경로 설치 실측 → check → 커밋·태그·원자 push. 예: make release VERSION=0.3.2
+	@test -n "$(VERSION)" || { echo "VERSION=X.Y.Z 가 필요하다"; exit 2; }
+	uv run --script scripts/release.py $(VERSION)
+
+deploy: ## 운영 호스트에 한 판 배포. 예: make deploy HOST=mini TAG=1b076d1 (REPO·OVERLAY 선택)
+	@test -n "$(HOST)" && test -n "$(TAG)" || { echo "HOST=<ssh host> TAG=<image tag> 가 필요하다"; exit 2; }
+	scripts/deploy.sh $(HOST) $(TAG) $(REPO) $(OVERLAY)
