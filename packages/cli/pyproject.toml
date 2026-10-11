@@ -1,11 +1,11 @@
 [project]
 name = "harness-catalog-cli"
-version = "0.3.1"
+version = "0.4.0"
 description = "harness-catalog command: check, init, config (author and operator machines, CI)"
 requires-python = ">=3.12"
 license = "Apache-2.0"
 dependencies = [
-  "harness-catalog-core==0.3.1",
+  "harness-catalog-core==0.4.0",
   "typer==0.27.2",
 ]
 
