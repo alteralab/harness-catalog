@@ -69,7 +69,7 @@ metadata:
 6. 커밋하고 PR을 엽니다. 본문에 Langfuse run 링크를 적습니다.
 7. CI의 `check`가 초록인지 봅니다. 붉으면 §4대로 고칩니다.
 8. 병합은 사람이 git 호스트에서 합니다. 병합한 사람이 이 판의 인증자입니다.
-9. 레지스트리가 한 주기(기본 60초) 안에 받아 색인합니다. `list_skills`에 나타나면 끝입니다.
+9. 레지스트리가 한 주기(기본 60초) 안에 받아 색인합니다. `search_skills(<이름>)`에 나타나면 끝입니다.
 
 `main`에 직접 push하거나 강제 push하지 않습니다. 브랜치 보호는 걸려 있지 않고 규율입니다.
 
@@ -109,7 +109,7 @@ CI에서도 돌리려면 운영자가 git 호스트 변수 `HARNESS_EVALS=true`�
 스킬이 "어떻게 하는가"의 산문이라면 도구는 "무엇을 부를 수 있는가"의 스키마입니다. 자주 쓰이고 입출력이 정해진 것은 도구로 올립니다(DESIGN §11 2026-10-11).
 
 ```
-tools/<name>/tool.json          # 필수. name(= 디렉토리명, 스킬과 같은 문법) · description(≤1024자) · inputSchema(type: object) · runtime · metadata(선택)
+tools/<name>/tool.json          # 필수. $schema(선택) · name(= 디렉토리명, 스킬과 같은 문법) · description(≤1024자) · inputSchema(type: object) · outputSchema(선택, MCP와 같은 이름) · runtime · metadata(선택)
 tools/<name>/scripts/x.py       # kind: script면 runtime.path가 가리키는 파일
 mcp-servers/<name>/server.json  # kind: mcp 도구가 참조하는 배선 레코드(MCP Registry 형식: name·version·packages|remotes)
 ```
@@ -120,6 +120,8 @@ mcp-servers/<name>/server.json  # kind: mcp 도구가 참조하는 배선 레코
 |---|---|---|
 | `script` | `path`, `command` | `command`는 셸을 거치지 않는 argv 배열이고 `path`는 그 원소 정확히 하나. `path`는 디렉토리 안의 일반 파일(링크 금지) |
 | `mcp` | `server`, `tool` | `server`는 `mcp-servers/<server>/`가 있어야 하고 `tool`은 그 서버가 내는 도구 이름 |
+
+뼈대는 `write-tool` 스킬이 만듭니다(`skills/write-tool/scripts/scaffold_tool.py`, 멱등). `tool.json`의 선택 키 `$schema`가 `schemas/tool.schema.json`을 가리키면 편집기가 타이핑 중에 검증합니다. 그 파일은 `harness-catalog init`이 core 모델에서 생성해 두고, 낡았으면 `harness-catalog schema tool > schemas/tool.schema.json`으로 다시 씁니다. 레지스트리는 `$schema`를 해석하지 않습니다. 계약의 저자용 문면은 `skills/write-tool/references/tool-contract.md`입니다.
 
 규칙은 스킬과 같은 것이 많습니다. 이름은 **스킬과 합쳐 전역 유일**이고 은퇴한 이름은 다시 쓰지 않습니다(검사 5·11). 시크릿은 저장소에 없습니다 — `server.json`의 `isSecret: true` 항목은 `value`·`default`를 가질 수 없습니다(검사 12). `metadata.requires-tools`·`replaced-by`는 스킬 규칙 그대로입니다. 검사 항목은 11(도구)·12(서버)이고 `harness-catalog check`가 함께 봅니다.
 
@@ -137,5 +139,5 @@ mcp-servers/<name>/server.json  # kind: mcp 도구가 참조하는 배선 레코
 |---|---|
 | 커밋 훅이 `checker failed: gitleaks` | `brew install gitleaks` |
 | CI `check`가 `could not read Username` | 코드 저장소가 비공개인데 읽기 자격 시크릿이 없다. 운영자에게 |
-| 이름이 `list_skills`에 없는데 항목 5가 거부 | 은퇴한 이름이다. 다른 이름 |
+| 이름이 `search_skills`에 없는데 항목 5가 거부 | 은퇴한 이름이다. 다른 이름 |
 | `harbor run`이 자격 오류 | `CLAUDE_CODE_OAUTH_TOKEN`+`CLAUDE_FORCE_OAUTH=1` 또는 `ANTHROPIC_API_KEY`, Langfuse 키 셋 |

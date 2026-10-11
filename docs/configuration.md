@@ -171,4 +171,4 @@ evals 잡이 돌 self-hosted 러너의 루트 `.env`에는 하네스별 모델 �
 |---|---|
 | `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE` | macOS Docker Desktop에서 `/var/run/docker.sock`. `pg` 표시 시험이 setdefault로 넣는다 |
 
-`http` 표시 시험(`tests/http/`)은 실제 uvicorn 프로세스를 띄우고 가짜 issuer(JWKS)로 토큰을 만들어 도구 넷과 401/403 경계, 스팬 속성을 봅니다. Dex도 토큰 변수도 필요 없습니다. 실제 Dex·LDAP·Langfuse까지의 끝에서 끝은 빠른 시작 스택에서 손으로 확인합니다([quickstart.md](quickstart.md) §3).
+`http` 표시 시험(`tests/http/`)은 실제 uvicorn 프로세스를 띄우고 가짜 issuer(JWKS)로 토큰을 만들어 도구 여섯과 401/403 경계, 스팬 속성을 봅니다. Dex도 토큰 변수도 필요 없습니다. 실제 Dex·LDAP·Langfuse까지의 끝에서 끝은 빠른 시작 스택에서 손으로 확인합니다([quickstart.md](quickstart.md) §3).

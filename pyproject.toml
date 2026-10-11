@@ -27,6 +27,7 @@ dev = [
   "anyio[trio]==4.15.1",
   "pyright==1.1.414",
   "httpx==0.28.1",
+  "jsonschema==4.26.0",  # tests/http: outputSchema 적합성(mcp의 전이 의존이지만 시험이 직접 쓰므로 명시)
   "testcontainers[postgres]==4.15.0",
   "opentelemetry-sdk==1.45.0",
 ]

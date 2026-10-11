@@ -883,6 +883,7 @@ version = "0.3.1"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "anyio" },
+    { name = "jsonschema" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "skills-ref" },
@@ -891,6 +892,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "anyio", specifier = "==4.15.1" },
+    { name = "jsonschema", specifier = "==4.26.0" },
     { name = "pydantic", specifier = "==2.13.5" },
     { name = "pydantic-settings", specifier = "==2.15.0" },
     { name = "skills-ref", specifier = "==0.1.1" },
@@ -938,6 +940,7 @@ dev = [
     { name = "harness-catalog-core" },
     { name = "harness-catalog-server" },
     { name = "httpx" },
+    { name = "jsonschema" },
     { name = "opentelemetry-sdk" },
     { name = "pyright" },
     { name = "pytest" },
@@ -954,6 +957,7 @@ dev = [
     { name = "harness-catalog-core", editable = "packages/core" },
     { name = "harness-catalog-server", editable = "packages/server" },
     { name = "httpx", specifier = "==0.28.1" },
+    { name = "jsonschema", specifier = "==4.26.0" },
     { name = "opentelemetry-sdk", specifier = "==1.45.0" },
     { name = "pyright", specifier = "==1.1.414" },
     { name = "pytest", specifier = "==9.1.1" },

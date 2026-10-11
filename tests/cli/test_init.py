@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import subprocess
 from pathlib import Path
 
@@ -9,6 +11,7 @@ import pytest
 from typer.testing import CliRunner
 
 from harness_catalog_cli.__main__ import app
+from harness_catalog_core.toolbox import tool_json_schema
 from harness_catalog_cli.init import InitError, detect_host, init_repository
 from tests.conftest import git
 
@@ -51,12 +54,14 @@ def test_init_refuses_repo_without_main(tmp_path: Path) -> None:
 def test_init_twice_is_idempotent(tmp_path: Path) -> None:
     remote = bare(tmp_path, "catalog.git")
     first = init_repository(str(remote), pin="deadbeef", host="gitlab")  # 로컬 경로는 호스트가 없다
-    base = {".harness-catalog", "README.md", ".pre-commit-config.yaml", ".gitlab-ci.yml"}
+    base = {".harness-catalog", "README.md", ".pre-commit-config.yaml", ".gitlab-ci.yml", "schemas/tool.schema.json"}  # 스키마는 core ToolSpec의 산출물(§11 2026-10-11 write-tool)
     skills = {w for w in first.written if w.startswith("skills/")}
     assert set(first.written) - skills == base
-    # 기본 스킬 둘이 init과 함께 들어간다(DESIGN §11 2026-10-10). .gitkeep은 더 쓰지 않는다
-    assert {"skills/pin-skill/SKILL.md", "skills/write-skill/SKILL.md"} <= skills and "skills/.gitkeep" not in skills
-    assert all(w.startswith(("skills/pin-skill/", "skills/write-skill/")) for w in skills)
+    # 기본 스킬 셋이 init과 함께 들어간다(DESIGN §11 2026-10-10·2026-10-11). .gitkeep은 더 쓰지 않는다
+    assert {"skills/pin-skill/SKILL.md", "skills/write-skill/SKILL.md", "skills/write-tool/SKILL.md"} <= skills and "skills/.gitkeep" not in skills
+    assert all(w.startswith(("skills/pin-skill/", "skills/write-skill/", "skills/write-tool/")) for w in skills)
+    schema = json.loads(git(remote, "show", "main:schemas/tool.schema.json"))
+    assert schema == tool_json_schema() and schema["additionalProperties"] is False and "$schema" in schema["properties"]
     assert listing(remote) == set(first.written)
     second = init_repository(str(remote), pin="deadbeef", host="gitlab")
     assert second.written == ()

@@ -223,7 +223,7 @@ class IndexSnapshot:
 
 @dataclass(frozen=True)
 class SkillListing:
-    """list_skills·search_skills의 항목: 선택에 쓰이는 것만."""
+    """search_skills의 항목: 선택에 쓰이는 것만."""
 
     name: str
     description: str
@@ -314,7 +314,7 @@ class ToolBody:
 class FileContent:
     path: str
     size: int
-    sha: str  # 판 = 스킬 디렉토리의 tree SHA (load_skill·list_skills의 sha와 같은 것)
+    sha: str  # 판 = 스킬 디렉토리의 tree SHA (load_skill·search_skills의 sha와 같은 것)
     blob: str  # 이 파일의 blob SHA
     text: str | None  # UTF-8로 읽히면 본문
     base64: str | None  # 아니면 base64

@@ -1,4 +1,4 @@
-"""HTTP 경유 시험: 실제 uvicorn 프로세스 + 가짜 issuer(JWKS). 도구 넷 호출과 401/403 경계."""
+"""HTTP 경유 시험: 실제 uvicorn 프로세스 + 가짜 issuer(JWKS). 도구 여섯 호출과 401/403 경계."""
 
 from __future__ import annotations
 
@@ -73,6 +73,14 @@ def call_tool(base: str, token: str | None, name: str, arguments: dict[str, Any]
     return httpx.post(base + PUBLIC_PATH, headers=headers, json=body, timeout=10)
 
 
+def list_tools(base: str, token: str) -> list[dict[str, Any]]:
+    headers = {"Accept": "application/json, text/event-stream", "Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+    body: dict[str, Any] = {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}
+    data = httpx.post(base + PUBLIC_PATH, headers=headers, json=body, timeout=10).json()
+    assert "result" in data, data
+    return list(data["result"]["tools"])
+
+
 def result_of(resp: httpx.Response) -> Mapping[str, Any]:
     data = resp.json()
     assert "result" in data, data
@@ -88,7 +96,7 @@ def test_health_and_ready(server: tuple[str, FakeIssuer]) -> None:
 
 def test_protected_resource_metadata_and_401(server: tuple[str, FakeIssuer]) -> None:
     base, _ = server
-    r = call_tool(base, None, "list_skills", {})
+    r = call_tool(base, None, "search_skills", {"query": "자막"})
     assert r.status_code == 401
     www = r.headers.get("www-authenticate", "")
     assert "resource_metadata=" in www
@@ -100,12 +108,11 @@ def test_protected_resource_metadata_and_401(server: tuple[str, FakeIssuer]) -> 
     assert doc["scopes_supported"] == ["openid", "groups", f"audience:server:client_id:{base}{PUBLIC_PATH}"]
 
 
-def test_reader_calls_all_four_tools(server: tuple[str, FakeIssuer]) -> None:
+def test_reader_calls_skill_tools(server: tuple[str, FakeIssuer]) -> None:
     base, issuer = server
     token = issuer.token(sub="user-1", aud=base + PUBLIC_PATH, groups=["harness-readers"])  # Dex처럼 scope 클레임 없음
-    listing = result_of(call_tool(base, token, "list_skills", {}))
-    names = [s["name"] for s in listing["structuredContent"]["skills"]]
-    assert names == ["pin-skill", "yt-subs"]
+    listing = result_of(call_tool(base, token, "search_skills", {"query": "pin"}))  # 전체 목록 도구는 없다(DESIGN §11 2026-10-11)
+    assert [s["name"] for s in listing["structuredContent"]["skills"]] == ["pin-skill"]
     hit = result_of(call_tool(base, token, "search_skills", {"query": "유튜브 자막"}))
     assert [s["name"] for s in hit["structuredContent"]["skills"]] == ["yt-subs"]
     body = result_of(call_tool(base, token, "load_skill", {"id": "yt-subs"}))["structuredContent"]
@@ -119,13 +126,13 @@ def test_reader_calls_all_four_tools(server: tuple[str, FakeIssuer]) -> None:
 def test_wrong_audience_expired_and_not_a_member(server: tuple[str, FakeIssuer]) -> None:
     base, issuer = server
     wrong_aud = issuer.token(sub="u", aud="claude-code", groups=["harness-readers"])  # 교차 클라이언트 스코프 없이 받은 Dex 토큰 꼴
-    assert call_tool(base, wrong_aud, "list_skills", {}).status_code == 401
+    assert call_tool(base, wrong_aud, "search_skills", {"query": "자막"}).status_code == 401
     multi_aud = issuer.token(sub="u", aud=[base + PUBLIC_PATH, "claude-code"], groups=["harness-readers"], azp="claude-code")  # 교차 클라이언트 스코프로 받은 꼴
-    assert "structuredContent" in result_of(call_tool(base, multi_aud, "list_skills", {}))
+    assert "structuredContent" in result_of(call_tool(base, multi_aud, "search_skills", {"query": "자막"}))
     expired = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["harness-readers"], exp_in=-120)
-    assert call_tool(base, expired, "list_skills", {}).status_code == 401
+    assert call_tool(base, expired, "search_skills", {"query": "자막"}).status_code == 401
     outsider = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["users"])
-    r = call_tool(base, outsider, "list_skills", {})
+    r = call_tool(base, outsider, "search_skills", {"query": "자막"})
     assert r.status_code == 200 and "www-authenticate" not in {k.lower() for k in r.headers}
     res = result_of(r)
     assert res["isError"] is True and res["structuredContent"]["code"] == "not_a_member"
@@ -134,13 +141,13 @@ def test_wrong_audience_expired_and_not_a_member(server: tuple[str, FakeIssuer])
 def test_machine_account_reads_by_group(server: tuple[str, FakeIssuer]) -> None:
     base, issuer = server
     svc = issuer.token(sub="svc-harness", aud=base + PUBLIC_PATH, groups=["harness-readers"])  # 기계 계정 = 그룹으로 reader
-    res = result_of(call_tool(base, svc, "list_skills", {}))
+    res = result_of(call_tool(base, svc, "search_skills", {"query": "자막"}))
     assert "structuredContent" in res and not res.get("isError")
     assert json.loads(res["content"][0]["text"])["skills"]
 
 
 def test_archive_descriptor_then_download_without_bearer(server: tuple[str, FakeIssuer], tmp_path: Path) -> None:
-    """다섯째 도구: 기술자(uri·헤더 토큰·크기·sha256) → 헤더만으로 GET → tar가 load_skill의 파일 목록과 같다. 자격은 URL에 없다."""
+    """다섯째 도구: 명세(uri·헤더 토큰·크기·sha256) → 헤더만으로 GET → tar가 load_skill의 파일 목록과 같다. 자격은 URL에 없다."""
     import hashlib
     import io
     import tarfile
@@ -175,7 +182,7 @@ def test_archive_descriptor_then_download_without_bearer(server: tuple[str, Fake
 
 
 def test_toolbox_search_get_and_script_archive(server: tuple[str, FakeIssuer]) -> None:
-    """toolbox 도구 둘: 검색 → 정의(kind=mcp면 server.json 동봉) → kind=script면 기술자로 tar를 받는다(tools 라우트, 종류가 서명 범위)."""
+    """toolbox 도구 둘: 검색 → 정의(kind=mcp면 server.json 동봉) → kind=script면 명세로 tar를 받는다(tools 라우트, 종류가 서명 범위)."""
     import hashlib
     import io
     import tarfile
@@ -185,7 +192,7 @@ def test_toolbox_search_get_and_script_archive(server: tuple[str, FakeIssuer]) -
     hits = result_of(call_tool(base, token, "search_tools", {"query": "자막"}))["structuredContent"]["tools"]
     assert [t["name"] for t in hits] == ["subs-fetch"] and hits[0]["kind"] == "script" and hits[0]["requires_tools"] == ["uv"]
     assert [t["name"] for t in result_of(call_tool(base, token, "search_tools", {"query": "graph"}))["structuredContent"]["tools"]] == ["graft-ask"]
-    assert [s["name"] for s in result_of(call_tool(base, token, "list_skills", {}))["structuredContent"]["skills"]] == ["pin-skill", "yt-subs"]  # 스킬 목록은 그대로
+    assert [s["name"] for s in result_of(call_tool(base, token, "search_skills", {"query": "자막"}))["structuredContent"]["skills"]] == ["yt-subs"]  # 스킬 검색에 도구(subs-fetch)가 섞이지 않는다
     mcp = result_of(call_tool(base, token, "get_tool", {"id": "graft-ask"}))["structuredContent"]
     assert mcp["kind"] == "mcp" and mcp["tool"]["runtime"] == {"kind": "mcp", "server": "graft", "tool": "graft_find_code"}
     assert mcp["server"]["name"] == "lab.altera/graft" and mcp["archive"] is None and len(mcp["sha"]) == 40
@@ -206,3 +213,35 @@ def test_toolbox_search_get_and_script_archive(server: tuple[str, FakeIssuer]) -
     outsider = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["users"])
     assert result_of(call_tool(base, outsider, "search_tools", {"query": "x"}))["structuredContent"]["code"] == "not_a_member"
     assert result_of(call_tool(base, token, "get_tool", {"id": "yt-subs"}))["structuredContent"]["code"] == "not_found"  # 스킬 이름은 도구가 아니다
+
+
+def test_every_tool_publishes_output_schema_and_results_conform(server: tuple[str, FakeIssuer]) -> None:
+    """DESIGN §11 2026-10-11 응답 모델: tools/list가 여섯 모두에 닫힌 outputSchema를 싣고, 성공 응답의 structuredContent가 그 스키마에 맞으며 text의 JSON과 같다."""
+    import jsonschema
+
+    base, issuer = server
+    token = issuer.token(sub="user-1", aud=base + PUBLIC_PATH, groups=["harness-readers"])
+    tools = {t["name"]: t for t in list_tools(base, token)}
+    assert sorted(tools) == ["get_skill_archive", "get_skill_file", "get_tool", "load_skill", "search_skills", "search_tools"]
+    for name, t in tools.items():
+        schema = t.get("outputSchema")
+        assert schema and schema["type"] == "object" and schema["additionalProperties"] is False, name
+    skill = result_of(call_tool(base, token, "load_skill", {"id": "yt-subs"}))["structuredContent"]
+    calls: list[tuple[str, dict[str, Any]]] = [
+        ("search_skills", {"query": "자막"}),
+        ("load_skill", {"id": "yt-subs"}),
+        ("get_skill_file", {"id": "yt-subs", "path": "scripts/fetch.py"}),
+        ("get_skill_archive", {"id": "yt-subs", "sha": skill["sha"]}),
+        ("search_tools", {"query": "자막"}),
+        ("get_tool", {"id": "subs-fetch"}),  # kind=script → archive 명세가 실린다
+        ("get_tool", {"id": "graft-ask"}),  # kind=mcp → server.json이 실린다(별칭 $schema 유지)
+    ]
+    for name, args in calls:
+        res = result_of(call_tool(base, token, name, args))
+        assert not res.get("isError"), (name, res)
+        jsonschema.validate(res["structuredContent"], tools[name]["outputSchema"])
+        assert json.loads(res["content"][0]["text"]) == res["structuredContent"], name
+    mcp = result_of(call_tool(base, token, "get_tool", {"id": "graft-ask"}))["structuredContent"]
+    assert mcp["server"]["name"] == "lab.altera/graft" and "version" in mcp["server"]
+    err = result_of(call_tool(base, token, "load_skill", {"id": "nope"}))
+    assert err["isError"] is True and set(err["structuredContent"]) == {"code", "detail"}  # 오류 모양은 스키마 밖이지만 하나다

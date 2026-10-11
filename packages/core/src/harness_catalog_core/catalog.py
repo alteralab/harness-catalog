@@ -98,7 +98,7 @@ class Catalog:
         self._status = Status(ready=False)
         self._db_synced = False  # 마지막 스냅샷이 사실 저장소에도 반영됐는가 — 검색 순위를 DB에 맡기는 조건
         self._lock = threading.Lock()
-        self._archive_lock = threading.Lock()  # 캐시 tar의 확인·생성·해시를 직렬화한다(동시 발급이 서로의 기술자를 깨지 않게)
+        self._archive_lock = threading.Lock()  # 캐시 tar의 확인·생성·해시를 직렬화한다(동시 발급이 서로의 명세를 깨지 않게)
 
     # ---- For operating ----
     def status(self) -> Status:
@@ -256,10 +256,6 @@ class Catalog:
         """DB 순위는 마지막 스냅샷이 DB에 반영됐을 때만 쓴다 — 아니면 복구된 DB의 구판 순위를 쓰게 된다(Codex 설계 리뷰 2026-10-11)."""
         return self._facts.search(query, n, kind) if self._db_synced else None
 
-    def list_skills(self) -> ListResult:
-        snap = self._ready_snapshot()
-        return ListResult(tuple(SkillListing.of(e) for e in snap.entries), snap.fetched_at)
-
     def search_skills(self, query: str, limit: int | None = None) -> ListResult:
         snap = self._ready_snapshot()
         n = self._limit(query, limit)
@@ -368,7 +364,7 @@ class Catalog:
     def get_archive(self, kind: ArchiveKind, name: str, sha: str | None = None) -> ArchiveInfo:
         """한 판의 tar를 작업 디렉토리 캐시(`archives/<kind>/<tree>.<commit>.tar` + `.sha256` 사이드카)에 만들어(있고 온전하면 재사용) 경로·크기·sha256을 돌려준다.
 
-        같은 커밋·트리는 언제 만들어도 같은 바이트(어댑터가 mtime을 커밋 시각으로 고정)라 캐시가 없어지면 다시 만들어도 기술자의 sha256이 맞는다.
+        같은 커밋·트리는 언제 만들어도 같은 바이트(어댑터가 mtime을 커밋 시각으로 고정)라 캐시가 없어지면 다시 만들어도 명세의 sha256이 맞는다.
         캐시 키에 종류와 커밋이 들어가 스킬·도구나 같은 트리의 다른 커밋이 충돌하지 않는다(Codex 설계 리뷰 2026-10-11).
         발급마다 파일 mtime을 갱신해 evict_archives가 "마지막 발급 뒤 보존 시간" 기준으로 지운다. 인증·서명·전송은 서버 어댑터의 몫.
         """

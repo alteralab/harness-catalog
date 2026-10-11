@@ -9,6 +9,7 @@ dependencies = [
   "pydantic-settings==2.15.0",
   "skills-ref==0.1.1",
   "anyio==4.15.1",
+  "jsonschema==4.26.0",  # 검사 11: inputSchema·outputSchema의 Draft 2020-12 메타스키마(§11 2026-10-12 보정)
 ]
 
 [build-system]

@@ -1,12 +1,11 @@
-"""MCP 어댑터: 도구 일곱(스킬 다섯 + toolbox 둘)을 앱 함수 호출로 바꾸고 결과를 MCP 응답으로. 스팬 속성도 여기서 끝난다."""
+"""MCP 어댑터: 도구 여섯(스킬 넷 + toolbox 둘)을 앱 함수 호출로 바꾸고 결과를 MCP 응답으로. 응답 모양은 responses.py의 모델이 정본(outputSchema). 스팬 속성도 여기서 끝난다."""
 
 from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from dataclasses import asdict
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any, Literal
 
 import anyio
 from mcp.server.auth.middleware.auth_context import get_access_token
@@ -15,12 +14,28 @@ from mcp.server.auth.settings import AuthSettings
 from mcp.server.mcpserver import MCPServer
 from mcp.types import CallToolResult, TextContent
 from opentelemetry import trace
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, BaseModel
 
 from harness_catalog_core.authz import authorize, principal_from_claims
 from harness_catalog_core.archive_token import TOKEN_HEADER, ArchiveSigner
 from harness_catalog_core.catalog import Catalog
-from harness_catalog_core.model import ArchiveInfo, CatalogError, ErrorCode, ListResult, Principal, ToolListResult, required_scopes
+from harness_catalog_core.model import ArchiveInfo, CatalogError, ErrorCode, Principal, required_scopes
+from harness_catalog_core.toolbox import ServerSpec, ToolSpec
+
+from .responses import (
+    DownloadDescriptor,
+    ErrorResponse,
+    FileEntry,
+    GetToolResponse,
+    LoadSkillResponse,
+    SearchSkillsResponse,
+    SearchToolsResponse,
+    SkillArchiveResponse,
+    SkillFileResponse,
+    SkillHit,
+    ToolHit,
+    dump,
+)
 
 ATTR_USER = "langfuse.user.id"
 ATTR_SKILL = "harness_catalog.skill"
@@ -30,21 +45,22 @@ ATTR_QUERY = "harness_catalog.query"
 ATTR_RESULT_COUNT = "harness_catalog.result_count"
 
 
-def _ok(payload: Mapping[str, Any]) -> CallToolResult:
-    return CallToolResult(content=[TextContent(type="text", text=json.dumps(payload, ensure_ascii=False, default=str))], structured_content=dict(payload))
+def _ok(model: BaseModel) -> CallToolResult:
+    """성공 응답: 모델을 한 번 직렬화해 text와 structuredContent에 같은 JSON을 싣는다. SDK가 structuredContent를 outputSchema의 모델로 다시 검증한다."""
+    payload = dump(model)
+    return CallToolResult(content=[TextContent(type="text", text=json.dumps(payload, ensure_ascii=False))], structured_content=payload)
+
+
+def _kind(value: str) -> Literal["script", "mcp"]:
+    """core는 kind를 str로 들고 오지만 검사 11이 판별자를 닫아 두었다. 응답 모델의 Literal로 좁힌다."""
+    if value == "script" or value == "mcp":
+        return value
+    raise CatalogError(ErrorCode.NOT_FOUND, f"unknown runtime kind {value!r}")
 
 
 def _error(code: ErrorCode, detail: str) -> CallToolResult:
-    payload = {"code": str(code), "detail": detail}
+    payload = dump(ErrorResponse(code=str(code), detail=detail))
     return CallToolResult(content=[TextContent(type="text", text=json.dumps(payload, ensure_ascii=False))], structured_content=payload, is_error=True)
-
-
-def _listing(result: ListResult) -> Mapping[str, Any]:
-    return {"skills": [asdict(s) for s in result.skills], "fetched_at": result.fetched_at.isoformat()}
-
-
-def _tool_listing(result: ToolListResult) -> Mapping[str, Any]:
-    return {"tools": [asdict(t) for t in result.tools], "fetched_at": result.fetched_at.isoformat()}
 
 
 class ToolBindings:
@@ -65,18 +81,7 @@ class ToolBindings:
             return _error(decision.code or ErrorCode.NOT_A_MEMBER, decision.detail)
         return principal
 
-    async def list_skills(self) -> CallToolResult:
-        p = self._principal("list_skills")
-        if isinstance(p, CallToolResult):
-            return p
-        try:
-            result = await anyio.to_thread.run_sync(self._catalog.list_skills)
-        except CatalogError as e:
-            return _error(e.code, e.detail)
-        trace.get_current_span().set_attribute(ATTR_RESULT_COUNT, len(result.skills))
-        return _ok(_listing(result))
-
-    async def search_skills(self, query: str, limit: int = 10) -> CallToolResult:
+    async def search_skills(self, query: str, limit: int = 10) -> Annotated[CallToolResult, SearchSkillsResponse]:
         p = self._principal("search_skills")
         if isinstance(p, CallToolResult):
             return p
@@ -87,9 +92,9 @@ class ToolBindings:
         except CatalogError as e:
             return _error(e.code, e.detail)
         span.set_attribute(ATTR_RESULT_COUNT, len(result.skills))
-        return _ok(_listing(result))
+        return _ok(SearchSkillsResponse(skills=[SkillHit(name=s.name, description=s.description, sha=s.sha, replaced_by=s.replaced_by, requires_tools=list(s.requires_tools), compatibility=s.compatibility) for s in result.skills], fetched_at=result.fetched_at))
 
-    async def load_skill(self, id: str, sha: str | None = None) -> CallToolResult:  # noqa: A002
+    async def load_skill(self, id: str, sha: str | None = None) -> Annotated[CallToolResult, LoadSkillResponse]:  # noqa: A002
         p = self._principal("load_skill")
         if isinstance(p, CallToolResult):
             return p
@@ -98,13 +103,13 @@ class ToolBindings:
         except CatalogError as e:
             return _error(e.code, e.detail)
         trace.get_current_span().set_attributes({ATTR_SKILL: body.name, ATTR_SHA: body.sha})
-        return _ok({
-            "id": body.name, "body": body.body, "sha": body.sha, "commit": body.commit, "metadata": dict(body.metadata),
-            "files": [asdict(f) for f in body.files], "has_scripts": body.has_scripts, "fetched_at": body.fetched_at.isoformat(),
-        })
+        return _ok(LoadSkillResponse(
+            id=body.name, body=body.body, sha=body.sha, commit=body.commit, metadata=dict(body.metadata),
+            files=[FileEntry(path=f.path, size=f.size) for f in body.files], has_scripts=body.has_scripts, fetched_at=body.fetched_at,
+        ))
 
-    async def get_skill_archive(self, id: str, sha: str | None = None) -> CallToolResult:  # noqa: A002
-        """SEP-2631 다운로드 기술자 모양: uri·method·headers·expires_at·size·sha256·digest. 자격은 헤더에만 있다."""
+    async def get_skill_archive(self, id: str, sha: str | None = None) -> Annotated[CallToolResult, SkillArchiveResponse]:  # noqa: A002
+        """SEP-2631 다운로드 명세 모양: uri·method·headers·expires_at·size·sha256·digest. 자격은 헤더에만 있다."""
         p = self._principal("get_skill_archive")
         if isinstance(p, CallToolResult):
             return p
@@ -115,22 +120,22 @@ class ToolBindings:
         except CatalogError as e:
             return _error(e.code, e.detail)
         trace.get_current_span().set_attributes({ATTR_SKILL: info.name, ATTR_SHA: info.sha})
-        return _ok({"id": info.name, "sha": info.sha, "commit": info.commit, **self._descriptor(info)})
+        return _ok(SkillArchiveResponse(id=info.name, sha=info.sha, commit=info.commit, **dump(self._descriptor(info))))
 
-    def _descriptor(self, info: ArchiveInfo) -> dict[str, Any]:
-        """SEP-2631 모양의 다운로드 기술자. 자격(헤더 토큰)은 URL 밖. 종류가 서명 범위에 들어 스킬·도구 토큰이 섞이지 않는다."""
+    def _descriptor(self, info: ArchiveInfo) -> DownloadDescriptor:
+        """SEP-2631 모양의 다운로드 명세. 자격(헤더 토큰)은 URL 밖. 종류가 서명 범위에 들어 스킬·도구 토큰이 섞이지 않는다."""
         assert self._signer is not None
         kind = "tools" if info.kind == "tools" else "skills"
         token, exp = self._signer.mint(info.name, info.sha, kind=kind)
         prefix = "/archive/tools" if kind == "tools" else "/archive"
-        return {
-            "uri": f"{self._public_url}{prefix}/{info.name}/{info.sha}.tar", "method": "GET",
-            "headers": {TOKEN_HEADER: token}, "expires_at": datetime.fromtimestamp(exp, UTC).isoformat(),
-            "mimeType": "application/x-tar", "size": info.size, "sha256": info.sha256, "digest": f"git-tree:{info.sha}",
-        }
+        return DownloadDescriptor(
+            uri=f"{self._public_url}{prefix}/{info.name}/{info.sha}.tar", method="GET",
+            headers={TOKEN_HEADER: token}, expires_at=datetime.fromtimestamp(exp, UTC),
+            mimeType="application/x-tar", size=info.size, sha256=info.sha256, digest=f"git-tree:{info.sha}",
+        )
 
     # ---- toolbox (DESIGN §11 2026-10-11) ----
-    async def search_tools(self, query: str, limit: int = 10) -> CallToolResult:
+    async def search_tools(self, query: str, limit: int = 10) -> Annotated[CallToolResult, SearchToolsResponse]:
         p = self._principal("search_tools")
         if isinstance(p, CallToolResult):
             return p
@@ -141,10 +146,10 @@ class ToolBindings:
         except CatalogError as e:
             return _error(e.code, e.detail)
         span.set_attribute(ATTR_RESULT_COUNT, len(result.tools))
-        return _ok(_tool_listing(result))
+        return _ok(SearchToolsResponse(tools=[ToolHit(name=x.name, description=x.description, sha=x.sha, kind=_kind(x.kind), server=x.server, replaced_by=x.replaced_by, requires_tools=list(x.requires_tools)) for x in result.tools], fetched_at=result.fetched_at))
 
-    async def get_tool(self, id: str, sha: str | None = None) -> CallToolResult:  # noqa: A002
-        """tool.json 전체 + 판·커밋·파일 목록. kind=mcp면 server.json을 `server`에, kind=script면 다운로드 기술자를 `archive`에. 레지스트리는 발견까지 — 도구를 부르지 않는다."""
+    async def get_tool(self, id: str, sha: str | None = None) -> Annotated[CallToolResult, GetToolResponse]:  # noqa: A002
+        """tool.json 전체 + 판·커밋·파일 목록. kind=mcp면 server.json을 `server`에, kind=script면 다운로드 명세를 `archive`에. 레지스트리는 발견까지 — 도구를 부르지 않는다."""
         p = self._principal("get_tool")
         if isinstance(p, CallToolResult):
             return p
@@ -153,7 +158,7 @@ class ToolBindings:
         except CatalogError as e:
             return _error(e.code, e.detail)
         trace.get_current_span().set_attributes({ATTR_TOOL: body.name, ATTR_SHA: body.sha})
-        archive: dict[str, Any] | None = None
+        archive: DownloadDescriptor | None = None
         if body.kind == "script":
             if self._signer is None or not self._public_url:
                 return _error(ErrorCode.NOT_FOUND, "archive download is not enabled on this server — script tools cannot be served")
@@ -161,13 +166,13 @@ class ToolBindings:
                 archive = self._descriptor(await anyio.to_thread.run_sync(self._catalog.get_tool_archive, id, body.sha))
             except CatalogError as e:
                 return _error(e.code, e.detail)
-        return _ok({
-            "id": body.name, "sha": body.sha, "commit": body.commit, "kind": body.kind, "tool": dict(body.spec),
-            "server": dict(body.server) if body.server is not None else None, "archive": archive,
-            "files": [asdict(f) for f in body.files], "fetched_at": body.fetched_at.isoformat(),
-        })
+        return _ok(GetToolResponse(
+            id=body.name, sha=body.sha, commit=body.commit, kind=_kind(body.kind), tool=ToolSpec.model_validate(dict(body.spec)),
+            server=ServerSpec.model_validate(dict(body.server)) if body.server is not None else None, archive=archive,
+            files=[FileEntry(path=f.path, size=f.size) for f in body.files], fetched_at=body.fetched_at,
+        ))
 
-    async def get_skill_file(self, id: str, path: str, sha: str | None = None) -> CallToolResult:  # noqa: A002
+    async def get_skill_file(self, id: str, path: str, sha: str | None = None) -> Annotated[CallToolResult, SkillFileResponse]:  # noqa: A002
         p = self._principal("get_skill_file")
         if isinstance(p, CallToolResult):
             return p
@@ -176,16 +181,15 @@ class ToolBindings:
         except CatalogError as e:
             return _error(e.code, e.detail)
         trace.get_current_span().set_attributes({ATTR_SKILL: id, ATTR_SHA: f.sha})
-        return _ok({"id": id, "path": f.path, "size": f.size, "sha": f.sha, "blob": f.blob, "text": f.text, "base64": f.base64})
+        return _ok(SkillFileResponse(id=id, path=f.path, size=f.size, sha=f.sha, blob=f.blob, text=f.text, base64=f.base64))
 
 
 def build_server(catalog: Catalog, *, issuer: str, public_url: str, verifier: TokenVerifier, signer: ArchiveSigner | None = None) -> MCPServer[None]:
-    """도구 일곱을 등록한 MCPServer. 인가 설정은 SDK가 RFC 9728·챌린지로 낸다(scopes_supported = required_scopes)."""
+    """도구 여섯을 등록한 MCPServer. 인가 설정은 SDK가 RFC 9728·챌린지로 낸다(scopes_supported = required_scopes)."""
     auth = AuthSettings(issuer_url=AnyHttpUrl(issuer), resource_server_url=AnyHttpUrl(public_url), required_scopes=list(required_scopes(public_url)), validate_token_resource=True)
-    server: MCPServer[None] = MCPServer(name="harness-catalog", instructions="Skill and tool catalog: list, search, load skills and their files; search and read tool definitions (toolbox).", auth=auth, token_verifier=verifier)
+    server: MCPServer[None] = MCPServer(name="harness-catalog", instructions="Skill and tool catalog: search and load skills and their files; search and read tool definitions (toolbox). No full-listing tools: search by topic.", auth=auth, token_verifier=verifier)
     b = ToolBindings(catalog, signer=signer, public_url=public_url)
-    server.tool(name="list_skills", description="List every skill: id, description, sha (tree), replaced_by, requires_tools, compatibility.")(b.list_skills)
-    server.tool(name="search_skills", description="Lexical search over id, description and metadata values. limit 1..20 (default 10).")(b.search_skills)
+    server.tool(name="search_skills", description="Lexical search over id, description and metadata values; each hit: id, description, sha (tree), replaced_by, requires_tools, compatibility. There is no full-listing tool: search by topic. limit 1..20 (default 10).")(b.search_skills)
     server.tool(name="load_skill", description="SKILL.md body with sha, commit, metadata and file list. sha optional (default: current main).")(b.load_skill)
     server.tool(name="get_skill_file", description="One file of a skill (text or base64). Path traversal and symlinks are rejected; 1 MB per file.")(b.get_skill_file)
     server.tool(name="search_tools", description="Toolbox: lexical search over tool definitions (name, description, metadata). Each hit: name, description, sha (tree), kind (script|mcp), server, replaced_by, requires_tools. limit 1..20 (default 10).")(b.search_tools)

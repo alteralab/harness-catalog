@@ -10,7 +10,7 @@ import pytest
 from harness_catalog_core.catalog import Catalog
 from harness_catalog_core.check import check_commit
 from harness_catalog_core.model import CatalogError, ErrorCode, ReadyReason, Root
-from harness_catalog_core.toolbox import MAX_INPUT_SCHEMA_BYTES, parse_server, parse_tool
+from harness_catalog_core.toolbox import MAX_INPUT_SCHEMA_BYTES, parse_server, parse_tool, tool_json_schema
 
 from .fakes import FakeStore, FakeValidator, MemoryFacts
 
@@ -68,12 +68,41 @@ def test_parse_tool_accepts_both_kinds() -> None:
         ({"description": ""}, "description"),
         ({"extra": 1}, "extra"),
         ({"metadata": {"k": 1}}, "metadata"),
+        ({"inputSchema": {"type": "object", "properties": 5}}, "not a valid JSON Schema"),  # 메타스키마(§11 2026-10-12 보정)
+        ({"inputSchema": {"type": "object", "properties": {"x": {"$ref": "https://example.com/x.json"}}}}, "outside the document"),
+        ({"outputSchema": {"type": "string"}}, "outputSchema.type"),
+        ({"outputSchema": {"type": "object", "required": "passed"}}, "outputSchema is not a valid JSON Schema"),
     ],
 )
 def test_parse_tool_rejects(over: dict[str, object], needle: str) -> None:
     name = str(over.get("name", "subs-fetch"))
     spec, errors = parse_tool(tool_json(name, **{k: v for k, v in over.items() if k != "name"}))
     assert spec is None and any(needle in e for e in errors), errors
+
+
+def test_parse_tool_accepts_output_schema_with_local_refs() -> None:
+    """outputSchema는 선택이고 MCP Tool.outputSchema와 같은 이름. 문서 안 $ref는 허용, 도메인 필드는 도구별(공통 강제 없음)."""
+    out = {"type": "object", "$defs": {"c": {"type": "object", "properties": {"name": {"type": "string"}, "passed": {"type": "boolean"}, "gap": {"type": "string"}}}}, "properties": {"passed": {"type": "boolean"}, "criteria": {"type": "array", "items": {"$ref": "#/$defs/c"}}, "summary": {"type": "string"}}, "required": ["passed", "summary"]}
+    spec, errors = parse_tool(tool_json(outputSchema=out))
+    assert errors == [] and spec is not None and spec.outputSchema == out
+    assert parse_tool(tool_json())[0].outputSchema is None  # type: ignore[union-attr]
+    assert "outputSchema" in tool_json_schema()["properties"]
+
+
+def test_parse_tool_accepts_editor_schema_pointer_and_generates_json_schema() -> None:
+    """`$schema`는 선택 문자열(편집기용)이고, tool.json의 JSON Schema는 ToolSpec에서 나오며 실린 레코드가 그 스키마에 맞는다(§11 2026-10-11 write-tool)."""
+    import jsonschema
+
+    spec, errors = parse_tool(tool_json("subs-fetch", **{"$schema": "../../schemas/tool.schema.json"}))
+    assert errors == [] and spec is not None and spec.schema_url == "../../schemas/tool.schema.json"
+    assert parse_tool(tool_json("subs-fetch", **{"$schema": 1}))[0] is None
+    schema = tool_json_schema()
+    assert schema["$schema"].startswith("https://json-schema.org/") and schema["additionalProperties"] is False
+    jsonschema.Draft202012Validator.check_schema(schema)
+    jsonschema.validate(json.loads(tool_json()), schema)
+    jsonschema.validate(json.loads(MCP_TOOL["tool.json"]), schema)
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(json.loads(tool_json(runtime={"kind": "http", "url": "x"})), schema)
 
 
 def test_parse_tool_depth_and_json_errors() -> None:
@@ -163,7 +192,7 @@ def test_search_tools_and_get_tool(tmp_path: Path) -> None:
     assert [t.name for t in hits] == ["subs-fetch"] and hits[0].kind == "script" and hits[0].requires_tools == ("uv", "yt-dlp")
     assert [t.name for t in cat.search_tools("graft").tools] == ["graft-ask"]
     assert cat.search_tools("graft").tools[0].server == "graft"
-    assert [s.name for s in cat.list_skills().skills] == ["yt-subs"]  # 스킬 목록에 도구가 섞이지 않는다
+    assert [s.name for s in cat.search_skills("subtitles").skills] == ["yt-subs"]  # 스킬 검색에 도구가 섞이지 않는다
     body = cat.get_tool("graft-ask")
     assert body.kind == "mcp" and body.server is not None and body.server["name"] == "lab.altera/graft" and body.sha == store.tree_of("graft-ask", "tools")
     script = cat.get_tool("subs-fetch")
@@ -184,7 +213,7 @@ def test_search_tools_and_get_tool(tmp_path: Path) -> None:
 def test_rejected_tool_is_excluded_but_skills_still_indexed(tmp_path: Path) -> None:
     cat, _ = make(tmp_path, tools={"graft-ask": MCP_TOOL})  # 서버 레코드 없음 → 항목 11 거부
     status = cat.rebuild()
-    assert status.ready and cat.search_tools("graft").tools == () and [s.name for s in cat.list_skills().skills] == ["yt-subs"]
+    assert status.ready and cat.search_tools("graft").tools == () and [s.name for s in cat.search_skills("subtitles").skills] == ["yt-subs"]
     assert ("graft-ask", "11: runtime.server 'graft' not found under mcp-servers/ (or rejected by item 12)") in status.rejected
 
 

@@ -11,6 +11,7 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, Literal, cast
 
+import jsonschema
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 TOOL_FILE = "tool.json"
@@ -50,10 +51,14 @@ Runtime = Annotated[ScriptRuntime | McpRuntime, Field(discriminator="kind")]
 
 
 class ToolSpec(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    """tool.json. `$schema`는 저자의 편집기 검증용 포인터(`schemas/tool.schema.json`)이고 레지스트리는 해석하지 않는다(§11 2026-10-11 write-tool)."""
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    schema_url: str | None = Field(default=None, alias="$schema", description="editor-only pointer to schemas/tool.schema.json; the registry ignores it")
     name: str = Field(min_length=1, max_length=64)
     description: str = Field(min_length=1, max_length=MAX_DESCRIPTION_CHARS)
     inputSchema: dict[str, Any]  # noqa: N815 — MCP 도구 정의의 필드 이름 그대로
+    outputSchema: dict[str, Any] | None = Field(default=None, description="MCP Tool.outputSchema; when declared the script prints exactly one JSON object conforming to it on exit 0 (§11 2026-10-12)")  # noqa: N815
     runtime: Runtime
     metadata: dict[str, str] = Field(default_factory=dict)
 
@@ -72,6 +77,18 @@ class ServerSpec(BaseModel):
     packages: list[dict[str, Any]] | None = None
     remotes: list[dict[str, Any]] | None = None
     meta: dict[str, Any] | None = Field(default=None, alias="_meta")
+
+
+TOOL_SCHEMA_ID = "https://github.com/alteralab/harness-catalog/schemas/tool.schema.json"
+
+
+def tool_json_schema() -> dict[str, Any]:
+    """tool.json의 JSON Schema — `ToolSpec`에서 생성한다. `harness-catalog init`이 카탈로그의 `schemas/tool.schema.json`으로 쓰고 `harness-catalog schema tool`이 찍는다.
+
+    문법 밖의 규칙(이름 정규식·경로 정규형·inputSchema 상한·command가 path를 정확히 한 번)은 검사 11만 본다 — 스키마는 모양까지다.
+    """
+    schema = ToolSpec.model_json_schema(by_alias=True)
+    return {"$schema": "https://json-schema.org/draft/2020-12/schema", "$id": TOOL_SCHEMA_ID, **schema}
 
 
 def _messages(e: ValidationError) -> list[str]:
@@ -106,15 +123,35 @@ def schema_depth(node: object, depth: int = 1) -> int:
     return depth
 
 
-def _schema_errors(schema: dict[str, Any]) -> list[str]:
+def _remote_refs(node: object) -> list[str]:
+    """문서 밖을 가리키는 `$ref`(원격·상대 URI). 등록 시 네트워크 해석을 하지 않으므로 거부 대상(§11 2026-10-12 보정)."""
+    out: list[str] = []
+    if isinstance(node, dict):
+        for k, v in cast("Mapping[object, object]", node).items():
+            if k == "$ref" and isinstance(v, str) and not v.startswith("#"):
+                out.append(v)
+            out.extend(_remote_refs(v))
+    elif isinstance(node, list):
+        for v in cast("Sequence[object]", node):
+            out.extend(_remote_refs(v))
+    return out
+
+
+def _schema_errors(schema: dict[str, Any], where: str = "inputSchema") -> list[str]:
+    """inputSchema·outputSchema 공통: 최상위 object, 크기·깊이 상한, Draft 2020-12 메타스키마, `$ref`는 문서 안만."""
     errors: list[str] = []
     if cast("Mapping[str, object]", schema).get("type") != "object":
-        errors.append("inputSchema.type must be 'object'")
+        errors.append(f"{where}.type must be 'object'")
     size = len(json.dumps(schema, separators=(",", ":")).encode("utf-8"))
     if size > MAX_INPUT_SCHEMA_BYTES:
-        errors.append(f"inputSchema is {size} bytes > {MAX_INPUT_SCHEMA_BYTES}")
+        errors.append(f"{where} is {size} bytes > {MAX_INPUT_SCHEMA_BYTES}")
     if (depth := schema_depth(schema)) > MAX_INPUT_SCHEMA_DEPTH:
-        errors.append(f"inputSchema nesting depth {depth} > {MAX_INPUT_SCHEMA_DEPTH}")
+        errors.append(f"{where} nesting depth {depth} > {MAX_INPUT_SCHEMA_DEPTH}")
+    try:
+        jsonschema.Draft202012Validator.check_schema(schema)
+    except jsonschema.SchemaError as e:
+        errors.append(f"{where} is not a valid JSON Schema (draft 2020-12): {e.message}")
+    errors.extend(f"{where}: $ref {ref!r} points outside the document (only '#…' allowed)" for ref in _remote_refs(schema))
     return errors
 
 
@@ -143,6 +180,8 @@ def parse_tool(text: bytes | str) -> tuple[ToolSpec | None, list[str]]:
     if not NAME_RE.match(spec.name):
         errors.append(f"name {spec.name!r}: 1-64 chars of [a-z0-9-], starting with [a-z0-9]")
     errors.extend(_schema_errors(spec.inputSchema))
+    if spec.outputSchema is not None:
+        errors.extend(_schema_errors(spec.outputSchema, "outputSchema"))
     errors.extend(_runtime_errors(spec.runtime))
     return (spec if not errors else None), errors
 

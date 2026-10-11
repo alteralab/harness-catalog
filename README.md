@@ -22,7 +22,7 @@
 
 스킬 하나는 git 저장소의 디렉토리 하나입니다. `skills/<name>/SKILL.md`와, 필요하면 스크립트·참고 파일·평가 과제가 함께 있습니다. 이 저장소를 **카탈로그 저장소**라 부르고, `main`에 병합된 것이 곧 게시된 판입니다. 스킬을 만들고 고치고 지우는 일은 전부 브랜치 → PR → 병합이며, 병합한 사람이 그 판을 인증한 사람입니다.
 
-**레지스트리**는 `main`을 주기적으로 받아 검사·색인하고, 하네스가 MCP로 물으면 답하는 서버입니다. 도구는 넷(`list_skills`·`search_skills`·`load_skill`·`get_skill_file`)이고 쓰기 도구는 없습니다. 저장소에는 읽기 전용 deploy key로만 닿습니다. 레지스트리가 뚫려도 카탈로그는 바뀌지 않고, 레지스트리가 죽어도 카탈로그는 git에 그대로 있습니다.
+**레지스트리**는 `main`을 주기적으로 받아 검사·색인하고, 하네스가 MCP로 물으면 답하는 서버입니다. 도구는 여섯(스킬 넷 `search_skills`·`load_skill`·`get_skill_file`·`get_skill_archive`, 도구 둘 `search_tools`·`get_tool`)이고 전부 읽기이며 쓰기 도구도 전체 목록 도구도 없습니다. 저장소에는 읽기 전용 deploy key로만 닿습니다. 레지스트리가 뚫려도 카탈로그는 바뀌지 않고, 레지스트리가 죽어도 카탈로그는 git에 그대로 있습니다.
 
 로그인은 팀 LDAP 계정으로 한 번 합니다. 레지스트리 앞의 Dex가 LDAP을 OIDC로 감싸고, LDAP 그룹 `harness-readers`에 든 사람만 도구를 부를 수 있습니다.
 
@@ -153,7 +153,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 │   ├── core/                    #   harness-catalog-core: 모델·카탈로그 앱·검사 항목·git/검증 어댑터
 │   ├── server/                  #   harness-catalog-server: MCP 서버·OIDC·PostgreSQL·스케줄러·마이그레이션
 │   ├── cli/                     #   harness-catalog-cli: check·init·config, 카탈로그 저장소 템플릿
-│   │   └── templates/           #     카탈로그 저장소 템플릿 + 기본 스킬 둘(skills/pin-skill·write-skill, 각자 evals). init이 새 카탈로그에 함께 쓴다
+│   │   └── templates/           #     카탈로그 저장소 템플릿 + 기본 스킬 셋(skills/pin-skill·write-skill·write-tool, 각자 evals)과 생성되는 schemas/tool.schema.json. init이 새 카탈로그에 함께 쓴다
 │   └── harbor-langfuse/         #   harbor-langfuse: Harbor 플러그인 → Langfuse
 ├── plans/                       # 실행 계획과 원장 (PLAN.md가 우산)
 │   ├── pilot/                   #   측정 결과 r1~r3 (Dex 그랜트, LDAP, 하네스 첫 접촉)

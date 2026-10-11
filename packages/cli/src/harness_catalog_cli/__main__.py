@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import os
 import sys
 import tempfile
@@ -9,6 +11,8 @@ from importlib.metadata import version
 from pathlib import Path
 
 import typer
+
+from harness_catalog_core.toolbox import tool_json_schema
 
 from harness_catalog_core.adapters.git import GitStore
 from harness_catalog_core.adapters.validate import SkillsRefValidator
@@ -140,7 +144,7 @@ def init(
     pin: str | None = typer.Option(None, "--pin", help="템플릿에 박을 코드 저장소 ref(개발용). 없으면 cli 자기 판의 태그이고 그 태그가 있어야 한다"),
     host: str | None = typer.Option(None, "--host", help="github | gitlab. 없으면 URL에서 판별한다"),
 ) -> None:
-    """표지·skills/·README·pre-commit·호스트별 CI를 없는 것만 써서 커밋·push한다. 두 번 돌리면 변경 0."""
+    """표지·skills/(기본 스킬 셋)·schemas/tool.schema.json·README·pre-commit·호스트별 CI를 없는 것만 써서 커밋·push한다. 두 번 돌리면 변경 0."""
     try:
         result = init_repository(repo_url, pin=pin, host=host)
     except InitError as e:
@@ -166,6 +170,15 @@ def config_docs(out_dir: Path = typer.Option(Path("docs"), "--out-dir", help="co
     target = out_dir / "configuration.md"
     target.write_text(merge_docs(target.read_text() if target.exists() else None, render_docs()))
     print(render_env_example(), end="")
+
+
+@app.command()
+def schema(kind: str = typer.Argument("tool", help="tool — tool.json의 JSON Schema(core ToolSpec에서 생성)")) -> None:
+    """카탈로그 레코드의 JSON Schema를 표준 출력에 찍는다. 저자가 `schemas/tool.schema.json`을 다시 쓸 때: `harness-catalog schema tool > schemas/tool.schema.json`."""
+    if kind != "tool":
+        print(f"unknown schema kind {kind!r} (tool only — server.json follows the MCP Registry schema at its own $schema URL)", file=sys.stderr)
+        raise typer.Exit(2)
+    print(json.dumps(tool_json_schema(), ensure_ascii=False, indent=2))
 
 
 def main() -> None:

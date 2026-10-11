@@ -42,16 +42,30 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 
 ## 3. 찾고 적재하기
 
+레지스트리가 내는 도구는 여섯이고 전부 읽기입니다. 전체 목록을 돌려주는 도구는 없습니다. 주제로 좁혀 검색합니다.
+
+| 도구 | 하는 일 |
+|---|---|
+| `search_skills(query, limit?)` | 스킬 어휘 검색(기본 10, 상한 20): 이름·설명·`sha`(판)·`replaced_by`·`requires_tools` |
+| `load_skill(id, sha?)` | SKILL.md 본문과 파일 목록. `sha`를 주면 그 판 |
+| `get_skill_file(id, path, sha?)` | 참조 파일·스크립트 하나(1 MB) |
+| `get_skill_archive(id, sha?)` | 한 판 전체를 tar로 받는 다운로드 명세(URI + 5분 헤더 토큰 + sha256). 파일은 모델을 지나지 않습니다. §4 pin이 씁니다 |
+| `search_tools(query, limit?)` | 도구 어휘 검색: 이름·설명·`sha`·`kind`·`server`. §5.5 |
+| `get_tool(id, sha?)` | `tool.json` 전체. `kind: mcp`면 참조하는 `server.json`을, `kind: script`면 다운로드 명세를 함께. §5.5 |
+
+여섯 도구 모두 `tools/list`에 `outputSchema`를 싣습니다. 성공 응답의 `structuredContent`는 그 스키마에 맞고, `content[0].text`에 같은 JSON이 있습니다. 오류는 `isError`와 `{code, detail}`입니다. 스키마의 정본은 서버의 `driving/responses.py`입니다.
+
 하네스에게 말로 시킵니다. 에이전트가 적절한 도구를 고릅니다.
 
 | 말 | 에이전트가 부르는 도구 |
 |---|---|
-| "카탈로그에 어떤 스킬 있어?" | `list_skills()` |
+| "카탈로그에 어떤 스킬 있어?" | 전체 목록 도구는 없습니다. 주제를 붙여 `search_skills("…")` |
 | "유튜브 자막 뽑는 스킬 있어?" | `search_skills("유튜브 자막")` |
 | "yt-subs 불러와" | `load_skill("yt-subs")` |
 | (스킬이 스크립트를 쓸 때) | `get_skill_file("yt-subs", "scripts/fetch.py", sha=…)` |
+| "yt-subs 내려받아" | `get_skill_archive("yt-subs", sha=…)` → 셸에서 `curl`로 받기(§4) |
 
-`list_skills`의 응답은 이런 모양입니다(줄임).
+`search_skills`의 응답은 이런 모양입니다(줄임).
 
 ```json
 {"skills": [
@@ -80,13 +94,13 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 
 ## 5. 새 판과 은퇴
 
-내려받은 사본은 그 시점의 판이고 저절로 바뀌지 않습니다. "새 판 있어?"라고 하면 에이전트가 두 범위의 `PINNED`를 읽어 `list_skills`의 `sha`와 견줍니다. "갱신해줘"라고 하면 같은 절차로 다시 받되, 기존 사본은 새 사본이 제자리에 들어갈 때까지 남겨 둡니다. 목록에서 사라진 이름은 은퇴한 스킬입니다.
+내려받은 사본은 그 시점의 판이고 저절로 바뀌지 않습니다. "새 판 있어?"라고 하면 에이전트가 두 범위의 `PINNED`를 읽어 이름마다 `search_skills(<이름>)`의 `sha`와 견줍니다. "갱신해줘"라고 하면 같은 절차로 다시 받되, 기존 사본은 새 사본이 제자리에 들어갈 때까지 남겨 둡니다. 검색에 더 나오지 않는 이름은 은퇴한 스킬입니다.
 
 ## 5.5 도구 찾기(toolbox)
 
 카탈로그는 스킬 말고 **도구**도 싣습니다(DESIGN §11 2026-10-11). 도구는 스키마가 있는 호출 가능한 것이고, 구현은 둘 중 하나입니다.
 
-- `script` — 카탈로그 안의 스크립트. `get_tool`이 돌려주는 `archive` 기술자로 파일을 받아(pin과 같은 방식) `runtime.command`를 **셸 없이 argv로** 실행합니다. 입력은 `inputSchema`에 맞는 JSON 객체 하나를 stdin으로, 결과는 stdout, 종료 코드 0이 성공입니다. cwd는 받은 디렉토리입니다.
+- `script` — 카탈로그 안의 스크립트. `get_tool`이 돌려주는 `archive` 명세로 파일을 받아(pin과 같은 방식) `runtime.command`를 **셸 없이 argv로** 실행합니다. 입력은 `inputSchema`에 맞는 JSON 객체 하나를 stdin으로, 결과는 stdout이고, `tool.json`에 `outputSchema`가 있으면 그 스키마에 맞는 JSON 객체 하나입니다. 종료 코드 0은 결과를 냈다는 뜻이고 0이 아니면 실행 실패(사유는 stderr)입니다. 통과·불통과 같은 판정은 결과 객체의 필드에 있고 종료 코드로는 말하지 않습니다. cwd는 받은 디렉토리입니다. 부르는 쪽은 종료 코드·stdout·stderr를 구분된 관측으로 모델에 돌려줍니다.
 - `mcp` — 팀 MCP 서버의 도구 하나. `get_tool`이 `server`에 그 서버의 `server.json`(MCP Registry 형식)을 함께 싣습니다. 하네스 설정(`.mcp.json`·`mcpServers`)에 그 서버를 붙이는 것은 사용자의 일이고, 레지스트리는 도구를 부르지 않습니다.
 
 ```
@@ -115,7 +129,7 @@ TOKEN=$(scripts/dev-token.sh https://<호스트>/dex https://<호스트>/mcp ci-
 | 로그인 뒤 "인증 서버가 동적 등록을 지원하지 않는다" | `oauth.clientId`가 없음 | 설정에 클라이언트 ID를 더한다 |
 | 로그인은 되는데 도구 호출이 거부 | `harness-readers`에 없음 | 운영자에게 그룹 추가 요청 |
 | `get_skill_file`이 `unknown_version` | 받는 사이 `main`이 바뀌어 그 판이 이력에서 풀리지 않음 | `load_skill`부터 다시 |
-| 검색 결과가 비어 있다 | 아직 색인 전(병합 뒤 한 주기) 또는 없는 스킬 | 잠시 뒤 다시, 또는 `list_skills` |
+| 검색 결과가 비어 있다 | 아직 색인 전(병합 뒤 한 주기) 또는 없는 스킬 | 잠시 뒤 다시, 또는 다른 낱말로 검색 |
 
 ## 비밀을 검색어에 넣지 않기
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import tempfile
 from collections.abc import Mapping
@@ -13,9 +14,11 @@ from urllib.parse import urlsplit
 
 from harness_catalog_core.catalog_file import MARKER_PATH, MarkerError, parse_marker
 from harness_catalog_core.model import SUPPORTED_LAYOUT
+from harness_catalog_core.toolbox import tool_json_schema
 
 CODE_REPO_URL = "https://github.com/alteralab/harness-catalog"
 VERSION_PLACEHOLDER = "<판>"
+SCHEMA_PATH = "schemas/tool.schema.json"
 
 
 class InitError(Exception):
@@ -52,9 +55,10 @@ def resolve_pin(pin: str | None, *, code_repo_url: str = CODE_REPO_URL) -> str:
 
 
 def template_files(host: str) -> Mapping[str, str]:
-    """상대 경로 → 내용. 호스트의 워크플로만 싣고, 기본 스킬 둘(templates/skills/)은 파일 전부를 싣는다.
+    """상대 경로 → 내용. 호스트의 워크플로만 싣고, 기본 스킬 셋(templates/skills/)은 파일 전부를 싣고, tool.json의 JSON Schema는 core 모델에서 생성해 싣는다.
 
-    스킬 원본은 이 패키지 데이터 하나다(사본을 두지 않는다, C-DUP-2). 새 카탈로그는 init 직후부터 두 스킬이 검색된다(DESIGN §11 2026-10-10).
+    스킬 원본은 이 패키지 데이터 하나다(사본을 두지 않는다, C-DUP-2). 새 카탈로그는 init 직후부터 세 스킬이 검색된다(DESIGN §11 2026-10-10·2026-10-11 write-tool).
+    schemas/tool.schema.json은 템플릿 파일이 아니라 `ToolSpec`의 산출물이다 — 모델이 바뀌면 다음 init(새 카탈로그)과 `harness-catalog schema tool`(기존 카탈로그)이 따라간다.
     """
     base = files("harness_catalog_cli") / "templates"
     out: dict[str, str] = {}
@@ -67,6 +71,7 @@ def template_files(host: str) -> Mapping[str, str]:
             out[".github/actions/code-repo-credentials/action.yml"] = (root / "github" / "actions" / "code-repo-credentials" / "action.yml").read_text()
         else:
             out[".gitlab-ci.yml"] = (root / "gitlab" / ".gitlab-ci.yml").read_text()
+        out[SCHEMA_PATH] = json.dumps(tool_json_schema(), ensure_ascii=False, indent=2) + "\n"
         skills_root = root / "skills"
         for p in sorted(skills_root.rglob("*")):
             rel = p.relative_to(skills_root)

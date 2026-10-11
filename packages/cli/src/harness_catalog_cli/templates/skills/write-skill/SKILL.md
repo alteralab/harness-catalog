@@ -18,7 +18,7 @@ metadata:
 ## 단계
 
 1. 사용자의 한 문장에서 스킬이 **하는 일**과 **발동 상황**을 받아 적는다. `search_skills`로 같은 일을 하는 스킬이 있는지 확인한다. 있으면 갱신 경로(위 "쓰지 않는다")를 안내하고 멈춘다.
-2. 이름을 정한다. `name` 문법은 1~64자, 소문자·숫자·하이픈이고 `list_skills`에 없어야 한다. 은퇴한 이름은 `harness-catalog check`(항목 5)가 거부하니 그때 바꾼다.
+2. 이름을 정한다. `name` 문법은 1~64자, 소문자·숫자·하이픈이고 `search_skills(<이름>)`에 없어야 한다. 은퇴한 이름은 `harness-catalog check`(항목 5)가 거부하니 그때 바꾼다.
 3. 카탈로그 저장소의 로컬 클론(없으면 사용자에게 경로를 묻고 clone)에서 `main`을 최신으로 한 뒤 브랜치 `skill/<name>`을 따고 뼈대는 `uv run --script <이 스킬>/scripts/scaffold.py <name> --description "<한 문장>" --positive <케이스> --negative <케이스> [--script <x.py>]`로 만든다(멱등). 그 결과의 TODO 자리를 채운다 — `SKILL.md` 본문(언제 쓰는가·단계·실패 대응 표), 스크립트 본문, evals의 과제 문장과 검증 조건.
 4. `references/conventions.md`의 점검표를 하나씩 지난다. 요지: 결정적인 일(계산·변환·조회)은 스크립트로, 판단은 본문 지시로. 파이썬 스크립트는 PEP 723 머리 + `uv run --script scripts/x.py`. 시스템 도구는 `metadata.requires-tools`(기계용)와 `compatibility`(사람용 문장) 둘 다에. 종료 코드 2 입력 오류·3 대상 없음·4 시스템 도구 없음.
 5. evals 최소 쌍은 3의 스크립트가 Harbor 태스크 여섯 파일(`task.toml`·`instruction.md`·`environment/Dockerfile`·`tests/test.sh`·`tests/test_outputs.py`·`solution/solve.sh`)씩 만들어 둔다. 써야 하는 과제 하나와 쓰지 말아야 하는 과제 하나(`no-trigger-*`). `instruction.md`·`tests/test_outputs.py`(pytest 단언)·`solve.sh`의 TODO를 채우고, 모델 없이 `harbor run -p skills/<name>/evals -a oracle -e docker`로 넷이 reward 1인지 먼저 본다.
@@ -32,7 +32,7 @@ metadata:
 | 상황 | 대응 |
 |---|---|
 | 같은 일을 하는 스킬이 이미 있다 | 갱신 경로를 안내하고 멈춘다 |
-| 이름이 `list_skills`에 있거나 `check` 항목 5가 거부 | 다른 이름 |
+| 이름이 `search_skills`에 있거나 `check` 항목 5가 거부 | 다른 이름 |
 | `harness-catalog check`가 붉다 | 항목 번호대로 고친다. 검사기 자체 실패(종료 2)는 gitleaks 설치·전체 이력 클론을 확인 |
 | Harbor가 없다 | 8을 건너뛰고 PR 본문에 "evals 미실행"을 적는다. 음성 케이스는 사람이 판정 |
 | 클라우드 샌드박스 세션 | 9에서 멈춘다 |

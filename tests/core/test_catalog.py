@@ -23,8 +23,8 @@ def test_rebuild_then_list_and_search(tmp_path: Path) -> None:
     cat, store, facts = make(tmp_path)
     status = cat.rebuild()
     assert status.ready and not status.reasons and status.commit_sha == store.commit
-    assert [s.name for s in cat.list_skills().skills] == ["alpha", "beta"]
-    assert cat.list_skills().skills[0].requires_tools == ("yt-dlp",)
+    assert [s.name for s in cat.search_skills("skill").skills] == ["alpha", "beta"]  # 전체 목록 도구는 없다 — 공통 낱말로 둘을 본다
+    assert cat.search_skills("skill").skills[0].requires_tools == ("yt-dlp",)
     assert [s.name for s in cat.search_skills("youtube").skills] == ["alpha"]
     assert [s.name for s in cat.search_skills("skill", limit=1).skills] == ["alpha"]
     assert cat.search_skills("nothing-matches").skills == ()
@@ -34,7 +34,7 @@ def test_rebuild_then_list_and_search(tmp_path: Path) -> None:
 def test_not_ready_before_rebuild(tmp_path: Path) -> None:
     cat, _, _ = make(tmp_path)
     with pytest.raises(CatalogError) as e:
-        cat.list_skills()
+        cat.search_skills("skill")
     assert e.value.code is ErrorCode.NOT_FOUND
 
 
@@ -53,7 +53,7 @@ def test_rejected_skill_is_excluded_and_reported(tmp_path: Path) -> None:
     status = cat.rebuild()
     assert status.ready
     assert [n for n, _ in status.rejected] == ["leaky"]
-    assert [s.name for s in cat.list_skills().skills] == ["alpha"]
+    assert [s.name for s in cat.search_skills("skill").skills] == ["alpha"]
 
 
 def test_load_skill_and_file(tmp_path: Path) -> None:
@@ -173,4 +173,4 @@ def test_first_start_uses_db_commit_as_base(tmp_path: Path) -> None:
     store.commit = "r" * 40  # 자손 아님 = 되감기
     status = fresh.rebuild()
     assert status.ready and "main_rewound" in status.degraded and status.commit_sha == old
-    assert [s.name for s in fresh.list_skills().skills] == ["alpha"] and len(facts.snapshots) == 1
+    assert [s.name for s in fresh.search_skills("skill").skills] == ["alpha"] and len(facts.snapshots) == 1
