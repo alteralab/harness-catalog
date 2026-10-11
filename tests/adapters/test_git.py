@@ -102,3 +102,26 @@ def test_archive_skill_is_deterministic_capped_and_clean(tmp_path: Path, catalog
         store.archive_skill("f" * 40, "yt-subs", tmp_path / "e.tar", max_bytes=10_000_000)
     assert sorted(p.name for p in tmp_path.glob("*.tar")) == ["a.tar", "b.tar"]  # 실패 때 임시 파일을 남기지 않는다
 
+
+
+def test_tools_root_trees_versions_and_archive(tmp_path: Path, catalog_repo: CatalogRepo) -> None:
+    """toolbox: list_trees·resolve_version·archive_tree가 tools/ 뿌리에서도 같은 규칙으로 돈다; 은퇴 이름은 뿌리별 표지 파일 삭제로 본다."""
+    import hashlib
+
+    from harness_catalog_core.model import ContentError
+
+    store = GitStore(tmp_path / "work" / "clone", str(catalog_repo.path))
+    head = store.fetch()
+    tools = store.list_trees(head, "tools")
+    assert [t.name for t in tools] == ["graft-ask", "subs-fetch"] and all(t.commit_sha == head for t in tools)
+    assert [t.name for t in store.list_trees(head, "mcp-servers")] == ["graft"]
+    sub = next(t for t in tools if t.name == "subs-fetch")
+    assert store.resolve_version("subs-fetch", sub.tree_sha, head, "tools") == head
+    assert store.resolve_version("subs-fetch", sub.tree_sha, head) is None  # skills/ 뿌리에는 그런 판이 없다
+    assert store.deleted_names(head, "tools") == frozenset() and store.deleted_names(head, "skills") == frozenset()
+    a, b = tmp_path / "a.tar", tmp_path / "b.tar"
+    store.archive_tree(head, "tools", "subs-fetch", a, max_bytes=10_000_000)
+    store.archive_tree(head, "tools", "subs-fetch", b, max_bytes=10_000_000)
+    assert hashlib.sha256(a.read_bytes()).hexdigest() == hashlib.sha256(b.read_bytes()).hexdigest()
+    with pytest.raises(ContentError):
+        store.archive_tree(head, "skills", "subs-fetch", tmp_path / "c.tar", max_bytes=10_000_000)  # 다른 뿌리에는 없다

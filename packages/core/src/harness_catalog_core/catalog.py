@@ -1,20 +1,21 @@
-"""카탈로그: main을 검사해 인덱스를 짓고, 목록·검색·본문·파일을 돌려준다. git도 DB도 모른다(포트만)."""
+"""카탈로그: main을 검사해 인덱스를 짓고, 목록·검색·본문·파일·도구를 돌려준다. git도 DB도 모른다(포트만)."""
 
 from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import os
 import tempfile
-import time
 import threading
+import time
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from types import MappingProxyType
-from typing import NamedTuple
+from typing import NamedTuple, cast
 
-from .archive_token import DEFAULT_TTL_SECONDS, LEEWAY_SECONDS
+from .archive_token import DEFAULT_TTL_SECONDS, KINDS, LEEWAY_SECONDS, ArchiveKind
 from .catalog_file import MARKER_PATH, MarkerError, parse_marker
 from .check import check_commit, structure_findings
 from .model import (
@@ -35,18 +36,23 @@ from .model import (
     SkillListing,
     SkillReport,
     Status,
+    ToolBody,
+    ToolEntry,
+    ToolListing,
+    ToolListResult,
 )
 from .ports import ContentStore, FactStore, SkillValidator
+from .toolbox import SERVER_FILE, TOOL_FILE, parse_tool
 
 MAX_QUERY_CHARS = 2000
 MAX_NAME_CHARS = 64
 MAX_PATH_CHARS = 1024
 MAX_FILE_BYTES = 1_000_000
-MAX_ARCHIVE_BYTES = 20_000_000  # 스킬 한 판의 tar 상한(실제 바이트). 넘으면 input_limit
+MAX_ARCHIVE_BYTES = 20_000_000  # 한 판의 tar 상한(실제 바이트). 넘으면 input_limit
 # 캐시 tar 보존: 토큰 수명 + 검증 여유 + 60초. 그 뒤로는 어떤 토큰도 유효하지 않으므로 지워도 안전하다(필요하면 같은 바이트로 다시 만든다)
 ARCHIVE_RETENTION_SECONDS = DEFAULT_TTL_SECONDS + LEEWAY_SECONDS + 60
-# 캐시 사이드카의 형식 판. 생성 규칙(mtime·umask·속성 고정)이 바뀌면 올린다 — 옛 규칙으로 만든 캐시는 적중하지 않는다
-ARCHIVE_FORMAT_VERSION = "v2"
+# 캐시 사이드카의 형식 판. 생성 규칙(mtime·umask·속성 고정)이나 캐시 경로 규칙이 바뀌면 올린다 — 옛 규칙으로 만든 캐시는 적중하지 않는다
+ARCHIVE_FORMAT_VERSION = "v3"
 DEFAULT_LIMIT = 10
 MAX_LIMIT = 20
 
@@ -90,7 +96,7 @@ class Catalog:
         self._limits = limits
         self._snapshot: IndexSnapshot | None = None
         self._status = Status(ready=False)
-        self._db_synced = False  # 마지막 스냅샷이 사실 저장소에도 반영됐는가
+        self._db_synced = False  # 마지막 스냅샷이 사실 저장소에도 반영됐는가 — 검색 순위를 DB에 맡기는 조건
         self._lock = threading.Lock()
         self._archive_lock = threading.Lock()  # 캐시 tar의 확인·생성·해시를 직렬화한다(동시 발급이 서로의 기술자를 깨지 않게)
 
@@ -172,16 +178,27 @@ class Catalog:
             return self._status
         rejected_names = report.rejected_skills()
         entries: list[SkillEntry] = []
-        for tree in self._store.list_skill_trees(commit):
+        for tree in self._store.list_trees(commit, "skills"):
             if tree.name in rejected_names:
                 continue
             props = self._inspect_tree(tree.tree_sha, tree.name).properties
             if props is None:
                 continue
             entries.append(SkillEntry(tree.name, props.description, props.compatibility, props.metadata, tree.tree_sha, tree.commit_sha))
+        rejected_tools = report.rejected_tools()
+        tools: list[ToolEntry] = []
+        for tree in self._store.list_trees(commit, "tools"):
+            if tree.name in rejected_tools:
+                continue
+            raw = self._store.read_blob(tree.tree_sha, TOOL_FILE)
+            spec, _ = parse_tool(raw) if raw is not None else (None, [])
+            if spec is None:
+                continue  # 검사 11이 거부했어야 하는 것 — 방어
+            server = spec.runtime.server if spec.runtime.kind == "mcp" else None
+            tools.append(ToolEntry(tree.name, spec.description, spec.runtime.kind, server, spec.metadata, tree.tree_sha, tree.commit_sha))
         rejected = tuple(sorted({(f.skill, f"{f.item}: {f.reason}") for f in report.errors if f.skill}))
         repo_findings: tuple[str, ...] = ()  # 저장소 수준 위반은 _structure_reasons가 먼저 잡아 빌드를 막는다
-        snapshot = IndexSnapshot(tuple(sorted(entries, key=lambda e: e.name)), commit, _now(), fetched_at, rejected)
+        snapshot = IndexSnapshot(tuple(sorted(entries, key=lambda e: e.name)), commit, _now(), fetched_at, rejected, tuple(sorted(tools, key=lambda t: t.name)))
         def is_descendant(stored: str) -> bool:
             return accept_rewind or self._store.is_ancestor(stored, commit)
 
@@ -198,7 +215,7 @@ class Catalog:
         return self._status
 
     def _structure_reasons(self, commit: str) -> tuple[tuple[ReadyReason, ...], tuple[str, ...]]:
-        """표지 → 배치. 표지가 없거나 깨졌으면 not_a_catalog, layout 값이 다르면 unsupported_layout, 항목 1·2 위반은 layout_mismatch."""
+        """표지 → 배치. 표지가 없거나 깨졌으면 not_a_catalog, layout 값이 다르면 unsupported_layout, 구조 항목(1·2·11·12) 위반은 layout_mismatch."""
         marker = self._store.read_blob(commit, MARKER_PATH)
         if marker is None:
             return (ReadyReason.NOT_A_CATALOG,), ()
@@ -227,18 +244,26 @@ class Catalog:
             raise CatalogError(ErrorCode.NOT_FOUND, "index not built yet")
         return snap
 
+    def _limit(self, query: str, limit: int | None) -> int:
+        if len(query) > self._limits.query_chars:
+            raise CatalogError(ErrorCode.INPUT_LIMIT, f"query longer than {self._limits.query_chars} chars")
+        n = DEFAULT_LIMIT if limit is None else limit
+        if n < 1 or n > self._limits.max_limit:
+            raise CatalogError(ErrorCode.INPUT_LIMIT, f"limit must be 1..{self._limits.max_limit}")
+        return n
+
+    def _ranked(self, query: str, n: int, kind: str) -> tuple[str, ...] | None:
+        """DB 순위는 마지막 스냅샷이 DB에 반영됐을 때만 쓴다 — 아니면 복구된 DB의 구판 순위를 쓰게 된다(Codex 설계 리뷰 2026-10-11)."""
+        return self._facts.search(query, n, kind) if self._db_synced else None
+
     def list_skills(self) -> ListResult:
         snap = self._ready_snapshot()
         return ListResult(tuple(SkillListing.of(e) for e in snap.entries), snap.fetched_at)
 
     def search_skills(self, query: str, limit: int | None = None) -> ListResult:
         snap = self._ready_snapshot()
-        if len(query) > self._limits.query_chars:
-            raise CatalogError(ErrorCode.INPUT_LIMIT, f"query longer than {self._limits.query_chars} chars")
-        n = DEFAULT_LIMIT if limit is None else limit
-        if n < 1 or n > self._limits.max_limit:
-            raise CatalogError(ErrorCode.INPUT_LIMIT, f"limit must be 1..{self._limits.max_limit}")
-        ranked = self._facts.search(query, n)
+        n = self._limit(query, limit)
+        ranked = self._ranked(query, n, "skills")
         if ranked is not None:
             by_name = {e.name: e for e in snap.entries}
             hits = [by_name[name] for name in ranked if name in by_name]
@@ -247,20 +272,36 @@ class Catalog:
             hits = [e for e in snap.entries if all(t in e.search_text for t in tokens)] if tokens else []
         return ListResult(tuple(SkillListing.of(e) for e in hits[:n]), snap.fetched_at)
 
-    def _resolve(self, name: str, sha: str | None) -> tuple[SkillEntry, str, str]:
-        """(현재 항목, 읽을 tree, 그 판의 커밋)."""
-        if len(name) > MAX_NAME_CHARS or not name:
-            raise CatalogError(ErrorCode.INPUT_LIMIT, f"name must be 1..{MAX_NAME_CHARS} chars")
-        snap = self._ready_snapshot()
-        entry = snap.get(name)
-        if entry is None:
-            raise CatalogError(ErrorCode.NOT_FOUND, f"skill {name!r} not found")
-        if sha is None or sha == entry.tree_sha:
-            return entry, entry.tree_sha, entry.commit_sha
-        commit = self._store.resolve_version(name, sha, snap.commit_sha)
+    def _version(self, root: ArchiveKind, name: str, current_tree: str, current_commit: str, sha: str | None) -> tuple[str, str]:
+        """(읽을 tree, 그 판의 커밋). sha가 없거나 현재 판이면 현재, 아니면 이력에서 찾는다(D6)."""
+        if sha is None or sha == current_tree:
+            return current_tree, current_commit
+        commit = self._store.resolve_version(name, sha, self._ready_snapshot().commit_sha, root)
         if commit is None:
             raise CatalogError(ErrorCode.UNKNOWN_VERSION, f"{name!r} has no version {sha}")
-        return entry, sha, commit
+        return sha, commit
+
+    @staticmethod
+    def _check_name(name: str) -> None:
+        if len(name) > MAX_NAME_CHARS or not name:
+            raise CatalogError(ErrorCode.INPUT_LIMIT, f"name must be 1..{MAX_NAME_CHARS} chars")
+
+    def _resolve(self, name: str, sha: str | None) -> tuple[SkillEntry, str, str]:
+        """(현재 스킬 항목, 읽을 tree, 그 판의 커밋)."""
+        self._check_name(name)
+        entry = self._ready_snapshot().get(name)
+        if entry is None:
+            raise CatalogError(ErrorCode.NOT_FOUND, f"skill {name!r} not found")
+        tree, commit = self._version("skills", name, entry.tree_sha, entry.commit_sha, sha)
+        return entry, tree, commit
+
+    def _resolve_tool(self, name: str, sha: str | None) -> tuple[ToolEntry, str, str]:
+        self._check_name(name)
+        entry = self._ready_snapshot().get_tool(name)
+        if entry is None:
+            raise CatalogError(ErrorCode.NOT_FOUND, f"tool {name!r} not found")
+        tree, commit = self._version("tools", name, entry.tree_sha, entry.commit_sha, sha)
+        return entry, tree, commit
 
     def load_skill(self, name: str, sha: str | None = None) -> SkillBody:
         entry, tree, commit = self._resolve(name, sha)
@@ -274,32 +315,90 @@ class Catalog:
             metadata = props.metadata if props is not None else MappingProxyType({})
         return SkillBody(name, body.decode("utf-8", errors="replace"), tree, commit, metadata, files, self._ready_snapshot().fetched_at)
 
-    def get_skill_archive(self, name: str, sha: str | None = None) -> ArchiveInfo:
-        """스킬 한 판의 tar를 작업 디렉토리 캐시(`archives/<tree>.tar` + `.sha256` 사이드카)에 만들어(있고 온전하면 재사용) 경로·크기·sha256을 돌려준다.
+    # ---- For consuming tools (toolbox, DESIGN §11 2026-10-11) ----
+    def search_tools(self, query: str, limit: int | None = None) -> ToolListResult:
+        snap = self._ready_snapshot()
+        n = self._limit(query, limit)
+        ranked = self._ranked(query, n, "tools")
+        if ranked is not None:
+            by_name = {t.name: t for t in snap.tools}
+            hits = [by_name[name] for name in ranked if name in by_name]
+        else:
+            tokens = [t for t in query.lower().split() if t]
+            hits = [t for t in snap.tools if all(tok in t.search_text for tok in tokens)] if tokens else []
+        return ToolListResult(tuple(ToolListing.of(t) for t in hits[:n]), snap.fetched_at)
 
-        같은 판은 언제 만들어도 같은 바이트(어댑터가 mtime을 커밋 시각으로 고정)라 캐시가 없어지면 다시 만들어도 기술자의 sha256이 맞는다.
-        발급마다 파일 mtime을 갱신해 evict_archives가 "마지막 발급 뒤 보존 시간" 기준으로 지운다. 인증·서명·전송은 서버 어댑터의 몫(DESIGN §11 2026-10-11).
+    def get_tool(self, name: str, sha: str | None = None) -> ToolBody:
+        """tool.json 전체와 판·커밋·파일 목록. kind=mcp면 그 커밋의 server.json을 함께(레지스트리는 발견까지 — 서버를 부르지 않는다)."""
+        _, tree, commit = self._resolve_tool(name, sha)
+        raw = self._store.read_blob(tree, TOOL_FILE)
+        if raw is None:
+            raise CatalogError(ErrorCode.NOT_FOUND, f"{name!r}: {TOOL_FILE} missing in {tree}")
+        try:
+            loaded: object = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError) as e:
+            raise CatalogError(ErrorCode.NOT_FOUND, f"{name!r}: {TOOL_FILE} in {tree} is not valid JSON ({e})") from e
+        if not isinstance(loaded, dict):
+            raise CatalogError(ErrorCode.NOT_FOUND, f"{name!r}: {TOOL_FILE} in {tree} is not an object")
+        spec = cast("dict[str, object]", loaded)
+        files = tuple(SkillFile(e.path, e.size) for e in self._store.list_tree(tree) if e.kind != "tree")
+        server: Mapping[str, object] | None = None
+        runtime = spec.get("runtime")
+        if isinstance(runtime, dict):
+            rt = cast("Mapping[str, object]", runtime)
+            server_name = rt.get("server")
+            if rt.get("kind") == "mcp" and isinstance(server_name, str) and server_name:
+                raw_server = self._store.read_blob(commit, f"mcp-servers/{server_name}/{SERVER_FILE}")
+                if raw_server is not None:
+                    try:
+                        loaded_server: object = json.loads(raw_server.decode("utf-8"))
+                    except (UnicodeDecodeError, ValueError):
+                        loaded_server = None
+                    if isinstance(loaded_server, dict):
+                        server = MappingProxyType(cast("dict[str, object]", loaded_server))
+        return ToolBody(name, MappingProxyType(spec), tree, commit, files, server, self._ready_snapshot().fetched_at)
+
+    # ---- Archives (skills and script tools) ----
+    def get_skill_archive(self, name: str, sha: str | None = None) -> ArchiveInfo:
+        return self.get_archive("skills", name, sha)
+
+    def get_tool_archive(self, name: str, sha: str | None = None) -> ArchiveInfo:
+        return self.get_archive("tools", name, sha)
+
+    def get_archive(self, kind: ArchiveKind, name: str, sha: str | None = None) -> ArchiveInfo:
+        """한 판의 tar를 작업 디렉토리 캐시(`archives/<kind>/<tree>.<commit>.tar` + `.sha256` 사이드카)에 만들어(있고 온전하면 재사용) 경로·크기·sha256을 돌려준다.
+
+        같은 커밋·트리는 언제 만들어도 같은 바이트(어댑터가 mtime을 커밋 시각으로 고정)라 캐시가 없어지면 다시 만들어도 기술자의 sha256이 맞는다.
+        캐시 키에 종류와 커밋이 들어가 스킬·도구나 같은 트리의 다른 커밋이 충돌하지 않는다(Codex 설계 리뷰 2026-10-11).
+        발급마다 파일 mtime을 갱신해 evict_archives가 "마지막 발급 뒤 보존 시간" 기준으로 지운다. 인증·서명·전송은 서버 어댑터의 몫.
         """
-        entry, tree, commit = self._resolve(name, sha)
-        archives = self._workdir / "archives"
-        dest = archives / f"{tree}.tar"
-        side = archives / f"{tree}.tar.sha256"
+        if kind not in KINDS:
+            raise CatalogError(ErrorCode.NOT_FOUND, f"unknown archive kind {kind!r}")
+        if kind == "skills":
+            skill, tree, commit = self._resolve(name, sha)
+            entry_name = skill.name
+        else:
+            tool, tree, commit = self._resolve_tool(name, sha)
+            entry_name = tool.name
+        archives = self._workdir / "archives" / kind
+        dest = archives / f"{tree}.{commit}.tar"
+        side = archives / f"{tree}.{commit}.tar.sha256"
         with self._archive_lock:
-            info = self._cached_archive(entry.name, tree, commit, dest, side)
+            info = self._cached_archive(kind, entry_name, tree, commit, dest, side)
             if info is None:
                 try:
-                    self._store.archive_skill(commit, entry.name, dest, max_bytes=self._limits.archive_bytes)
+                    self._store.archive_tree(commit, kind, entry_name, dest, max_bytes=self._limits.archive_bytes)
                 except ArchiveTooLarge as e:
                     raise CatalogError(ErrorCode.INPUT_LIMIT, f"{name!r} version {tree} is larger than {e.max_bytes} bytes as a tar") from e
                 except ContentError as e:
                     raise CatalogError(ErrorCode.NOT_FOUND, f"{name!r}: cannot archive {tree}: {e.detail}") from e
                 size, digest = _size_and_sha256(dest)
                 side.write_text(f"{ARCHIVE_FORMAT_VERSION} {digest}\n")
-                info = ArchiveInfo(entry.name, tree, commit, dest, size, digest)
+                info = ArchiveInfo(entry_name, tree, commit, dest, size, digest, kind)
             os.utime(dest, None)
             return info
 
-    def _cached_archive(self, name: str, tree: str, commit: str, dest: Path, side: Path) -> ArchiveInfo | None:
+    def _cached_archive(self, kind: str, name: str, tree: str, commit: str, dest: Path, side: Path) -> ArchiveInfo | None:
         """캐시 적중 조건: 파일과 사이드카가 있고, 크기가 상한 안이고, sha256이 사이드카와 같다. 아니면 None(다시 만든다)."""
         if not (dest.is_file() and side.is_file()):
             return None
@@ -314,16 +413,16 @@ class Catalog:
         size, digest = _size_and_sha256(dest)
         if digest != recorded:
             return None
-        return ArchiveInfo(name, tree, commit, dest, size, digest)
+        return ArchiveInfo(name, tree, commit, dest, size, digest, kind)
 
     def evict_archives(self, *, now: float | None = None, retention_seconds: int = ARCHIVE_RETENTION_SECONDS) -> int:
-        """마지막 발급(mtime) 뒤 retention_seconds를 넘은 캐시 tar와 사이드카를 지운다. 스케줄러가 주기마다 부르고, 기동 때는 retention 0으로 전부 지운다. 지운 파일 수를 돌려준다."""
+        """마지막 발급(mtime) 뒤 retention_seconds를 넘은 캐시 tar와 사이드카를 지운다(종류별 하위 디렉토리 전부). 스케줄러가 주기마다 부르고, 기동 때는 retention 0으로 전부 지운다. 지운 파일 수를 돌려준다."""
         archives = self._workdir / "archives"
         if not archives.is_dir():
             return 0
         cutoff = (time.time() if now is None else now) - retention_seconds
         removed = 0
-        candidates = [tar for tar in archives.glob("*.tar") if _mtime(tar) <= cutoff]  # 훑기는 lock 밖에서
+        candidates = [tar for tar in archives.rglob("*.tar") if _mtime(tar) <= cutoff]  # 훑기는 lock 밖에서
         for tar in candidates:
             with self._archive_lock:  # 발급이 방금 mtime을 갱신했을 수 있으니 lock 안에서 다시 보고 지운다
                 try:

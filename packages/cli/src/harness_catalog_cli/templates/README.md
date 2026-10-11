@@ -1,6 +1,6 @@
 # 스킬 카탈로그
 
-이 저장소는 팀의 스킬 카탈로그입니다. `skills/<name>/`마다 agentskills.io 형식의 스킬 하나가 있고, `main`에 병합된 것이 곧 게시·인증된 판입니다.
+이 저장소는 팀의 스킬 카탈로그입니다. `skills/<name>/`마다 agentskills.io 형식의 스킬 하나가 있고, `main`에 병합된 것이 곧 게시·인증된 판입니다. 도구(toolbox)는 `tools/<name>/tool.json`에, 그것이 참조하는 MCP 서버 배선은 `mcp-servers/<name>/server.json`에 둡니다(선택).
 
 ## 사용자 안내
 

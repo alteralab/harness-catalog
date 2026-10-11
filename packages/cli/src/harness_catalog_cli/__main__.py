@@ -59,7 +59,7 @@ def _run_check(repo_root: Path, base: str | None, rev: str) -> int:
         return 2
     for f in report.findings:
         kind = "warning" if f.warning else "error"
-        where = f.skill or "(repository)"
+        where = (f.skill if f.kind == "skill" else f"{f.kind} {f.skill}") if f.skill else "(repository)"
         print(f"{kind}: item {f.item}: {where}: {f.reason}")
     return 1 if report.errors else 0
 

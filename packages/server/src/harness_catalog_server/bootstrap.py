@@ -22,7 +22,7 @@ from harness_catalog_core.settings import Settings
 from .adapters.oidc import JwtTokenVerifier, discover_jwks_uri
 from .adapters.pg import PgFactStore
 from .driving.mcp_tools import build_server
-from .driving.archive_route import ARCHIVE_PATH, make_archive_route
+from .driving.archive_route import ARCHIVE_PATH, TOOL_ARCHIVE_PATH, make_archive_route
 from .driving.ops import healthz, make_readyz
 from .driving.scheduler import run_migrations, run_scheduler
 
@@ -32,7 +32,7 @@ class NoFactStore:
     def replace_index(self, _snapshot: IndexSnapshot, _is_descendant: Callable[[str], bool], /) -> IndexOutcome:
         return IndexOutcome.REPLACED
 
-    def search(self, _query: str, _limit: int, /) -> tuple[str, ...] | None:
+    def search(self, _query: str, _limit: int, /, kind: str = "skills") -> tuple[str, ...] | None:  # noqa: ARG002 — 포트 시그니처
         return None
 
     def current_commit(self) -> str | None:
@@ -101,7 +101,7 @@ def bootstrap(settings: Settings, workdir: Path, *, jwks_uri: str | None = None,
 
     asgi = Starlette(
         # 아카이브 라우트는 MCP Mount("/") 앞에 있어야 한다 — 뒤에 두면 /mcp/... 전부를 MCP 앱이 먼저 받아 401을 낸다
-        routes=[Route("/healthz", healthz), Route("/readyz", make_readyz(catalog)), Route(ARCHIVE_PATH, make_archive_route(catalog, signer)), Mount("/", app=mcp_app)],
+        routes=[Route("/healthz", healthz), Route("/readyz", make_readyz(catalog)), Route(TOOL_ARCHIVE_PATH, make_archive_route(catalog, signer, "tools")), Route(ARCHIVE_PATH, make_archive_route(catalog, signer, "skills")), Mount("/", app=mcp_app)],
         lifespan=lifespan,
     )
     return App(asgi, catalog, facts)

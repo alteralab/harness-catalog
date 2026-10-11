@@ -14,7 +14,7 @@ def test_mint_then_verify_within_ttl() -> None:
     t = [1_000_000]
     s = ArchiveSigner(KEY, ttl_seconds=300, clock=lambda: t[0])
     token, exp = s.mint(NAME, TREE)
-    assert exp == 1_000_300 and token.startswith("v1.1000300.") and "?" not in token
+    assert exp == 1_000_300 and token.startswith("v2.1000300.") and "?" not in token
     assert s.verify(NAME, TREE, token)
     t[0] = 1_000_299
     assert s.verify(NAME, TREE, token)  # TTL 안 재생은 허용(멱등 읽기)
@@ -29,11 +29,12 @@ def test_rejects_tamper_other_target_far_future_and_malformed() -> None:
     assert not s.verify("other", TREE, token) and not s.verify(NAME, "b" * 40, token)
     head, _, sig = token.rpartition(".")
     assert not s.verify(NAME, TREE, head + "." + ("A" if sig[0] != "A" else "B") + sig[1:])  # 서명 변조
-    assert not s.verify(NAME, TREE, f"v1.{1_000_900}.{sig}")  # 만료 연장 시도(서명 범위에 exp)
+    assert not s.verify(NAME, TREE, f"v2.{1_000_900}.{sig}")  # 만료 연장 시도(서명 범위에 exp)
+    assert not s.verify(NAME, TREE, token, kind="tools")  # 종류도 서명 범위 — 스킬 토큰으로 도구를 받을 수 없다
     far = ArchiveSigner(KEY, ttl_seconds=300, clock=lambda: 1_000_000)
     forged, _ = ArchiveSigner(KEY, ttl_seconds=99_999, clock=lambda: 1_000_000).mint(NAME, TREE)
     assert not far.verify(NAME, TREE, forged)  # 같은 키라도 창(ttl+leeway)을 넘는 exp는 거부
-    for bad in (None, "", "v2." + token[3:], token + "=", token.replace(".", ",", 1), "v1.abc." + sig, "v1.1000300." + sig[:-1]):
+    for bad in (None, "", "v1." + token[3:], token + "=", token.replace(".", ",", 1), "v2.abc." + sig, "v2.1000300." + sig[:-1]):
         assert not s.verify(NAME, TREE, bad)
     assert not s.verify("Bad_Name", TREE, token) and not s.verify(NAME, "zz", token)
 

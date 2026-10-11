@@ -27,12 +27,12 @@ def make(tmp_path: Path, **kw: object) -> Catalog:
 def test_archive_is_cached_and_described(tmp_path: Path) -> None:
     cat = make(tmp_path)
     info = cat.get_skill_archive("alpha")
-    assert info.name == "alpha" and info.path == tmp_path / "archives" / f"{info.sha}.tar"
+    assert info.name == "alpha" and info.kind == "skills" and info.path == tmp_path / "archives" / "skills" / f"{info.sha}.{info.commit}.tar"
     data = info.path.read_bytes()
     assert info.size == len(data) and info.sha256 == hashlib.sha256(data).hexdigest()
     with tarfile.open(fileobj=io.BytesIO(data)) as tar:
         assert sorted(m.name for m in tar.getmembers() if m.isfile()) == sorted(SKILL)
-    assert (tmp_path / "archives" / f"{info.sha}.tar.sha256").read_text().strip() == f"v2 {info.sha256}"
+    assert Path(str(info.path) + ".sha256").read_text().strip() == f"v3 {info.sha256}"
     before = info.path.stat().st_mtime_ns
     again = cat.get_skill_archive("alpha", info.sha)
     assert again == info and info.path.stat().st_mtime_ns >= before  # 같은 판은 캐시 재사용, 발급마다 mtime 갱신
@@ -59,12 +59,12 @@ def test_corrupt_or_oversized_cache_is_rebuilt(tmp_path: Path) -> None:
     info.path.write_bytes(b"corrupt")  # 사이드카와 어긋남 → 다시 만든다
     assert cat.get_skill_archive("alpha") == info
     info.path.write_bytes(b"x" * (info.size + 1))
-    (tmp_path / "archives" / f"{info.sha}.tar.sha256").write_text("v2 " + hashlib.sha256(b"x" * (info.size + 1)).hexdigest())
+    Path(str(info.path) + ".sha256").write_text("v3 " + hashlib.sha256(b"x" * (info.size + 1)).hexdigest())
     small = Catalog(FakeStore({"alpha": SKILL}), FakeValidator(), MemoryFacts(), workdir=tmp_path, limits=Limits(archive_bytes=info.size))  # type: ignore[arg-type]
     assert small.rebuild().ready
     assert small.get_skill_archive("alpha") == info  # 상한을 넘는 캐시는 믿지 않고 다시 만든다
-    (tmp_path / "archives" / f"{info.sha}.tar.sha256").write_text("v1 " + info.sha256)  # 옛 생성 규칙의 캐시 → 자기 일관적이어도 다시 만든다
-    assert cat.get_skill_archive("alpha") == info and (tmp_path / "archives" / f"{info.sha}.tar.sha256").read_text().startswith("v2 ")
+    Path(str(info.path) + ".sha256").write_text("v2 " + info.sha256)  # 옛 생성 규칙의 캐시 → 자기 일관적이어도 다시 만든다
+    assert cat.get_skill_archive("alpha") == info and Path(str(info.path) + ".sha256").read_text().startswith("v3 ")
 
 
 def test_concurrent_mints_agree_with_served_bytes(tmp_path: Path) -> None:
@@ -106,7 +106,14 @@ def test_evict_archives_by_last_issue_time(tmp_path: Path) -> None:
     now = time.time()
     assert cat.evict_archives(now=now) == 0  # 방금 발급 → 보존
     os.utime(info.path, (now - 1000, now - 1000))
-    assert cat.evict_archives(now=now) == 1 and not info.path.exists() and not (tmp_path / "archives" / f"{info.sha}.tar.sha256").exists()
+    assert cat.evict_archives(now=now) == 1 and not info.path.exists() and not Path(str(info.path) + ".sha256").exists()
+    stale_tool = tmp_path / "archives" / "tools" / ("e" * 40 + "." + "f" * 40 + ".tar")  # 다른 종류의 하위 디렉토리도 훑는다
+    stale_tool.parent.mkdir(parents=True, exist_ok=True)
+    stale_tool.write_bytes(b"old")
+    Path(str(stale_tool) + ".sha256").write_text("v3 x")
+    import os as _os
+    _os.utime(stale_tool, (now - 10_000, now - 10_000))
+    assert cat.evict_archives(now=now) == 1 and not stale_tool.exists() and not Path(str(stale_tool) + ".sha256").exists()
     again = cat.get_skill_archive("alpha")
     assert again.sha256 == info.sha256  # 지워져도 같은 바이트로 다시 만든다
     assert cat.evict_archives(retention_seconds=0) == 1  # 기동 때 전부

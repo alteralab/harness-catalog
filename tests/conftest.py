@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 from typing import NamedTuple
@@ -68,5 +69,31 @@ def catalog_repo(tmp_path: Path) -> CatalogRepo:
     (repo / "README.md").write_text("# catalog\n")
     write_skill(repo, "yt-subs", "Extract YouTube subtitles. Use for 유튜브 자막.", metadata={"requires-tools": "yt-dlp uv"}, files={"scripts/fetch.py": b"print('hi')\n", "references/notes.md": b"# notes\n"})
     write_skill(repo, "pin-skill", "Download a skill next to the harness (pin).")
-    head = commit_all(repo, "two skills")
+    write_tool(repo, "subs-fetch", {"kind": "script", "path": "scripts/fetch.py", "command": ["uv", "run", "--script", "scripts/fetch.py"]},
+               description="Fetch subtitles as text (toolbox script). 자막 텍스트.", files={"scripts/fetch.py": b"print('subs')\n"}, metadata={"requires-tools": "uv"})
+    write_tool(repo, "graft-ask", {"kind": "mcp", "server": "graft", "tool": "graft_find_code"}, description="Ask the code graph (toolbox mcp).")
+    write_server(repo, "graft", "0.21.1")
+    head = commit_all(repo, "two skills, two tools, one server")
     return CatalogRepo(repo, head)
+
+
+def write_tool(repo: Path, name: str, runtime: dict[str, object], *, description: str, files: dict[str, bytes] | None = None, metadata: dict[str, str] | None = None) -> None:
+    """tools/<name>/tool.json(+파일). toolbox(DESIGN §11 2026-10-11)."""
+    d = repo / "tools" / name
+    d.mkdir(parents=True, exist_ok=True)
+    spec: dict[str, object] = {"name": name, "description": description, "inputSchema": {"type": "object", "properties": {"q": {"type": "string"}}, "required": ["q"]}, "runtime": runtime}
+    if metadata:
+        spec["metadata"] = metadata
+    (d / "tool.json").write_text(json.dumps(spec, indent=2) + "\n")
+    for rel, data in (files or {}).items():
+        (d / rel).parent.mkdir(parents=True, exist_ok=True)
+        (d / rel).write_bytes(data)
+
+
+def write_server(repo: Path, name: str, version: str) -> None:
+    """mcp-servers/<name>/server.json — MCP Registry 형식의 부분집합."""
+    d = repo / "mcp-servers" / name
+    d.mkdir(parents=True, exist_ok=True)
+    spec = {"name": f"lab.altera/{name}", "version": version, "description": f"{name} MCP server",
+            "packages": [{"registryType": "npm", "identifier": f"@nanonets/{name}", "version": version, "transport": {"type": "stdio"}}]}
+    (d / "server.json").write_text(json.dumps(spec, indent=2) + "\n")

@@ -13,7 +13,7 @@ import threading
 from collections.abc import Mapping
 from pathlib import Path
 
-from ..model import ArchiveTooLarge, ContentError, ReadyReason, SkillTree, TreeEntry
+from ..model import ROOT_MARKERS, ArchiveTooLarge, ContentError, ReadyReason, Root, SkillTree, TreeEntry
 
 MAIN_REF = "refs/remotes/origin/main"
 
@@ -142,9 +142,10 @@ class GitStore:
             entries.append(TreeEntry(path, k, sha, int(size) if size != "-" else 0))
         return tuple(entries)
 
-    def list_skill_trees(self, commit: str) -> tuple[SkillTree, ...]:
+    def list_trees(self, commit: str, root: Root) -> tuple[SkillTree, ...]:
+        """`<root>/` 바로 아래 디렉토리마다 판(tree)과 그 판을 넣은 커밋. root는 닫힌 Literal이라 pathspec은 외부 입력이 아니다."""
         try:
-            out = self._text("ls-tree", "-z", f"{commit}:skills")
+            out = self._text("ls-tree", "-z", f"{commit}:{root}")
         except GitError:
             return ()
         trees: list[SkillTree] = []
@@ -156,25 +157,32 @@ class GitStore:
             if kind != "tree":
                 continue
             try:
-                last = self._text("log", "-1", "--format=%H", commit, "--", f"skills/{name}").strip()
+                last = self._text("log", "-1", "--format=%H", commit, "--", f"{root}/{name}").strip()
             except GitError:
                 last = ""  # 트리 객체(스테이징)는 이력이 없다
             trees.append(SkillTree(name, sha, last or commit))
         return tuple(trees)
 
-    def deleted_skill_names(self, commit: str) -> frozenset[str]:
-        """전체 이력이 필요하다: 얕은 클론이거나 log가 실패하면 빈 집합이 아니라 ContentError(fail-closed)."""
+    def list_skill_trees(self, commit: str) -> tuple[SkillTree, ...]:
+        return self.list_trees(commit, "skills")
+
+    def deleted_names(self, commit: str, root: Root) -> frozenset[str]:
+        """전체 이력이 필요하다: 얕은 클론이거나 log가 실패하면 빈 집합이 아니라 ContentError(fail-closed). 표지 파일(SKILL.md·tool.json·server.json)의 삭제가 은퇴다."""
         if self._text("rev-parse", "--is-shallow-repository").strip() == "true":
             raise ContentError(ReadyReason.REPO_UNREACHABLE, "shallow clone: full history required for retired-name check")
-        out = self._text("log", "--diff-filter=D", "--name-only", "--format=", "--end-of-options", commit, "--", "skills/*/SKILL.md")
-        names = {line.split("/")[1] for line in out.splitlines() if line.startswith("skills/") and line.count("/") >= 2}
+        out = self._text("log", "--diff-filter=D", "--name-only", "--format=", "--end-of-options", commit, "--", f"{root}/*/{ROOT_MARKERS[root]}")
+        prefix = f"{root}/"
+        names = {line.split("/")[1] for line in out.splitlines() if line.startswith(prefix) and line.count("/") >= 2}
         return frozenset(names)
 
-    def resolve_version(self, name: str, tree_sha: str, head: str) -> str | None:
-        commits = self._text("log", "--format=%H", head, "--", f"skills/{name}").split()
+    def deleted_skill_names(self, commit: str) -> frozenset[str]:
+        return self.deleted_names(commit, "skills")
+
+    def resolve_version(self, name: str, tree_sha: str, head: str, root: Root = "skills") -> str | None:
+        commits = self._text("log", "--format=%H", head, "--", f"{root}/{name}").split()
         for c in commits:
             try:
-                sha = self._text("rev-parse", f"{c}:skills/{name}").strip()
+                sha = self._text("rev-parse", f"{c}:{root}/{name}").strip()
             except GitError:
                 continue
             if sha == tree_sha:
@@ -191,7 +199,10 @@ class GitStore:
         raise ContentError(ReadyReason.REPO_UNREACHABLE, f"merge-base failed: {proc.stderr.decode(errors='replace').strip()}")
 
     def archive_skill(self, commit: str, name: str, dest: Path, *, max_bytes: int) -> int:
-        """`git archive --format=tar --mtime=@<commit time> <commit>:skills/<name>`을 파일로 스트리밍한다(git ≥ 2.42).
+        return self.archive_tree(commit, "skills", name, dest, max_bytes=max_bytes)
+
+    def archive_tree(self, commit: str, root: Root, name: str, dest: Path, *, max_bytes: int) -> int:
+        """`git archive --format=tar --mtime=@<commit time> <commit>:<root>/<name>`을 파일로 스트리밍한다(git ≥ 2.42).
 
         상한을 넘으면 프로세스를 죽이고 임시 파일을 지운다. stderr는 파일로 받아 파이프 교착이 없고, 어떤 경로로 나가도 자식을 회수한다(Codex 리뷰 2026-10-11).
         """
@@ -209,7 +220,7 @@ class GitStore:
                     # 바이트가 환경에 매이지 않게: tar.umask·속성 파일(export-ignore 등)·전역/시스템 설정을 고정한다
                     proc = subprocess.Popen(
                         ["git", "-C", str(self._dir), "-c", "tar.umask=0022", "-c", "core.attributesfile=/dev/null",
-                         "archive", "--format=tar", f"--mtime=@{when}", "--end-of-options", f"{commit}:skills/{name}"],
+                         "archive", "--format=tar", f"--mtime=@{when}", "--end-of-options", f"{commit}:{root}/{name}"],
                         stdout=subprocess.PIPE, stderr=err, env=self._env(),  # _env()의 GIT_CONFIG_GLOBAL(safe.directory)은 그대로 — 바이트에 걸리는 설정은 -c로 고정했다
                     )
                     assert proc.stdout is not None
@@ -218,7 +229,7 @@ class GitStore:
                         while chunk := proc.stdout.read(65536):
                             total += len(chunk)
                             if total > max_bytes:
-                                raise ArchiveTooLarge(f"{commit}:skills/{name}", max_bytes)
+                                raise ArchiveTooLarge(f"{commit}:{root}/{name}", max_bytes)
                             out.write(chunk)
                         streamed = True
                     finally:
@@ -228,7 +239,7 @@ class GitStore:
                         rc = proc.wait(timeout=60 if not streamed else 600)
                     if rc != 0 and streamed:
                         err.seek(0)
-                        raise GitError(["archive", f"{commit}:skills/{name}"], err.read().decode(errors="replace"))
+                        raise GitError(["archive", f"{commit}:{root}/{name}"], err.read().decode(errors="replace"))
                 os.replace(tmp, dest)
                 return total
             except BaseException:

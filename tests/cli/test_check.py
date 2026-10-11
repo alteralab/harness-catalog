@@ -46,3 +46,20 @@ def test_version_flag() -> None:
     from importlib.metadata import version
 
     assert r.exit_code == 0 and r.output.strip() == version("harness-catalog-cli")  # 판은 pyproject가 정본이다(lockstep)
+
+
+def test_check_reports_tool_and_server_findings(catalog_repo: CatalogRepo) -> None:
+    """검사 11·12: 깨진 tool.json·server.json은 'item N: tool|server <name>:'으로 출력되고 종료 코드 1."""
+    import json
+
+    repo = catalog_repo.path
+    (repo / "tools" / "bad-tool").mkdir()
+    (repo / "tools" / "bad-tool" / "tool.json").write_text(json.dumps({"name": "bad-tool", "description": "x", "inputSchema": {"type": "object"}, "runtime": {"kind": "mcp", "server": "nowhere", "tool": "t"}}))
+    (repo / "mcp-servers" / "bad-server").mkdir()
+    (repo / "mcp-servers" / "bad-server" / "server.json").write_text(json.dumps({"name": "other", "version": "1"}))
+    git(repo, "add", "-A")
+    r = runner.invoke(app, ["check", str(repo)])
+    assert r.exit_code == 1, r.output
+    assert "error: item 11: tool bad-tool: runtime.server 'nowhere' not found" in r.output
+    assert "error: item 12: server bad-server:" in r.output and "must be 'bad-server'" in r.output
+    assert "yt-subs" not in r.output and "subs-fetch" not in r.output  # 멀쩡한 레코드는 조용하다

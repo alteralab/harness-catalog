@@ -82,6 +82,20 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 
 내려받은 사본은 그 시점의 판이고 저절로 바뀌지 않습니다. "새 판 있어?"라고 하면 에이전트가 두 범위의 `PINNED`를 읽어 `list_skills`의 `sha`와 견줍니다. "갱신해줘"라고 하면 같은 절차로 다시 받되, 기존 사본은 새 사본이 제자리에 들어갈 때까지 남겨 둡니다. 목록에서 사라진 이름은 은퇴한 스킬입니다.
 
+## 5.5 도구 찾기(toolbox)
+
+카탈로그는 스킬 말고 **도구**도 싣습니다(DESIGN §11 2026-10-11). 도구는 스키마가 있는 호출 가능한 것이고, 구현은 둘 중 하나입니다.
+
+- `script` — 카탈로그 안의 스크립트. `get_tool`이 돌려주는 `archive` 기술자로 파일을 받아(pin과 같은 방식) `runtime.command`를 **셸 없이 argv로** 실행합니다. 입력은 `inputSchema`에 맞는 JSON 객체 하나를 stdin으로, 결과는 stdout, 종료 코드 0이 성공입니다. cwd는 받은 디렉토리입니다.
+- `mcp` — 팀 MCP 서버의 도구 하나. `get_tool`이 `server`에 그 서버의 `server.json`(MCP Registry 형식)을 함께 싣습니다. 하네스 설정(`.mcp.json`·`mcpServers`)에 그 서버를 붙이는 것은 사용자의 일이고, 레지스트리는 도구를 부르지 않습니다.
+
+```
+search_tools(query, limit=10)  → name·description·sha·kind·server·replaced_by·requires_tools
+get_tool(id, sha?)             → tool.json 전체 + sha·commit·files + server(kind=mcp) 또는 archive(kind=script)
+```
+
+어느 턴에 어느 도구를 문맥에 넣을지는 하네스가 정합니다(Claude Code의 지연 적재·ToolSearch). 레지스트리는 "무엇이 있는가"까지입니다.
+
 ## 6. 사람 없이 쓰기
 
 CI나 자동화 루프에는 LDAP 기계 계정을 씁니다. 운영자가 계정(우리 팀은 `svc-harness`)을 `harness-readers`에 넣어 두면, 기밀 클라이언트 `ci-runner`의 비밀번호 그랜트로 토큰을 받습니다.

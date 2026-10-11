@@ -8,6 +8,11 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from types import MappingProxyType
+from typing import Literal, cast
+
+Root = Literal["skills", "tools", "mcp-servers"]
+ROOT_MARKERS: Mapping[Root, str] = MappingProxyType({"skills": "SKILL.md", "tools": "tool.json", "mcp-servers": "server.json"})
+NAME_ROOTS: tuple[Root, ...] = ("skills", "tools")  # 하나의 이름공간을 이루는 뿌리 둘(§3 식별자 — 스킬과 도구를 합쳐 전역 유일)
 
 
 class ErrorCode(StrEnum):
@@ -128,11 +133,40 @@ class TreeEntry:
 
 @dataclass(frozen=True)
 class SkillTree:
-    """main의 skills/<name>/ 디렉토리 하나: 판(tree)과 그 판을 넣은 커밋."""
+    """main의 <root>/<name>/ 디렉토리 하나: 판(tree)과 그 판을 넣은 커밋. 스킬·도구·MCP 서버 레코드가 같은 모양이다."""
 
     name: str
     tree_sha: str
     commit_sha: str
+
+
+@dataclass(frozen=True)
+class ToolEntry:
+    """tool_index 행 하나(§11 2026-10-11 toolbox). `kind`는 runtime.kind, `server`는 kind=mcp가 참조하는 mcp-servers/<name>."""
+
+    name: str
+    description: str
+    kind: str
+    server: str | None
+    metadata: Mapping[str, str]
+    tree_sha: str
+    commit_sha: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "metadata", _freeze(self.metadata))
+
+    @property
+    def replaced_by(self) -> str | None:
+        return self.metadata.get("replaced-by") or None
+
+    @property
+    def requires_tools(self) -> tuple[str, ...]:
+        return tuple(self.metadata.get("requires-tools", "").split())
+
+    @property
+    def search_text(self) -> str:
+        values = " ".join(v for _, v in sorted(self.metadata.items()))
+        return f"{self.name} {self.description} {values}".lower()
 
 
 @dataclass(frozen=True)
@@ -172,11 +206,18 @@ class IndexSnapshot:
     built_at: datetime
     fetched_at: datetime
     rejected: tuple[tuple[str, str], ...] = ()  # (name, reason)
+    tools: tuple[ToolEntry, ...] = ()  # toolbox(§11 2026-10-11). 스킬과 같은 커밋에서 파생한 한 스냅샷
 
     def get(self, name: str) -> SkillEntry | None:
         for e in self.entries:
             if e.name == name:
                 return e
+        return None
+
+    def get_tool(self, name: str) -> ToolEntry | None:
+        for t in self.tools:
+            if t.name == name:
+                return t
         return None
 
 
@@ -199,6 +240,29 @@ class SkillListing:
 @dataclass(frozen=True)
 class ListResult:
     skills: tuple[SkillListing, ...]
+    fetched_at: datetime
+
+
+@dataclass(frozen=True)
+class ToolListing:
+    """search_tools의 항목: 선택에 쓰이는 것만(식별자·설명·sha·kind·server·replaced_by·requires_tools)."""
+
+    name: str
+    description: str
+    sha: str
+    kind: str
+    server: str | None = None
+    replaced_by: str | None = None
+    requires_tools: tuple[str, ...] = ()
+
+    @classmethod
+    def of(cls, e: ToolEntry) -> ToolListing:
+        return cls(e.name, e.description, e.tree_sha, e.kind, e.server, e.replaced_by, e.requires_tools)
+
+
+@dataclass(frozen=True)
+class ToolListResult:
+    tools: tuple[ToolListing, ...]
     fetched_at: datetime
 
 
@@ -227,6 +291,26 @@ class SkillBody:
 
 
 @dataclass(frozen=True)
+class ToolBody:
+    """get_tool의 본문: tool.json 전체(spec)와 판·커밋·파일 목록, kind=mcp면 참조하는 server.json(server)."""
+
+    name: str
+    spec: Mapping[str, object]
+    sha: str
+    commit: str
+    files: tuple[SkillFile, ...]
+    server: Mapping[str, object] | None
+    fetched_at: datetime
+
+    @property
+    def kind(self) -> str:
+        runtime = self.spec.get("runtime")
+        if isinstance(runtime, Mapping):
+            return str(cast("Mapping[str, object]", runtime).get("kind", ""))
+        return ""
+
+
+@dataclass(frozen=True)
 class FileContent:
     path: str
     size: int
@@ -249,7 +333,7 @@ class Status:
 
 @dataclass(frozen=True)
 class ArchiveInfo:
-    """스킬 한 판의 tar(DESIGN §11 2026-10-11). path는 서버 작업 디렉토리 안의 캐시 파일; size·sha256은 그 파일의 실제 바이트."""
+    """스킬·도구 한 판의 tar(DESIGN §11 2026-10-11). path는 서버 작업 디렉토리 안의 캐시 파일; size·sha256은 그 파일의 실제 바이트."""
 
     name: str
     sha: str  # 판 = tree SHA
@@ -257,3 +341,4 @@ class ArchiveInfo:
     path: Path
     size: int
     sha256: str
+    kind: str = "skills"  # 아카이브 종류(서명 범위·캐시 경로): skills | tools

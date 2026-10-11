@@ -1,6 +1,6 @@
 [project]
 name = "harness-catalog-server"
-version = "0.2.0"
+version = "0.3.0"
 description = "harness-catalog registry process: MCP server + scheduler (container image entry point)"
 requires-python = ">=3.12"
 license = "Apache-2.0"

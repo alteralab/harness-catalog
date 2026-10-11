@@ -6,7 +6,7 @@ from pathlib import Path
 
 from harness_catalog_core.catalog import Catalog
 from harness_catalog_core.check import check_commit
-from harness_catalog_core.model import ReadyReason
+from harness_catalog_core.model import ReadyReason, Root
 
 from .fakes import FakeStore, FakeValidator, MemoryFacts
 
@@ -38,8 +38,11 @@ def test_item9_reads_frontmatter_not_body_text(tmp_path: Path) -> None:
     class Both(FakeStore):
         """기준 커밋이면 base_store, 아니면 now_store로 답한다."""
 
+        def list_trees(self, commit: str, root: Root):  # noqa: ANN202
+            return base_store.list_trees(commit, root) if commit == base_store.commit else now_store.list_trees(commit, root)
+
         def list_skill_trees(self, commit: str):  # noqa: ANN202
-            return base_store.list_skill_trees(commit) if commit == base_store.commit else now_store.list_skill_trees(commit)
+            return self.list_trees(commit, "skills")
 
         def export_tree(self, tree_sha: str, dest: Path) -> None:
             base_store.export_tree(tree_sha, dest)

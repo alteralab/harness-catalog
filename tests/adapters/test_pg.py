@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Iterator
 from datetime import UTC, datetime
+from pathlib import Path
 
 import psycopg
 import pytest
@@ -167,3 +168,102 @@ def test_disabled_until_migrated(database_url: str) -> None:
     facts.enable()
     assert facts.current_commit() is not None or facts.replace_index(snap("e" * 40, "x"), lambda _s: True) is IndexOutcome.REPLACED
     facts.close()
+
+
+def tool_snap(commit: str, *tools: tuple[str, str, str | None]) -> IndexSnapshot:
+    from harness_catalog_core.model import ToolEntry
+
+    entries = tuple(ToolEntry(n, f"{n} tool 자막" if n == "subs-fetch" else f"{n} tool", kind, server, {"requires-tools": "uv"}, ("u" + n).ljust(40, "0")[:40], commit) for n, kind, server in tools)
+    return IndexSnapshot((), commit, datetime.now(UTC), datetime.now(UTC), tools=entries)
+
+
+def test_tool_index_contract_and_search(database_url: str) -> None:
+    """toolbox(D19): tool_index의 열·생성식·제약·인덱스가 설계의 DDL 문자열과 같고, 두 표가 한 트랜잭션에 바뀐다."""
+    with psycopg.connect(database_url) as conn, conn.cursor() as cur:
+        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'tool_index' ORDER BY ordinal_position")
+        assert [r[0] for r in cur.fetchall()] == ["name", "description", "kind", "server", "metadata", "tree_sha", "commit_sha", "indexed_at", "replaced_by", "requires_tools", "search_text", "search"]
+        cur.execute("SELECT a.attname, pg_get_expr(d.adbin, d.adrelid) FROM pg_attribute a JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum WHERE a.attrelid = 'tool_index'::regclass AND a.attgenerated = 's' ORDER BY a.attnum")
+        gen = dict(cur.fetchall())
+        assert gen["replaced_by"] == "(metadata ->> 'replaced-by'::text)"
+        assert gen["requires_tools"] == "string_to_array(NULLIF((metadata ->> 'requires-tools'::text), ''::text), ' '::text)"
+        assert "to_tsvector('simple'::regconfig" in gen["search"] and "metadata_values(metadata)" in gen["search_text"]
+        cur.execute("SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'tool_index' ORDER BY 1")
+        idx = dict(cur.fetchall())
+        assert "gin (search_text gin_trgm_ops)" in idx["tool_index_trgm"] and "gin (search)" in idx["tool_index_search"]
+        cur.execute("SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid = 'tool_index'::regclass AND contype = 'c'")
+        defs = [r[0] for r in cur.fetchall()]
+        assert any("'script'" in d and "'mcp'" in d for d in defs) and any("length(description) <= 1024" in d for d in defs)
+    facts = PgFactStore(database_url)
+    facts.open()
+    facts.enable()
+    c = "c" * 40
+    assert facts.replace_index(tool_snap(c, ("subs-fetch", "script", None), ("graft-ask", "mcp", "graft")), lambda _s: True) is IndexOutcome.REPLACED
+    assert facts.search("자막", 10, "tools") == ("subs-fetch",) and facts.search("graft", 10, "tools") == ("graft-ask",)
+    assert facts.search("자막", 10, "skills") == () and facts.search("x", 10, "nope") is None  # 표는 닫힌 사전에서만
+    with psycopg.connect(database_url) as conn, conn.cursor() as cur:
+        cur.execute("SELECT name, kind, server, requires_tools FROM tool_index ORDER BY name")
+        assert cur.fetchall() == [("graft-ask", "mcp", "graft", ["uv"]), ("subs-fetch", "script", None, ["uv"])]
+    facts.close()
+
+
+def test_replace_is_all_or_nothing_across_both_tables(database_url: str) -> None:
+    """도구 행 하나가 제약을 어기면 스킬 표·도구 표·index_state 전부 이전 세대로 남는다."""
+    facts = PgFactStore(database_url)
+    facts.open()
+    facts.enable()
+    good, bad = "1" * 40, "2" * 40
+    assert facts.replace_index(snap(good, "yt-subs"), lambda _s: True) is IndexOutcome.REPLACED
+    broken = tool_snap(bad, ("bad-kind", "http", None))  # CHECK (kind IN ('script','mcp')) 위반
+    assert facts.replace_index(broken, lambda _s: True) is IndexOutcome.UNAVAILABLE
+    assert facts.current_commit() == good
+    with psycopg.connect(database_url) as conn, conn.cursor() as cur:
+        cur.execute("SELECT name FROM skill_index")
+        assert cur.fetchall() == [("yt-subs",)]
+        cur.execute("SELECT count(*) FROM tool_index")
+        assert cur.fetchone() == (0,)
+    facts.close()
+
+
+def test_upgrade_0001_to_0002_on_populated_db() -> None:
+    """0001만 적용된 채 데이터가 있는 DB에 0002가 올라가고, 다시 migrate는 0이다."""
+    from importlib.resources import as_file, files
+    from yoyo import get_backend, read_migrations  # pyright: ignore[reportUnknownVariableType]
+
+    with PostgresContainer("postgres:17-alpine", driver=None) as pg:
+        url = pg.get_connection_url()
+        with as_file(files("harness_catalog_server") / "migrations") as path:
+            migrations = read_migrations(str(path))  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        backend = get_backend(yoyo_url(url))  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        with backend.lock():  # pyright: ignore[reportUnknownMemberType]
+            first = migrations.filter(lambda m: m.id.startswith("0001"))  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType, reportUnknownLambdaType]
+            backend.apply_migrations(backend.to_apply(first))  # pyright: ignore[reportUnknownMemberType]
+        with psycopg.connect(url) as conn, conn.cursor() as cur:
+            cur.execute("INSERT INTO skill_index (name, description, metadata, tree_sha, commit_sha, indexed_at) VALUES ('old', 'd', '{}', %s, %s, now())", ("a" * 40, "b" * 40))
+            cur.execute("INSERT INTO index_state (id, commit_sha, indexed_at) VALUES (1, %s, now())", ("b" * 40,))
+            conn.commit()
+        assert migrate(url) == 1  # 0002만
+        assert migrate(url) == 0
+        with psycopg.connect(url) as conn, conn.cursor() as cur:
+            cur.execute("SELECT name FROM skill_index")
+            assert cur.fetchall() == [("old",)]
+            cur.execute("SELECT count(*) FROM tool_index")
+            assert cur.fetchone() == (0,)
+
+
+def test_tool_index_ddl_equals_design_contract() -> None:
+    """0002_toolbox.sql의 문장은 DESIGN 그림 3 아래 계약 블록의 tool_index 부분과 공백·주석을 빼고 같다(D19 수용 조건)."""
+    import re
+    from importlib.resources import as_file, files
+
+    def statements(text: str) -> list[str]:
+        body = "\n".join(line for line in text.splitlines() if not line.strip().startswith("--"))
+        # ast-grep-ignore: regex-on-structure — 어휘: 공백 연속을 한 칸으로 접는 정규 언어(구조 해석 아님)
+        return [re.sub(r"\s+", " ", s).strip() for s in body.split(";") if s.strip()]
+
+    design = Path(__file__).resolve().parents[2].joinpath("DESIGN.md").read_text()
+    start = design.index("CREATE TABLE tool_index")
+    end = design.index("CREATE INDEX tool_index_trgm", start)
+    end = design.index(";", end) + 1
+    with as_file(files("harness_catalog_server") / "migrations" / "0002_toolbox.sql") as path:
+        migration = path.read_text()
+    assert statements(design[start:end]) == statements(migration)

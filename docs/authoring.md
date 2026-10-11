@@ -104,6 +104,25 @@ harbor run --path skills/<name>/evals --agent claude-code --env docker --plugin 
 
 CI에서도 돌리려면 운영자가 git 호스트 변수 `HARNESS_EVALS=true`와 러너 자격을 둡니다([operations.md](operations.md)).
 
+## 5.5 도구 올리기(toolbox)
+
+스킬이 "어떻게 하는가"의 산문이라면 도구는 "무엇을 부를 수 있는가"의 스키마입니다. 자주 쓰이고 입출력이 정해진 것은 도구로 올립니다(DESIGN §11 2026-10-11).
+
+```
+tools/<name>/tool.json          # 필수. name(= 디렉토리명, 스킬과 같은 문법) · description(≤1024자) · inputSchema(type: object) · runtime · metadata(선택)
+tools/<name>/scripts/x.py       # kind: script면 runtime.path가 가리키는 파일
+mcp-servers/<name>/server.json  # kind: mcp 도구가 참조하는 배선 레코드(MCP Registry 형식: name·version·packages|remotes)
+```
+
+`runtime`은 둘 중 하나입니다.
+
+| kind | 필드 | 규칙 |
+|---|---|---|
+| `script` | `path`, `command` | `command`는 셸을 거치지 않는 argv 배열이고 `path`는 그 원소 정확히 하나. `path`는 디렉토리 안의 일반 파일(링크 금지) |
+| `mcp` | `server`, `tool` | `server`는 `mcp-servers/<server>/`가 있어야 하고 `tool`은 그 서버가 내는 도구 이름 |
+
+규칙은 스킬과 같은 것이 많습니다. 이름은 **스킬과 합쳐 전역 유일**이고 은퇴한 이름은 다시 쓰지 않습니다(검사 5·11). 시크릿은 저장소에 없습니다 — `server.json`의 `isSecret: true` 항목은 `value`·`default`를 가질 수 없습니다(검사 12). `metadata.requires-tools`·`replaced-by`는 스킬 규칙 그대로입니다. 검사 항목은 11(도구)·12(서버)이고 `harness-catalog check`가 함께 봅니다.
+
 ## 6. 고치기, 은퇴시키기, 대체하기
 
 **고치기**는 같은 디렉토리를 브랜치에서 바꿔 PR을 여는 것입니다. 병합되면 트리 `sha`가 바뀌고, pin해 둔 사람은 "새 판 있어?"로 압니다. 옛 판은 사라지지 않습니다. `load_skill(id, sha=<옛 sha>)`가 `main` 이력에서 찾아 돌려줍니다.

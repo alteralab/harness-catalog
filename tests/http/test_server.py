@@ -21,7 +21,7 @@ from tests.http.fake_issuer import FakeIssuer, start_fake_issuer
 PUBLIC_PATH = "/mcp"
 
 
-def _free_port() -> int:
+def free_port() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         return int(s.getsockname()[1])
@@ -36,7 +36,7 @@ def issuer() -> Iterator[FakeIssuer]:
 
 @pytest.fixture
 def server(tmp_path: Path, catalog_repo: CatalogRepo, issuer: FakeIssuer) -> Iterator[tuple[str, FakeIssuer]]:
-    port = _free_port()
+    port = free_port()
     public_url = f"http://127.0.0.1:{port}{PUBLIC_PATH}"
     env = {
         **os.environ,
@@ -152,7 +152,7 @@ def test_archive_descriptor_then_download_without_bearer(server: tuple[str, Fake
     assert d["sha"] == body["sha"] and d["digest"] == f"git-tree:{body['sha']}" and d["mimeType"] == "application/x-tar"
     assert d["uri"] == f"{base}{PUBLIC_PATH}/archive/yt-subs/{body['sha']}.tar" and "?" not in d["uri"]  # 자격은 URL 밖
     header_name, header_value = next(iter(d["headers"].items()))
-    assert header_name == "X-Harness-Archive-Token" and header_value.startswith("v1.")
+    assert header_name == "X-Harness-Archive-Token" and header_value.startswith("v2.")
     r = httpx.get(d["uri"], headers=d["headers"], timeout=10)
     assert r.status_code == 200 and r.headers["content-type"].startswith("application/x-tar")
     assert r.headers["cache-control"] == "private, no-store" and int(r.headers["content-length"]) == d["size"]
@@ -172,3 +172,37 @@ def test_archive_descriptor_then_download_without_bearer(server: tuple[str, Fake
     unknown = result_of(call_tool(base, token, "get_skill_archive", {"id": "yt-subs", "sha": "e" * 40}))["structuredContent"]
     assert unknown["code"] == "unknown_version"
 
+
+
+def test_toolbox_search_get_and_script_archive(server: tuple[str, FakeIssuer]) -> None:
+    """toolbox 도구 둘: 검색 → 정의(kind=mcp면 server.json 동봉) → kind=script면 기술자로 tar를 받는다(tools 라우트, 종류가 서명 범위)."""
+    import hashlib
+    import io
+    import tarfile
+
+    base, issuer = server
+    token = issuer.token(sub="user-1", aud=base + PUBLIC_PATH, groups=["harness-readers"])
+    hits = result_of(call_tool(base, token, "search_tools", {"query": "자막"}))["structuredContent"]["tools"]
+    assert [t["name"] for t in hits] == ["subs-fetch"] and hits[0]["kind"] == "script" and hits[0]["requires_tools"] == ["uv"]
+    assert [t["name"] for t in result_of(call_tool(base, token, "search_tools", {"query": "graph"}))["structuredContent"]["tools"]] == ["graft-ask"]
+    assert [s["name"] for s in result_of(call_tool(base, token, "list_skills", {}))["structuredContent"]["skills"]] == ["pin-skill", "yt-subs"]  # 스킬 목록은 그대로
+    mcp = result_of(call_tool(base, token, "get_tool", {"id": "graft-ask"}))["structuredContent"]
+    assert mcp["kind"] == "mcp" and mcp["tool"]["runtime"] == {"kind": "mcp", "server": "graft", "tool": "graft_find_code"}
+    assert mcp["server"]["name"] == "lab.altera/graft" and mcp["archive"] is None and len(mcp["sha"]) == 40
+    script = result_of(call_tool(base, token, "get_tool", {"id": "subs-fetch"}))["structuredContent"]
+    assert script["kind"] == "script" and script["server"] is None and sorted(f["path"] for f in script["files"]) == ["scripts/fetch.py", "tool.json"]
+    d = script["archive"]
+    assert d["uri"] == f"{base}{PUBLIC_PATH}/archive/tools/subs-fetch/{script['sha']}.tar" and d["digest"] == f"git-tree:{script['sha']}"
+    r = httpx.get(d["uri"], headers=d["headers"], timeout=10)
+    assert r.status_code == 200 and hashlib.sha256(r.content).hexdigest() == d["sha256"] and len(r.content) == d["size"]
+    with tarfile.open(fileobj=io.BytesIO(r.content)) as tar:
+        assert sorted(m.name for m in tar.getmembers() if m.isfile()) == ["scripts/fetch.py", "tool.json"]
+    # 도구 토큰으로 스킬 라우트를, 스킬 토큰으로 도구 라우트를 열 수 없다(종류가 서명 범위) — 둘 다 빈 403
+    assert httpx.get(f"{base}{PUBLIC_PATH}/archive/subs-fetch/{script['sha']}.tar", headers=d["headers"], timeout=10).status_code == 403
+    skill = result_of(call_tool(base, token, "load_skill", {"id": "yt-subs"}))["structuredContent"]
+    sd = result_of(call_tool(base, token, "get_skill_archive", {"id": "yt-subs", "sha": skill["sha"]}))["structuredContent"]
+    assert httpx.get(f"{base}{PUBLIC_PATH}/archive/tools/yt-subs/{skill['sha']}.tar", headers=sd["headers"], timeout=10).status_code == 403
+    assert httpx.get(d["uri"], timeout=10).status_code == 403
+    outsider = issuer.token(sub="u", aud=base + PUBLIC_PATH, groups=["users"])
+    assert result_of(call_tool(base, outsider, "search_tools", {"query": "x"}))["structuredContent"]["code"] == "not_a_member"
+    assert result_of(call_tool(base, token, "get_tool", {"id": "yt-subs"}))["structuredContent"]["code"] == "not_found"  # 스킬 이름은 도구가 아니다

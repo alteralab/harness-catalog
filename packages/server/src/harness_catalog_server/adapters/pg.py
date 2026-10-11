@@ -1,4 +1,4 @@
-"""PostgreSQL 어댑터: 인덱스 교체 트랜잭션(세대 검사)과 어휘 검색. psycopg 3 + 풀, ORM 없음. 브레이커·시간 초과 포함."""
+"""PostgreSQL 어댑터: 인덱스 교체 트랜잭션(세대 검사, 두 표)과 어휘 검색. psycopg 3 + 풀, ORM 없음. 브레이커·시간 초과 포함."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from collections.abc import Callable
 from typing import Final
 
 import psycopg
+from psycopg import sql
 from psycopg.rows import tuple_row
 from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool, PoolTimeout
@@ -21,13 +22,19 @@ STATEMENT_TIMEOUT_MS: Final = 5000
 BREAKER_FAILURES: Final = 3
 BREAKER_OPEN_SECONDS: Final = 30.0
 
-INSERT_ROW = """
+INSERT_SKILL = """
 INSERT INTO skill_index (name, description, compatibility, metadata, tree_sha, commit_sha, indexed_at)
 VALUES (%s, %s, %s, %s::jsonb, %s, %s, %s)
 """
+INSERT_TOOL = """
+INSERT INTO tool_index (name, description, kind, server, metadata, tree_sha, commit_sha, indexed_at)
+VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s, %s)
+"""
+# 표 이름은 닫힌 사전에서만 고른다 — 외부 입력이 SQL에 들어가지 않는다
+TABLES: Final[dict[str, str]] = {"skills": "skill_index", "tools": "tool_index"}
 SEARCH = """
 SELECT name
-FROM skill_index
+FROM {table}
 WHERE search @@ plainto_tsquery('simple', %(q)s)
    OR search_text %% %(q)s
    OR search_text ILIKE %(like)s
@@ -125,7 +132,8 @@ class PgFactStore:
         return str(row[0]) if row else None
 
     def replace_index(self, snapshot: IndexSnapshot, is_descendant: Callable[[str], bool], /) -> IndexOutcome:
-        """트랜잭션 하나: advisory lock → index_state FOR UPDATE → 새 커밋이 저장된 커밋의 자손일 때만 DELETE+INSERT."""
+        """트랜잭션 하나: advisory lock → index_state FOR UPDATE → 새 커밋이 저장된 커밋의 자손일 때만
+        DELETE skill_index → DELETE tool_index → 두 INSERT → index_state upsert. 어느 삽입이 실패해도 전부 롤백된다(D19)."""
         if not self._gate():
             return IndexOutcome.UNAVAILABLE
         try:
@@ -138,8 +146,11 @@ class PgFactStore:
                 if stored is not None and stored != snapshot.commit_sha and not is_descendant(stored):
                     return IndexOutcome.STALE
                 cur.execute("DELETE FROM skill_index")
+                cur.execute("DELETE FROM tool_index")
                 for e in snapshot.entries:
-                    cur.execute(INSERT_ROW, (e.name, e.description, e.compatibility, Jsonb(dict(e.metadata)), e.tree_sha, e.commit_sha, snapshot.built_at))
+                    cur.execute(INSERT_SKILL, (e.name, e.description, e.compatibility, Jsonb(dict(e.metadata)), e.tree_sha, e.commit_sha, snapshot.built_at))
+                for t in snapshot.tools:
+                    cur.execute(INSERT_TOOL, (t.name, t.description, t.kind, t.server, Jsonb(dict(t.metadata)), t.tree_sha, t.commit_sha, snapshot.built_at))
                 cur.execute(
                     "INSERT INTO index_state (id, commit_sha, indexed_at) VALUES (1, %s, %s) "
                     "ON CONFLICT (id) DO UPDATE SET commit_sha = EXCLUDED.commit_sha, indexed_at = EXCLUDED.indexed_at",
@@ -152,13 +163,14 @@ class PgFactStore:
         self._breaker.record_success()
         return IndexOutcome.REPLACED
 
-    def search(self, query: str, limit: int, /) -> tuple[str, ...] | None:
-        if not self._gate():
+    def search(self, query: str, limit: int, /, kind: str = "skills") -> tuple[str, ...] | None:
+        table = TABLES.get(kind)
+        if table is None or not self._gate():
             return None
         like = "%" + "%".join(t for t in query.split() if t) + "%" if query.strip() else "%"
         try:
             with self._pool.connection() as conn, conn.cursor() as cur:
-                cur.execute(SEARCH, {"q": query, "like": like, "n": limit})
+                cur.execute(sql.SQL(SEARCH).format(table=sql.Identifier(table)), {"q": query, "like": like, "n": limit})
                 rows = cur.fetchall()
         except (psycopg.Error, PoolTimeout) as e:
             self._breaker.record_failure()
