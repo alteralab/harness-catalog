@@ -83,7 +83,7 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
    - `{"kind": "mcp", "server": "<mcp-servers의 이름>", "tool": "<그 서버가 내는 도구 이름>"}` — 서버 레코드가 먼저 있어야 합니다.
    `mcp-servers/<name>/server.json`은 MCP Registry 형식(`name`·`version`·`packages` 또는 `remotes`)이고, 시크릿 값은 적지 않습니다(`isSecret: true` 항목에 `value`·`default` 금지).
 3. 도구는 한 번 돌려 봅니다. 이 저장소 안에서는 toolbox가 띄운 MCP 도구로 부르거나, 터미널에서 `echo '{...}' | uv run --script tools/<name>/scripts/<x>.py`로 칩니다. 스킬은 `harbor run -p skills/<name>/evals -a oracle -e docker`로 evals 쌍이 모델 없이 reward 1인지 봅니다.
-4. 커밋 전에 `pre-commit install`을 한 번 해 두면 `hc check`가 커밋마다 돕니다(`hc`는 `harness-catalog`의 짧은 이름이고 같은 명령입니다). 같은 검사가 PR의 CI와 레지스트리의 색인에서도 돕니다. 붉으면 병합하지 않습니다.
+4. 커밋 전에 `pre-commit install`을 한 번 해 두면 `hc check`가 커밋마다 돕니다(`hc`는 `harness-catalog`의 짧은 이름이고 같은 명령입니다). `hc` 설치는 팀 Nexus 인덱스에서: `uv tool install --index https://ds923plus.tail2f9fe3.ts.net:8443/repository/pypi-public/simple/ harness-catalog-cli==<판>`. 같은 검사가 PR의 CI와 레지스트리의 색인에서도 돕니다. 붉으면 병합하지 않습니다.
 5. PR을 열고 사람이 병합합니다. **병합한 사람이 그 판의 인증자**입니다. 레지스트리는 다음 fetch(기본 60초)에 새 판을 색인합니다.
 6. 고치기는 같은 디렉토리를 바꿔 병합하는 것, 은퇴는 디렉토리 삭제입니다(스킬·도구 같음). 후속은 검색으로 찾습니다. 있는 스킬이 발동하지 않거나 다듬고 싶으면 **`review` 스킬**이 점검표(`skills/review/references/checklist.md`)로 심사해 표를 내고, 고른 항목을 브랜치에 고칩니다.
 

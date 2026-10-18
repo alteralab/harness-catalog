@@ -61,7 +61,7 @@ make deploy HOST=mini TAG=<짧은 SHA>   # 운영 호스트에서 pull → REGIS
 
 1. 네 `pyproject.toml`의 `version`을 같은 값으로 올립니다(lockstep).
 2. `uv lock`, 시험·게이트 통과, 커밋.
-3. 태그 `vX.Y.Z`를 push합니다. 카탈로그 저장소의 훅과 CI가 이 태그로 `core`·`cli`를 설치하고, `init`은 자기 판의 태그를 템플릿에 박습니다. CI가 이미지를 `ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:<태그>`로도 올립니다(판 태그는 보존 정리에서 제외).
+3. 태그 `vX.Y.Z`를 push합니다. 이어서 `core`·`cli` 휠을 NAS Nexus `pypi-internal`에 올립니다(`UV_PUBLISH_USERNAME`·`UV_PUBLISH_PASSWORD` — gopass `nas/nexus-publish`; 없으면 건너뛰고 `release.py --publish-only <판>`으로 나중에). 받는 쪽은 인덱스 `https://ds923plus.tail2f9fe3.ts.net:8443/repository/pypi-public/simple/`(tailnet)로 `uvx --index … harness-catalog-cli==<판> hc …`. 카탈로그 저장소의 훅과 CI가 이 태그로 `core`·`cli`를 설치하고, `init`은 자기 판의 태그를 템플릿에 박습니다. CI가 이미지를 `ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:<태그>`로도 올립니다(판 태그는 보존 정리에서 제외).
 4. `main` 병합마다는 짧은 SHA 태그로 빌드됩니다. 운영 호스트에서는 `REGISTRY_IMAGE`에 판 태그를 적어 올립니다.
 
 템플릿(`packages/cli/.../templates/`)을 바꾸면 이미 만들어진 카탈로그 저장소에는 반영되지 않습니다. `init`은 없는 파일만 쓰기 때문입니다. 그 저장소의 워크플로 파일은 손으로 갱신합니다.
