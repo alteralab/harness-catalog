@@ -145,3 +145,51 @@ def test_cli_pin_reads_response_from_stdin(served: tuple[str, dict[str, bytes]],
     assert "pinned skill alpha" in r.output and (tmp_path / ".agents" / "skills" / "alpha" / "PINNED").exists()
     r2 = CliRunner().invoke(app, ["pin", "--scope", "nowhere", "--project-root", str(tmp_path)], input="{}")
     assert r2.exit_code == 2
+
+
+def test_traversal_id_is_rejected_before_any_path_is_built(served: tuple[str, dict[str, bytes]], tmp_path: Path) -> None:
+    """Codex 2026-10-18 critical: id가 디렉토리명이 되므로 카탈로그 name 문법 밖은 거부한다(.. 등)."""
+    base, store = served
+    doc = response(base, store)
+    for bad in ("../../victim", "a/b", "Bad_Name", "", "-x"):
+        doc["id"] = bad
+        with pytest.raises(pin.PinError, match="not a catalog name"):
+            pin.parse_response(doc)
+    doc["id"], doc["sha"] = "alpha", "zz" * 20
+    with pytest.raises(pin.PinError, match="40-hex"):
+        pin.parse_response(doc)
+
+
+def test_link_failure_rolls_back_to_previous_copy(served: tuple[str, dict[str, bytes]], tmp_path: Path) -> None:
+    """Codex 2026-10-18 high: 링크·설정 단계가 실패하면 새 사본을 지우고 옛 사본을 되돌린다 — 되돌림 디렉토리는 그때까지 남아 있다."""
+    base, store = served
+    rec = pin.parse_response(response(base, store))
+    pin.install(rec, pin.download(rec), scope="project", project_root=tmp_path)
+    target = tmp_path / ".agents" / "skills" / "alpha"
+    before = (target / "PINNED").read_text()
+    claude = tmp_path / ".claude"
+    import shutil
+
+    shutil.rmtree(claude)
+    claude.write_text("not a directory")  # .claude/skills를 만들 수 없게 → link_claude가 OSError
+    rec2 = pin.parse_response(response(base, store, sha="b" * 40))
+    with pytest.raises(OSError):
+        pin.install(rec2, pin.download(rec2), scope="project", project_root=tmp_path, force=True)
+    assert (target / "PINNED").read_text() == before  # 옛 사본이 돌아왔다
+    assert not any(p.name.startswith(".alpha.pin-") and p.is_dir() for p in target.parent.iterdir())  # 임시·되돌림 디렉토리가 남지 않는다
+
+
+def test_concurrent_pin_of_same_name_is_refused(served: tuple[str, dict[str, bytes]], tmp_path: Path) -> None:
+    """Codex 2026-10-18 high: 같은 이름의 pin은 flock으로 직렬화된다. 잠금을 쥔 채 두 번째 호출은 즉시 거부된다."""
+    import fcntl
+
+    base, store = served
+    rec = pin.parse_response(response(base, store))
+    root = tmp_path / ".agents" / "skills"
+    root.mkdir(parents=True)
+    with (root / ".alpha.pin-lock").open("w") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        with pytest.raises(pin.PinError, match="in progress"):
+            pin.install(rec, pin.download(rec), scope="project", project_root=tmp_path)
+    pin.install(rec, pin.download(rec), scope="project", project_root=tmp_path)  # 잠금이 풀리면 된다
+    assert (root / "alpha" / "PINNED").exists()

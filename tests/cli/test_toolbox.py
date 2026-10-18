@@ -88,6 +88,19 @@ def test_timeout_is_an_error_not_a_hang(tmp_path: Path) -> None:
     assert res.is_error and "timeout" in res.content[0].text  # type: ignore[union-attr]
 
 
+def test_output_flood_is_killed_at_the_cap(tmp_path: Path) -> None:
+    """Codex 2026-10-18 high: 상한은 돌면서 집행한다 — 10 MB를 쏟는 도구는 1 MB에서 끊기고 오류가 되며 메모리에 다 쌓이지 않는다."""
+    d = tmp_path / "flood"
+    (d / "scripts").mkdir(parents=True)
+    (d / "scripts" / "run.py").write_text("import sys\nfor _ in range(200):\n    sys.stdout.write('x' * 50_000)\n    sys.stdout.flush()\n")
+    (d / "tool.json").write_text(json.dumps({"name": "flood", "description": "d", "inputSchema": {"type": "object"}, "runtime": {"kind": "script", "path": "scripts/run.py", "command": [sys.executable, "scripts/run.py"]}}))
+    tools, _ = toolbox.load_tools(tmp_path)
+    outcome = toolbox.run_tool(tools["flood"], {}, timeout=30)
+    assert outcome.truncated and outcome.exit_code != 0 and len(outcome.stdout) <= toolbox.MAX_OUTPUT_BYTES and "exceeded" in outcome.stderr
+    res = toolbox.call(tools["flood"], {})
+    assert res.is_error
+
+
 @pytest.mark.anyio
 async def test_stdio_end_to_end(tmp_path: Path) -> None:
     """`hc toolbox <dir>`를 실제 프로세스로 띄워 MCP 클라이언트로 tools/list·tools/call. 세션·루프가 보는 모양 그대로."""

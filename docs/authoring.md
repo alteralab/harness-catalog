@@ -119,7 +119,7 @@ mcp-servers/<name>/server.json  # kind: mcp 도구가 참조하는 배선 레코
 
 뼈대는 `write` 스킬이 도구 `scaffold`(`tools/scaffold/`, 카탈로그 클론의 `.mcp.json`으로 MCP에 떠 있음)로 만듭니다(멱등). `tool.json`의 선택 키 `$schema`가 `schemas/tool.schema.json`을 가리키면 편집기가 타이핑 중에 검증합니다. 그 파일은 `harness-catalog init`이 core 모델에서 생성해 두고, 낡았으면 `hc check`가 경고하고 운영자가 `hc init <repo-url> --refresh`로 다시 씁니다. 레지스트리는 `$schema`를 해석하지 않습니다. 계약의 저자용 문면은 `skills/write/references/tool-contract.md`입니다.
 
-규칙은 스킬과 같은 것이 많습니다. 이름은 **스킬과 합쳐 전역 유일**입니다(검사 11). 시크릿은 저장소에 없습니다 — `server.json`의 `isSecret: true` 항목은 `value`·`default`를 가질 수 없습니다(검사 12). `metadata.requires-tools`·`replaced-by`는 스킬 규칙 그대로입니다. 검사 항목은 11(도구)·12(서버)이고 `harness-catalog check`가 함께 봅니다.
+규칙은 스킬과 같은 것이 많습니다. 이름은 **스킬과 합쳐 전역 유일**입니다(검사 11). 시크릿은 저장소에 없습니다 — `server.json`의 `isSecret: true` 항목은 `value`·`default`를 가질 수 없습니다(검사 12). `metadata`는 자유 맵이고 팀 규약 키는 없습니다 — 의존성은 스크립트 안에만, 은퇴는 디렉토리 삭제뿐입니다(스킬과 같다). 검사 항목은 11(도구)·12(서버)이고 `hc check`가 함께 봅니다.
 
 ## 6. 고치기, 은퇴시키기, 대체하기
 
