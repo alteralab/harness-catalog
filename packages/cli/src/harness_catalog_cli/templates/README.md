@@ -15,6 +15,7 @@
 ├── .harness-catalog                 # 표지: layout = 1. 레지스트리가 이 저장소를 카탈로그로 인식하는 근거
 ├── .mcp.json                        # 이 클론에서 tools/의 도구를 MCP로 띄우는 toolbox 항목(hc toolbox ./tools)
 ├── .pre-commit-config.yaml          # 커밋 전 `harness-catalog check` (CLI 판 v<판>에 핀)
+├── .gitignore                       # harbor 결과(jobs/)·파이썬 캐시·이 클론 안의 pin 사본(.agents/)은 커밋하지 않는다
 ├── .github/
 │   ├── workflows/check.yml          # PR·main push마다 `harness-catalog check`, 선택 잡 evals
 │   └── actions/code-repo-credentials/action.yml   # 코드 저장소가 비공개인 동안 CI가 CLI를 받을 deploy key

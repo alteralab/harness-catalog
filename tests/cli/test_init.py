@@ -54,7 +54,7 @@ def test_init_refuses_repo_without_main(tmp_path: Path) -> None:
 def test_init_twice_is_idempotent(tmp_path: Path) -> None:
     remote = bare(tmp_path, "catalog.git")
     first = init_repository(str(remote), pin="deadbeef", host="gitlab")  # 로컬 경로는 호스트가 없다
-    base = {".harness-catalog", "README.md", ".pre-commit-config.yaml", ".gitlab-ci.yml", "schemas/tool.schema.json", ".mcp.json"}  # 스키마는 core ToolSpec의 산출물, .mcp.json은 toolbox 항목(§11 2026-10-18)
+    base = {".harness-catalog", "README.md", ".pre-commit-config.yaml", ".gitignore", ".gitlab-ci.yml", "schemas/tool.schema.json", ".mcp.json"}  # 스키마는 core ToolSpec의 산출물, .mcp.json은 toolbox 항목(§11 2026-10-18)
     skills = {w for w in first.written if w.startswith(("skills/", "tools/"))}
     assert set(first.written) - skills == base
     # 기본 스킬 셋이 init과 함께 들어간다(DESIGN §11 2026-10-10·2026-10-11). .gitkeep은 더 쓰지 않는다

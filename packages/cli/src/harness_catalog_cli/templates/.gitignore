@@ -1,0 +1,10 @@
+# 카탈로그 저장소의 .gitignore — hc init이 둔다. 카탈로그에 커밋되는 것은 스킬·도구·배선·설정뿐이다.
+jobs/                 # harbor run의 로컬 결과(evals 실행 기록)
+__pycache__/          # 도구 스크립트를 import한 흔적
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+.DS_Store
+.agents/              # 이 클론 안에서 pin으로 받은 사본(카탈로그 자체가 아니다)
+.claude/skills/       # pin이 둔 심볼릭 링크
