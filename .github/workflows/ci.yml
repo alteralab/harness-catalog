@@ -57,7 +57,11 @@ jobs:
             *) echo "sha=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT" ;;
           esac
       - name: login harbor (NAS, tailnet 주소 — 러너 mini는 tailnet 안)
-        run: echo "${{ secrets.HARBOR_ROBOT_SECRET }}" | docker login ds923plus.tail2f9fe3.ts.net:9443 -u "${{ secrets.HARBOR_ROBOT_NAME }}" --password-stdin
+        env:
+          # robot 이름에 $가 있다(robot$alteralab+ci-push) — run 문자열에 직접 넣으면 bash가 $alteralab을 지운다(2026-10-18 실측 unauthorized). env로 넘긴다.
+          HARBOR_USER: ${{ secrets.HARBOR_ROBOT_NAME }}
+          HARBOR_SECRET: ${{ secrets.HARBOR_ROBOT_SECRET }}
+        run: printf '%s' "$HARBOR_SECRET" | docker login ds923plus.tail2f9fe3.ts.net:9443 -u "$HARBOR_USER" --password-stdin
       - name: build · push
         run: |
           IMG=ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:${{ steps.tag.outputs.sha }}
