@@ -153,6 +153,17 @@ def test_evals_plan_two_jobs_per_skill_with_evals(tmp_path: Path) -> None:
     assert baseline.index("--plugin") > 0 and baseline[baseline.index("--plugin") + 1] == "harbor_langfuse:LangfusePlugin"
 
 
+def test_evals_plan_oracle_is_one_job_without_skill_or_langfuse(tmp_path: Path) -> None:
+    """CI 기본(2026-10-18): Oracle 은 스킬 주입도 플러그인도 자격도 없이 잡 하나."""
+    repo, _ = make_repo(tmp_path)
+    (repo / "skills" / "a" / "evals" / "c1").mkdir(parents=True)
+    plan = ci.evals_plan(repo, ("skills/a", "skills/b"), ci.ORACLE, cli_version="0.1.0", code_repo_url="https://example.com/code")
+    assert len(plan) == 1
+    (job,) = plan
+    assert job == ("uvx", "--from", f"harbor=={ci.HARBOR_VERSION}", "harbor", "run", "--path", "skills/a/evals", "--agent", "oracle", "--env", "docker")
+    assert "--skill" not in job and "--plugin" not in job and "--with" not in job
+
+
 def test_harbor_env_fills_skill_ref_and_catalog_name(tmp_path: Path) -> None:
     repo, shas = make_repo(tmp_path)
     run = ci.git_runner(repo)
@@ -194,6 +205,13 @@ def test_cli_ci_evals_exit_codes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     monkeypatch.setenv("CI_COMMIT_BEFORE_SHA", shas[0])
     r = runner.invoke(app, ["evals", "--agent", "claude-code", "--dry-run", str(repo)])
     assert r.exit_code == 0 and "harbor jobs: 2" in r.output and r.output.count("$ uvx") == 2 and "--skill ./skills/a" in r.output
+    for k in ("ANTHROPIC_API_KEY", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_HOST"):
+        monkeypatch.delenv(k, raising=False)
+    r = runner.invoke(app, ["evals", "--dry-run", str(repo)])  # 기본 oracle: 자격 없이도 돈다, 잡 하나
+    assert r.exit_code == 0 and "harbor jobs: 1" in r.output and "--agent oracle" in r.output and "--skill" not in r.output and "--plugin" not in r.output
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
+    for k, v in {"LANGFUSE_PUBLIC_KEY": "a", "LANGFUSE_SECRET_KEY": "b", "LANGFUSE_HOST": "h"}.items():
+        monkeypatch.setenv(k, v)
     calls: list[list[str]] = []
 
     def fake_run_plan(plan: tuple[tuple[str, ...], ...], cwd: Path, env: object, **_: object) -> int:

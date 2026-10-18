@@ -48,7 +48,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
    ```
 
    자격 경로는 deploy key 하나입니다(PAT 경로는 2026-10-10에 뺐습니다 — 웹에서만 만들 수 있고 만료가 있어 자동화가 끊깁니다). 코드 저장소를 공개하면 이 시크릿도 필요 없습니다.
-6. CI evals(선택)는 git 호스트 변수 `HARNESS_EVALS=true`와 self-hosted 러너 루트 `.env`의 자격으로 켭니다. 변수 이름은 [runner.env.example](../.github/runner.env.example)에 전부 있습니다. claude-code는 `CLAUDE_CODE_OAUTH_TOKEN`+`CLAUDE_FORCE_OAUTH=1` 또는 `ANTHROPIC_API_KEY`, codex는 `OPENAI_API_KEY` 또는 `CODEX_FORCE_AUTH_JSON=1`(+`CODEX_AUTH_JSON_PATH`), cursor-cli는 `CURSOR_API_KEY`, gemini-cli는 `GEMINI_API_KEY` 또는 `GEMINI_FORCE_OAUTH`, 그리고 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`. 하네스 목록은 변수 `HARNESS_EVALS_AGENTS`(JSON 배열, 기본 `["claude-code", "codex"]`; GitHub 전용 — GitLab은 `.gitlab-ci.yml`의 matrix 줄을 고칩니다). 변수가 없으면 evals 잡은 만들어지지 않고, 켰는데 자격이 비면 잡의 첫 단계가 그 이름을 적고 실패합니다.
+6. CI evals는 Oracle입니다(모델·자격 없이, 바뀐 스킬의 참조 해답으로 과제와 검증기를 확인). PR마다·`main` push마다 self-hosted 러너에서 돕니다. 켜고 끄는 변수는 없습니다. 모델로 돌리는 측정은 저자가 자기 클론에서 합니다([authoring.md](authoring.md) §5).
 
 ## 2. 레지스트리 설치
 

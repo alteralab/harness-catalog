@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import cast
 
 HARBOR_VERSION = "0.24.0"
+ORACLE = "oracle"  # 모델 없이 solution/solve.sh 를 그대로 — 과제가 풀리는지·검증기가 끝 상태를 받는지만 본다. 자격·Langfuse 불필요(CI 의 기본, §11 2026-10-18)
 ZERO_SHA = "0" * 40
 EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"  # git의 빈 트리(SHA-1 저장소). 브랜치 생성 push의 기준 — 선행 커밋이 없다
 CI_MARKERS = ("GITHUB_ACTIONS", "GITLAB_CI")
@@ -136,6 +137,8 @@ def missing_langfuse(env: Mapping[str, str]) -> str | None:
 
 def harbor_argv(evals_dir: str, agent: str, *, skill_dir: str | None, cli_version: str, code_repo_url: str) -> tuple[str, ...]:
     """harbor run 한 번의 argv. 플러그인은 cli와 같은 태그에서 받는다(distribution D22: 이미지 밖 배포물은 전부 같은 태그)."""
+    if agent == ORACLE:  # 스킬 주입도 Langfuse 도 없다 — Oracle 은 --skill 을 받지 않는다(Harbor 0.24 실측)
+        return ("uvx", "--from", f"harbor=={HARBOR_VERSION}", "harbor", "run", "--path", evals_dir, "--agent", ORACLE, "--env", "docker")
     plugin = f"harbor-langfuse @ git+{code_repo_url}@v{cli_version}#subdirectory=packages/harbor-langfuse"
     argv = ["uvx", "--from", f"harbor=={HARBOR_VERSION}", "--with", plugin, "harbor", "run", "--path", evals_dir, "--agent", agent, "--env", "docker", "--plugin", "harbor_langfuse:LangfusePlugin"]
     if skill_dir is not None:
@@ -144,10 +147,13 @@ def harbor_argv(evals_dir: str, agent: str, *, skill_dir: str | None, cli_versio
 
 
 def evals_plan(repo: Path, dirs: tuple[str, ...], agent: str, *, cli_version: str, code_repo_url: str) -> tuple[tuple[str, ...], ...]:
-    """바뀐 스킬마다 evals/가 있으면 두 잡 — 스킬 있이, 없이(baseline). 순서는 결정적."""
+    """바뀐 스킬마다 evals/가 있으면: oracle 은 잡 하나, 모델 에이전트는 두 잡 — 스킬 있이, 없이(baseline). 순서는 결정적."""
     plan: list[tuple[str, ...]] = []
     for d in dirs:
         if not (repo / d / "evals").is_dir():
+            continue
+        if agent == ORACLE:
+            plan.append(harbor_argv(f"{d}/evals", ORACLE, skill_dir=None, cli_version=cli_version, code_repo_url=code_repo_url))
             continue
         plan.append(harbor_argv(f"{d}/evals", agent, skill_dir=f"./{d}", cli_version=cli_version, code_repo_url=code_repo_url))
         plan.append(harbor_argv(f"{d}/evals", agent, skill_dir=None, cli_version=cli_version, code_repo_url=code_repo_url))

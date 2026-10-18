@@ -76,7 +76,7 @@ def test_init_github_url_gets_actions_workflow(tmp_path: Path) -> None:
     assert ".github/workflows/check.yml" in r.written and ".gitlab-ci.yml" not in r.written
     assert ".github/actions/code-repo-credentials/action.yml" in r.written  # 자격 주입은 로컬 composite action 하나(check·evals 잡이 공유)
     wf = git(remote, "show", "main:.github/workflows/check.yml")
-    assert "@v1.2.3#subdirectory=packages/cli" in wf and "HARNESS_EVALS" in wf
+    assert "@v1.2.3#subdirectory=packages/cli" in wf and "harness-catalog evals" in wf and "HARNESS_EVALS" not in wf  # CI evals 는 Oracle, 켜는 변수 없음(2026-10-18)
 
 
 def test_init_stops_on_layout_mismatch(tmp_path: Path) -> None:

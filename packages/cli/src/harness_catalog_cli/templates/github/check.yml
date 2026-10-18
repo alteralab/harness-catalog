@@ -1,5 +1,6 @@
-# PR마다·main push마다 harness-catalog check. main push에는 선택 잡 evals(변수 HARNESS_EVALS=true일 때만).
-# 이 파일은 배선만 한다. 논리(gitleaks·기준 커밋·하네스 자격·harbor 호출)는 CLI `harness-catalog check`·`evals`에 있고 pytest가 검사한다.
+# PR마다·main push마다 harness-catalog check, 그리고 바뀐 스킬의 evals를 Oracle로(모델·자격 없음 — 과제가 풀리고 검증기가 끝 상태를 받는지).
+# 모델로 돌리는 측정(스킬 있이·없이)은 저자가 자기 자격으로 자기 클론에서 한다(write 스킬 9단계) — CI 게이트가 아니다(§11 2026-10-18).
+# 이 파일은 배선만 한다. 논리(gitleaks·기준 커밋·harbor 호출)는 CLI `harness-catalog check`·`evals`에 있고 pytest가 검사한다.
 # 판을 올리려면 아래 두 줄의 @v<판>을 바꾼다 — 논리는 그 판을 따라온다.
 name: check
 on:
@@ -19,13 +20,8 @@ jobs:
       - run: uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog check --rev HEAD
 
   evals:
-    if: github.event_name == 'push' && vars.HARNESS_EVALS == 'true'
     needs: [check]
-    runs-on: [self-hosted, harness-catalog]
-    strategy:
-      fail-fast: false
-      matrix:
-        agent: ${{ fromJSON(vars.HARNESS_EVALS_AGENTS || '["claude-code", "codex"]') }}   # 변수는 JSON 배열
+    runs-on: [self-hosted, harness-catalog]   # Docker 가 있고 tailnet 안(eval 이미지가 NAS Nexus 에서 hc 를 받는다)
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,4 +30,4 @@ jobs:
       - uses: ./.github/actions/code-repo-credentials
         with:
           deploy-key: ${{ secrets.HARNESS_CATALOG_DEPLOY_KEY }}
-      - run: uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog evals --agent "${{ matrix.agent }}"
+      - run: uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog evals   # --agent oracle 이 기본

@@ -97,7 +97,7 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 4. Dex에 하네스 제품의 정적 클라이언트(`claude-code`·`codex`·`cursor`)가 있는지, 첫 팀원이 `harness-readers`에 있는지 확인합니다(로그인 한 번으로 확인).
 5. 레지스트리를 띄우고 `/readyz`가 200인지 봅니다. 503이면 본문의 사유대로 1·2를 다시 봅니다: `not_a_catalog`(표지 없음) · `unsupported_layout`(표지의 layout이 다른 판) · `no_main_branch` · `repo_unreachable`(deploy key) · `layout_mismatch`(구조 항목 1·2·11·12 위반, 본문에 어느 항목인지).
 6. 코드 저장소 `alteralab/harness-catalog`가 비공개인 동안은 CI가 CLI를 설치할 수 있게 그 저장소의 읽기 전용 deploy key 개인 키를 이 저장소(또는 조직) 시크릿 `HARNESS_CATALOG_DEPLOY_KEY`에 넣습니다(`ssh-keygen -t ed25519`, `gh repo deploy-key add`, `gh secret set`). `.github/actions/code-repo-credentials`가 그것을 잡 환경으로만 건넵니다. 코드 저장소가 공개면 필요 없습니다.
-7. CI evals(선택): git 호스트 변수 `HARNESS_EVALS=true`로 켜고 `false`로 끕니다. 하네스 자격은 self-hosted 러너의 `.env`(변수 이름은 코드 저장소 `.github/runner.env.example`), 하네스 목록은 변수 `HARNESS_EVALS_AGENTS`(JSON 배열, 기본 `["claude-code", "codex"]`; GitLab은 `.gitlab-ci.yml`의 matrix 줄을 고칩니다).
+7. CI evals는 Oracle입니다(모델·자격 없음). self-hosted 러너에 Docker가 있고 tailnet에 닿으면(eval 이미지가 NAS Nexus에서 `hc`를 받습니다) 그대로 돕니다. 모델 측정(스킬 있이·없이)은 저자가 자기 클론에서 자기 자격으로 합니다 — `write` 스킬 9단계.
 8. CLI 판을 올릴 때는 `.pre-commit-config.yaml`과 `.github/workflows/check.yml`의 `@v<판>` 두 곳을 같은 태그로 바꿉니다. 검사 논리는 그 판을 따라옵니다.
 
 GitLab용 워크플로(`.gitlab-ci.yml`)는 문면대로 작성만 되어 있고 아직 실제로 돌린 적이 없습니다. GitHub Actions가 먼저입니다.

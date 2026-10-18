@@ -30,7 +30,7 @@ compatibility: 카탈로그 저장소의 로컬 클론과 git·gh(PR 생성), uv
 6. 점검표를 지난다. 스킬은 `references/conventions.md`, 도구는 `references/tool-contract.md`. 요지: 의존성은 스크립트 안에만(PEP 723 머리, 바이너리는 없을 때 종료 4), `command`는 셸 없는 argv이고 `path`는 그 원소 하나, 결과는 stdout의 JSON 하나·종료 0은 "결과를 냈다", 판정은 결과 필드로. `compatibility`는 네트워크·특정 제품 같은 조건이 있을 때만.
 7. 도구는 한 번 돌려 본다. `scaffold`가 떠 있는 것과 같은 toolbox가 새 도구도 띄우므로(toolbox를 다시 시작하면 새 `tool.json`을 읽는다) MCP로 부르거나, 터미널에서 `echo '{...}' | uv run --script tools/<name>/scripts/<x.py>`로 친다.
 8. `hc check`를 돌린다(pre-commit 훅이 커밋 때 다시 돌리고 CI가 PR에서 또 돌린다). 위반 항목(3 SKILL.md 스펙, 4 시크릿, 7 크기, 11 tool.json, 12 server.json)을 고친다.
-9. 스킬이면 evals를 모델 없이 먼저 돌린다: `harbor run -p skills/<name>/evals -a oracle -e docker`로 전 케이스 reward 1. 그다음 `harbor run --path skills/<name>/evals --agent <하네스> --model <모델> --env docker --skill ./skills/<name> --plugin harbor_langfuse:LangfusePlugin`을 스킬 있이·없이 두 번. Harbor가 없으면 건너뛰고 PR 본문에 "evals 미실행"을 적는다.
+9. 스킬이면 evals를 모델 없이 먼저 돌린다: `harbor run -p skills/<name>/evals -a oracle -e docker`로 전 케이스 reward 1. 그다음 `harbor run --path skills/<name>/evals --agent <하네스> --model <모델> --env docker --skill ./skills/<name> --plugin harbor_langfuse:LangfusePlugin`을 스킬 있이·없이 두 번. Harbor가 없으면 건너뛰고 PR 본문에 "evals 미실행"을 적는다. CI는 Oracle만 돌리므로 모델 측정은 여기서 저자가 하는 것이 유일하다.
 10. 사용자에게 브랜치·점검표 결과를 보고하고 **멈춘다.** 올린 뒤의 심사와 다듬기는 `review` 스킬의 일이다. 사람 승인 전까지는 되돌릴 수 있는 일만 한다. "올려"라고 할 때만 커밋·push·`gh pr create`(GitLab이면 `glab mr create`). 병합은 사람이 git 호스트에서 한다. 클라우드 샌드박스 세션(git 자격 없음)이면 여기서 멈추고 로컬 세션에서 하라고 알린다.
 
 ## 실패 대응

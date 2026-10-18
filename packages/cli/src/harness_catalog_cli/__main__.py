@@ -89,16 +89,17 @@ def check(
 
 @app.command()
 def evals(
-    agent: str = typer.Option(..., "--agent", help="Harbor 에이전트 이름(claude-code·codex·cursor-cli·gemini-cli)"),
+    agent: str = typer.Option("oracle", "--agent", help="oracle(기본, 자격 없이 참조 해답만) 또는 Harbor 에이전트 이름(claude-code·codex·cursor-cli·gemini-cli — 저자가 자기 자격으로)"),
     repo_root: Path = typer.Argument(Path("."), help="카탈로그 저장소"),
     dry_run: bool = typer.Option(False, "--dry-run", help="돌리지 않고 harbor 명령만 찍는다"),
 ) -> None:
-    """CI용. 기준 커밋(GitHub Actions·GitLab CI 환경에서 정한다: PR/MR은 merge-base, push는 push 전 커밋, 로컬은 HEAD~1) 이후 바뀐 스킬마다 evals를 스킬 있이·없이 두 번 돌려 Langfuse에 남긴다. 자격이 없으면 1, 기준·diff를 못 구하면 2, 바뀐 스킬이 없으면 아무것도 하지 않는다."""
+    """기준 커밋(GitHub Actions·GitLab CI 환경에서 정한다: PR/MR은 merge-base, push는 push 전 커밋, 로컬은 HEAD~1) 이후 바뀐 스킬의 evals를 돌린다. 기본 oracle은 모델·자격 없이 참조 해답으로 "과제가 풀리고 검증기가 받는가"만 본다(CI가 PR마다). 모델 에이전트를 주면 스킬 있이·없이 두 번 돌려 Langfuse에 남긴다 — 저자가 자기 자격으로(§11 2026-10-18). 자격이 없으면 1, 기준·diff를 못 구하면 2, 바뀐 스킬이 없으면 아무것도 하지 않는다."""
     env = dict(os.environ)
-    for problem in (ci_logic.missing_credentials(agent, env), ci_logic.missing_langfuse(env)):
-        if problem:
-            print(problem, file=sys.stderr)
-            raise typer.Exit(1)
+    if agent != ci_logic.ORACLE:
+        for problem in (ci_logic.missing_credentials(agent, env), ci_logic.missing_langfuse(env)):
+            if problem:
+                print(problem, file=sys.stderr)
+                raise typer.Exit(1)
     repo = repo_root.resolve()
     run = ci_logic.git_runner(repo)
     try:

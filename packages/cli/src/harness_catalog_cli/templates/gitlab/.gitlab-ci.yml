@@ -31,12 +31,10 @@ evals:
   extends: .code-repo-credentials
   stage: evals
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" && $HARNESS_EVALS == "true"
-  tags: [harness-catalog]
-  parallel:
-    matrix:
-      - AGENT: [claude-code, codex]   # GitLab은 변수로 matrix를 만들 수 없다 — HARNESS_EVALS_AGENTS 변수는 GitHub 전용이고 여기서는 이 줄을 고친다
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+  tags: [harness-catalog]   # Docker 가 있고 tailnet 안(eval 이미지가 NAS Nexus 에서 hc 를 받는다)
   variables:
     GIT_DEPTH: 0
   script:
-    - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog evals --agent "$AGENT"
+    - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog evals   # --agent oracle 이 기본. 모델 측정은 저자 로컬

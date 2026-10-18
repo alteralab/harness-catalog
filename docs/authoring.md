@@ -98,7 +98,7 @@ harbor run --path skills/<name>/evals --agent claude-code --env docker --plugin 
 
 둘 다 통과하면 모델이 이미 혼자 하는 일이라 스킬이 값을 하지 않는 것이고, 넣었을 때만 통과하면 값을 한 것입니다. 결과는 Langfuse 데이터셋 `<카탈로그>/<스킬>`에 run 둘로 남습니다. 음성 과제처럼 자동 판정이 어려우면 사람이 눈으로 보고 Langfuse에 주석(annotation)으로 남겨도 됩니다. Harbor가 없으면 PR 본문에 "evals 미실행"을 적습니다.
 
-CI에서도 돌리려면 운영자가 git 호스트 변수 `HARNESS_EVALS=true`와 러너 자격을 둡니다([operations.md](operations.md)).
+CI는 Oracle만 돌립니다(`harness-catalog evals`, 바뀐 스킬의 `-a oracle`) — 과제가 풀리고 검증기가 끝 상태를 받는지를 PR마다 확인하는 것이고, 모델 측정은 위 두 명령으로 저자가 자기 자격으로 합니다. 결과는 Langfuse에 남습니다.
 
 ## 5.5 도구 올리기(toolbox)
 
