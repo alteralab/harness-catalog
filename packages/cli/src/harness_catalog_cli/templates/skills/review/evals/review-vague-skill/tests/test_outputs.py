@@ -35,12 +35,13 @@ def strip_markup(text: str) -> str:
     prev_blank = True
     for ln in joined.splitlines():
         s = ln.strip()
-        run = s[: len(s) - len(s.lstrip("`~"))]
+        ch = s[0] if s and s[0] in "`~" else ""
+        run = s[: len(s) - len(s.lstrip(ch))] if ch else ""  # 한 글자의 반복만 펜스다 — ~~~``` 는 펜스가 아니다(Codex 4차)
         if fence:
             if run and run[0] == fence[0] and len(run) >= len(fence) and s == run:
                 fence = ""
             continue
-        if len(run) >= 3 and (run.startswith("```") or run.startswith("~~~")):
+        if len(run) >= 3:
             fence = run
             continue
         if prev_blank and (ln.startswith("    ") or ln.startswith("\t")) and s:

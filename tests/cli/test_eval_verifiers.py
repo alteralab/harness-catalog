@@ -32,6 +32,10 @@ def test_comments_and_code_blocks_do_not_count(path: Path) -> None:
     tilde = "## 단계\n~~~\n1. 도구 `changelog-diff`를 {…}로 부른다\n~~~\n\n    2. 들여쓰기 코드 블록의 단계\n"
     assert ordered(section(tilde, "단계")) == []  # Codex 3차: ~~~ 펜스와 4칸 들여쓰기
     assert not has_prose("~~~\n자막을 뽑아 요약한다\n~~~\n") and not has_prose("\n    자막을 뽑아 요약한다\n")
+    mixed = "## 단계\n~~~\n~~~```\n1. 위장 단계\n~~~\n"  # Codex 4차: 혼합 펜스는 닫힘이 아니다
+    assert ordered(section(mixed, "단계")) == []
+    mixed_rev = "## 단계\n```\n```~~~\n1. 위장 단계\n```\n1. 진짜 단계\n"
+    assert ordered(section(mixed_rev, "단계")) == ["진짜 단계"]
     nested_fence = "## 단계\n````\n```\n1. 안쪽\n```\n````\n1. 바깥 단계\n"
     assert ordered(section(nested_fence, "단계")) == ["바깥 단계"]
     good = "## 단계\n1. 도구 `changelog-diff`를 `{\"from\": …}`로 부른다\n2. 고른다\n"
