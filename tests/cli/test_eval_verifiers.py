@@ -37,6 +37,8 @@ def test_comments_and_code_blocks_do_not_count(path: Path) -> None:
     # CommonMark 4.5: 여는 펜스는 info string을 가질 수 있다(백틱 펜스의 info string에는 백틱이 못 온다) — ```python도 ~~~```도 여는 펜스다. 닫는 펜스만 info string이 없다.
     info_opens = "## 단계\n```python\n1. 코드 속 단계\n```\n~~~```\n1. 틸드 펜스 속 단계\n~~~\n1. 진짜 단계\n"
     assert ordered(section(info_opens, "단계")) == ["진짜 단계"]
+    backtick_info = "## 단계\n```a`b\n1. 펜스가 아니므로 보이는 단계\n"  # 백틱 펜스의 info string에 백틱 — 펜스가 아니다
+    assert ordered(section(backtick_info, "단계")) == ["펜스가 아니므로 보이는 단계"]
     mixed_rev = "## 단계\n```\n```~~~\n1. 위장 단계\n```\n1. 진짜 단계\n"
     assert ordered(section(mixed_rev, "단계")) == ["진짜 단계"]
     nested_fence = "## 단계\n````\n```\n1. 안쪽\n```\n````\n1. 바깥 단계\n"

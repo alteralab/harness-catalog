@@ -41,7 +41,7 @@ def strip_markup(text: str) -> str:
             if run and run[0] == fence[0] and len(run) >= len(fence) and s == run:
                 fence = ""
             continue
-        if len(run) >= 3:
+        if len(run) >= 3 and not (ch == "`" and "`" in s[len(run):]):  # 백틱 펜스의 info string에는 백틱이 못 온다(CommonMark 4.5)
             fence = run
             continue
         if prev_blank and (ln.startswith("    ") or ln.startswith("\t")) and s:
