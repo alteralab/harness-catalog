@@ -1,4 +1,4 @@
-"""명령 harness-catalog(별칭 hc): check · evals · init · schema · config. 출력 층(T201 면제)."""
+"""명령 harness-catalog(별칭 hc): check · evals · init · toolbox · pin · config. 출력 층(T201 면제)."""
 
 from __future__ import annotations
 
@@ -9,10 +9,11 @@ import sys
 import tempfile
 from importlib.metadata import version
 from pathlib import Path
+from typing import cast
 
 import typer
 
-from harness_catalog_core.toolbox import tool_json_schema
+import anyio
 
 from harness_catalog_core.adapters.git import GitStore
 from harness_catalog_core.adapters.validate import SkillsRefValidator
@@ -20,9 +21,11 @@ from harness_catalog_core.check import check_commit
 from harness_catalog_core.model import ContentError
 
 from . import ci as ci_logic
+from . import pin as pin_logic
+from . import toolbox as toolbox_logic
 from .config import effective_values, merge_docs, render_docs, render_env_example
 from .gitleaks import GitleaksUnavailable, ensure_gitleaks
-from .init import CODE_REPO_URL, InitError, init_repository
+from .init import CODE_REPO_URL, SCHEMA_PATH, InitError, generated_schema, init_repository
 
 app = typer.Typer(add_completion=False, help="harness-catalog: 카탈로그 저장소의 검사와 초기화")
 config_app = typer.Typer(help="설정값: 실효값 보기, 참조 문서 생성")
@@ -56,6 +59,7 @@ def _run_check(repo_root: Path, rev: str) -> int:
             print(f"checker failed: {e}", file=sys.stderr)
             return 2
         report = check_commit(store, SkillsRefValidator(gitleaks=gitleaks), head, workdir=work)
+        stale_schema = _schema_is_stale(store, head)
     if report.checker_failed:
         print(f"checker failed: {report.checker_failed}", file=sys.stderr)
         return 2
@@ -63,7 +67,15 @@ def _run_check(repo_root: Path, rev: str) -> int:
         kind = "warning" if f.warning else "error"
         where = (f.skill if f.kind == "skill" else f"{f.kind} {f.skill}") if f.skill else "(repository)"
         print(f"{kind}: item {f.item}: {where}: {f.reason}")
+    if stale_schema:
+        print(f"warning: {SCHEMA_PATH} differs from this cli's model — regenerate with `hc init <repo-url> --refresh` (editor validation only; the registry validates tool.json with the model directly)")
     return 1 if report.errors else 0
+
+
+def _schema_is_stale(store: GitStore, rev: str) -> bool:
+    """저장된 편집기용 스키마가 현재 core 모델과 다른가(경고, 종료 코드에 안 걸린다 — Codex 2026-10-18 ⑥)."""
+    raw = store.read_blob(rev, SCHEMA_PATH)
+    return raw is not None and raw.decode("utf-8", errors="replace") != generated_schema()
 
 
 @app.command()
@@ -114,10 +126,11 @@ def init(
     repo_url: str = typer.Argument(..., help="빈(또는 이미 있는) 카탈로그 저장소의 URL. 운영자의 git 자격으로 clone·push한다"),
     pin: str | None = typer.Option(None, "--pin", help="템플릿에 박을 코드 저장소 ref(개발용). 없으면 cli 자기 판의 태그이고 그 태그가 있어야 한다"),
     host: str | None = typer.Option(None, "--host", help="github | gitlab. 없으면 URL에서 판별한다"),
+    refresh: bool = typer.Option(False, "--refresh", help="생성 파일(schemas/tool.schema.json)이 이 cli의 모델과 다르면 다시 쓴다. 그 밖은 여전히 없는 것만"),
 ) -> None:
-    """표지·skills/(기본 스킬 셋)·schemas/tool.schema.json·README·pre-commit·호스트별 CI를 없는 것만 써서 커밋·push한다. 두 번 돌리면 변경 0."""
+    """표지·skills/·schemas/tool.schema.json·.mcp.json·README·pre-commit·호스트별 CI를 없는 것만 써서 커밋·push한다. 두 번 돌리면 변경 0. `--refresh`는 생성 스키마를 현재 모델로 맞춘다."""
     try:
-        result = init_repository(repo_url, pin=pin, host=host)
+        result = init_repository(repo_url, pin=pin, host=host, refresh=refresh)
     except InitError as e:
         print(f"init stopped: {e}", file=sys.stderr)
         raise typer.Exit(1)
@@ -144,12 +157,44 @@ def config_docs(out_dir: Path = typer.Option(Path("docs"), "--out-dir", help="co
 
 
 @app.command()
-def schema(kind: str = typer.Argument("tool", help="tool — tool.json의 JSON Schema(core ToolSpec에서 생성)")) -> None:
-    """카탈로그 레코드의 JSON Schema를 표준 출력에 찍는다. 저자가 `schemas/tool.schema.json`을 다시 쓸 때: `harness-catalog schema tool > schemas/tool.schema.json`."""
-    if kind != "tool":
-        print(f"unknown schema kind {kind!r} (tool only — server.json follows the MCP Registry schema at its own $schema URL)", file=sys.stderr)
+def toolbox(
+    directory: Path = typer.Argument(Path("./tools"), help="`<dir>/*/tool.json`을 읽는다. 카탈로그 클론은 ./tools, 세션은 .agents/tools"),
+    timeout: float = typer.Option(toolbox_logic.DEFAULT_TIMEOUT, "--timeout", help="도구 호출 하나의 상한(초)"),
+) -> None:
+    """공구 걸이: 디렉토리의 kind: script 도구를 MCP(stdio) 도구로 노출하고 호출을 셸 없는 서브프로세스로 돌린다. 세션은 pin이, 카탈로그 클론은 init의 .mcp.json이, 루프는 조립기가 이 명령을 mcpServers에 등록한다."""
+    async def main() -> int:
+        return await toolbox_logic.serve(directory.resolve(), timeout=timeout)
+
+    raise typer.Exit(anyio.run(main))
+
+
+@app.command()
+def pin(
+    scope: str = typer.Option(..., "--scope", help="project(저장소의 .agents/) 또는 user(~/.agents/)"),
+    response: Path | None = typer.Option(None, "--response", help="get_skill/get_tool(archive=true) 응답(structuredContent) JSON 파일. 없으면 표준 입력"),
+    project_root: Path = typer.Option(Path("."), "--project-root", help="project 범위의 뿌리"),
+    force: bool = typer.Option(False, "--force", help="같은 이름의 사본이 있으면 .pin-old로 비켜 두고 바꾼다"),
+) -> None:
+    """내려받기의 결정적 꼬리: 받기 → 크기·sha256 대조 → 풀기 → 파일 목록 대조 → PINNED → 원자적 교체 → 링크(스킬) 또는 .mcp.json의 toolbox 항목(도구). 실패해도 기존 사본은 남는다. 무엇을 어느 범위에 받을지는 pin 스킬이 대화로 정한다."""
+    if scope not in ("project", "user"):
+        print(f"--scope must be project or user, not {scope!r}", file=sys.stderr)
         raise typer.Exit(2)
-    print(json.dumps(tool_json_schema(), ensure_ascii=False, indent=2))
+    text = response.read_text(encoding="utf-8") if response is not None else sys.stdin.read()
+    try:
+        data: object = json.loads(text)
+    except ValueError as e:
+        print(f"response is not JSON: {e}", file=sys.stderr)
+        raise typer.Exit(2)
+    if not isinstance(data, dict):
+        print("response is not a JSON object", file=sys.stderr)
+        raise typer.Exit(2)
+    try:
+        record = pin_logic.parse_response(cast("dict[str, object]", data))
+        target = pin_logic.install(record, pin_logic.download(record), scope=scope, project_root=project_root.resolve(), force=force)
+    except pin_logic.PinError as e:
+        print(f"pin stopped: {e}", file=sys.stderr)
+        raise typer.Exit(1)
+    print(f"pinned {record.kind} {record.name} {record.sha} → {target} ({len(record.files)} files)")
 
 
 def main() -> None:

@@ -13,6 +13,7 @@
 ```
 .
 ├── .harness-catalog                 # 표지: layout = 1. 레지스트리가 이 저장소를 카탈로그로 인식하는 근거
+├── .mcp.json                        # 이 클론에서 tools/의 도구를 MCP로 띄우는 toolbox 항목(hc toolbox ./tools)
 ├── .pre-commit-config.yaml          # 커밋 전 `harness-catalog check` (CLI 판 v<판>에 핀)
 ├── .github/
 │   ├── workflows/check.yml          # PR·main push마다 `harness-catalog check`, 선택 잡 evals
@@ -69,8 +70,8 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 | `search_tools(query)` | 도구 어휘 검색: 이름·설명·`sha`·`kind`·`server` |
 | `get_tool(id, sha?, archive?)` | `tool.json` 전체. `kind: mcp`면 참조하는 `server.json`을, `kind: script`이고 `archive=true`면 다운로드 명세를 함께 |
 
-- **곁에 두기(pin).** 매일 쓰는 스킬은 `pin-skill`을 따라 `.agents/skills/<name>/`(프로젝트) 또는 `~/.agents/skills/<name>/`(사용자)에 내려받습니다. 사본이 낡았는지는 `search_skills(<name>)`의 `sha`와 사본의 `PINNED`를 견주면 압니다.
-- **도구를 쓸 때.** `get_tool`은 정의와 배선을 줄 뿐 도구를 부르지 않습니다. `kind: mcp`면 그 서버를 하네스 설정(`.mcp.json`·`mcpServers`)에 붙이는 것은 사용자의 일이고, `kind: script`면 받은 디렉토리에서 `runtime.command`를 **셸 없이 argv로** 실행합니다(입력은 `inputSchema`에 맞는 JSON 하나를 stdin으로, 결과는 stdout — `outputSchema`가 있으면 그 스키마의 JSON 객체 하나, 종료 0 = 결과를 냈다·0 아님 = 실행 실패. 판정은 결과 객체의 필드로).
+- **곁에 두기(pin).** 매일 쓰는 스킬은 `pin` 스킬을 따라 `.agents/skills/<name>/`(프로젝트) 또는 `~/.agents/skills/<name>/`(사용자)에 내려받습니다. 무엇을 어느 범위에 받을지는 대화로 정하고, 받기부터 PINNED까지는 `hc pin`이 한 번에 합니다. 사본이 낡았는지는 `search_skills(<name>)`의 `sha`와 사본의 `PINNED`를 견주면 압니다.
+- **도구를 쓸 때.** `get_tool`은 정의와 배선을 줄 뿐 도구를 부르지 않습니다. `kind: mcp`면 그 서버를 하네스 설정(`.mcp.json`·`mcpServers`)에 붙이는 것은 사용자의 일입니다. `kind: script`면 `get_tool(archive=true)` 응답을 `hc pin --scope project`에 넘기고, 그 명령이 `.mcp.json`에 써 둔 `toolbox` 항목(`hc toolbox .agents/tools`)이 도구를 MCP로 띄웁니다. 이 카탈로그 저장소 안에서는 `init`이 둔 `.mcp.json`(`hc toolbox ./tools`)으로 `tools/`의 도구가 바로 MCP에 뜹니다.
 - **검색어에 비밀을 넣지 마세요.** 검색어는 팀 Langfuse의 도구 호출 기록에 남습니다.
 
 ## 만드는 사람: 올리기

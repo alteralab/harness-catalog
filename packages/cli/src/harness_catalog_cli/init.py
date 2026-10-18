@@ -19,6 +19,8 @@ from harness_catalog_core.toolbox import tool_json_schema
 CODE_REPO_URL = "https://github.com/alteralab/harness-catalog"
 VERSION_PLACEHOLDER = "<판>"
 SCHEMA_PATH = "schemas/tool.schema.json"
+MCP_CONFIG_PATH = ".mcp.json"
+MCP_CONFIG = json.dumps({"mcpServers": {"toolbox": {"command": "hc", "args": ["toolbox", "./tools"]}}}, ensure_ascii=False, indent=2) + "\n"
 
 
 class InitError(Exception):
@@ -58,7 +60,8 @@ def template_files(host: str) -> Mapping[str, str]:
     """상대 경로 → 내용. 호스트의 워크플로만 싣고, 기본 스킬 셋(templates/skills/)은 파일 전부를 싣고, tool.json의 JSON Schema는 core 모델에서 생성해 싣는다.
 
     스킬 원본은 이 패키지 데이터 하나다(사본을 두지 않는다, C-DUP-2). 새 카탈로그는 init 직후부터 세 스킬이 검색된다(DESIGN §11 2026-10-10·2026-10-11 write-tool).
-    schemas/tool.schema.json은 템플릿 파일이 아니라 `ToolSpec`의 산출물이다 — 모델이 바뀌면 다음 init(새 카탈로그)과 `harness-catalog schema tool`(기존 카탈로그)이 따라간다.
+    schemas/tool.schema.json은 템플릿 파일이 아니라 `ToolSpec`의 산출물이다 — 모델이 바뀌면 다음 init(새 카탈로그)과 `init --refresh`(기존 카탈로그)가 따라간다; `check`가 낡음을 경고한다.
+    .mcp.json은 카탈로그 클론에서 저자가 자기 도구를 바로 MCP로 쓰게 하는 `toolbox` 항목 하나다(§11 2026-10-18 어디서나 MCP 하나).
     """
     base = files("harness_catalog_cli") / "templates"
     out: dict[str, str] = {}
@@ -71,13 +74,18 @@ def template_files(host: str) -> Mapping[str, str]:
             out[".github/actions/code-repo-credentials/action.yml"] = (root / "github" / "actions" / "code-repo-credentials" / "action.yml").read_text()
         else:
             out[".gitlab-ci.yml"] = (root / "gitlab" / ".gitlab-ci.yml").read_text()
-        out[SCHEMA_PATH] = json.dumps(tool_json_schema(), ensure_ascii=False, indent=2) + "\n"
+        out[SCHEMA_PATH] = generated_schema()
+        out[MCP_CONFIG_PATH] = MCP_CONFIG
         skills_root = root / "skills"
         for p in sorted(skills_root.rglob("*")):
             rel = p.relative_to(skills_root)
             if p.is_file() and "__pycache__" not in rel.parts:  # 스크립트를 import한 흔적(.pyc)은 템플릿이 아니다
                 out[f"skills/{rel.as_posix()}"] = p.read_text()
     return out
+
+
+def generated_schema() -> str:
+    return json.dumps(tool_json_schema(), ensure_ascii=False, indent=2) + "\n"
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -87,8 +95,8 @@ def _git(repo: Path, *args: str) -> str:
     return proc.stdout
 
 
-def write_missing(repo: Path, contents: Mapping[str, str], pin: str) -> tuple[str, ...]:
-    """없는 파일만 쓴다. 표지가 있는데 layout이 다르면 멈춘다."""
+def write_missing(repo: Path, contents: Mapping[str, str], pin: str, *, refresh: bool = False) -> tuple[str, ...]:
+    """없는 파일만 쓴다. 표지가 있는데 layout이 다르면 멈춘다. refresh면 생성 파일(schemas/tool.schema.json)이 낡았을 때 다시 쓴다."""
     marker = repo / MARKER_PATH
     if marker.exists():
         try:
@@ -101,6 +109,9 @@ def write_missing(repo: Path, contents: Mapping[str, str], pin: str) -> tuple[st
     for rel, text in contents.items():
         target = repo / rel
         if target.exists():
+            if refresh and rel == SCHEMA_PATH and target.read_text() != text:
+                target.write_text(text)
+                written.append(rel)
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text.replace(VERSION_PLACEHOLDER, pin.removeprefix("v")))
@@ -108,7 +119,7 @@ def write_missing(repo: Path, contents: Mapping[str, str], pin: str) -> tuple[st
     return tuple(written)
 
 
-def init_repository(repo_url: str, *, pin: str | None = None, host: str | None = None, author: str = "harness-catalog init") -> InitResult:
+def init_repository(repo_url: str, *, pin: str | None = None, host: str | None = None, author: str = "harness-catalog init", refresh: bool = False) -> InitResult:
     host = host or detect_host(repo_url)
     if host not in ("github", "gitlab"):
         raise InitError(f"unknown host {host!r} (github·gitlab only)")
@@ -126,9 +137,9 @@ def init_repository(repo_url: str, *, pin: str | None = None, host: str | None =
             _git(repo, "checkout", "-q", "-b", "main")
         else:
             raise InitError("repository has commits but no 'main' branch — create main (the catalog branch) first, then rerun")
-        written = write_missing(repo, template_files(host), ref)
+        written = write_missing(repo, template_files(host), ref, refresh=refresh)
         if written:
             _git(repo, "add", "-A")
-            _git(repo, "-c", "user.name=harness-catalog", "-c", f"user.email={author}@localhost", "commit", "-q", "-m", f"harness-catalog init (cli {ref})")
+            _git(repo, "-c", "user.name=harness-catalog", "-c", f"user.email={author}@localhost", "commit", "-q", "-m", f"harness-catalog init{' --refresh' if refresh else ''} (cli {ref})")
             _git(repo, "push", "-q", "origin", "HEAD:main")
     return InitResult(written, ref, host)

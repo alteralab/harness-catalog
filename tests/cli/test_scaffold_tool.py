@@ -1,4 +1,4 @@
-"""write-tool의 scripts/scaffold.py — 결정적 뼈대 스크립트와 `harness-catalog schema tool`. 템플릿 패키지 데이터라 모듈이 아니므로 파일을 그대로 실행한다."""
+"""write-tool의 scripts/scaffold_tool.py — 결정적 뼈대 스크립트. 템플릿 패키지 데이터라 모듈이 아니므로 파일을 그대로 실행한다."""
 
 import json
 import subprocess
@@ -6,9 +6,7 @@ import sys
 from pathlib import Path
 
 import jsonschema
-from typer.testing import CliRunner
 
-from harness_catalog_cli.__main__ import app
 from harness_catalog_core.toolbox import parse_server, parse_tool, tool_json_schema
 
 SKILLS = Path(__file__).resolve().parents[2] / "packages/cli/src/harness_catalog_cli/templates/skills"
@@ -59,9 +57,3 @@ def test_rejects_bad_inputs(tmp_path: Path) -> None:
     assert run(tmp_path, "ok", "--description", "x", "--kind", "mcp", "--server", "graft").returncode == 2  # --tool 없음
     assert run(tmp_path, "ok", "--description", "x", "--kind", "http").returncode == 2
     assert not (tmp_path / "tools").exists() and not (tmp_path / "mcp-servers").exists()
-
-
-def test_cli_schema_tool_prints_the_same_schema() -> None:
-    r = CliRunner().invoke(app, ["schema", "tool"])
-    assert r.exit_code == 0 and json.loads(r.stdout) == tool_json_schema()
-    assert CliRunner().invoke(app, ["schema", "server"]).exit_code == 2
