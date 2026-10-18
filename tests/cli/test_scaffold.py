@@ -206,3 +206,11 @@ def test_put_is_exclusive_create_so_a_racing_file_is_neither_overwritten_nor_rol
     put(fresh, "new", created, tmp_path)
     assert fresh.read_text() == "new" and created == ["tools/t/tool.json"]
 
+
+
+def test_pin_eval_stub_copies_are_identical() -> None:
+    """pin 의 두 케이스는 같은 스텁(레지스트리 모양)과 fixture 를 가진다 — Harbor 빌드 컨텍스트가 케이스별 environment/ 라 사본이 둘이다."""
+    a, b = (SKILLS / "pin/evals" / c / "environment/stub" for c in ("pin-project-scope", "no-trigger-load"))
+    fa = {p.relative_to(a).as_posix(): p.read_bytes() for p in a.rglob("*") if p.is_file()}
+    fb = {p.relative_to(b).as_posix(): p.read_bytes() for p in b.rglob("*") if p.is_file()}
+    assert fa and fa == fb and "registry_stub.py" in fa and "fixture/skills/yt-subs/SKILL.md" in fa

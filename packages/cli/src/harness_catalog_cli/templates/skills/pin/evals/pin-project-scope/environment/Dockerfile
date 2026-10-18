@@ -7,4 +7,7 @@ RUN pip install --no-cache-dir uv==0.11.8 pytest==8.4.1 pytest-json-ctrf==0.3.5 
 RUN pip install --no-cache-dir --index-url https://ds923plus.tail2f9fe3.ts.net:8443/repository/pypi-public/simple/ harness-catalog-cli==<판>   # hc: toolbox(MCP)·pin·init. 팀 Nexus(tailnet) — 이미지는 tailnet 안에서 굽는다
 RUN mkdir -p /skills   # task.toml의 skills_dir. Harbor가 주입 때 만들기도 하지만 문서("이미지에 있게 하라")를 따른다
 WORKDIR /work
+# 레지스트리 스텁: 진짜 레지스트리(OAuth·tailnet)는 컨테이너에 둘 수 없다 — 같은 네 도구의 모양을 고정 스킬에서 내는 stdio MCP 서버(task.toml mcp_servers). 의존성은 빌드 때 받아 둔다.
+COPY stub /work/stub
+RUN cd /work/stub && uv run --script registry_stub.py --warm
 RUN git init -q /work
