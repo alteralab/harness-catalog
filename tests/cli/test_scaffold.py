@@ -87,6 +87,7 @@ def test_skill_tools_preflight_writes_nothing_on_failure(tmp_path: Path) -> None
                          (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "object", "properties": {"a": {}}, "required": ["zzz"]}, "runtime": {}}), "required must list keys"),
                          (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "array"}, "runtime": {}}), "inputSchema must be an object"),
                          (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "object"}, "outputSchema": {"type": "string"}, "runtime": {}}), "outputSchema must be"),
+                         (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "object"}, "outputSchema": {"type": "string", "properties": {}}, "runtime": {}}), "outputSchema must be"),
                          (json.dumps({"name": "other", "description": "d", "inputSchema": {"type": "object"}, "runtime": {}}), "name 'broken'")):
         broken.joinpath("tool.json").write_text(text)
         res = run(tmp_path, {"kind": "skill", "name": "s", "description": "x", "tools": ["valid-new", "broken"]})
@@ -161,3 +162,29 @@ def test_shipped_base_evals_match_scaffold() -> None:
         assert (case / "tests/test.sh").read_text() == k["test_sh"], f"{case}: test.sh가 scaffold.py TEST_SH와 다르다"
         cfg = tomllib.loads((case / "task.toml").read_text())
         assert cfg["verifier"]["environment_mode"] == "shared" and cfg["environment"]["skills_dir"] == "/skills", case
+
+
+def test_names_are_unique_across_skills_and_tools(tmp_path: Path) -> None:
+    """Codex 2026-10-18 2차: 검사 11이 거부할 카탈로그를 scaffold가 만들지 않는다 — 네 방향 전부 쓰기 전에 거부."""
+    assert run(tmp_path, {"kind": "tool", "name": "foo", "description": "x"}).returncode == 0
+    assert run(tmp_path, {"kind": "skill", "name": "bar", "description": "x"}).returncode == 0
+    snapshot = sorted(str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*") if p.is_file())
+    for payload, needle in (({"kind": "skill", "name": "foo", "description": "x"}, "already a tool"),
+                            ({"kind": "tool", "name": "bar", "description": "x"}, "already a skill"),
+                            ({"kind": "skill", "name": "baz", "description": "x", "tools": ["bar"]}, "collide with a skill"),
+                            ({"kind": "skill", "name": "qux", "description": "x", "tools": ["qux"]}, "collide with a skill")):
+        res = run(tmp_path, payload)
+        assert res.returncode == 2 and needle in res.stderr, (payload, res.stderr)
+    assert sorted(str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*") if p.is_file()) == snapshot
+
+
+def test_write_failure_rolls_back_this_calls_files_only(tmp_path: Path) -> None:
+    """Codex 2026-10-18 2차: preflight 뒤의 I/O 실패(여기서는 tools/<x>가 파일이라 mkdir 불가)는 이번 호출이 만든 파일을 전부 되돌리고, 있던 파일은 그대로."""
+    (tmp_path / "tools").mkdir()
+    (tmp_path / "tools" / "new-x").write_text("not a directory")  # tool.json이 없으니 preflight는 '없는 도구'로 보고, 쓰기 단계에서 OSError
+    (tmp_path / "skills").mkdir()
+    (tmp_path / "skills" / "keep.txt").write_text("untouched")
+    res = run(tmp_path, {"kind": "skill", "name": "s", "description": "x", "tools": ["new-x"]})
+    assert res.returncode == 1 and "rolled back" in res.stderr
+    assert not (tmp_path / "skills" / "s").exists() and (tmp_path / "skills" / "keep.txt").read_text() == "untouched"
+    assert (tmp_path / "tools" / "new-x").read_text() == "not a directory"

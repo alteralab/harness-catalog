@@ -214,6 +214,8 @@ def server_json(server: str) -> str:
 
 def scaffold_tool(root: Path, name: str, description: str, runtime: str, script: str, server: str | None, mcp_tool: str | None, created: list[str]) -> list[str]:
     tool_dir = root / "tools" / name
+    if (root / "skills" / name).exists():
+        raise Input(f"name {name!r} is already a skill (skills/{name}/) — names are unique across skills and tools")
     if runtime == "script":
         if not SCRIPT_RE.match(script):
             raise Input(f"script must be a file name like main.py, not {script!r}")
@@ -248,7 +250,7 @@ def read_tool_spec(root: Path, tool: str) -> dict[str, object]:
     if not isinstance(required, list) or any(k not in props for k in required):
         raise Input(f"tools/{tool}/tool.json: inputSchema.required must list keys of properties")
     out = spec.get("outputSchema")
-    if out is not None and (not isinstance(out, dict) or not isinstance(out.get("properties"), dict)):
+    if out is not None and (not isinstance(out, dict) or out.get("type") != "object" or not isinstance(out.get("properties"), dict)):
         raise Input(f"tools/{tool}/tool.json: outputSchema must be an object schema with properties (omit it for a text tool)")
     return spec  # type: ignore[return-value]
 
@@ -267,10 +269,8 @@ def tool_line(tool: str, spec: dict[str, object]) -> str:
     return f"   - 도구 `{tool}`을 `{{{args}}}`로 부른다 — {desc}.{result}\n"
 
 
-def scaffold_skill(root: Path, name: str, description: str, positive: str, negative: str, tools: list[str], created: list[str]) -> list[str]:
-    neg = negative if negative.startswith("no-trigger-") else f"no-trigger-{negative}"
-    d = root / "skills" / name
-    # 1) 검증과 호출 줄을 전부 메모리에서 — 어느 하나라도 틀리면 아무것도 쓰지 않는다
+def plan_tools(root: Path, skill: str, tools: list[str]) -> tuple[list[str], list[str]]:
+    """스킬이 엮는 도구 목록을 검증하고 (새로 만들 이름들, SKILL.md 호출 줄들)을 돌려준다. 파일은 쓰지 않는다."""
     missing: list[str] = []
     lines: list[str] = []
     for tool in tools:
@@ -279,9 +279,21 @@ def scaffold_skill(root: Path, name: str, description: str, positive: str, negat
         if (root / "tools" / tool / "tool.json").exists():
             spec = read_tool_spec(root, tool)
         else:
+            if tool == skill or (root / "skills" / tool).exists():
+                raise Input(f"tool {tool!r} would collide with a skill of the same name — names are unique across skills and tools")
             missing.append(tool)
             spec = json.loads(tool_json(tool, "TODO", {"kind": "script", "path": "scripts/main.py", "command": ["uv", "run", "--script", "scripts/main.py"]}))
         lines.append(tool_line(tool, spec))
+    return missing, lines
+
+
+def scaffold_skill(root: Path, name: str, description: str, positive: str, negative: str, tools: list[str], created: list[str]) -> list[str]:
+    neg = negative if negative.startswith("no-trigger-") else f"no-trigger-{negative}"
+    d = root / "skills" / name
+    # 1) 검증과 호출 줄을 전부 메모리에서 — 어느 하나라도 틀리면 아무것도 쓰지 않는다
+    if (root / "tools" / name).exists():
+        raise Input(f"name {name!r} is already a tool (tools/{name}/) — names are unique across skills and tools")
+    missing, lines = plan_tools(root, name, tools)
     skill_md = d / "SKILL.md"
     if skill_md.exists():  # 재실행: 있는 본문은 건드리지 않으므로, 본문이 모르는 도구를 새로 만들어 고아로 두지 않는다
         body = skill_md.read_text(encoding="utf-8")
@@ -329,8 +341,25 @@ def main() -> int:
     except Input as e:
         print(str(e), file=sys.stderr)
         return 2
+    except OSError as e:  # 쓰기 도중 실패 — 이번 호출이 만든 파일만 되돌린다(있던 파일은 put이 건드리지 않았다)
+        rollback(root, created)
+        print(f"write failed, rolled back {len(created)} new file(s): {e}", file=sys.stderr)
+        return 1
     print(json.dumps({"created": created, "todo": todo}, ensure_ascii=False))
     return 0
+
+
+def rollback(root: Path, created: list[str]) -> None:
+    for rel in reversed(created):
+        path = root / rel
+        try:
+            path.unlink()
+        except OSError:
+            continue
+        parent = path.parent
+        while parent != root and parent.exists() and not any(parent.iterdir()):
+            parent.rmdir()
+            parent = parent.parent
 
 
 if __name__ == "__main__":
