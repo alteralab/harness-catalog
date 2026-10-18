@@ -9,7 +9,7 @@ RUN mkdir -p /skills   # task.toml의 skills_dir. Harbor가 주입 때 만들기
 WORKDIR /work
 # 시험용 카탈로그: 이 판의 템플릿 그대로를 hc init 으로(기본 스킬 셋·tools/scaffold·.mcp.json·schemas) + 시험용 스킬 yt-subs. 사본 없음 — 템플릿이 바뀌면 fixture 도 따라온다.
 # /work/main.sha 는 검증기의 기준(main 이 그대로인가, 무엇이 새로 생겼나).
-RUN git init -q --bare /fixture.git && hc init --host github --pin v<판> file:///fixture.git >/dev/null \
+RUN git init -q --bare -b main /fixture.git && hc init --host github --pin v<판> file:///fixture.git >/dev/null \
  && git clone -q /fixture.git /work/catalog && cd /work/catalog \
  && mkdir -p skills/yt-subs && printf -- '---\nname: yt-subs\ndescription: YouTube 자막을 추출한다. 유튜브 자막 뽑아줘.\n---\n# yt-subs\n' > skills/yt-subs/SKILL.md \
  && git add -A && git -c user.email=t@x -c user.name=t commit -q -m "fixture: yt-subs" && git push -q origin main \
