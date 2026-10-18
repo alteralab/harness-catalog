@@ -21,3 +21,6 @@ openwiki/.run.json
 
 # OS
 .DS_Store
+
+# Harbor 로컬 실행 결과(harbor run)
+jobs/

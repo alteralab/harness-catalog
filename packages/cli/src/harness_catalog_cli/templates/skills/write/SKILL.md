@@ -40,6 +40,7 @@ compatibility: 카탈로그 저장소의 로컬 클론과 git·gh(PR 생성), uv
 | 같은 일을 하는 스킬·도구가 이미 있다 | 갱신 경로를 안내하고 멈춘다 |
 | 이름이 `search_skills`·`search_tools`에 있거나 `check` 항목 11이 "이름이 스킬로도 있다"고 거부 | 다른 이름 |
 | `scaffold`가 MCP에 없다 | 카탈로그 클론 루트에 `.mcp.json`이 있는지, 하네스를 그 디렉토리에서 열었는지 본다. 없으면 `hc init <repo-url>`이 둔 파일을 받거나 `hc toolbox ./tools`를 설정에 더한다 |
+| `hc`가 없어 toolbox를 못 띄우는 환경 | 같은 도구를 터미널에서 친다: `echo '{"kind": "skill", …}' \| uv run --script tools/scaffold/scripts/scaffold.py`. 입력과 결과는 MCP로 부를 때와 같다 |
 | 입출력이 스키마로 안 떨어진다(판단이 필요하다) | 도구가 아니라 스킬이다 — 판단은 산문으로, 결정적 부분만 도구로 |
 | 있는 도구가 거의 맞는데 인자 하나가 모자란다 | 그 도구를 갱신한다(인자는 더하기만, 기존 스킬이 깨지지 않게). 복사해서 새 도구를 만들지 않는다 |
 | `scaffold`가 `tools/<x>/tool.json unreadable` | 있는 도구의 tool.json이 깨져 있다. 그 도구부터 고친다(`hc check` 항목 11) |
