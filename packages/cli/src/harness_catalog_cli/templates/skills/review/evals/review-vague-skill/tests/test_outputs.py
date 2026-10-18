@@ -31,13 +31,22 @@ def strip_markup(text: str) -> str:
     out.append(rest)
     joined = "".join(out)
     kept: list[str] = []
-    fenced = False
+    fence = ""  # 열린 펜스(``` 또는 ~~~, 같은 글자·같거나 긴 길이로 닫힌다)
+    prev_blank = True
     for ln in joined.splitlines():
-        if ln.strip().startswith("```"):
-            fenced = not fenced
+        s = ln.strip()
+        run = s[: len(s) - len(s.lstrip("`~"))]
+        if fence:
+            if run and run[0] == fence[0] and len(run) >= len(fence) and s == run:
+                fence = ""
             continue
-        if not fenced:
-            kept.append(ln)
+        if len(run) >= 3 and (run.startswith("```") or run.startswith("~~~")):
+            fence = run
+            continue
+        if prev_blank and (ln.startswith("    ") or ln.startswith("\t")) and s:
+            continue  # 들여쓰기 코드 블록(빈 줄 뒤 4칸·탭)
+        prev_blank = not s
+        kept.append(ln)
     return "\n".join(kept)
 
 
