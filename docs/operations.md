@@ -48,7 +48,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
    ```
 
    자격 경로는 deploy key 하나입니다(PAT 경로는 2026-10-10에 뺐습니다 — 웹에서만 만들 수 있고 만료가 있어 자동화가 끊깁니다). 코드 저장소를 공개하면 이 시크릿도 필요 없습니다.
-6. CI evals는 Oracle입니다(모델·자격 없이, 바뀐 스킬의 참조 해답으로 과제와 검증기를 확인). PR마다·`main` push마다 self-hosted 러너에서 돕니다. 켜고 끄는 변수는 없습니다. 모델로 돌리는 측정은 저자가 자기 클론에서 합니다([authoring.md](authoring.md) §5).
+6. CI evals는 Oracle입니다(모델·자격 없이, 바뀐 스킬의 참조 해답으로 과제와 검증기를 확인). PR마다·`main` push마다 self-hosted 러너에서 돕니다. 켜고 끄는 변수는 없습니다. self-hosted 러너는 **저장소 단위로 등록**하므로 카탈로그 저장소에도 라벨 `harness-catalog`의 러너가 있어야 합니다(없으면 잡이 영원히 queued — 2026-10-18 실측). mini에는 `~/actions-runner-catalog`(`mini-catalog`)가 그것입니다. 러너 디렉토리를 복사해 만들 때 `bin`·`externals`가 원본을 가리키는 절대 심볼릭 링크라 그대로 두면 원본 러너로 동작합니다 — 복사본 안의 판으로 다시 겁니다. 모델로 돌리는 측정은 저자가 자기 클론에서 합니다([authoring.md](authoring.md) §5).
 
 ## 2. 레지스트리 설치
 
