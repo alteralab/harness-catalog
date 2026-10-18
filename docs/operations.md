@@ -28,7 +28,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
 
    ```sh
    uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v0.1.0#subdirectory=packages/cli" \
-     harness-catalog init https://github.com/<org>/<catalog>.git
+     hc init https://github.com/<org>/<catalog>.git
    ```
 
    템플릿에는 CLI 자기 판의 태그가 박힙니다. 코드 저장소에 그 태그가 없으면 멈춥니다(`--pin`으로 다른 ref를 줄 수 있습니다).
@@ -130,7 +130,7 @@ Dex에 등록된 클라이언트는 다음과 같습니다. 바꾸려면 설정 
 | 사유 | 뜻 | 조치 |
 |---|---|---|
 | `repo_unreachable` | 저장소를 받지 못함 | URL, deploy key, 네트워크 |
-| `no_main_branch` | 커밋 0인 빈 저장소 | `harness-catalog init` |
+| `no_main_branch` | 커밋 0인 빈 저장소 | `hc init` |
 | `not_a_catalog` | 표지 파일 없음 | `init` |
 | `unsupported_layout` | 표지의 `layout`이 지원하지 않는 값 | 레지스트리 판을 올리거나 표지를 맞춘다 |
 | `layout_mismatch` | 표지와 실제 배치가 다름 | 저장소 구조를 본다 |

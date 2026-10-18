@@ -1,5 +1,5 @@
 # PR마다·main push마다 harness-catalog check. main push에는 선택 잡 evals(변수 HARNESS_EVALS=true일 때만).
-# 이 파일은 배선만 한다. 논리(기준 커밋·gitleaks·하네스 자격·harbor 호출)는 CLI `harness-catalog ci …`에 있고 pytest가 검사한다.
+# 이 파일은 배선만 한다. 논리(gitleaks·기준 커밋·하네스 자격·harbor 호출)는 CLI `harness-catalog check`·`evals`에 있고 pytest가 검사한다.
 # 판을 올리려면 아래 두 줄의 @v<판>을 바꾼다 — 논리는 그 판을 따라온다.
 name: check
 on:
@@ -11,14 +11,12 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # 은퇴한 이름 검사(항목 5)는 전체 이력이 필요하다
+      - uses: actions/checkout@v4   # 검사는 HEAD 트리만 본다 — 이력이 필요 없다
       - uses: astral-sh/setup-uv@v5
       - uses: ./.github/actions/code-repo-credentials
         with:
           deploy-key: ${{ secrets.HARNESS_CATALOG_DEPLOY_KEY }}
-      - run: uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog ci check
+      - run: uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog check --rev HEAD
 
   evals:
     if: github.event_name == 'push' && vars.HARNESS_EVALS == 'true'
@@ -31,9 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0   # 바뀐 스킬을 기준 커밋과 견준다
       - uses: astral-sh/setup-uv@v5
       - uses: ./.github/actions/code-repo-credentials
         with:
           deploy-key: ${{ secrets.HARNESS_CATALOG_DEPLOY_KEY }}
-      - run: uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog ci evals --agent "${{ matrix.agent }}"
+      - run: uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog evals --agent "${{ matrix.agent }}"

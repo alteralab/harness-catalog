@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from harness_catalog_core.catalog import Catalog
-from harness_catalog_core.model import CatalogError, ContentError, ErrorCode, ReadyReason
+from harness_catalog_core.model import CatalogError, ErrorCode, ReadyReason
 
 from .fakes import FakeStore, FakeValidator, MemoryFacts
 
@@ -24,7 +24,7 @@ def test_rebuild_then_list_and_search(tmp_path: Path) -> None:
     status = cat.rebuild()
     assert status.ready and not status.reasons and status.commit_sha == store.commit
     assert [s.name for s in cat.search_skills("skill").skills] == ["alpha", "beta"]  # 전체 목록 도구는 없다 — 공통 낱말로 둘을 본다
-    assert cat.search_skills("skill").skills[0].requires_tools == ("yt-dlp",)
+    assert cat.search_skills("skill").skills[0].has_scripts and not cat.search_skills("skill").skills[1].has_scripts
     assert [s.name for s in cat.search_skills("youtube").skills] == ["alpha"]
     assert [s.name for s in cat.search_skills("skill", limit=1).skills] == ["alpha"]
     assert cat.search_skills("nothing-matches").skills == ()
@@ -56,10 +56,10 @@ def test_rejected_skill_is_excluded_and_reported(tmp_path: Path) -> None:
     assert [s.name for s in cat.search_skills("skill").skills] == ["alpha"]
 
 
-def test_load_skill_and_file(tmp_path: Path) -> None:
+def test_get_skill_and_file(tmp_path: Path) -> None:
     cat, store, _ = make(tmp_path)
     cat.rebuild()
-    body = cat.load_skill("alpha")
+    body = cat.get_skill("alpha")
     assert body.sha == store.tree_of("alpha") and "body A" in body.body and body.has_scripts
     assert sorted(f.path for f in body.files) == ["SKILL.md", "scripts/run.py"]
     f = cat.get_skill_file("alpha", "scripts/run.py")
@@ -72,10 +72,10 @@ def test_unknown_version_and_history(tmp_path: Path) -> None:
     cat, _, _ = make(tmp_path)
     cat.rebuild()
     with pytest.raises(CatalogError) as e:
-        cat.load_skill("alpha", sha="f" * 40)
+        cat.get_skill("alpha", sha="f" * 40)
     assert e.value.code is ErrorCode.UNKNOWN_VERSION
     with pytest.raises(CatalogError) as e2:
-        cat.load_skill("nope")
+        cat.get_skill("nope")
     assert e2.value.code is ErrorCode.NOT_FOUND
 
 
@@ -134,18 +134,12 @@ def test_same_commit_skips_rebuild(tmp_path: Path) -> None:
     assert store.fetch_calls == 2 and len(facts.snapshots) == 1
 
 
-def test_accept_rewind_drops_missing_base(tmp_path: Path) -> None:
-    """되감기 수용: 옛 기준 커밋이 이력에 없어도(deleted_skill_names가 실패해도) 빌드된다."""
+def test_accept_rewind_builds_unrelated_commit(tmp_path: Path) -> None:
+    """되감기 수용: 새 커밋이 옛 커밋의 자손이 아니어도 빌드된다(검사는 이력을 보지 않는다)."""
     store = FakeStore({"alpha": SKILL_A})
     facts = MemoryFacts()
     Catalog(store, FakeValidator(), facts, workdir=tmp_path).rebuild()
-    gone = store.commit
     store.commit = "g" * 40
-
-    def boom(_commit: str) -> frozenset[str]:
-        raise ContentError(ReadyReason.REPO_UNREACHABLE, f"bad object {gone}")
-
-    store.deleted_skill_names = boom  # type: ignore[method-assign]
     fresh = Catalog(store, FakeValidator(), facts, workdir=tmp_path)
     status = fresh.rebuild(accept_rewind=True)
     assert status.ready and status.commit_sha == "g" * 40 and not status.degraded and facts.current_commit() == "g" * 40

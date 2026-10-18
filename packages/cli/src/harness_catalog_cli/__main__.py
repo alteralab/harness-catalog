@@ -1,4 +1,4 @@
-"""명령 harness-catalog: check · init · config · ci. 출력 층(T201 면제)."""
+"""명령 harness-catalog(별칭 hc): check · evals · init · schema · config. 출력 층(T201 면제)."""
 
 from __future__ import annotations
 
@@ -27,8 +27,6 @@ from .init import CODE_REPO_URL, InitError, init_repository
 app = typer.Typer(add_completion=False, help="harness-catalog: 카탈로그 저장소의 검사와 초기화")
 config_app = typer.Typer(help="설정값: 실효값 보기, 참조 문서 생성")
 app.add_typer(config_app, name="config")
-ci_app = typer.Typer(help="CI에서 부르는 것: 기준 커밋·검사·evals. 워크플로 YAML은 이것만 부른다")
-app.add_typer(ci_app, name="ci")
 
 
 def _version(flag: bool) -> None:
@@ -42,7 +40,7 @@ def _root(_: bool = typer.Option(False, "--version", callback=_version, is_eager
     pass
 
 
-def _run_check(repo_root: Path, base: str | None, rev: str) -> int:
+def _run_check(repo_root: Path, rev: str) -> int:
     """종료 코드: 0 통과 / 1 위반 / 2 검사기 실패. 출력은 항목 번호와 사유."""
     with tempfile.TemporaryDirectory(prefix="hc-check.") as tmp:
         work = Path(tmp)
@@ -57,7 +55,7 @@ def _run_check(repo_root: Path, base: str | None, rev: str) -> int:
         except GitleaksUnavailable as e:
             print(f"checker failed: {e}", file=sys.stderr)
             return 2
-        report = check_commit(store, SkillsRefValidator(gitleaks=gitleaks), head, base=base, workdir=work)
+        report = check_commit(store, SkillsRefValidator(gitleaks=gitleaks), head, workdir=work)
     if report.checker_failed:
         print(f"checker failed: {report.checker_failed}", file=sys.stderr)
         return 2
@@ -71,46 +69,19 @@ def _run_check(repo_root: Path, base: str | None, rev: str) -> int:
 @app.command()
 def check(
     repo_root: Path = typer.Argument(Path("."), help="카탈로그 저장소(작업 트리)"),
-    base: str | None = typer.Option(None, "--base", help="변화를 볼 기준 커밋(항목 5·9)"),
     rev: str = typer.Option("INDEX", "--rev", help="검사할 트리: INDEX(스테이징, pre-commit용)·HEAD·커밋"),
 ) -> None:
-    """저장소 구조와 스킬마다의 규칙을 판정한다. 종료 0 통과 / 1 위반 / 2 검사기 실패. gitleaks는 PATH에 없으면 핀된 판을 체크섬 검증해 캐시에 받는다."""
-    raise typer.Exit(_run_check(repo_root, base, rev))
+    """저장소 구조와 스킬·도구·서버마다의 규칙을 판정한다(검사 일곱). 종료 0 통과 / 1 위반 / 2 검사기 실패. 기준 커밋이 필요 없어 pre-commit·CI·색인이 같은 명령이다. gitleaks는 PATH에 없으면 핀된 판을 체크섬 검증해 캐시에 받는다."""
+    raise typer.Exit(_run_check(repo_root, rev))
 
 
-def _base_or_exit(repo: Path) -> str:
-    try:
-        return ci_logic.base_commit(os.environ, ci_logic.git_runner(repo))
-    except ci_logic.CIError as e:
-        print(f"ci: {e}", file=sys.stderr)
-        raise typer.Exit(2)
-
-
-@ci_app.command("base")
-def ci_base(repo_root: Path = typer.Argument(Path("."), help="카탈로그 저장소")) -> None:
-    """호스트 환경(GitHub Actions·GitLab CI)에서 기준 커밋을 정해 찍는다: PR/MR은 merge-base, push는 push 전 커밋(브랜치 생성이면 루트), 로컬은 HEAD~1. 정할 수 없으면 2."""
-    print(_base_or_exit(repo_root.resolve()))
-
-
-@ci_app.command("check")
-def ci_check(repo_root: Path = typer.Argument(Path("."), help="카탈로그 저장소")) -> None:
-    """`check --rev HEAD --base <ci base>`. 워크플로의 check 잡이 부르는 한 줄."""
-    repo = repo_root.resolve()
-    base = _base_or_exit(repo)
-    if ci_logic.is_branch_creation(base, ci_logic.git_runner(repo)):
-        print("base: branch creation — no prior history, items 5/9 skipped", file=sys.stderr)
-        raise typer.Exit(_run_check(repo_root, None, "HEAD"))
-    print(f"base {base[:12]}", file=sys.stderr)
-    raise typer.Exit(_run_check(repo_root, base, "HEAD"))
-
-
-@ci_app.command("evals")
-def ci_evals(
+@app.command()
+def evals(
     agent: str = typer.Option(..., "--agent", help="Harbor 에이전트 이름(claude-code·codex·cursor-cli·gemini-cli)"),
     repo_root: Path = typer.Argument(Path("."), help="카탈로그 저장소"),
     dry_run: bool = typer.Option(False, "--dry-run", help="돌리지 않고 harbor 명령만 찍는다"),
 ) -> None:
-    """기준 커밋 이후 바뀐 스킬마다 evals를 스킬 있이·없이 두 번 돌려 Langfuse에 남긴다. 자격이 없으면 1, 기준·diff를 못 구하면 2, 바뀐 스킬이 없으면 아무것도 하지 않는다."""
+    """CI용. 기준 커밋(GitHub Actions·GitLab CI 환경에서 정한다: PR/MR은 merge-base, push는 push 전 커밋, 로컬은 HEAD~1) 이후 바뀐 스킬마다 evals를 스킬 있이·없이 두 번 돌려 Langfuse에 남긴다. 자격이 없으면 1, 기준·diff를 못 구하면 2, 바뀐 스킬이 없으면 아무것도 하지 않는다."""
     env = dict(os.environ)
     for problem in (ci_logic.missing_credentials(agent, env), ci_logic.missing_langfuse(env)):
         if problem:

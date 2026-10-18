@@ -22,7 +22,7 @@
 
 스킬 하나는 git 저장소의 디렉토리 하나입니다. `skills/<name>/SKILL.md`와, 필요하면 스크립트·참고 파일·평가 과제가 함께 있습니다. 이 저장소를 **카탈로그 저장소**라 부르고, `main`에 병합된 것이 곧 게시된 판입니다. 스킬을 만들고 고치고 지우는 일은 전부 브랜치 → PR → 병합이며, 병합한 사람이 그 판을 인증한 사람입니다.
 
-**레지스트리**는 `main`을 주기적으로 받아 검사·색인하고, 하네스가 MCP로 물으면 답하는 서버입니다. 도구는 여섯(스킬 넷 `search_skills`·`load_skill`·`get_skill_file`·`get_skill_archive`, 도구 둘 `search_tools`·`get_tool`)이고 전부 읽기이며 쓰기 도구도 전체 목록 도구도 없습니다. 저장소에는 읽기 전용 deploy key로만 닿습니다. 레지스트리가 뚫려도 카탈로그는 바뀌지 않고, 레지스트리가 죽어도 카탈로그는 git에 그대로 있습니다.
+**레지스트리**는 `main`을 주기적으로 받아 검사·색인하고, 하네스가 MCP로 물으면 답하는 서버입니다. 도구는 넷(스킬 둘 `search_skills`·`get_skill`, 도구 둘 `search_tools`·`get_tool`)이고 전부 읽기이며 쓰기 도구도 전체 목록 도구도 없습니다. 저장소에는 읽기 전용 deploy key로만 닿습니다. 레지스트리가 뚫려도 카탈로그는 바뀌지 않고, 레지스트리가 죽어도 카탈로그는 git에 그대로 있습니다.
 
 로그인은 팀 LDAP 계정으로 한 번 합니다. 레지스트리 앞의 Dex가 LDAP을 OIDC로 감싸고, LDAP 그룹 `harness-readers`에 든 사람만 도구를 부를 수 있습니다.
 
@@ -94,7 +94,7 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 git switch -c skill/<name>
 mkdir -p skills/<name> && $EDITOR skills/<name>/SKILL.md
 pre-commit install                                   # 커밋마다 harness-catalog check
-harness-catalog check . --rev HEAD --base main       # 직접 돌릴 때
+hc check . --rev HEAD                                # 직접 돌릴 때 (hc = harness-catalog의 짧은 이름)
 gh pr create
 ```
 
@@ -112,7 +112,7 @@ docker compose -f docker/compose.yml up -d
 curl -fsS http://127.0.0.1:8000/readyz
 ```
 
-카탈로그 저장소가 아직 없으면 `harness-catalog init <repo-url>`이 세웁니다. 프록시 경로·LDAP 연동·런북은 [docs/operations.md](docs/operations.md).
+카탈로그 저장소가 아직 없으면 `hc init <repo-url>`이 세웁니다(`hc`와 `harness-catalog`는 같은 명령입니다. 사람이 치는 자리는 `hc`, pre-commit·CI 설정 같은 기계가 읽는 자리는 긴 이름을 씁니다). 프록시 경로·LDAP 연동·런북은 [docs/operations.md](docs/operations.md).
 
 ## 문서
 

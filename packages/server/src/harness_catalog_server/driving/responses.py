@@ -1,4 +1,4 @@
-"""읽기 도구 여섯의 성공 응답 모델(DESIGN §11 2026-10-11 "응답 모양은 pydantic 모델로 고정"). §4 도구 표의 산문은 이 모델의 설명이다.
+"""읽기 도구 넷의 성공 응답 모델(DESIGN §11 2026-10-11 "응답 모양은 pydantic 모델로 고정"). §4 도구 표의 산문은 이 모델의 설명이다.
 
 MCP 어댑터가 이 모델의 인스턴스를 만들어 직렬화하고, 반환 주석 `Annotated[CallToolResult, <모델>]`로 SDK가 `tools/list`에
 `outputSchema`를 싣고 성공 응답의 `structuredContent`를 검증한다. 오류 응답(`isError`)은 `ErrorResponse` 모양이고 스키마 밖이다.
@@ -23,14 +23,13 @@ class _Closed(BaseModel):
 
 
 class SkillHit(_Closed):
-    """search_skills 항목: 선택에 쓰이는 것만(§4 예산)."""
+    """search_skills 항목: 선택에 쓰이는 것만(§4 예산). `has_scripts`는 루프 조립기가 세션 전용 스킬을 거르는 신호(§11 2026-10-18)."""
 
     name: str
     description: str
     sha: str = TREE_SHA
-    replaced_by: str | None = None
-    requires_tools: list[str] = Field(default_factory=list)
     compatibility: str | None = None
+    has_scripts: bool = False
 
 
 class SearchSkillsResponse(_Closed):
@@ -43,22 +42,11 @@ class FileEntry(_Closed):
     size: int = Field(ge=0)
 
 
-class LoadSkillResponse(_Closed):
-    id: str
-    body: str = Field(description="SKILL.md body (frontmatter stripped)")
-    sha: str = TREE_SHA
-    commit: str = COMMIT_SHA
-    metadata: dict[str, str]
-    files: list[FileEntry]
-    has_scripts: bool
-    fetched_at: datetime
+class SkillFilePayload(_Closed):
+    """get_skill(path=…)이 돌려주는 파일 하나."""
 
-
-class SkillFileResponse(_Closed):
-    id: str
     path: str
     size: int = Field(ge=0)
-    sha: str = TREE_SHA
     blob: str = Field(min_length=40, max_length=40, pattern=r"^[0-9a-f]{40}$", description="git blob SHA of this file")
     text: str | None = Field(description="UTF-8 text, or null when the file is binary")
     base64: str | None = Field(description="base64 bytes when the file is binary, else null")
@@ -77,10 +65,19 @@ class DownloadDescriptor(_Closed):
     digest: str = Field(description="`git-tree:<tree sha>` of the version inside the tar")
 
 
-class SkillArchiveResponse(DownloadDescriptor):
+class GetSkillResponse(_Closed):
+    """get_skill: 기본은 본문·파일 목록; `path`를 주면 `file`에 그 파일 하나(본문은 null); `archive=true`면 `archive`에 tar 명세(§11 2026-10-18)."""
+
     id: str
     sha: str = TREE_SHA
     commit: str = COMMIT_SHA
+    body: str | None = Field(description="SKILL.md body (frontmatter stripped); null when `path` was given")
+    metadata: dict[str, str]
+    files: list[FileEntry]
+    has_scripts: bool
+    file: SkillFilePayload | None = Field(default=None, description="the requested file when `path` was given, else null")
+    archive: DownloadDescriptor | None = Field(default=None, description="download descriptor for this version as a tar when `archive=true`, else null")
+    fetched_at: datetime
 
 
 class ToolHit(_Closed):
@@ -91,8 +88,6 @@ class ToolHit(_Closed):
     sha: str = TREE_SHA
     kind: Literal["script", "mcp"]
     server: str | None = Field(default=None, description="mcp-servers/<server> for kind=mcp, else null")
-    replaced_by: str | None = None
-    requires_tools: list[str] = Field(default_factory=list)
 
 
 class SearchToolsResponse(_Closed):
@@ -107,7 +102,7 @@ class GetToolResponse(_Closed):
     kind: Literal["script", "mcp"]
     tool: ToolSpec = Field(description="tool.json of this version, exactly as validated by check 11")
     server: ServerSpec | None = Field(default=None, description="mcp-servers/<server>/server.json (MCP Registry format) for kind=mcp, else null")
-    archive: DownloadDescriptor | None = Field(default=None, description="download descriptor for the tool directory for kind=script, else null")
+    archive: DownloadDescriptor | None = Field(default=None, description="download descriptor for the tool directory when kind=script and `archive=true`, else null")
     files: list[FileEntry]
     fetched_at: datetime
 

@@ -183,16 +183,16 @@ def test_cli_ci_evals_exit_codes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     runner = CliRunner()
     for k in ("CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_FORCE_OAUTH", "ANTHROPIC_API_KEY", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_HOST", "CI_COMMIT_BEFORE_SHA", "GITHUB_EVENT_NAME", "GITHUB_EVENT_PATH", "CI_MERGE_REQUEST_DIFF_BASE_SHA"):
         monkeypatch.delenv(k, raising=False)
-    r = runner.invoke(app, ["ci", "evals", "--agent", "claude-code", str(repo)])
+    r = runner.invoke(app, ["evals", "--agent", "claude-code", str(repo)])
     assert r.exit_code == 1 and "CLAUDE_CODE_OAUTH_TOKEN" in r.output  # 자격 없음
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
     for k, v in {"LANGFUSE_PUBLIC_KEY": "a", "LANGFUSE_SECRET_KEY": "b", "LANGFUSE_HOST": "h"}.items():
         monkeypatch.setenv(k, v)
     monkeypatch.setenv("CI_COMMIT_BEFORE_SHA", "deadbeef" * 5)
-    r = runner.invoke(app, ["ci", "evals", "--agent", "claude-code", str(repo)])
+    r = runner.invoke(app, ["evals", "--agent", "claude-code", str(repo)])
     assert r.exit_code == 2 and "not reachable" in r.output  # 기준을 못 정하면 2
     monkeypatch.setenv("CI_COMMIT_BEFORE_SHA", shas[0])
-    r = runner.invoke(app, ["ci", "evals", "--agent", "claude-code", "--dry-run", str(repo)])
+    r = runner.invoke(app, ["evals", "--agent", "claude-code", "--dry-run", str(repo)])
     assert r.exit_code == 0 and "harbor jobs: 2" in r.output and r.output.count("$ uvx") == 2 and "--skill ./skills/a" in r.output
     calls: list[list[str]] = []
 
@@ -201,27 +201,8 @@ def test_cli_ci_evals_exit_codes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
         return 1
 
     monkeypatch.setattr(ci, "run_plan", fake_run_plan)
-    r = runner.invoke(app, ["ci", "evals", "--agent", "claude-code", str(repo)])
+    r = runner.invoke(app, ["evals", "--agent", "claude-code", str(repo)])
     assert r.exit_code == 1 and len(calls) == 2 and "1 harbor job(s) failed" in r.output
     monkeypatch.setenv("CI_COMMIT_BEFORE_SHA", shas[2])  # HEAD 자신이 기준이면 바뀐 스킬 없음 → 아무것도 안 하고 0
-    r = runner.invoke(app, ["ci", "evals", "--agent", "claude-code", str(repo)])
+    r = runner.invoke(app, ["evals", "--agent", "claude-code", str(repo)])
     assert r.exit_code == 0 and "(none)" in r.output
-
-
-def test_cli_ci_check_on_branch_creation_skips_history(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    repo, _ = make_repo(tmp_path)
-    for k in ("GITHUB_EVENT_NAME", "GITHUB_EVENT_PATH", "CI_MERGE_REQUEST_DIFF_BASE_SHA"):
-        monkeypatch.delenv(k, raising=False)
-    monkeypatch.setenv("CI_COMMIT_BEFORE_SHA", ci.ZERO_SHA)
-    seen: list[tuple[Path, str | None, str]] = []
-
-    def fake_run_check(repo_root: Path, base: str | None, rev: str) -> int:
-        seen.append((repo_root, base, rev))
-        return 1
-
-    from harness_catalog_cli import __main__ as cli_main
-
-    monkeypatch.setattr(cli_main, "_run_check", fake_run_check)
-    r = CliRunner().invoke(app, ["ci", "check", str(repo)])
-    assert r.exit_code == 1 and "branch creation" in r.output  # 이력 대조는 건너뛰고(base None) 나머지 검사의 종료 코드를 그대로 전한다
-    assert seen == [(Path(str(repo)), None, "HEAD")]

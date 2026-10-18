@@ -22,7 +22,7 @@ KB의 잣대로 v2.4를 다시 재면 이렇다.
 | `[it]` 연합 컴퓨테이셔널 거버넌스: 수작업 인증·중앙 검증은 병목 | PR 게이트 5단, CODEOWNERS + 새 스킬은 리드 승인, evals 없으면 머지 불가 | **인증 병목.** 사람 승인이 게시 경로에 있다(v3.3도 PR을 쓰지만 리뷰어·evals를 병합 조건으로 강제하지 않는다 — §5) |
 | `[it]` 발견 가능성의 왼쪽 이동: 스킬 자신이 발견 정보를 갖는다 | SKILL.md가 갖고 있는데 CATALOG.md·MCP 인덱스·마켓플레이스 항목으로 세 번 파생 | **중복.** 파생물 셋 중 둘은 git 호스트의 디렉토리 열람으로 대체된다 |
 
-`[웹]` Databricks UC Skills(2026-09-25 확인)가 단순한 이유는 사용자에게 보이는 표면이 작기 때문이다. 사람은 CLI 명령 셋(`ug configure`, `ug skills`, `ug skills add`)과 Catalog Explorer의 권한 화면과 자연어를 쓰고, 에이전트는 MCP 도구 여섯(`list_skills`, `load_skill`, `get_skill_files`, `create_skill`, `update_skill`, `delete_skill`)을 부른다. 문서에 리뷰·승인·eval 단계는 보이지 않는다(부재 관찰이지 증명은 아니다). 게시는 즉시이고 처음엔 비공개이며 공유는 복사가 아니라 grant다. 그 단위가 agentskills.io의 SKILL.md다.
+`[웹]` Databricks UC Skills(2026-09-25 확인)가 단순한 이유는 사용자에게 보이는 표면이 작기 때문이다. 사람은 CLI 명령 셋(`ug configure`, `ug skills`, `ug skills add`)과 Catalog Explorer의 권한 화면과 자연어를 쓰고, 에이전트는 MCP 도구 여섯(`list_skills`, `get_skill`, `get_skill_files`, `create_skill`, `update_skill`, `delete_skill`)을 부른다. 문서에 리뷰·승인·eval 단계는 보이지 않는다(부재 관찰이지 증명은 아니다). 게시는 즉시이고 처음엔 비공개이며 공유는 복사가 아니라 grant다. 그 단위가 agentskills.io의 SKILL.md다.
 
 ---
 
@@ -72,7 +72,7 @@ flowchart LR
     REG -. "OTLP: 도구 호출 스팬 (sub·도구·스킬·sha·검색어·결과 수)" .-> LF
     REPO -- "fetch main (기동·주기, 기본 60초)" --> REG
     REPO -- "push·PR 이벤트" --> CI
-    HUMAN -- "pin: get_skill_archive → curl | tar" --> LOCAL
+    HUMAN -- "pin: get_skill(archive) → curl | tar" --> LOCAL
     LOCAL -. "시작 시 발견 (스펙 1단계)" .-> HUMAN
     HUMAN == "브랜치 → 커밋 → PR → 병합 (git 자격)" ==> REPO
     HUMAN -. "harbor run --plugin langfuse (자기 머신·자기 키)" .-> LF
@@ -86,7 +86,7 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph DRIVING["구동 어댑터"]
-        MCPA["MCP 어댑터<br/>도구 여섯 ↔ 포트 · 스팬 속성"]
+        MCPA["MCP 어댑터<br/>도구 넷 ↔ 포트 · 스팬 속성"]
         OPSA["운영 어댑터<br/>/healthz /readyz"]
         SCHED["스케줄러 어댑터<br/>기동 1회 · fetch 간격(기본 60초)"]
     end
@@ -132,7 +132,7 @@ flowchart LR
 
 | 노드 | 종류 | 역할 | 코드에서의 형태 |
 |---|---|---|---|
-| MCP 어댑터 | 구동 어댑터 | MCP 요청을 받아 도구 여섯을 앱 함수 호출로 바꾸고 결과를 MCP 응답으로 돌려준다. 프로토콜·헤더·JSON-RPC는 여기서 끝난다. **사용 기록도 여기서 끝난다.** `[웹]` MCP Python SDK v2는 인바운드 메시지마다 `SERVER` 스팬(`tools/call load_skill`, 속성 `mcp.method.name`·`gen_ai.tool.name` 등)을 기본으로 내므로, 어댑터는 그 현재 스팬에 인가 정책이 돌려준 주체와 앱이 돌려준 결과의 속성(`langfuse.user.id`=`sub`, 스킬·`sha`, 검색어·결과 수)을 더할 뿐이다. 앱은 스팬을 모른다 | SDK의 `Server` 도구 등록 + `streamable_http_app()` + `opentelemetry.trace.get_current_span().set_attributes(...)` |
+| MCP 어댑터 | 구동 어댑터 | MCP 요청을 받아 도구 넷을 앱 함수 호출로 바꾸고 결과를 MCP 응답으로 돌려준다. 프로토콜·헤더·JSON-RPC는 여기서 끝난다. **사용 기록도 여기서 끝난다.** `[웹]` MCP Python SDK v2는 인바운드 메시지마다 `SERVER` 스팬(`tools/call load_skill`, 속성 `mcp.method.name`·`gen_ai.tool.name` 등)을 기본으로 내므로, 어댑터는 그 현재 스팬에 인가 정책이 돌려준 주체와 앱이 돌려준 결과의 속성(`langfuse.user.id`=`sub`, 스킬·`sha`, 검색어·결과 수)을 더할 뿐이다. 앱은 스팬을 모른다 | SDK의 `Server` 도구 등록 + `streamable_http_app()` + `opentelemetry.trace.get_current_span().set_attributes(...)` |
 | 운영 어댑터 | 구동 어댑터 | 오케스트레이터의 헬스 체크를 받아 앱의 상태를 HTTP로 낸다 | Starlette 라우트 둘(`/healthz`, `/readyz`) |
 | 스케줄러 어댑터 | 구동 어댑터 | 시계가 앱을 부른다. 기동 시 1회(구조 검사 + 첫 인덱스 빌드), fetch 주기마다(`FETCH_INTERVAL_SECONDS`, 기본 60. fetch → `main`이 바뀌었으면 검사 + 인덱스 재구축). 인스턴스 안의 백그라운드 작업이고 클론 잠금(§2)을 쥔다 | asyncio 태스크 하나(기동 검사 뒤 fetch 루프). Configurator가 uvicorn과 함께 띄운다 |
 | For consuming skills | 제공 포트 | 소비자(사람의 세션, 루프)가 앱에 요구할 수 있는 것. 목록·검색·본문·파일 | 앱 함수 넷의 시그니처 |
@@ -147,7 +147,7 @@ flowchart LR
 | OIDC 어댑터 | 피구동 어댑터 | issuer의 JWKS로 서명을 검증하고 `iss`·`aud`·`exp`·`nbf`·`scope`·`groups`를 확인해 주체를 만든다. 바깥 통신은 JWKS 가져오기뿐 | SDK `TokenVerifier` 구현 |
 | git 어댑터 | 피구동 어댑터 | 로컬 클론을 유지하고 fetch와 읽기를 한다. commit·push는 없다 | git CLI 호출 |
 | PostgreSQL 어댑터 | 피구동 어댑터 | 인덱스의 SQL. 어휘 검색(`tsvector`·`pg_trgm`)도 여기 | psycopg 3 + SQL 파일 |
-| 검증 어댑터 | 피구동 어댑터 | `skills-ref validate`·시크릿 스캔·저장소 구조·이름 재사용·`replaced-by` 연쇄 검사를 돌려 판정으로 바꾼다. 같은 구현이 `harness-catalog check` CLI다 | 라이브러리 호출 + 서브프로세스 |
+| 검증 어댑터 | 피구동 어댑터 | `skills-ref validate`·시크릿 스캔·저장소 구조·크기·`tool.json`·`server.json` 검사(일곱)를 돌려 판정으로 바꾼다. 이력은 보지 않는다(§11 2026-10-18). 같은 구현이 `harness-catalog check` CLI다 | 라이브러리 호출 + 서브프로세스 |
 | Configurator | 패턴 밖, 필수 | 설정값 다섯(과 기본값 있는 하나)을 읽어 피구동 어댑터 넷을 만들고, 앱을 만들어 넷을 꽂고, 구동 어댑터 셋(MCP·운영·스케줄러)을 만들어 앱을 건넨다. 모든 참가자를 아는 유일한 자리. OTel exporter는 여기서 조립하지 않는다 — 표준 환경 변수(`OTEL_EXPORTER_OTLP_*`)를 읽는 `opentelemetry-sdk`의 자동 구성이 켜며, 변수가 없으면 스팬은 no-op이다 | `bootstrap(settings) -> App` 함수 하나 + uvicorn 기동 |
 
 그림 2를 읽는 법. 앱 안에는 둘이 있다. **인가 정책**(토큰의 주체와 그룹으로 이 호출을 허용하는가), **카탈로그**(`main`을 검사하고 인덱스를 지어 검색하고 본문을 돌려준다). 이 둘은 git도 PostgreSQL도 OIDC도 모른다. `[it]` 강한 준수의 기준은 "앱이 외부 기술에 대해 아무것도 모른다"이고, 그래야 어댑터를 갈아 끼울 수 있다(SQLite로 되돌리기, 다른 IdP, GitLab). 구동 포트는 액터마다 하나다. 소비하는 쪽(사람과 루프), 운영하는 쪽(오케스트레이터의 헬스 체크), 유지하는 쪽(시계. `[it]` 콕번은 타이머 같은 자동 트리거도 구동 액터로 센다). 셋째가 있어야 주기 fetch·기동 검사가 앱 함수로 존재하고 시험에서는 시험 케이스가 시계 대신 그 함수를 부른다. `[it]` 인스턴스화·설정은 포트가 아니라 Configurator의 일이다. **Configurator**가 어댑터를 골라 앱에 꽂으며 `[it]` 패턴 밖이지만 반드시 필요한 다섯째 요소다. **레지스트리 프로세스**의 필수 설정값은 다섯이다. 카탈로그 저장소 URL, git deploy key(읽기 전용), OIDC issuer, 레지스트리 공개 URL(토큰의 audience이자 RFC 9728 메타데이터의 `resource`), PostgreSQL 접속. 기본값이 있는 선택 설정값이 하나 더 있다. 주기 fetch 간격(`FETCH_INTERVAL_SECONDS`, 기본 60). (v3.5 전에는 사용 기록 보존 일수 `USAGE_RETENTION_DAYS`도 있었으나 사용 기록이 Langfuse로 가면서 빠졌다 — §11.) 이것을 설정으로 뺀 근거는 `[it]` 외부 설정의 목록("세율처럼 외부에서 설정되는 매개변수", 환경별 매개변수)이고, fetch 간격은 git 호스트의 fetch 부하 한도와 병합 뒤 반영 지연 사이에서 운영 환경이 정하는 값이라 `[it]` "사용자가 우리보다 더 나은 값을 정할 수 있는가"에 "그렇다"인 드문 경우다. 이 여섯 밖의 레지스트리 설정값은 없다. 플랫폼 운영 설정(Dex의 issuer·LDAP 연결·정적 클라이언트·그랜트, 백업 대상·스케줄)은 §2.1 "운영자가 아는 것"에 따로 센다.
@@ -188,7 +188,7 @@ Dex를 두면 v3.0 compose는 서비스 1 + PostgreSQL 1 + Dex 1이 된다. 클�
 |---|---|---|
 | **저장소** | git 저장소 하나. `skills/<name>/`. 스킬 **내용**의 정본이자 **쓰기의 유일한 경로**. `main` = 인증된 판, 브랜치 = 초안, 병합 = 게시이자 인증. `main` 직접 push·강제 push 금지는 규율이다(브랜치 보호 없음, §11) | 저장소 1 |
 | **PostgreSQL** | 저장소에서 파생한 인덱스(재구축 가능). 정본 사실은 없다 — 스킬에 **대한 사실**(사용 기록·평가 결과)은 Langfuse에 있다 | DB 1 |
-| **harness-catalog 서비스** | 호스트 한 대에서 도는 MCP 서버(HTTP 전송). 저장소를 fetch해 검사하고 인덱스를 짓고 도구 여섯을 낸다. 사내 SSO로 사용자를 알고, 저장소에는 쓰지 않는다. 같은 코드 저장소의 별도 배포물 `harness-catalog-cli`가 명령 둘을 낸다(§11 2026-09-27 워크스페이스): `harness-catalog init <repo-url>`(저장소 초기화, §2.1)과 `harness-catalog check`(검사, pre-commit·CI가 부른다) | 서비스 1, 플랫폼 팀 소유 |
+| **harness-catalog 서비스** | 호스트 한 대에서 도는 MCP 서버(HTTP 전송). 저장소를 fetch해 검사하고 인덱스를 짓고 도구 넷을 낸다. 사내 SSO로 사용자를 알고, 저장소에는 쓰지 않는다. 같은 코드 저장소의 별도 배포물 `harness-catalog-cli`가 명령 둘을 낸다(§11 2026-09-27 워크스페이스): `harness-catalog init <repo-url>`(저장소 초기화, §2.1)과 `harness-catalog check`(검사, pre-commit·CI가 부른다) | 서비스 1, 플랫폼 팀 소유 |
 | **CI 검증** | PR마다·`main` push마다 `harness-catalog check`를 돌린다. 저장소 구조와 스킬마다의 검사(§5)가 한 명령이고, 붉으면 병합하지 않는 것이 규율이다(브랜치 보호가 없어 강제는 아니다). 인덱스 빌드가 같은 검사를 다시 돌려 통과하지 못한 스킬을 인덱스에서 뺀다(아래 인덱스 갱신) | 워크플로 1 |
 
 운영자가 살려 둬야 하는 것: 서비스 1, DB 1, 인가 서버(Dex) 1. 사내 IdP로 옮기면 Dex는 빠진다. v2.4는 MCP 서버·collector·Grafana·gh-pages였고 DB를 "기록 시스템 하나 더"라며 뺐다. v3는 DB를 되돌리되 역할을 좁힌다.
@@ -198,13 +198,13 @@ Dex를 두면 v3.0 compose는 서비스 1 + PostgreSQL 1 + Dex 1이 된다. 클�
 | 데이터 | 자리 | 성질 | 근거 |
 |---|---|---|---|
 | SKILL.md 본문, `scripts/`·`references/`·`assets/` | git | 정본 | `[영상]` 13:14~14:25 파일은 쓰기 쉽고 POSIX 의미론을 따르며 비정형에 맞고 모델이 잘 다룬다. 이것을 "내용은 git"으로 옮긴 것은 이 설계의 판단이다 |
-| 스펙 앞머리(`name`·`description`·`license`·`compatibility`·`metadata`), 그 안의 `metadata.replaced-by` | git (SKILL.md 안) | 정본 | `[웹]` 스펙이 정한 자리. 폐기·대체는 저자 선언이라 git이 유일한 정본이다. DB에 따로 두지 않는다(v3.0의 중복을 뺐다) |
-| 인덱스(식별자·설명·`compatibility`·`metadata`·`replaced-by`·tree SHA·commit, 어휘 검색용. 전부 `main`의 판) | DB | 파생. `main`에서 언제든 재구축 | `[it]` 파생 데이터는 잃어도 원본에서 다시 만든다 |
+| 스펙 앞머리(`name`·`description`·`license`·`compatibility`·`metadata`) | git (SKILL.md 안) | 정본 | `[웹]` 스펙이 정한 자리. DB에 따로 두지 않는다(v3.0의 중복을 뺐다). `metadata`는 자유 맵이고 팀 규약 키는 없다(§11 2026-10-18: `replaced-by`·`requires-tools`를 뺐다) |
+| 인덱스(식별자·설명·`compatibility`·`metadata`·`has_scripts`·tree SHA·commit, 어휘 검색용. 전부 `main`의 판) | DB | 파생. `main`에서 언제든 재구축 | `[it]` 파생 데이터는 잃어도 원본에서 다시 만든다 |
 | 사용 기록 — 도구 호출마다 OpenTelemetry 스팬 하나. SDK가 내는 것: 이름 `tools/call <tool>`, `mcp.method.name`·`mcp.protocol.version`·`jsonrpc.request.id`·`gen_ai.operation.name=execute_tool`·`gen_ai.tool.name`, 오류 status. MCP 어댑터가 더하는 것: `langfuse.user.id`=`sub`, `langfuse.observation.metadata.skill`·`.sha`(load·file), `.query`·`.result_count`(search만. 검색어는 2000자에서 자르고 제어 문자 제거) | **Langfuse** (OTLP `/api/public/otel`, 표준 `OTEL_EXPORTER_OTLP_*` 환경 변수) | 정본이되 **v3.0은 쌓기만 하고 보지 않는다**(§5). 요청 경로에서 조회하는 색인이 아니라 쌓인 뒤 분석해 개선에 쓰는 데이터다 — 순위·폐기 후보·결과 0 검색어의 골든 편입(`[altera-skills]` `evals/search/queries.yml`)이 그 분석이고 Langfuse 위에서 한다(관측 API·metrics API, 또는 내보내기). 검색어는 사람의 발화라 개인 데이터일 수 있고 보존은 Langfuse 프로젝트의 것이다. 스팬이 빠지면(exporter 큐 초과) 그 호출의 기록만 사라진다 | 사용자 결정(2026-09-27, §11): "직접 발명하는 것은 관측 도구를 이기지 못한다". `[웹]` MCP Python SDK v2 `docs/run/opentelemetry.md`("Your server is already traced. You don't have to add anything"), `src/mcp/server/_otel.py`; OpenTelemetry GenAI 규약 `docs/gen-ai/mcp.md`(MCP 서버 스팬, Development); Langfuse OTel 수신(`langfuse.user.id`·`langfuse.observation.metadata.*` 매핑). 우리 표는 SDK가 이미 내는 사건을 우리 형식으로 한 번 더 적는 것이었다 |
 | 평가 결과 — Harbor 잡마다 dataset run(메타데이터 `skill`·`sha`·`scenario_sha`·`model`·`harness`·`baseline`), 트라이얼마다 trace(궤적·토큰·비용)와 `passed` score | **Langfuse** (카탈로그 밖. v3.0은 팀이 이미 쓰는 Cloud Hobby 프로젝트, 이후 셀프호스팅 가능) | 정본. `harbor run --plugin harbor_langfuse`가 남긴다(§5.1). 카탈로그 DB에는 없고 레지스트리는 Langfuse를 부르지 않는다. 사람은 Langfuse UI(dataset run 비교)로 읽고, 폐기 심사도 거기서 한다 | 사용자 결정(2026-09-27, §11): "직접 발명하는 것은 관측 도구를 이기지 못한다". `[웹]` Langfuse 데이터 모델(2026-09-27 확인): Score는 "references exactly one of Trace, Observation, Session, or DatasetRun", DatasetRunItem이 `traceId`로 궤적을 가리킨다 — 판정 한 줄이 궤적에 붙어 있어 실패한 행에서 원인으로 갈 수 있다(v3.3의 `eval_result`에는 이 연결이 없었다). `[영상]` 0qySk1fcf6k 14:29 "evaluation observability"는 중앙 플랫폼의 구성 요소이지 카탈로그 표가 아니다 |
 | 게시·인증 사실(누가 언제 무엇을 올리고 누가 병합했는가) | git 이력(커밋 author, PR, 병합 커밋) | 정본. DB의 인덱스 행이 커밋에서 이것을 파생한다 | 커밋과 PR이 곧 기록 |
 
-**SHA는 둘이다.** 이 문서에서 `sha`는 스킬 디렉토리의 **git tree SHA**다. 그 스킬의 내용만으로 정해지고 다른 스킬의 변경에 영향받지 않는다. `load_skill(sha)`, `PINNED`, 도구 호출 스팬과 Langfuse run 메타데이터의 `sha`가 전부 이것이다. 저장소의 **commit SHA**는 이력의 위치이고 `load_skill` 응답에만 `commit`으로 실린다(`search_skills` 항목에는 없다 — 식별자 둘이 나란히 있으면 `sha` 자리에 커밋을 넣는 실수를 부른다). 과거 판을 `load_skill(id, sha)`로 받을 때 레지스트리는 인덱스가 기억한 tree→commit 대응이나 `git log`로 그 tree를 찾는다.
+**SHA는 둘이다.** 이 문서에서 `sha`는 스킬 디렉토리의 **git tree SHA**다. 그 스킬의 내용만으로 정해지고 다른 스킬의 변경에 영향받지 않는다. `get_skill(sha)`, `PINNED`, 도구 호출 스팬과 Langfuse run 메타데이터의 `sha`가 전부 이것이다. 저장소의 **commit SHA**는 이력의 위치이고 `get_skill` 응답에만 `commit`으로 실린다(`search_skills` 항목에는 없다 — 식별자 둘이 나란히 있으면 `sha` 자리에 커밋을 넣는 실수를 부른다). 과거 판을 `get_skill(id, sha)`로 받을 때 레지스트리는 인덱스가 기억한 tree→commit 대응이나 `git log`로 그 tree를 찾는다.
 
 경계 규칙은 하나다. **DB는 SKILL.md 내용을 인덱스 말고는 복제하지 않는다.** DB에 정본 사실은 없다 — 전부 `main`에서 파생한 인덱스다. 스킬에 대한 사실 둘(사용 기록·평가 결과)은 Langfuse에 있고 둘 다 그때의 `sha`를 속성으로 적는다(§2 데이터 표, §5.1). 스킬 식별자에 걸리는 사실은 v3.3에 없다 — 인증도 `main` 병합이라 git 이력이다. `[it]` Meta Mart는 데이터에서 조달되지 않아 재구축할 수 없는 마트이며 백업 대상인데, 이 설계의 DB에는 그 후보가 없다. 사실은 Langfuse에 있고 그 보존·백업은 Langfuse 쪽의 것이다(§7). `[영상]` 20:29~21:13 저장소가 여럿이면 에이전트용 동기화 로직의 오버헤드가 커진다. 그것을 근거로 **카탈로그가 읽고 쓰는 저장소**는 git과 DB 둘에서 멈추기로 **결정**했다. Langfuse는 셋째 저장소이지만 카탈로그가 닿지 않는 자리다 — 레지스트리도 하네스도 Langfuse와 동기화하지 않고, 쓰는 것은 `harbor run`과 레지스트리의 스팬 내보내기뿐이고 둘 다 한 방향이라 강연이 말한 에이전트용 동기화 로직이 생기지 않는다. 강연이 "둘이 최적"이라 말한 것은 아니다. 강연이 그다음(21:19~22:22)에 권하는 "한 데이터베이스에 전부"는 발표자 회사의 제품 홍보라 근거로 쓰지 않는다. **저장소는 하나만 지원한다.** 둘째 저장소(제한 스킬용 등)가 필요해지면 식별자에 저장소 접두를 더하고 검색을 병합하는 것이 확장 경로이며 §7의 조건이다.
 
@@ -217,8 +217,6 @@ erDiagram
         text description "NOT NULL. frontmatter 그대로"
         text compatibility "nullable. 스펙이 정한 문자열 하나(500자 이하)"
         jsonb metadata "NOT NULL. frontmatter의 문자열 맵. 없으면 {}"
-        varchar(64) replaced_by "생성 열: metadata->>'replaced-by'"
-        text[] requires_tools "생성 열: metadata->>'requires-tools'를 공백으로 쪼갠 목록. 기계 판독용"
         char(40) tree_sha "NOT NULL. main에 있는 스킬 디렉토리의 git tree SHA = 판"
         char(40) commit_sha "NOT NULL. 그 판을 넣은 커밋(병합 커밋)"
         text search_text "생성 열: name, description, metadata 값들을 이은 텍스트"
@@ -231,8 +229,6 @@ erDiagram
         varchar(16) kind "NOT NULL. runtime.kind: script | mcp"
         varchar(64) server "nullable. kind=mcp가 참조하는 mcp-servers/name"
         jsonb metadata "NOT NULL. 문자열 맵. 없으면 {}"
-        varchar(64) replaced_by "생성 열: metadata->>'replaced-by'"
-        text[] requires_tools "생성 열: metadata->>'requires-tools'"
         char(40) tree_sha "NOT NULL. tools/name/의 git tree SHA = 판"
         char(40) commit_sha "NOT NULL"
         text search_text "생성 열"
@@ -258,10 +254,6 @@ CREATE FUNCTION metadata_values(m jsonb) RETURNS text
   $$ SELECT string_agg(v, ' ' ORDER BY k) FROM jsonb_each_text(m) AS t(k, v) $$;
 
 ALTER TABLE skill_index
-  ADD COLUMN replaced_by varchar(64)
-    GENERATED ALWAYS AS (metadata->>'replaced-by') STORED,
-  ADD COLUMN requires_tools text[]
-    GENERATED ALWAYS AS (string_to_array(nullif(metadata->>'requires-tools', ''), ' ')) STORED,
   ADD COLUMN search_text text
     GENERATED ALWAYS AS (name || ' ' || description || ' ' || coalesce(metadata_values(metadata), '')) STORED,
   ADD COLUMN search tsvector
@@ -269,7 +261,6 @@ ALTER TABLE skill_index
 
 CREATE INDEX skill_index_search ON skill_index USING gin (search);
 CREATE INDEX skill_index_trgm   ON skill_index USING gin (search_text gin_trgm_ops);
-CREATE INDEX skill_index_tools  ON skill_index USING gin (requires_tools);
 
 -- toolbox(§11 2026-10-11): 마이그레이션 0002. 생성 열·인덱스는 skill_index와 같은 식이다.
 CREATE TABLE tool_index (
@@ -283,10 +274,6 @@ CREATE TABLE tool_index (
   indexed_at    timestamptz  NOT NULL
 );
 ALTER TABLE tool_index
-  ADD COLUMN replaced_by varchar(64)
-    GENERATED ALWAYS AS (metadata->>'replaced-by') STORED,
-  ADD COLUMN requires_tools text[]
-    GENERATED ALWAYS AS (string_to_array(nullif(metadata->>'requires-tools', ''), ' ')) STORED,
   ADD COLUMN search_text text
     GENERATED ALWAYS AS (name || ' ' || description || ' ' || coalesce(metadata_values(metadata), '')) STORED,
   ADD COLUMN search tsvector
@@ -300,11 +287,11 @@ CREATE INDEX tool_index_trgm   ON tool_index USING gin (search_text gin_trgm_ops
 
 읽는 규칙 다섯. 근거 라벨은 KB 페이지와 절·쪽을 적었고, 그 원칙에서 이 설계가 끌어낸 판단은 "판단"이라고 표시했다.
 
-1. **`skill_index`는 저장 열에서 3정규형이고, 생성 열 넷은 의도한 파생 열이다.** `[it]` 라이스(8장 pp.291–294): 3NF는 각 테이블이 자기 기본 키와 관련된 필드만 담고 이행 의존이 없는 것이며, "데이터베이스는 3정규형이면 보통 정규화됐다고 여겨진다". `[it]` 클레프만(3장 p.74): "작거나 중간 규모의 시스템에서는 정규화된 데이터 모델이 대체로 최선". 저장 열은 전부 `name`에만 의존한다. `replaced_by`·`requires_tools`·`search_text`·`search`는 비키 열에서 나오므로 형식상 3NF 위반인 비정규화 열이고, 그것을 알고 둔다. 넷 다 **생성 열**이라 애플리케이션이 따로 쓰지 않고 DB가 유도한다. `[it]` 클레프만(3장 p.74)이 비정규화를 "중복 사본을 갱신하는 프로세스가 필요한 파생 데이터"로 보라고 한 것의 그 프로세스가 생성 열이다. `metadata`를 jsonb로 둔 것은 `[it]` 클레프만(3장 p.80)의 판정("트리 전체가 한 번에 로드되고 중첩 항목을 직접 참조할 일이 없으면 문서 모델")에 맞는다. `compatibility`가 열 하나인 것은 `[웹]` 스펙이 그 필드를 문자열 하나(500자 이하)로 정했기 때문이다. 루프가 "이 머신에 ffmpeg가 있는가"를 문자열 해석 없이 거르려면 `metadata.requires-tools`에 공백 구분 목록을 적는 팀 규약을 쓴다(§5.1. 토큰 문법은 `[a-z0-9._+-]+`, 소문자, 버전 없음, 중복 무시). DB는 그것을 `requires_tools text[]` 생성 열로 쪼개 GIN 인덱스를 걸며("ffmpeg가 필요한 스킬"을 `@>`로 찾는다), `search_skills`가 배열로 돌려주므로 루프가 자기 환경과 대조한다.
+1. **`skill_index`는 저장 열에서 3정규형이고, 생성 열 둘(`search_text`·`search`)은 의도한 파생 열이다.** (2026-10-18까지는 넷이었다. `replaced_by`·`requires_tools`는 마이그레이션 0003이 지웠다. 아래 문장의 그 둘은 당시 근거다.) `[it]` 라이스(8장 pp.291–294): 3NF는 각 테이블이 자기 기본 키와 관련된 필드만 담고 이행 의존이 없는 것이며, "데이터베이스는 3정규형이면 보통 정규화됐다고 여겨진다". `[it]` 클레프만(3장 p.74): "작거나 중간 규모의 시스템에서는 정규화된 데이터 모델이 대체로 최선". 저장 열은 전부 `name`에만 의존한다. `replaced_by`·`requires_tools`·`search_text`·`search`는 비키 열에서 나오므로 형식상 3NF 위반인 비정규화 열이고, 그것을 알고 둔다. 넷 다 **생성 열**이라 애플리케이션이 따로 쓰지 않고 DB가 유도한다. `[it]` 클레프만(3장 p.74)이 비정규화를 "중복 사본을 갱신하는 프로세스가 필요한 파생 데이터"로 보라고 한 것의 그 프로세스가 생성 열이다. `metadata`를 jsonb로 둔 것은 `[it]` 클레프만(3장 p.80)의 판정("트리 전체가 한 번에 로드되고 중첩 항목을 직접 참조할 일이 없으면 문서 모델")에 맞는다. `compatibility`가 열 하나인 것은 `[웹]` 스펙이 그 필드를 문자열 하나(500자 이하)로 정했기 때문이다. 루프가 "이 머신에 ffmpeg가 있는가"를 문자열 해석 없이 거르려면 `metadata.requires-tools`에 공백 구분 목록을 적는 팀 규약을 쓴다(§5.1. 토큰 문법은 `[a-z0-9._+-]+`, 소문자, 버전 없음, 중복 무시). DB는 그것을 `requires_tools text[]` 생성 열로 쪼개 GIN 인덱스를 걸며("ffmpeg가 필요한 스킬"을 `@>`로 찾는다), `search_skills`가 배열로 돌려주므로 루프가 자기 환경과 대조한다.
 2. **은퇴한 이름은 표가 아니라 git 이력이고, 검사는 `harness-catalog check`가 한다.** §3의 "은퇴한 이름 재사용 금지"를 위해 표를 두지 않는다. `check`가 PR에서 `git log --diff-filter=D --name-only --format= -- 'skills/*/SKILL.md'`로 지워진 적 있는 이름을 얻어 새 디렉토리 이름과 대조하고, 인덱스 빌드도 같은 검사를 돌려 위반 스킬을 인덱스에서 뺀다. 지워진 `SKILL.md`의 경로에서 둘째 성분이 은퇴한 이름이다. 스크립트만 지운 커밋은 `SKILL.md`가 남아 걸리지 않고, 디렉토리 이름 바꾸기는 옛 `SKILL.md`의 삭제로 나타나 옛 이름이 은퇴한다(판단. 근거는 §7의 yagni와 `[it]` 클레프만의 "파생 데이터는 원본에서 다시 만든다").
 3. **인덱스 갱신은 트랜잭션 하나이고 뒤로 가지 않는다.** 기동·주기 fetch의 인덱스 빌드는 같은 `main` 스냅샷(commit 하나)에서 행 전체를 만들어 `DELETE` + `INSERT`를 한 트랜잭션으로 커밋한다. MVCC 덕에 읽는 쪽은 커밋 전에는 온전한 구판, 뒤에는 온전한 신판만 본다. 그 트랜잭션은 먼저 `index_state` 행을 `SELECT … FOR UPDATE`로 잠그고, 새 커밋이 저장된 `commit_sha`의 자손(`git merge-base --is-ancestor`)일 때만 덮어쓰며 아니면 아무것도 하지 않고 끝낸다. 인스턴스가 둘일 때 낡은 커밋으로 시작한 빌드가 최신 인덱스를 되돌리는 것을 이것이 막는다(Codex 지적). 단일 인스턴스에서는 같은 규칙이 공짜다. `main`이 강제 push로 되감기면(규율 위반) 자손 검사가 거짓이라 인덱스가 갱신되지 않고 `/readyz`의 `degraded`에 `main_rewound`로 적힌다. 운영자가 확인하고 되돌리거나 인덱스를 다시 짓는다(`harness-catalog reindex --accept-rewind`, 운영 명령).
-4. **외래 키를 걸지 않고, 선언할 수 있는 불변식은 제약으로 건다.** `replaced_by → skill_index.name`은 §5.1의 "대체 대상 없음" 표시 때문에 외래 키가 아니고, 인덱스 갱신이 표를 통째로 덮어쓰므로 자기 참조 외래 키는 재구축을 막는다(`[it]` 클레프만: 파생 데이터는 언제든 지우고 다시 만들 수 있어야 한다). 대신 `[it]` 클레프만(8장 p.281)의 처방대로 선언할 수 있는 불변식(NOT NULL, `compatibility` 길이)은 CHECK로 건다.
-5. **개인 데이터, 과거 판, 검색.** 이 DB에는 개인 데이터가 없다. 주체(`sub`)와 검색어(사람의 발화)는 v3.4까지 이 DB의 `usage_record`에 있었고 v3.5부터 도구 호출 스팬의 속성으로 Langfuse에 간다(§2 데이터 표). `[it]` 클레프만(1장 p.24, 3장 p.104)의 추가 전용 로그와 개인 데이터의 충돌은 그쪽 보존 정책의 것이 되고, 삭제 요구는 Langfuse 프로젝트에서 처리한다(v3.5는 그 절차를 정하지 않는다). 과거 판 `load_skill(name, sha)`는 이 표가 아니라 git에서 찾는다(§2 "SHA는 둘이다"). 벡터 열은 §7의 조건까지 없다. 평가 결과는 이 DB에 없다 — 정본은 Langfuse이고(§5.1) 카탈로그 응답에도 실리지 않는다(§3). 루프가 자기 모델·하네스의 결과로 후보를 거르려면 루프가 Langfuse를 읽는 것이 루프의 정책이며, 그것을 카탈로그 응답에 실어야 하는 날이 오면 §7의 재도입 행(주기 복사한 파생 열)이 자리다.
+4. **외래 키를 걸지 않고, 선언할 수 있는 불변식은 제약으로 건다.** 인덱스 갱신이 표를 통째로 덮어쓰므로 자기 참조 외래 키는 재구축을 막는다(`[it]` 클레프만: 파생 데이터는 언제든 지우고 다시 만들 수 있어야 한다). 대신 `[it]` 클레프만(8장 p.281)의 처방대로 선언할 수 있는 불변식(NOT NULL, `compatibility` 길이)은 CHECK로 건다.
+5. **개인 데이터, 과거 판, 검색.** 이 DB에는 개인 데이터가 없다. 주체(`sub`)와 검색어(사람의 발화)는 v3.4까지 이 DB의 `usage_record`에 있었고 v3.5부터 도구 호출 스팬의 속성으로 Langfuse에 간다(§2 데이터 표). `[it]` 클레프만(1장 p.24, 3장 p.104)의 추가 전용 로그와 개인 데이터의 충돌은 그쪽 보존 정책의 것이 되고, 삭제 요구는 Langfuse 프로젝트에서 처리한다(v3.5는 그 절차를 정하지 않는다). 과거 판 `get_skill(name, sha)`는 이 표가 아니라 git에서 찾는다(§2 "SHA는 둘이다"). 벡터 열은 §7의 조건까지 없다. 평가 결과는 이 DB에 없다 — 정본은 Langfuse이고(§5.1) 카탈로그 응답에도 실리지 않는다(§3). 루프가 자기 모델·하네스의 결과로 후보를 거르려면 루프가 Langfuse를 읽는 것이 루프의 정책이며, 그것을 카탈로그 응답에 실어야 하는 날이 오면 §7의 재도입 행(주기 복사한 파생 열)이 자리다.
 
 **그림 4 — 권한 모델.** 인증·인가 표의 "무엇을 인가하는가" 행을 권한 → 역할 → 주체의 층으로 편 것이다. `[it]` 게이트웨이·신원 제공자가 할 수 있는 것은 굵은 인가(로그인 여부, 그룹 소속)까지이고 어느 연산을 허용할지는 서비스 자신이 정해야 하므로, 그룹은 신원 제공자가, 역할과 권한은 레지스트리가 소유한다. v3.3에서 레지스트리의 역할은 reader 하나다. 쓰기의 역할(write·admin)은 git 호스트의 저장소 권한이고 이 그림 밖이다. `[웹]` DataHub(Admin·Editor·Reader)·Langfuse(Owner·Admin·Member·Viewer)의 관례(2026-09-26 확인)에서 Reader 층만 레지스트리에 남고, Editor·Admin에 해당하는 것은 git 호스트의 권한이 된다.
 
@@ -325,9 +312,9 @@ flowchart LR
         direction TB
         P0["CATALOG_READ"]
     end
-    subgraph L4["④ 도구 여섯 — 요청 스코프 skills:read"]
+    subgraph L4["④ 도구 넷 — 요청 스코프 skills:read"]
         direction TB
-        T0["search_skills · load_skill<br/>get_skill_file · get_skill_archive<br/>skills:read"]
+        T0["search_skills · get_skill<br/>search_tools · get_tool<br/>skills:read"]
     end
     H0 --> RX
     HR --> R0
@@ -342,14 +329,14 @@ flowchart LR
 
 | 층 | 내용 | 소유 |
 |---|---|---|
-| 권한 (카탈로그 수준, 하나) | `CATALOG_READ`: `search_skills`·`load_skill`·`get_skill_file`·`get_skill_archive`·`search_tools`·`get_tool`(§11 2026-10-11 toolbox). 스킬 단위 권한은 없다 — 스킬별 읽기 제한은 역할이 아니라 격리 문제이고(`[it]` RBAC와 격리는 같은 것이 아니다) 그 자리는 §7의 둘째 저장소다. 평가 결과의 쓰기·읽기 권한은 Langfuse 프로젝트의 것이다(§5.1) | 레지스트리(코드) |
+| 권한 (카탈로그 수준, 하나) | `CATALOG_READ`: `search_skills`·`get_skill`·`search_tools`·`get_tool`(§11 2026-10-11 toolbox). 스킬 단위 권한은 없다 — 스킬별 읽기 제한은 역할이 아니라 격리 문제이고(`[it]` RBAC와 격리는 같은 것이 아니다) 그 자리는 §7의 둘째 저장소다. 평가 결과의 쓰기·읽기 권한은 Langfuse 프로젝트의 것이다(§5.1) | 레지스트리(코드) |
 | 역할 (하나, 고정) | `reader` = CATALOG_READ. 권한 하나에 역할 하나를 두는 이유는 그룹→역할→권한의 층을 코드에 남겨 §7의 둘째 저장소·세밀한 층이 올 때 층을 새로 세우지 않기 위해서다 | 레지스트리(코드) |
 | 주체 → 역할 | `groups`에 `harness-readers` = reader. 무인 주체(LDAP 기계 계정)도 같은 그룹으로 reader다 — 주체 종류 판정은 없다(사용자 결정 2026-10-07). 그룹에 없는 사람 = 역할 없음, 모든 도구가 403 `not_a_member`. 그룹 이름은 규약으로 고정하고 설정값에 두지 않는다(설정값 여섯 유지) | 그룹은 신원 제공자, 대응은 레지스트리(코드) |
 | 쓰기 | 게시·갱신·폐기·은퇴·인증은 전부 git 호스트에서 브랜치·PR·병합이고, 누가 할 수 있는가는 저장소의 write(브랜치·PR)·admin(병합·설정) 권한이다. 운영자가 저장소 read 명단을 `harness-readers`와 같게 유지한다 | git 호스트 |
 | 접근 관리 | 레지스트리에 grant API·화면이 없다. 읽기 권한을 주고 뺏는 일은 신원 제공자의 그룹 편집, 쓰기 권한은 git 호스트의 협업자 설정이다 | 신원 제공자, git 호스트 |
 | 없는 것 | 스킬별 소유자(`[웹]` Polaris에 없고 Snowflake는 되모은다), 레지스트리 안의 editor·admin 역할(v3.2에 있었다, §11), 그룹→역할 매핑 설정(§7), 세밀한 층(§7 둘째 저장소) | — |
 
-인가 정책(그림 2)은 이 표를 순수 함수 하나로 옮긴 것이고, 시험은 주체 셋(reader·그룹 없음·서비스) × 도구 여섯의 행렬을 이 표와 대조한다. 스코프와 역할의 관계: 스코프는 클라이언트가 요청한 범위(`skills:read` 하나)이고 역할은 주체가 가진 권한이다. 둘 다 통과해야 허용이며, 스코프 부족은 401/403 챌린지(재인가로 풀린다), 그룹 없음은 403 본문(`not_a_member`, 재인가로 풀리지 않는다)이다.
+인가 정책(그림 2)은 이 표를 순수 함수 하나로 옮긴 것이고, 시험은 주체 셋(reader·그룹 없음·서비스) × 도구 넷의 행렬을 이 표와 대조한다. 스코프와 역할의 관계: 스코프는 클라이언트가 요청한 범위(`skills:read` 하나)이고 역할은 주체가 가진 권한이다. 둘 다 통과해야 허용이며, 스코프 부족은 401/403 챌린지(재인가로 풀린다), 그룹 없음은 403 본문(`not_a_member`, 재인가로 풀리지 않는다)이다.
 
 **게시는 git 호스트의 트렁크 기반 워크플로다.** 레지스트리에 쓰기 도구가 없다. 저자(사람의 세션에서는 에이전트가 사람의 git 자격으로)는 `main`에서 브랜치를 따고 `skills/<name>/`을 만들거나 고쳐 커밋하고 PR을 연다. PR마다 CI가 `harness-catalog check`를 돌린다(§5 검사). 병합은 `main`에 대한 git의 compare-and-swap이라 동시 갱신은 git이 풀고(충돌은 브랜치를 `main` 위에 다시 얹는 것), 병합된 판이 곧 **인증된 판**이다 — 소비자가 보는 유일한 판이라 "현재 판"과 "인증 판"이 갈릴 자리가 없다. 되돌리기는 revert PR이다. 순서와 실패 양식은 이렇다.
 
@@ -411,7 +398,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 
 세 형태 모두 빌드 아티팩트는 같은 컨테이너 이미지 하나이고, 로컬에서 도는 이미지가 운영 이미지와 같다. `[it]` 아티팩트를 한 번만 만든다는 조항이다. compose 파일은 같은 저장소의 루트에, compose 지원 파일(빠른 시작용 Dex 설정·DB 초기화)은 `docker/`에, 나중의 Helm 차트는 `helm/`에 두고(오픈소스 공통 골격, §11 사용자 결정), 서비스는 배포 형태를 모른다(설정값 여섯만 환경에서 읽는다).
 
-**서비스가 내놓아야 하는 것.** `[it]` 원하는 상태 관리가 성립하려면 애플리케이션이 살아 있음과 준비됨을 따로 알려야 한다. 살아 있음이 실패하면 재시작, 준비됨이 실패하면 트래픽 제외. 준비됨은 "첫 fetch가 성공하고 저장소 구조 검사(§2.1 저장소 초기화)를 통과해 인덱스가 만들어졌다"이다. 인덱스의 정본 사본은 PostgreSQL이지만(그림 3), 인덱스 빌드는 같은 행 집합을 **프로세스 메모리에도** 들고 있다(같은 fetch에서 나온 같은 파생물이고, 다음 빌드가 통째로 바꾼다). 그래서 DB 연결은 준비됨의 조건이 아니다. git이 끊기면 낡은 인덱스로(응답에 마지막 fetch 시각), DB가 끊기면 메모리 사본으로 `search_skills`를 부분 일치(순위 없음)로 답하고 `load_skill`·`get_skill_file`은 메모리 스냅샷의 판을 로컬 클론에서 읽는다. `/readyz`는 둘 다 200을 유지하고 본문에 `degraded` 사유를 적는다. 트래픽을 빼는 것보다 읽기를 유지하는 쪽이 이 서비스의 가용성 결정이다. 로그는 표준 출력으로, 도구 호출 스팬은 OTLP로 Langfuse로(표준 OTel 환경 변수 `OTEL_EXPORTER_OTLP_ENDPOINT`·`OTEL_EXPORTER_OTLP_HEADERS`·`OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`. 레지스트리 설정값이 아니다). 별도 관측 스택은 두지 않는다(§7).
+**서비스가 내놓아야 하는 것.** `[it]` 원하는 상태 관리가 성립하려면 애플리케이션이 살아 있음과 준비됨을 따로 알려야 한다. 살아 있음이 실패하면 재시작, 준비됨이 실패하면 트래픽 제외. 준비됨은 "첫 fetch가 성공하고 저장소 구조 검사(§2.1 저장소 초기화)를 통과해 인덱스가 만들어졌다"이다. 인덱스의 정본 사본은 PostgreSQL이지만(그림 3), 인덱스 빌드는 같은 행 집합을 **프로세스 메모리에도** 들고 있다(같은 fetch에서 나온 같은 파생물이고, 다음 빌드가 통째로 바꾼다). 그래서 DB 연결은 준비됨의 조건이 아니다. git이 끊기면 낡은 인덱스로(응답에 마지막 fetch 시각), DB가 끊기면 메모리 사본으로 `search_skills`를 부분 일치(순위 없음)로 답하고 `get_skill`·`get_skill(path=…)`은 메모리 스냅샷의 판을 로컬 클론에서 읽는다. `/readyz`는 둘 다 200을 유지하고 본문에 `degraded` 사유를 적는다. 트래픽을 빼는 것보다 읽기를 유지하는 쪽이 이 서비스의 가용성 결정이다. 로그는 표준 출력으로, 도구 호출 스팬은 OTLP로 Langfuse로(표준 OTel 환경 변수 `OTEL_EXPORTER_OTLP_ENDPOINT`·`OTEL_EXPORTER_OTLP_HEADERS`·`OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`. 레지스트리 설정값이 아니다). 별도 관측 스택은 두지 않는다(§7).
 
 **실패 시 동작 — 시간 초과·서킷 브레이커·기능 깎기.** `[it]` 연쇄 장애 때문에 동기 하류 호출 전부에 서킷 브레이커를 붙이되, 합리적 기본값을 어디에나 붙이고 특정 경우만 바꾼다. 빨리 실패하는 것이 느리게 실패하는 것보다 언제나 낫고, 끊긴 동안 동기 사슬은 빨리 실패하며 기능을 깎는다. 범위는 하류마다 하나씩.
 
@@ -446,7 +433,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 | 인가 | SDK의 `AuthSettings` + `TokenVerifier` 구현. JWT 검증은 PyJWT(`PyJWKClient`가 JWKS 캐시와 `kid` 재조회를 한다) | 스펙 준수는 SDK, 서명 검증만 우리 것 |
 | DB | psycopg 3 + `psycopg_pool`. ORM 없음. 마이그레이션은 SQL 파일과 가벼운 러너(yoyo) 하나, 기동 시 적용 | 업무 테이블이 하나(인덱스. 그림 3)와 인덱스 상태 행 하나이고 그 밖은 마이그레이션 러너의 메타 테이블 하나뿐이라 ORM이 감출 것이 없다. 어휘 검색은 `tsvector`·`pg_trgm`을 SQL로 직접 |
 | git | 이미지 안의 `git` 바이너리를 서브프로세스로. 레지스트리는 fetch·읽기만 한다 | 순수 파이썬 구현보다 단순하고 검증됐다 |
-| 검증 | `skills_ref.validate()` 라이브러리 호출 + 시크릿 스캔은 gitleaks 정적 바이너리 서브프로세스 + 저장소 구조·이름 재사용·`replaced-by` 검사. 같은 구현이 `harness-catalog check` CLI로 나가 pre-commit·CI가 부른다 | 참조 구현 한 곳(DRY). 세 자리(pre-commit·CI·인덱스 빌드)가 같은 코드를 돈다. gitleaks는 런타임이 아니라 바이너리 하나라 "런타임 하나" 원칙을 깨지 않는다 |
+| 검증 | `skills_ref.validate()` 라이브러리 호출 + 시크릿 스캔은 gitleaks 정적 바이너리 서브프로세스 + 저장소 구조·크기·`tool.json`·`server.json` 검사. 같은 구현이 `harness-catalog check` CLI로 나가 pre-commit·CI가 부른다 | 참조 구현 한 곳(DRY). 세 자리(pre-commit·CI·인덱스 빌드)가 같은 코드를 돈다. gitleaks는 런타임이 아니라 바이너리 하나라 "런타임 하나" 원칙을 깨지 않는다 |
 | 동시성 | SDK가 쓰는 anyio. 블로킹 호출(git·DB·검증)은 `anyio.to_thread.run_sync` | 프레임워크를 더 들이지 않는다 |
 | 설정 | pydantic-settings로 환경 변수 필수 다섯 + 선택 둘 | SDK 예제와 같은 방식 |
 | 시험 | pytest. 앱 시험은 SDK의 인메모리 `Client`로 서버 객체에 직접 붙는다. DB 어댑터 시험은 testcontainers로 실제 PostgreSQL | `[it]` DB 대역은 실물을 보장하지 않는다. git·OIDC 어댑터는 가짜로 |
@@ -459,7 +446,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 
 **저장소 초기화 — `harness-catalog init`이 한 번 쓴다.** 카탈로그 저장소가 갖춰야 할 것은 일곱이다. 표지 파일 `.harness-catalog`(내용 `layout = 1`. 이 저장소가 어느 배치의 카탈로그인지 선언한다), `skills/` 디렉토리와 그 안의 기본 스킬 셋(`pin-skill`·`write-skill`·`write-tool` — init이 패키지 데이터에서 함께 쓴다. §11 2026-10-10·2026-10-11 행; 그 전에는 `.gitkeep`만 두고 첫 PR로 넣었다), `schemas/tool.schema.json`(`tool.json`의 JSON Schema — 템플릿 파일이 아니라 core `ToolSpec`에서 init이 생성한다. §11 2026-10-11 write-tool 행), CI 워크플로(PR마다·`main` push마다 `harness-catalog check`, 그리고 `main` push에서 `harbor run --plugin harbor_langfuse`로 evals를 돌려 Langfuse에 남기는 선택 잡 — 파일에 항상 있되 git 호스트의 변수 `HARNESS_EVALS=true`일 때만 만들어지고, 자격은 러너의 환경에서 읽는다. §5.1 "CI 게이트의 켜고 끄기"), pre-commit 설정(`harness-catalog check`를 로컬 훅으로), README(등록 한 줄, 브랜치 규율, 검색어에 비밀 금지), 그리고 `main` 직접 push·강제 push 금지라는 규율(설정이 아니다 — §11 브랜치 보호 예외). 앞의 여섯은 파일이고 **`harness-catalog init <repo-url>`**이 만든다. 운영자의 git 자격으로 저장소를 clone해 URL에서 호스트(GitHub·GitLab)를 알아내 그 호스트의 워크플로 파일을 놓고, 나머지 다섯을 쓰고, 커밋해 push한다. 이미 있는 파일은 건드리지 않고 없는 것만 더하며(멱등), 표지가 있는데 `layout`이 다르면 멈춘다. 레지스트리 프로세스는 이 명령을 부르지 않는다 — 기동 시 저장소에 쓰지 않고 검사만 한다(`[it]` 토머스·헌트 Tip 38 "일찍 죽어라". 불구가 된 프로그램이 죽은 프로그램보다 더 큰 피해를 준다). init을 기동에서 뗀 이유는 둘이다. 쓰기 자격(운영자)과 읽기 자격(레지스트리 deploy key)이 다르고, CI 형식이 호스트별이라 그것을 아는 코드가 서비스 안에 있으면 git 어댑터의 호스트 중립이 깨진다. CLI는 서비스와 같은 패키지지만 다른 진입점이다. `[it]` 뉴먼은 맞춤 템플릿의 선택과 설정을 플랫폼 팀의 과제로 두되 사용은 선택이어야 한다고 적으며, 자동 템플릿 생성은 보통 짝이 되는 빌드 파이프라인도 함께 만든다고 적는다. 여기서 그 짝이 CI 워크플로다. 템플릿 파일과 기본 스킬 셋의 원본은 코드 저장소의 `packages/cli/src/harness_catalog_cli/templates/` 하나이고 init이 그것을 패키지 데이터로 들고 간다.
 
-**검사는 하나이고 세 자리에서 돈다.** `harness-catalog check [<repo-root>] [--base <commit>]`는 저장소 구조와 스킬마다의 규칙을 판정해 종료 코드로 말한다(0 통과, 1 위반, 2 검사기 실패 — fail-closed). 입력은 둘이다. 검사할 트리(작업 트리 또는 커밋)와, 변화를 볼 기준 커밋 `--base`(§5 항목 5·9가 쓴다: 어느 디렉토리가 새로 생기고 지워졌는가). 세 자리의 기준은 이렇다 — pre-commit 훅은 `HEAD`, PR의 CI는 `main`과의 merge-base, `main` push의 CI는 직전 `main` 커밋, 레지스트리의 인덱스 빌드는 `index_state.commit_sha`(첫 빌드는 기준 없음이라 5·9를 건너뛰고 그 사실을 로그에 적는다). 항목 5(이름 재사용)는 삭제 이력이 필요하므로 얕은 클론에서는 검사기 실패(종료 2)다 — CI는 `fetch-depth: 0`으로 받고, 레지스트리 클론은 전체 이력이며, 저자 머신의 클론은 보통 전체다. 같은 구현을 세 자리가 돌고, 입력(트리·기준·이력 깊이)이 같으면 판정이 같다. 항목은 §5에 있다. 규칙을 더하는 자리도 하나다.
+**검사는 하나이고 세 자리에서 돈다.** `harness-catalog check [<repo-root>] [--rev <tree>]`는 저장소 구조와 스킬·도구·서버마다의 규칙을 판정해 종료 코드로 말한다(0 통과, 1 위반, 2 검사기 실패 — fail-closed). 입력은 하나다. 검사할 트리(스테이징·`HEAD`·커밋). 이력은 보지 않으므로 기준 커밋이 없고 얕은 클론에서도 같은 판정이다(§11 2026-10-18: 은퇴 이름 재사용 금지와 `replaced-by` 검사를 뺐다). pre-commit 훅은 스테이징 트리, CI는 `HEAD`, 레지스트리의 인덱스 빌드는 fetch한 `main`을 같은 함수에 넣는다. 항목은 §5에 있다. 규칙을 더하는 자리도 하나다.
 
 **기동 시 구조 검사.** 순서대로 넷이다. 앞의 셋(clone, 표지, 배치)이 실패하거나 넷째의 인덱스 빌드 자체가 실패하면 `/readyz`가 503과 사유를 내고 로그에 적으며 저장소에 아무것도 쓰지 않는다. 넷째에서 개별 스킬이 검사에 실패하는 것은 그 스킬을 인덱스에서 빼는 일이지 준비됨 실패가 아니다.
 
@@ -480,22 +467,20 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 
 **설치 1회.** 에이전트의 MCP 설정에 레지스트리 URL 한 줄. 첫 호출에 레지스트리가 401과 `resource_metadata`로 답하면 에이전트가 `[웹]` MCP 인가 스펙대로 인가 서버를 찾아 로그인을 연다. 사람은 브라우저(인가 코드 + PKCE)나 장치 코드로 한 번 로그인하고 토큰 캐시는 에이전트가 관리한다. 무인 루프는 LDAP 기계 계정(`harness-readers` 소속)의 비밀번호로 Dex 비밀번호 그랜트를 써서 토큰을 받는다(§11 사용자 결정 2026-10-07; 이전 판의 "클라이언트 자격 증명"은 Dex에 없다). 사용자가 고르는 설정값은 URL뿐이지만 절차는 "한 줄 + 로그인 한 번"이다. (UC의 `ug configure`에 대응)
 
-**식별자.** 식별자는 스펙의 `name`이고 저장 경로 `skills/<name>/`(도구는 `tools/<name>/`, §11 2026-10-11)과 같다. **`name`은 카탈로그 전체에서 유일하다 — 스킬과 도구를 합쳐서.** 같은 이름의 스킬과 도구가 공존할 수 없고(검사 11), 은퇴한 이름은 종류를 바꿔도 다시 쓰지 않는다(검사 5는 `skills/`·`tools/` 두 뿌리의 삭제 이력을 합쳐 본다). `mcp-servers/<name>`은 도구가 참조하는 배선 레코드라 이 이름공간 밖이다. 살아 있는 스킬 사이에 같은 `name`이 둘일 수 없고(디렉토리가 하나뿐이라 git이 보장한다), **은퇴한 이름도 다시 쓰지 않는다.** git 이력에서 지워진 적 있는 `name`은 `harness-catalog check`가 PR에서 `git log --diff-filter=D`로 확인해 거부하고 인덱스 빌드도 같은 검사로 그 스킬을 뺀다(표는 두지 않는다. 그림 3 규칙 2). `PINNED`의 `<name>`+sha만으로는 새 판과 이름을 재사용한 다른 스킬을 가를 수 없기 때문이다. 세션에서 말하는 이름·내려받은 디렉토리명·`/name` 호출·검색 결과의 이름이 하나로 같다. 팀이 여럿이 되어도 이 규칙은 유지하고 경로에만 `teams/<team>/`이 붙는다(§7). 근거는 §1.0의 잣대다. `[it]` 사용자보다 개발자가 고생하는 편이 나으므로 이름 충돌의 비용을 소비자마다(내려받을 때) 치르게 하지 않고 저자가 한 번 치른다.
+**식별자.** 식별자는 스펙의 `name`이고 저장 경로 `skills/<name>/`(도구는 `tools/<name>/`, §11 2026-10-11)과 같다. **`name`은 살아 있는 레코드 사이에서 유일하다 — 스킬과 도구를 합쳐서.** 같은 이름의 스킬과 도구가 공존할 수 없고(검사 11), `mcp-servers/<name>`은 도구가 참조하는 배선 레코드라 이 이름공간 밖이다. 살아 있는 스킬 사이에 같은 `name`이 둘일 수 없는 것은 디렉토리가 하나뿐이라 git이 보장한다. 은퇴는 디렉토리 삭제뿐이고 은퇴한 이름을 다시 쓰는 것을 막지 않는다(§11 2026-10-18 — 2026-10-17까지는 `git log --diff-filter=D`로 막았다). 같은 이름으로 다른 내용을 올리고 싶으면 그것은 은퇴가 아니라 갱신이라 디렉토리를 고쳐 병합한다. 남는 위험 하나(pin해 둔 은퇴 스킬과 같은 이름의 무관한 새 스킬)는 pin의 새 판 확인이 받기 전에 description을 보여 사람이 가르는 것으로 받는다. 세션에서 말하는 이름·내려받은 디렉토리명·`/name` 호출·검색 결과의 이름이 하나로 같다. 팀이 여럿이 되어도 이 규칙은 유지하고 경로에만 `teams/<team>/`이 붙는다(§7).
 
-**도구 여섯(스킬 넷 + 도구 둘, §11 2026-10-11 toolbox).** 사람은 세션에서 부르고(검색·탐색·명시 호출), 루프는 반복 안에서 부른다(자동 선택·로드). 호출 주체가 달라도 도구는 같다. 전부 읽기이고, 쓰기 도구도 기록 도구도 없다 — 게시는 git 호스트(§2, §5), 평가 결과는 Langfuse(§5.1)다.
+**도구 넷(스킬 둘 + 도구 둘, §11 2026-10-18; 2026-10-11에는 여섯이었다).** 사람은 세션에서 부르고(검색·탐색·명시 호출), 루프는 조립기가 부른다(§4). 호출 주체가 달라도 도구는 같다. 전부 읽기이고, 쓰기 도구도 기록 도구도 없다 — 게시는 git 호스트(§2, §5), 평가 결과는 Langfuse(§5.1)다. 동사는 `search`와 `get` 둘뿐이다. `get`은 "식별자(와 판)를 받아 정의를 돌려준다"이고, 받은 것을 문맥에 넣는 것은 받아 간 쪽의 일이라 `load`라는 동사를 두지 않는다.
 
 | 도구 | 하는 일 | UC 대응 |
 |---|---|---|
-| `search_skills(query, limit=10)` | 식별자·설명·SKILL.md `metadata` 값의 어휘 검색. 후보 기본 10, 상한 20. 항목은 **선택에 쓰이는 것만**: 식별자·설명·`sha`(tree)·`replaced-by`(있을 때)·`requires_tools`(배열, 있을 때)·`compatibility`(있을 때). 응답에 한 번, 마지막 fetch 시각. 필드마다 소비자가 있다: 식별자·설명은 고르는 자리, `sha`는 pin 새 판 확인과 `load_skill(sha)`, `replaced-by`는 폐기 스킬 회피, `requires_tools`는 루프의 환경 대조, `compatibility`는 사람이 로드 전에 읽는 문장. 그 밖(커밋 SHA, `metadata` 전체, 파일 목록)은 `load_skill`에 있다 — 후보마다 곱해지는 무관한 필드는 방해 문서와 같다(§4 예산). 평가 결과는 어느 응답에도 없다(Langfuse, §5.1). 읽기 권한은 reader 전부라 필터가 없다. 전체 목록 도구는 없다(§11 2026-10-11 `list_skills` 제거) | `list_skills` |
-| `load_skill(id, sha?)` | SKILL.md 본문과 `sha`(tree)·`commit`·`metadata` 전체·파일 목록(`scripts/` 유무 포함)을 **돌려준다.** 컨텍스트에 넣고 빼는 것은 호출자다. `sha`를 생략하면 `main`의 현재 판이다 — 사람과 루프에게 같다. `sha`를 주면 그 판을 돌려준다(재현·사고 조사용). 스킬 하나에 대한 호출이라 `list_skills`에서 뺀 무거운 필드가 여기 있다 | `load_skill` |
-| `get_skill_file(id, path, sha?)` | 참조 파일이나 스크립트 하나. 경로 이탈·심볼릭 링크 거부, 파일당 1 MB 상한 | `get_skill_files` |
-| `get_skill_archive(id, sha?)` | 한 판 전체를 받는 **다운로드 명세**(download descriptor; 2026-10-11까지는 "기술자"로 적었다. §11 2026-10-11): `uri`(`{public_url}/archive/<id>/<tree>.tar`), `headers`(`X-Harness-Archive-Token`, HMAC-SHA256, 5분), `size`·`sha256`(tar의 실제 바이트), `digest`(`git-tree:<sha>`), `expires_at`. 파일 내용은 MCP를 지나지 않는다 — 에이전트가 셸에서 `curl`로 받아 sha256을 대조하고 푼다(pin). tar 상한 20 MB(`input_limit`), 없는 판은 `unknown_version`. 서버는 그 URI를 bearer 없이, 헤더 토큰만 보고 낸다(라우트 `GET /mcp/archive/<id>/<tree>.tar`, 실패는 빈 403 하나) | (없음 — UC는 `ug skills add` CLI, Anthropic Skills API는 zip 내려받기 엔드포인트) |
-| `search_tools(query, limit=10)` | **toolbox(§11 2026-10-11).** `tools/<name>/tool.json`의 식별자·설명·`metadata` 값의 어휘 검색. 결과 항목은 식별자·설명·`sha`(tree)·`kind`(`script`·`mcp`)·`server`(kind가 `mcp`일 때 참조하는 `mcp-servers/<name>`)·`replaced_by`·`requires_tools`. 스킬과 섞지 않는다 — 응답도 표도 따로다 | (없음 — Anthropic Tool Search·AgentCore semantic search는 하네스/게이트웨이 쪽) |
-| `get_tool(id, sha?)` | 도구 한 판의 정의: `tool.json` 전체(`name`·`description`·`inputSchema`·`runtime`·`metadata`)와 `sha`·`commit`·파일 목록. `runtime.kind`가 `mcp`면 참조하는 `server.json`(MCP Registry 형식)을 `server`에 함께 싣고, `script`면 `get_skill_archive`와 같은 모양의 다운로드 명세를 `archive`에 싣는다(라우트 `GET /mcp/archive/tools/<id>/<tree>.tar`, 서명 범위에 `tools/` 접두가 들어가 스킬 토큰과 섞이지 않는다). 레지스트리는 **발견까지**다 — 도구를 부르지도 중계하지도 않는다 | (없음) |
+| `search_skills(query, limit=10)` | 식별자·설명·SKILL.md `metadata` 값의 어휘 검색. 후보 기본 10, 상한 20. 항목은 **선택에 쓰이는 것만**: 식별자·설명·`sha`(tree)·`compatibility`(있을 때)·`has_scripts`. 응답에 한 번, 마지막 fetch 시각. 필드마다 소비자가 있다: 식별자·설명은 고르는 자리, `sha`는 pin 새 판 확인과 `get_skill(sha)`, `compatibility`는 사람이 로드 전에 읽는 문장, `has_scripts`는 루프 조립기가 세션 전용 스킬(scripts/를 품은 것)을 후보에서 빼는 유일한 신호. 그 밖(커밋 SHA, `metadata` 전체, 파일 목록)은 `get_skill`에 있다 — 후보마다 곱해지는 무관한 필드는 방해 문서와 같다(§4 예산). 평가 결과는 어느 응답에도 없다(Langfuse, §5.1). 읽기 권한은 reader 전부라 필터가 없다. 전체 목록 도구는 없다(§11 2026-10-11 `list_skills` 제거) | `list_skills` |
+| `get_skill(id, sha?, path?, archive?)` | 스킬 한 판. 기본은 SKILL.md 본문과 `sha`(tree)·`commit`·`metadata` 전체·파일 목록·`has_scripts`를 **돌려준다.** 컨텍스트에 넣고 빼는 것은 호출자다. `sha`를 생략하면 `main`의 현재 판이다 — 사람과 루프에게 같다. `sha`를 주면 그 판(재현·사고 조사용). `path`를 주면 본문 대신 그 파일 하나를 `file`에(텍스트 또는 base64, 경로 이탈·심볼릭 링크 거부, 파일당 1 MB — 2026-10-17까지의 `get_skill(path=…)`). `archive=true`면 한 판 전체를 받는 **다운로드 명세**를 `archive`에 함께 싣는다(2026-10-17까지의 `get_skill(archive=true)`): `uri`(`{public_url}/archive/<id>/<tree>.tar`), `headers`(`X-Harness-Archive-Token`, HMAC-SHA256, 5분), `size`·`sha256`(tar의 실제 바이트), `digest`(`git-tree:<sha>`), `expires_at`. 파일 내용은 MCP를 지나지 않는다 — 에이전트가 셸에서 `curl`로 받아 sha256을 대조하고 푼다(pin). tar 상한 20 MB(`input_limit`), 없는 판은 `unknown_version`. 서버는 그 URI를 bearer 없이, 헤더 토큰만 보고 낸다(라우트 `GET /mcp/archive/<id>/<tree>.tar`, 실패는 빈 403 하나). 옵트인인 이유: 명세는 5분 토큰을 찍으므로 pin이 아닌 호출마다 발급할 까닭이 없다 | `get_skill`·`get_skill_files` |
+| `search_tools(query, limit=10)` | **toolbox(§11 2026-10-11).** `tools/<name>/tool.json`의 식별자·설명·`metadata` 값의 어휘 검색. 결과 항목은 식별자·설명·`sha`(tree)·`kind`(`script`·`mcp`)·`server`(kind가 `mcp`일 때 참조하는 `mcp-servers/<name>`). 스킬과 섞지 않는다 — 응답도 표도 따로다 | (없음 — Anthropic Tool Search·AgentCore semantic search는 하네스/게이트웨이 쪽) |
+| `get_tool(id, sha?, archive?)` | 도구 한 판의 정의: `tool.json` 전체(`name`·`description`·`inputSchema`·`outputSchema`·`runtime`·`metadata`)와 `sha`·`commit`·파일 목록. `runtime.kind`가 `mcp`면 참조하는 `server.json`(MCP Registry 형식)을 `server`에 함께 싣고, `script`이고 `archive=true`면 `get_skill`과 같은 모양의 다운로드 명세를 `archive`에 싣는다(라우트 `GET /mcp/archive/tools/<id>/<tree>.tar`, 서명 범위에 `tools/` 접두가 들어가 스킬 토큰과 섞이지 않는다). 레지스트리는 **발견까지**다 — 도구를 부르지도 중계하지도 않는다 | (없음) |
 
 **응답 모양의 정본은 server `driving/responses.py`의 pydantic 모델이다(§11 2026-10-11).** 위 표는 그 모델의 산문이고, 같은 모델이 `tools/list`의 `outputSchema`로 공개되어 성공 응답마다 검증된다. 오류 응답은 `isError`와 `{code, detail}`이며 스키마 밖이다.
 
-이것이 인터페이스의 전부다. `[it]` 깊은 모듈의 잣대로, 이 일곱 뒤에 git·검사·인덱스·토큰 계산·인증·아카이브 서명이 숨는다. UC의 `create_skill`·`update_skill`·`delete_skill`과 `ug skills add`(다운로드)에 대응하는 **서버 도구는 없다.** 쓰기는 git 호스트의 브랜치·PR·병합이고(§5.1), 내려받기는 클라이언트 쪽 쓰기라 MCP 서버가 할 수 없으며 필요한 읽기는 `load_skill`과 `get_skill_file`로 이미 충분하다. 그 절차는 §4의 "내려받기"이고 CLI를 따로 설치하지 않는다. **도구 오류 코드.** 인가 실패는 HTTP 401/403(위 인증·인가 표)이고, 도구 안의 실패는 MCP 도구 오류 결과에 `{code, detail}`로 실린다. 코드는 다섯으로 닫는다. `not_found`(없는 스킬·도구·파일), `unknown_version`(`sha`를 받는 모든 도구 — `load_skill`·`get_skill_file`·`get_skill_archive`·`get_tool` — 에서 `sha`가 현재 판도 이력의 판도 아님), `not_a_member`(403 본문, 그룹 없음), `input_limit`(길이 상한, 어느 상한인지 동봉), `path_rejected`(경로 이탈·심볼릭 링크·절대 경로). 이 목록 밖의 코드를 내지 않으며 코드를 더하는 것은 이 절의 변경이다. `harness-catalog check`의 위반(형식·시크릿·이름 재사용·대체 연쇄·크기)은 도구 오류가 아니라 그 명령의 출력이다.
+이것이 인터페이스의 전부다. `[it]` 깊은 모듈의 잣대로, 이 넷 뒤에 git·검사·인덱스·토큰 계산·인증·아카이브 서명이 숨는다. UC의 `create_skill`·`update_skill`·`delete_skill`과 `ug skills add`(다운로드)에 대응하는 **서버 도구는 없다.** 쓰기는 git 호스트의 브랜치·PR·병합이고(§5.1), 내려받기는 클라이언트 쪽 쓰기라 MCP 서버가 할 수 없으며 필요한 읽기는 `get_skill`로 이미 충분하다. 그 절차는 §4의 "내려받기"이고 결정적 꼬리는 CLI `hc pin`이 맡는다(§11 2026-10-18). **도구 오류 코드.** 인가 실패는 HTTP 401/403(위 인증·인가 표)이고, 도구 안의 실패는 MCP 도구 오류 결과에 `{code, detail}`로 실린다. 코드는 다섯으로 닫는다. `not_found`(없는 스킬·도구·파일), `unknown_version`(`sha`를 받는 도구 둘 — `get_skill`·`get_tool` — 에서 `sha`가 현재 판도 이력의 판도 아님), `not_a_member`(403 본문, 그룹 없음), `input_limit`(길이 상한, 어느 상한인지 동봉), `path_rejected`(경로 이탈·심볼릭 링크·절대 경로). 이 목록 밖의 코드를 내지 않으며 코드를 더하는 것은 이 절의 변경이다. `harness-catalog check`의 위반(형식·시크릿·이름 재사용·대체 연쇄·크기)은 도구 오류가 아니라 그 명령의 출력이다.
 
 **에이전트 확장.** 벤더 종속이 남는 자리는 둘이고 각각 표 한 줄이다. 마켓플레이스·플러그인은 쓰지 않는다(Claude Code 전용). 하네스별 스킬 디렉토리는 사람의 내려받기(§4)에서만 쓰고, 그 규약은 §4의 표 하나로 끝난다.
 
@@ -512,11 +497,11 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 
 소비 양식은 둘이다. 루프는 레지스트리에서 그때그때 가져오고, 사람은 매일 쓰는 소수를 내려받아 둔다. 맥락이 둘이고 약속이 다르다.
 
-**루프(우리가 만드는 것).** 한 반복은 `search_skills(과제 서술)` → 후보의 식별자+설명 → 모델이 고른다 → `load_skill`로 본문(`main`의 현재 판 — 검색이 고른 그 판. 브랜치에 있는 초안은 병합되기 전까지 루프에 닿지 않는다) → 필요하면 `get_skill_file` → 사용. 다음 반복은 다시 검색에서 시작하고 앞 반복의 본문을 들고 가지 않는다. 반복의 경계와 컨텍스트 조립은 루프 코드가 정하므로 이 약속은 루프가 지킨다. `[영상]` 반복마다 조립하고 안 맞으면 뺀다는 것을 이렇게 구체화했다. 프리픽스에 실리는 것은 레지스트리 도구 여섯의 이름뿐이다. 후보 하나의 이름+설명은 스펙이 프리픽스 메타데이터 층에 두는 것과 같은 양이라 대략 100토큰으로 본다(추정).
+**루프(우리가 만드는 것).** 한 반복은 `search_skills(과제 서술)` → 후보의 식별자+설명 → 모델이 고른다 → `get_skill`로 본문(`main`의 현재 판 — 검색이 고른 그 판. 브랜치에 있는 초안은 병합되기 전까지 루프에 닿지 않는다) → 필요하면 `get_skill(path=…)` → 사용. 다음 반복은 다시 검색에서 시작하고 앞 반복의 본문을 들고 가지 않는다. 반복의 경계와 컨텍스트 조립은 루프 코드가 정하므로 이 약속은 루프가 지킨다. `[영상]` 반복마다 조립하고 안 맞으면 뺀다는 것을 이렇게 구체화했다. 프리픽스에 실리는 것은 레지스트리 도구 넷의 이름뿐이다. 후보 하나의 이름+설명은 스펙이 프리픽스 메타데이터 층에 두는 것과 같은 양이라 대략 100토큰으로 본다(추정).
 
-**일반 세션(Claude Code 등 하네스).** 같은 도구를 사람이 부른다. 세션은 둘로 갈린다. **로컬 세션**은 사람의 머신에서 돌아 홈 디렉토리와 git 자격이 있고, **클라우드 샌드박스 세션**은 벤더가 띄운 원격 컨테이너에서 돌아(Claude Code 웹판, Codex 클라우드 태스크, Cursor 백그라운드 에이전트 같은 것) 홈 디렉토리도 git 자격도 없다. 후자는 라이브 읽기만 한다 — pin도 게시(브랜치·PR)도 못 한다. 처음 만나는 스킬은 검색해서 고르고 `load_skill`로 그 세션에 넣는다. 본문이 세션에 얼마나 남는지는 하네스가 정하고 이 설계는 그것을 통제하지 않는다. 매일 쓰는 소수는 아래 "내려받기"로 곁에 두고, 그 뒤로는 하네스가 스펙의 1단계(시작 시 이름·설명 적재)대로 스스로 발견한다. 약속은 "검색은 레지스트리, 상주는 하네스"다.
+**일반 세션(Claude Code 등 하네스).** 같은 도구를 사람이 부른다. 세션은 둘로 갈린다. **로컬 세션**은 사람의 머신에서 돌아 홈 디렉토리와 git 자격이 있고, **클라우드 샌드박스 세션**은 벤더가 띄운 원격 컨테이너에서 돌아(Claude Code 웹판, Codex 클라우드 태스크, Cursor 백그라운드 에이전트 같은 것) 홈 디렉토리도 git 자격도 없다. 후자는 라이브 읽기만 한다 — pin도 게시(브랜치·PR)도 못 한다. 처음 만나는 스킬은 검색해서 고르고 `get_skill`로 그 세션에 넣는다. 본문이 세션에 얼마나 남는지는 하네스가 정하고 이 설계는 그것을 통제하지 않는다. 매일 쓰는 소수는 아래 "내려받기"로 곁에 두고, 그 뒤로는 하네스가 스펙의 1단계(시작 시 이름·설명 적재)대로 스스로 발견한다. 약속은 "검색은 레지스트리, 상주는 하네스"다.
 
-**내려받기(pin).** UC의 `ug skills add`에 대응하는 사람 쪽 절차다. 사람이 세션에서 "이 스킬 내려받아"라고 하면 에이전트가 `load_skill`로 판(`sha`)과 파일 목록을 받고, `get_skill_archive(id, sha)`가 돌려준 명세로 **셸에서 `curl`로 tar를 받아**(sha256·크기 대조 뒤 풀기 — 파일 내용은 모델을 지나지 않는다, §11 2026-10-11; 그 전에는 `get_skill_file`로 하나씩 받아 에이전트가 썼다) 아래 표의 자리에 쓰고, 옆에 `PINNED` 파일 한 줄(`<name> <tree sha> <일자>`)을 남긴다. 서버 도구도 CLI도 없다. 절차 자체가 카탈로그의 스킬 하나(`pin-skill`)로 실려 로컬 세션의 어느 하네스에서든 같은 지시를 따르게 한다(클라우드 샌드박스 세션은 홈 디렉토리를 읽지 않으므로 사용자 범위 pin이 닿지 않는다. 그곳은 라이브다). 사본의 뜻은 UC와 같다. `[웹]` "a point-in-time copy"이며 새 판은 사용자가 다시 받는다. 새 판이 있는지는 `search_skills(<name>)`의 `sha`와 `PINNED`의 sha를 견주면 나오고, 그 확인도 같은 스킬의 지시다. 사람이 고르는 것은 **범위 하나**뿐이다.
+**내려받기(pin).** UC의 `ug skills add`에 대응하는 사람 쪽 절차다. 사람이 세션에서 "이 스킬 내려받아"라고 하면 에이전트가 `get_skill(id, sha, archive=true)`로 판(`sha`)·파일 목록·다운로드 명세를 한 번에 받고, 그 명세로 **셸에서 `curl`로 tar를 받아**(sha256·크기 대조 뒤 풀기 — 파일 내용은 모델을 지나지 않는다, §11 2026-10-11; 그 전에는 `get_skill(path=…)`로 하나씩 받아 에이전트가 썼다) 아래 표의 자리에 쓰고, 옆에 `PINNED` 파일 한 줄(`<name> <tree sha> <일자>`)을 남긴다. 서버 도구는 없다. 절차의 판단 부분(무엇을, 어느 범위에)은 카탈로그의 스킬 하나(`pin`)로 실려 로컬 세션의 어느 하네스에서든 같은 지시를 따르게 한다(클라우드 샌드박스 세션은 홈 디렉토리를 읽지 않으므로 사용자 범위 pin이 닿지 않는다. 그곳은 라이브다). 사본의 뜻은 UC와 같다. `[웹]` "a point-in-time copy"이며 새 판은 사용자가 다시 받는다. 새 판이 있는지는 `search_skills(<name>)`의 `sha`와 `PINNED`의 sha를 견주면 나오고, 그 확인도 같은 스킬의 지시다. 사람이 고르는 것은 **범위 하나**뿐이다.
 
 | 고르는 것 | 선택지 | 근거 |
 |---|---|---|
@@ -533,15 +518,15 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 | Gemini CLI | `.gemini/skills/` 또는 별칭 `.agents/skills/` | `~/.gemini/skills/` 또는 별칭 `~/.agents/skills/` | 같은 층에서는 `.agents/skills/`가 우선 |
 | VS Code / Copilot | `.github/skills/`, `.claude/skills/`, `.agents/skills/` | `~/.copilot/skills/`, `~/.claude/skills/`, `~/.agents/skills/` | 문서에 규칙 없음 |
 
-`pin-skill`의 지시에 규칙 넷이 더 있다. 첫째, `name`이 카탈로그 전체에서 유일하므로(§3) 내려받은 디렉토리명과 카탈로그의 이름이 같다. 그래도 내려받기 전에 그 이름의 디렉토리가 이미 있으면 멈추고 알린다. 카탈로그 밖에서 만든 개인 스킬과의 충돌은 여기서만 잡힌다. 둘째, `PINNED`는 스킬 디렉토리 안의 파일 하나이고 한 줄이다. `<name> <tree sha 40자> <ISO 8601 UTC 시각>`, UTF-8, 끝에 개행. 새 판 확인은 이 sha와 `search_skills(<name>)`의 sha를 견주는 것이고, 은퇴한 이름은 다시 쓰이지 않으므로(§3) sha가 다르면 새 판이다. 사용자가 사본을 고쳤는지는 `PINNED`로 알 수 없다. 재다운로드는 덮어쓰기이며, 고친 사본을 지키려면 이름을 바꿔 두라는 것이 `pin-skill`의 지시다. 셋째, 같은 이름의 우선순위가 하네스마다 다르므로(위 표), 새 판 확인은 프로젝트 범위와 사용자 범위의 `PINNED`를 함께 읽어 같은 스킬이 둘 다 있으면 낡은 쪽을 알리고 하나로 합치게 한다. 두 사본의 sha가 같으면 어느 쪽이 이겨도 결과가 같다. 넷째, 쓰기는 원자적이다. 파일을 같은 범위 디렉토리 아래의 임시 디렉토리(`.<name>.pin-tmp/`)에 전부 받아 `load_skill`이 준 파일 목록과 대조한 뒤 한 번에 이름을 바꾼다. 도중에 실패하면 임시 디렉토리를 지우고 기존 사본은 그대로다. `get_skill_file`은 파일을 하나씩 돌려주므로 목록은 `load_skill` 응답의 것을 쓰고, 바이너리는 base64로 받아 그대로 쓰며, 빈 디렉토리는 git에 없으므로 만들지 않는다.
+`pin-skill`의 지시에 규칙 넷이 더 있다. 첫째, `name`이 카탈로그 전체에서 유일하므로(§3) 내려받은 디렉토리명과 카탈로그의 이름이 같다. 그래도 내려받기 전에 그 이름의 디렉토리가 이미 있으면 멈추고 알린다. 카탈로그 밖에서 만든 개인 스킬과의 충돌은 여기서만 잡힌다. 둘째, `PINNED`는 스킬 디렉토리 안의 파일 하나이고 한 줄이다. `<name> <tree sha 40자> <ISO 8601 UTC 시각>`, UTF-8, 끝에 개행. 새 판 확인은 이 sha와 `search_skills(<name>)`의 sha를 견주는 것이고, sha가 다르면 새 판이다. 은퇴한 이름이 다시 쓰일 수 있으므로(§3) 받기 전에 description을 보여 같은 스킬인지 사용자가 확인한다. 사용자가 사본을 고쳤는지는 `PINNED`로 알 수 없다. 재다운로드는 덮어쓰기이며, 고친 사본을 지키려면 이름을 바꿔 두라는 것이 `pin-skill`의 지시다. 셋째, 같은 이름의 우선순위가 하네스마다 다르므로(위 표), 새 판 확인은 프로젝트 범위와 사용자 범위의 `PINNED`를 함께 읽어 같은 스킬이 둘 다 있으면 낡은 쪽을 알리고 하나로 합치게 한다. 두 사본의 sha가 같으면 어느 쪽이 이겨도 결과가 같다. 넷째, 쓰기는 원자적이다. 파일을 같은 범위 디렉토리 아래의 임시 디렉토리(`.<name>.pin-tmp/`)에 전부 받아 `get_skill`이 준 파일 목록과 대조한 뒤 한 번에 이름을 바꾼다. 도중에 실패하면 임시 디렉토리를 지우고 기존 사본은 그대로다. 빈 디렉토리는 git에 없으므로 만들지 않는다. 이 넷째 규칙 전체가 결정적이라 CLI `hc pin`이 맡는다(§11 2026-10-18).
 
-**스크립트.** `get_skill_file`이 내용과 SHA를 돌려주고, 루프가 작업 디렉토리에 써서 실행한 뒤 버린다. 영구 사본이 아니므로 낡음이 없다. **실행 보안은 소비자 쪽 하네스의 것이다.** 카탈로그의 스크립트는 사내 저자가 PR로 올려 `main`에 병합된 파일이고(`check`가 크기와 경로를 강제한다), 실행은 그 에이전트의 보통 명령 실행 경로(권한 확인, 샌드박스, 시간 초과)를 지난다. 카탈로그가 별도 샌드박스를 더하지 않는다. 루프는 스크립트를 돌리기 전에 자기 정책대로 확인을 받고, 어느 SHA의 스크립트를 돌렸는지 로그에 남긴다. 신뢰 경계는 "인증된 사내 저자 + git 이력 + 검증"이며 그 이상(서명, 격리 실행)은 §7의 조건이다.
+**스크립트.** `get_skill(path=…)`이 내용과 SHA를 돌려주고, 세션이 작업 디렉토리에 써서 실행한 뒤 버린다(루프는 scripts/를 품은 스킬을 쓰지 않는다 — 코드는 도구다, §11 2026-10-18). 영구 사본이 아니므로 낡음이 없다. **실행 보안은 소비자 쪽 하네스의 것이다.** 카탈로그의 스크립트는 사내 저자가 PR로 올려 `main`에 병합된 파일이고(`check`가 크기와 경로를 강제한다), 실행은 그 에이전트의 보통 명령 실행 경로(권한 확인, 샌드박스, 시간 초과)를 지난다. 카탈로그가 별도 샌드박스를 더하지 않는다. 루프는 스크립트를 돌리기 전에 자기 정책대로 확인을 받고, 어느 SHA의 스크립트를 돌렸는지 로그에 남긴다. 신뢰 경계는 "인증된 사내 저자 + git 이력 + 검증"이며 그 이상(서명, 격리 실행)은 §7의 조건이다.
 
-**예산.** 컨텍스트는 유한한 주의 예산이고 토큰마다 한계 효용이 준다(`[웹]` Anthropic 컨텍스트 엔지니어링, 2026-09-26 확인). 실측은 셋이다. `[it]` Liu 외(TACL 2024): 답을 담은 문서 하나에 방해 문서를 더할수록 정확도가 떨어져 문서 20~30개 설정이 문서를 안 준 것보다 낮았고, 20개를 넘기면 이득이 1~1.5%뿐이다. `[it]` 후옌: 도구가 많을수록 효율적으로 쓰기 어렵고 도구 설명이 컨텍스트를 채운다. `[웹]` Anthropic Tool Search: 도구 30~50개를 넘으면 선택 정확도가 떨어진다. 그래서 이 설계의 예산 장치는 다른 호스트들과 같은 셋이다 — 후보 수(`limit` 기본 10, 상한 20. 20의 근거가 위 Liu의 포화점), 후보 항목의 필드 최소화(`search_skills` 행: 소비자를 적을 수 없는 필드는 싣지 않는다), 본문은 고른 뒤 하나만(`load_skill`). 호스트 쪽 예산도 실재한다(`[웹]` Codex는 초기 스킬 목록을 컨텍스트의 2% 또는 8,000자로 자르고 설명을 먼저 줄이며, Claude Code는 스킬당 설명을 1,536자에서 자른다; 2026-09-26 확인). 스킬 본문의 크기는 저자 쪽 규칙(스펙 권고 500줄·5000토큰, `check`가 경고)이지 선택 시점의 신호가 아니다 — 확인한 호스트·구현 여덟(Codex·Claude Code·Deep Agents·Anthropic Tool Search·langgraph-bigtool·Oracle DevRel·MCP Registry·Databricks) 어느 것도 크기를 모델에게 주지 않는다. Liu의 U자(첫머리·끝 편향) 때문에 description은 핵심 용례와 발동 낱말을 앞에 쓴다(§5.1 검수). 경고 문턱은 두지 않는다. `[it]` "사용자가 우리보다 더 나은 값을 정할 수 있는가"에 대한 답이 "루프가 `limit`으로 정한다"이기 때문이다.
+**예산.** 컨텍스트는 유한한 주의 예산이고 토큰마다 한계 효용이 준다(`[웹]` Anthropic 컨텍스트 엔지니어링, 2026-09-26 확인). 실측은 셋이다. `[it]` Liu 외(TACL 2024): 답을 담은 문서 하나에 방해 문서를 더할수록 정확도가 떨어져 문서 20~30개 설정이 문서를 안 준 것보다 낮았고, 20개를 넘기면 이득이 1~1.5%뿐이다. `[it]` 후옌: 도구가 많을수록 효율적으로 쓰기 어렵고 도구 설명이 컨텍스트를 채운다. `[웹]` Anthropic Tool Search: 도구 30~50개를 넘으면 선택 정확도가 떨어진다. 그래서 이 설계의 예산 장치는 다른 호스트들과 같은 셋이다 — 후보 수(`limit` 기본 10, 상한 20. 20의 근거가 위 Liu의 포화점), 후보 항목의 필드 최소화(`search_skills` 행: 소비자를 적을 수 없는 필드는 싣지 않는다), 본문은 고른 뒤 하나만(`get_skill`). 호스트 쪽 예산도 실재한다(`[웹]` Codex는 초기 스킬 목록을 컨텍스트의 2% 또는 8,000자로 자르고 설명을 먼저 줄이며, Claude Code는 스킬당 설명을 1,536자에서 자른다; 2026-09-26 확인). 스킬 본문의 크기는 저자 쪽 규칙(스펙 권고 500줄·5000토큰, `check`가 경고)이지 선택 시점의 신호가 아니다 — 확인한 호스트·구현 여덟(Codex·Claude Code·Deep Agents·Anthropic Tool Search·langgraph-bigtool·Oracle DevRel·MCP Registry·Databricks) 어느 것도 크기를 모델에게 주지 않는다. Liu의 U자(첫머리·끝 편향) 때문에 description은 핵심 용례와 발동 낱말을 앞에 쓴다(§5.1 검수). 경고 문턱은 두지 않는다. `[it]` "사용자가 우리보다 더 나은 값을 정할 수 있는가"에 대한 답이 "루프가 `limit`으로 정한다"이기 때문이다.
 
 **잃는 것.** 레지스트리가 죽으면 라이브 로드가 안 된다. 대부분의 스킬은 안내 자료라 없어도 작업이 계속되고, 사람은 git 호스트에서 읽을 수 있다. 그러나 runbook·배포 절차처럼 작업 자체가 스킬에 걸린 것은 예외이고, 그런 스킬이 확인되면 §7의 조건대로 루프에도 사본을 둔다. 사람은 내려받은 것이 있으면 레지스트리 없이도 그것을 쓴다. 루프는 하네스의 디렉토리 자동 발견을 쓰지 않는다. 루프가 그 일을 한다.
 
-**버전.** git SHA다. `load_skill`이 SHA를 돌려주고 `sha`로 특정 판을 다시 받을 수 있다. 되돌리기는 revert PR이다. semver·CHANGELOG는 두지 않는다.
+**버전.** git SHA다. `get_skill`이 SHA를 돌려주고 `sha`로 특정 판을 다시 받을 수 있다. 되돌리기는 revert PR이다. semver·CHANGELOG는 두지 않는다.
 
 ---
 
@@ -555,12 +540,9 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 | 2 | `skills/` 바로 아래는 디렉토리뿐이고 각 디렉토리에 `SKILL.md`가 있다 | 저장소 |
 | 3 | 스펙 준수: `skills-ref validate`(`name` = 디렉토리명, 길이·문자 규칙, `compatibility` 500자, `metadata` 문자열 맵) | 스킬 |
 | 4 | 시크릿 없음: 텍스트 파일 전부 gitleaks | 스킬 |
-| 5 | 이름 재사용 금지: `--base` 대비 새로 생긴 디렉토리 이름이 이력에서 지워진 적 있는 이름이 아니다(그림 3 규칙 2). 전체 이력이 필요하다 | 스킬(기준 커밋 대비) |
-| 6 | `metadata.replaced-by`의 대상이 존재하고 다시 다른 것으로 대체되지 않았다(연쇄·순환 금지) | 스킬 |
+| 5·6 | (비어 있음. 은퇴 이름 재사용 금지·`replaced-by` 검사는 §11 2026-10-18에서 뺐다) | |
 | 7 | 크기 상한: 파일 50개, 파일당 1 MB, 합계 5 MB. 심볼릭 링크 없음 | 스킬 |
-| 8 | `metadata.requires-tools`의 토큰 문법(§5.1) | 스킬 |
-| 9 | 은퇴는 디렉토리 삭제이고, `--base` 대비 지워진 스킬은 기준 커밋의 SKILL.md에 `replaced-by`가 있었다(권고 위반은 경고, 종료 코드에 안 걸린다) | 스킬(기준 커밋 대비) |
-| 10 | 복사된 스크립트의 드리프트: 서로 다른 스킬의 `scripts/` 아래 같은 상대 경로의 파일이 내용이 다르면 경고(어느 둘인지 출력). 공유 규약은 §5.1(경고, 종료 코드에 안 걸린다) | 저장소(스킬 쌍) |
+| 8·9·10 | (비어 있음. `requires-tools` 문법·은퇴 권고·복사 스크립트 드리프트는 §11 2026-10-18에서 뺐다 — 의존성은 스크립트 안에만, 공유 코드는 도구) | |
 | 11 | **toolbox(§11 2026-10-11).** `tools/` 바로 아래는 디렉토리뿐이고 각 디렉토리에 `tool.json`이 있다. `tool.json`은 `name`(= 디렉토리명, 스킬과 같은 문법)·`description`(비지 않음, 1024자 이하)·`inputSchema`(`type: object`인 JSON Schema 객체)·`runtime`(닫힌 판별자 `kind`: `script`면 `path`가 디렉토리 안의 파일이고 `command`(문자열 배열)가 그 경로를 포함한다; `mcp`면 `server`가 `mcp-servers/`에 있고 `tool`이 비지 않는다)·선택 `metadata`(문자열 맵, `replaced-by`·`requires-tools`는 스킬과 같은 규칙). 항목 4(시크릿)·5(은퇴 이름)·7(크기)도 도구 디렉토리에 같이 적용 | 도구 |
 | 12 | **toolbox.** `mcp-servers/` 바로 아래는 디렉토리뿐이고 각 디렉토리에 `server.json`이 있다. `server.json`은 MCP Registry 형식의 부분집합을 지킨다: `name`(디렉토리명과 같거나 `<이름공간>/<디렉토리명>`)·`version`·`packages` 또는 `remotes` 중 하나 이상. 레지스트리는 서버에 접속하지 않고 이 파일만 읽는다 | 서버 |
 
@@ -570,7 +552,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 - **비공개.** 카탈로그에 올리기 전의 스킬은 저자의 개인 디렉토리(어디든, 카탈로그 밖)나 아직 병합되지 않은 브랜치에 있다. 그것이 비공개다. `[it]` 특수 사례를 없애 흔한 경우가 엣지까지 처리하게 한다. "비공개 게시 상태"를 따로 두지 않는다.
 - **공유.** 팀(`harness-readers` 그룹)과 서비스 주체가 전부 읽는다. 디렉터리에 있을 뿐 그룹에 없는 사람은 읽지 못한다. **v3에는 스킬 단위 읽기 제한이 없다.** 팀 안에서는 저장소를 읽을 수 있으면 레지스트리로도 읽는다. 읽기 제한이 필요한 스킬이 생기면 git 호스트 권한이 걸린 둘째 저장소가 그 자리이고 레지스트리가 저장소 둘을 읽게 된다(§7).
 - **품질.** 게이트 대신 피드백 루프다. `[it]` 중복·저품질을 인증으로 막지 말고 검색 순위와 넛지로 격하하라. v3.0은 순위를 두지 않는다(이름순). 목록이 한 화면을 넘을 때 Langfuse의 사용 기록(도구 호출 스팬)에서 순위를 계산해 인덱스 열로 넣는다.
-- **감사.** 쓰기는 git 이력(커밋 author, PR, 병합 커밋). 읽기는 Langfuse의 도구 호출 스팬(§2 데이터 표). 속성은 주체(`langfuse.user.id`=`sub`)·도구(`gen_ai.tool.name`)·스킬 식별자·SHA·시각이고, `search_skills` 스팬에는 검색어와 결과 수가 더 있다(검색어는 2000자에서 자르고 제어 문자를 지운다. 어떤 질의가 어떤 스킬로 이어졌는지는 같은 주체의 뒤따르는 `load_skill`로 읽는다. MCP 2026-07-28에 세션이 없어 요청 간 상관 키는 두지 않는다. 검색어에 비밀을 넣지 말라는 안내는 `pin-skill`·`write-skill`과 같은 자리인 카탈로그 README에 둔다). 보존과 접근은 Langfuse 프로젝트의 것이다. v3.0은 쌓기만 하고 보지 않으며, 순위와 채택률이 나중에 이 기록에서 나온다.
+- **감사.** 쓰기는 git 이력(커밋 author, PR, 병합 커밋). 읽기는 Langfuse의 도구 호출 스팬(§2 데이터 표). 속성은 주체(`langfuse.user.id`=`sub`)·도구(`gen_ai.tool.name`)·스킬 식별자·SHA·시각이고, `search_skills` 스팬에는 검색어와 결과 수가 더 있다(검색어는 2000자에서 자르고 제어 문자를 지운다. 어떤 질의가 어떤 스킬로 이어졌는지는 같은 주체의 뒤따르는 `get_skill`로 읽는다. MCP 2026-07-28에 세션이 없어 요청 간 상관 키는 두지 않는다. 검색어에 비밀을 넣지 말라는 안내는 `pin-skill`·`write-skill`과 같은 자리인 카탈로그 README에 둔다). 보존과 접근은 Langfuse 프로젝트의 것이다. v3.0은 쌓기만 하고 보지 않으며, 순위와 채택률이 나중에 이 기록에서 나온다.
 - **evals.** 있으면 팀이 자기 스킬 디렉토리 안에 Harbor 태스크 형식으로 두고(§5.1) `harbor run`으로 자기가 돌린다. 결과는 Langfuse에 남는다(플러그인). 병합 조건이 아니다. PR의 CI가 돌려 검사 결과로 보이는 것과 `main` push의 CI가 병합된 판으로 돌려 Langfuse에 남기는 것은 팀의 선택이다.
 - **검사기 운영.** `check`는 레지스트리 이미지와 CI가 같은 패키지 판을 쓴다(pre-commit 훅과 CI는 코드 저장소의 판 태그로 핀한다. 설치 명세는 PLAN distribution D22). 검사기 자체가 실패하면 통과로 치지 않는다(종료 코드 2, fail-closed). 시크릿 스캔 오탐은 저자가 해당 파일을 고치는 것이 유일한 길이고 예외 승인 절차는 두지 않는다.
 
@@ -591,7 +573,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 | 단계 | 누가 | 무엇을 | 필수/권고 |
 |---|---|---|---|
 | 작성 | 사람 + 에이전트 | SKILL.md 본문. `[영상]` 36:49~37:01 여러 세션의 절차를 증류해 더 나은 SKILL.md로 | 권고 |
-| 스크립트 종속성 | 사람 + 에이전트 | 종속성은 둘로 갈라 적는다. 루프가 기계적으로 거르길 원하면 `metadata.requires-tools`에 공백 구분 목록(예: `"yt-dlp ffmpeg uv"`)을 적는다(팀 규약. 토큰 문법은 `check` 항목 8이 보고 설치 여부는 보지 않는다. `compatibility`는 사람이 읽는 문장). **언어 패키지**는 스크립트 안에서 해결한다. 파이썬이면 `[웹]` PEP 723 인라인 메타데이터(`# /// script` … `dependencies = [...]`)로 종속성을 적고, `[웹]` uv의 `uv run --script <path>`가 첫 실행 때 격리 환경을 만들어 설치한다(둘은 다른 출처다. PEP 723은 형식만, 설치는 uv의 동작). 호출은 `uv run --script scripts/x.py`로 통일해 실행 비트에 기대지 않는다(§3이 실행 비트를 무시하므로 shebang 직접 실행은 쓰지 않는다). 따라서 `uv` 자체가 시스템 도구이며 `compatibility`에 적는다. 첫 실행은 네트워크가 필요하므로 내려받은 스킬의 "오프라인"은 본문과 이미 설치된 환경까지다. 판을 고정하려면 `uv lock --script`의 잠금 파일을 스킬에 함께 두거나 `exclude-newer`를 쓴다(권고). 사내 패키지 인덱스와 프록시는 `uv`의 환경 변수로 사용자 머신에서 정한다. (`[altera-skills]` `plugins/*/skills/*/scripts/*.py` 중 PEP 723 머리를 단 실행 스크립트 10개가 이 형태다.) **여러 스킬이 같은 스크립트를 쓸 때**는 크기로 가른다(사용자 결정 2026-09-27, §11). 라이브러리 규모면 카탈로그 저장소의 `packages/<lib>/`(또는 별도 저장소)에 패키지로 두고, 각 스킬의 `scripts/x.py`는 PEP 723 `dependencies`에 `<lib> @ git+<url>@<sha-or-tag>#subdirectory=packages/<lib>`를 적은 얇은 진입점만 남긴다(`[웹]` 인라인 스크립트 메타데이터 스펙: 항목은 dependency specifier라 직접 참조가 된다. 2026-09-27 uv 0.11.8로 `skills-ref @ git+https://github.com/agentskills/agentskills@<sha>#subdirectory=skills-ref`가 `uv run --script`로 그대로 설치·실행됨을 실측). 판은 SHA나 태그로 고정한다. 몇십 줄이면 복사한다 — `[웹]` Anthropic 자체 저장소가 `docx`·`pptx`·`xlsx`에 같은 `scripts/office/` 11개 파일을 내용까지 동일하게 각자 갖는 방식이고(2026-09-27 해시 대조), 스펙의 "self-contained"와 맞는다. 복사본의 드리프트는 `check` 항목 10이 경고한다. 실행 지점이 서버여야 하는 능력만 MCP 도구로 내고 `metadata.requires-tools`에 적는다(§11 toolbox 결정). Claude Code의 `${CLAUDE_PLUGIN_ROOT}`는 쓰지 않는다 — 플러그인 설치에만 존재해 레지스트리 로드·pin·Harbor 주입 경로에서 풀리지 않는다(`[웹]` `${CLAUDE_SKILL_DIR}`는 "the skill's subdirectory within the plugin, not the plugin root"). 스킬 간 호출은 구조가 아니다 — 스펙·Claude Code·Codex 문서에 스킬이 다른 스킬을 부르는 문법이 없고, 있는 것은 사람·에이전트의 `/name` 호출뿐이다(2026-09-27 확인). **시스템 도구**(`yt-dlp`·`ffmpeg`·`node` 등)와 네트워크는 frontmatter `compatibility`에 적고(`[웹]` 스펙의 예: "Requires git, docker, jq, and access to the internet"), 스크립트는 그 도구가 없을 때 종료 코드와 설치 안내로 실패한다. 코드 값은 이 팀의 규약이다. 2 입력 오류, 3 대상 없음, 4 시스템 도구 없음(`[altera-skills]` yt-subs의 실물: exit 4 + `brew install yt-dlp`. 한 사례이며 규약은 여기서 정한다). 카탈로그는 설치하지 않는다. 검색 결과에 `compatibility`를 실어 로드 전에 보이게 할 뿐이다(§3) | 권고 (스펙의 "self-contained or clearly document dependencies"를 채우는 법) |
+| 스크립트 의존성 | 사람 + 에이전트 | **의존성은 스크립트 안에만 적는다(§11 2026-10-18).** 파이썬이면 `[웹]` PEP 723 인라인 메타데이터(`# /// script` … `dependencies = [...]`)로 적고, `[웹]` uv의 `uv run --script <path>`가 첫 실행 때 격리 환경을 만들어 설치한다(둘은 다른 출처다. PEP 723은 형식만, 설치는 uv의 동작). 호출은 `uv run --script scripts/x.py`로 통일해 실행 비트에 기대지 않는다. 바이너리(git·yt-dlp 같은 시스템 도구)는 스크립트가 쓰는 순간 있어야 하고, 없으면 스크립트가 종료 4와 설치 안내 한 줄(stderr)로 말한다 — 바깥에 베껴 적는 필드(`metadata.requires-tools`, 2026-10-17까지)는 없다. 같은 사실을 두 곳에 적으면 어긋나고, 어긋남을 잡으려면 검사가 또 하나 생기기 때문이다. `compatibility`는 네트워크·특정 제품 같은 조건이 있을 때만 사람이 읽는 자유 문장이고 대부분의 스킬에는 없다(스펙). 첫 실행은 네트워크가 필요하므로 내려받은 스킬의 "오프라인"은 본문과 이미 설치된 환경까지다. 판을 고정하려면 `uv lock --script`의 잠금 파일을 함께 두거나 `exclude-newer`를 쓴다(권고). **여러 스킬이 같은 코드를 쓸 때** 그 코드는 도구다(`tools/<name>/`, §11 2026-10-18 기본형 공용). 라이브러리 규모면 카탈로그 저장소의 `packages/<lib>/`에 패키지로 두고 도구의 스크립트가 PEP 723 `dependencies`에 `<lib> @ git+<url>@<sha-or-tag>#subdirectory=packages/<lib>`로 참조한다(2026-09-27 uv 0.11.8로 실측). 스킬 간 복사는 하지 않는다 |
 | description 검수 | 사람 | `[웹]` UC 문서가 사람의 검수를 결정적이라 적는 자리. 무엇을·언제 쓰는지, 검색될 낱말이 들어 있는지, **핵심 용례와 발동 낱말이 앞에 있는지**(`[웹]` Codex: 호스트가 설명을 자를 수 있으니 "front-load the key use case and trigger words"; `[it]` Liu의 첫머리 편향) | 권고 (기계가 검사하지 않는다) |
 | 로컬 검증 | 기계 | `skills-ref validate` | 권고 (서버가 어차피 다시 한다) |
 | 써 보기 | 사람 | 자기 세션에서 실제 과제에 써 본다 | 권고 |
@@ -613,7 +595,7 @@ skills/yt-subs/
       task.toml
       instruction.md            # SRT랑 VTT 차이가 뭐야?
       environment/Dockerfile
-      tests/test.sh             # 궤적에 load_skill/스킬 파일 읽기가 없고 답이 직접 나왔는지 검사(궤적은 Harbor가 남긴다)
+      tests/test.sh             # 궤적에 get_skill/스킬 파일 읽기가 없고 답이 직접 나왔는지 검사(궤적은 Harbor가 남긴다)
 ```
 
 실행은 `harbor run --dataset ./skills/yt-subs/evals --agent claude-code --model <모델> --env docker`이고, 스킬 있이·없이 두 잡의 reward가 `passed`·`baseline_passed`다. 있이·없이 둘 다 통과하면 기본 모델이 이미 하는 일이라 스킬이 하는 일이 없는 것이고, 있이만 통과하면 스킬이 값을 한 것이다. 음성(`no-trigger-*`)은 description이 과잉 발동하는지 잡는데 답의 내용만으로는 판정이 어려워 궤적을 보는 검증기가 필요하고, 그것을 쓰기 전까지는 사람이 눈으로 판정해 Langfuse UI에서 annotation score로 남겨도 된다(권고의 하한. `[웹]` Score `source`는 `API`·`EVAL`·`ANNOTATION` 셋). Harbor를 고른 근거는 형식의 채택이다(`[웹]` 2026-09-26 실측: 기존 벤치마크 어댑터 88개, 설치 에이전트 51개 — Claude Code·Codex·Cursor·Gemini CLI 포함, 릴리스 월 1~2회). 우리 형식(`prompt.txt` + `expected.md`)은 이전 저장소의 사설 규약이었다. Harbor는 빠르게 움직이므로(스키마 1.1) 판을 핀한다. 모델 호출의 자격은 사람 머신에서는 구독이고, CI에서는 `CLAUDE_FORCE_OAUTH=1` + `CLAUDE_CODE_OAUTH_TOKEN`(`claude setup-token`)으로 역시 구독이다(`[웹]` Harbor `claude_code.py` 실측). API 키는 쓰지 않는다. 라이브 소비(레지스트리 MCP)를 샌드박스에서 시험하려면 `task.toml`의 `[[environment.mcp_servers]]`에 레지스트리 URL을, `[environment.env]`에 서비스 주체 토큰을 주되 tailnet에 닿는 `--env docker`에서만 된다.
@@ -629,7 +611,6 @@ skills/yt-subs/
 | 게시 | 저자(저장소 write) | `main`에서 브랜치를 따 `skills/<name>/`을 넣고 커밋, PR. pre-commit과 CI의 `check`가 열 항목(§5)을 본다. 이름이 살아 있거나 은퇴한 이름이면 `check`가 거부해 저자가 이름을 바꾼다. 병합되면 다음 fetch 주기에 검색된다 | 필수(`check` 통과 — 규율), 권고(리뷰) |
 | 갱신 | 저자 | 같은 절차. 브랜치를 `main`에서 따므로 남의 변경 위에 얹게 되고 충돌은 git이 알려 준다. 병합된 판이 새 현재 판이고 이력은 git에 남는다. 소비자는 매 반복 검색하므로 이전 판을 붙들고 있는 곳이 없다 | 필수(`check`) |
 | 인증 | 병합하는 사람(저장소 write·admin) | PR을 보고 병합한다. 리뷰어를 요구하지 않고 셀프 병합도 된다. git 호스트가 PR에 기록하는 병합자가 인증자다 | 권고(리뷰), 필수(병합 없이 소비되는 판은 없다) |
-| 폐기 | 저자 | SKILL.md `metadata.replaced-by: "<name>"`을 적어 PR. `check`가 대상의 존재와 연쇄·순환을 본다. 사유는 커밋 메시지에. 검색·목록 결과에 `replaced-by`가 실리고 대체 대상이 없어지면 "대체 대상 없음"으로 표시된다 | 필수(대상 검사) |
 | 은퇴 | 저자 | 폐기 표시 뒤 30일이 지나면 디렉토리를 지우는 PR. 자동 삭제는 없다. 이력은 git에 남고 그것이 tombstone이며, 그 이름은 다시 쓰지 않는다(`check` 5) | 권고(30일) |
 
 **④ 개인 스킬의 승격.** 별도 절차가 없다. ①~③이 그것이다. `[영상]` 37:32~37:36 "재사용 가능하고 개선 가능한 스킬로 승격"이 PR 병합이고, 구판 제거와 갱신은 같은 절차다.
@@ -643,14 +624,14 @@ skills/yt-subs/
 | 하고 싶은 것 | 사람 (세션 안, 명시적) | 에이전트 루프 (자동) |
 |---|---|---|
 | 있는 스킬 찾기 | 세션에서 검색한다(`search_skills`. 전체 목록 도구는 없다, §11 2026-10-11). 세션 밖에서는 git 호스트의 `skills/` 열람 | 과제 서술로 `search_skills` |
-| 이해하기 | 검색 결과의 설명을 읽고 본문을 연다(`load_skill`, 또는 git 호스트 렌더링) | `load_skill`로 같은 본문 |
-| 쓰기 | 고른 스킬을 `load_skill`로 이 세션에 넣는다 | 설명이 과제와 맞으면 그 반복에서 `load_skill`. 다음 반복에는 들고 가지 않는다 |
+| 이해하기 | 검색 결과의 설명을 읽고 본문을 연다(`get_skill`, 또는 git 호스트 렌더링) | 조립기가 `get_skill`로 같은 본문을 가져다 놓는다 |
+| 쓰기 | 고른 스킬을 `get_skill`로 이 세션에 넣는다 | 설명이 과제와 맞으면 그 회차에서. 다음 회차에는 들고 가지 않는다 |
 | 매일 쓰는 것 곁에 두기 | "내려받아"라고 지시한다. 에이전트가 `pin-skill`의 절차대로 범위를 묻고 디렉토리에 쓴다(§4). 그 뒤 하네스가 스스로 발견한다 | 없음. 루프는 반복마다 검색한다 |
 | 올리기 | 사람이 지시하고 검수한다. 에이전트가 사람의 git 자격으로 브랜치·커밋·PR을 만든다(`write-skill`) | 세션 중 만든 스킬은 사람의 지시 뒤에만 PR. 병합은 사람 |
 | 인증하기 | PR을 보고 병합한다(git 호스트) | 없음. 루프는 병합하지 않는다 |
-| 믿기 | commit 이력과 author(행위자)·병합자(인증자), PR, SHA, `replaced-by`, `compatibility`, 마지막 fetch 시각, 인덱스에 있다는 사실 자체(= `check` 통과). 평가 결과는 Langfuse에서(카탈로그 응답에 없다, §5.1) | 같은 것. 응답 필드로 받는다. 자기 모델·하네스의 결과로 후보를 거르려면 루프가 Langfuse를 읽는 것이 루프의 정책이고 카탈로그는 관여하지 않는다 |
+| 믿기 | commit 이력과 author(행위자)·병합자(인증자), PR, SHA, `compatibility`, 마지막 fetch 시각, 인덱스에 있다는 사실 자체(= `check` 통과). 평가 결과는 Langfuse에서(카탈로그 응답에 없다, §5.1) | 같은 것. 응답 필드로 받는다. 자기 모델·하네스의 결과로 후보를 거르려면 루프가 Langfuse를 읽는 것이 루프의 정책이고 카탈로그는 관여하지 않는다 |
 
-같은 문서(SKILL.md), 같은 저장소, 같은 도구 여섯. 다른 것은 호출 주체와 시점뿐이다. `[it]` 발견 정보는 스킬 자신에게 있고 카탈로그는 그것을 두 번 쓰지 않는다.
+같은 문서(SKILL.md), 같은 저장소, 같은 도구 넷. 다른 것은 호출 주체와 시점뿐이다. `[it]` 발견 정보는 스킬 자신에게 있고 카탈로그는 그것을 두 번 쓰지 않는다.
 
 ---
 
@@ -679,7 +660,7 @@ skills/yt-subs/
 | 레지스트리 안의 평가 결과 표·기록 도구(v3.3의 `eval_result`·`record_eval`) | 없음. 평가 결과의 정본은 Langfuse(§5.1)이고 카탈로그 응답에 평가가 없다 | 루프가 자기 모델·하네스의 최근 결과로 후보를 거르려는데 루프 안에서 Langfuse API를 부를 수 없을 때(지연·한도). 그때도 정본은 Langfuse이고 레지스트리에 두는 것은 스케줄러가 주기 복사한 파생 열(재구축 가능, 백업 대상 아님)이다. 기록 도구는 다시 두지 않는다 |
 | Langfuse 셀프호스팅 | 없음. 팀이 이미 쓰는 Langfuse Cloud Hobby 프로젝트 | 30일 데이터 접근이 폐기 심사(분기, 2회 연속)나 미사용 스킬 판정(90일)에 모자랄 때, 사용자 2명·월 50k units을 넘을 때, 프롬프트·스킬 본문의 SaaS 반출이 §5의 경계에 걸릴 때. 형태는 `[웹]` web·worker·Postgres·ClickHouse·Redis/Valkey·S3 여섯, 권장 4코어·16 GiB·약 100 GB, compose는 "lacks high-availability, scaling capabilities, and backup functionality"(2026-09-27 확인). 라이선스는 MIT(`ee` 폴더 제외, 저작권자 ClickHouse, Inc.). 카탈로그 compose와 별개 스택이고 이 설계는 그 운영을 정하지 않는다 |
 | 벡터·하이브리드 검색 | 없음. `tsvector`+`pg_trgm` 어휘 검색(§2.1) | 파일럿(§9)에서 바꿔 말한 질의의 miss가 실측될 때. 한 후보는 `pgvector`로 설명 임베딩 열 하나를 더하고 어휘 순위와 코사인 순위를 RRF로 융합하는 것(같은 DB 안, 새 의존은 임베딩 모델 호출). 실제 형태는 파일럿의 miss 유형을 보고 정한다. `[웹]` 참조 구현(Oracle 노트북)은 toolbox·skillbox에 벡터만, 지식 메모리에만 하이브리드(RRF k=60)를 쓰며 그 이유를 "순수 벡터는 정확한 토큰을 저평가한다"로 적는다. 우리는 그 반대쪽(토큰)에서 시작한다 |
-| 멀티 팀(팀별 경로·그룹·권한) | 없음. 팀 하나, 읽기 그룹 `harness-readers` 하나, 쓰기는 저장소 권한, 경로 `skills/<name>/` | 둘째 팀이 생겨 "자기 팀 것만 고친다"가 필요할 때. 그때 바뀌는 것은 넷이다. 경로가 `teams/<team>/<name>/`, 읽기 그룹이 `skills-<team>-readers`(그리고 `<team>` 문법·정규화·중첩 그룹 규칙, v3.1 §2에 있던 것), 쓰기 권한은 git 호스트의 CODEOWNERS 또는 팀별 저장소, 응답에 소유 팀 필드. 이행 비용은 생산자·운영자에게 남는다(저장소 경로 이동과 그에 걸린 CI·열린 PR, 인덱스 재구축). **바뀌지 않는 것**은 `name` 전역 유일과 식별자 `<name>`이라, 소비자 쪽(내려받은 사본·`replaced-by`·사용 기록)은 그대로 유효하다(v3.1 §3의 B+ 결정이 이것을 위해 남아 있다) |
+| 멀티 팀(팀별 경로·그룹·권한) | 없음. 팀 하나, 읽기 그룹 `harness-readers` 하나, 쓰기는 저장소 권한, 경로 `skills/<name>/` | 둘째 팀이 생겨 "자기 팀 것만 고친다"가 필요할 때. 그때 바뀌는 것은 넷이다. 경로가 `teams/<team>/<name>/`, 읽기 그룹이 `skills-<team>-readers`(그리고 `<team>` 문법·정규화·중첩 그룹 규칙, v3.1 §2에 있던 것), 쓰기 권한은 git 호스트의 CODEOWNERS 또는 팀별 저장소, 응답에 소유 팀 필드. 이행 비용은 생산자·운영자에게 남는다(저장소 경로 이동과 그에 걸린 CI·열린 PR, 인덱스 재구축). **바뀌지 않는 것**은 `name` 전역 유일과 식별자 `<name>`이라, 소비자 쪽(내려받은 사본·사용 기록)은 그대로 유효하다(v3.1 §3의 B+ 결정이 이것을 위해 남아 있다) |
 | 서비스 주체의 게시 | 없음. 서비스 주체는 읽기뿐이고 게시는 git 호스트의 PR이다 | 무인 루프가 사람 개입 없이 게시해야 할 때. 그때도 레지스트리가 아니라 CI 봇 계정이 PR을 여는 것이 자리다 |
 | 그룹→역할 매핑 설정 | 없음. 그룹 이름 `harness-readers` 하나가 역할 reader에 고정 | 역할이 셋 이상 필요할 때. 선례는 `[웹]` Airflow/FAB의 `AUTH_ROLES_MAPPING`(§10) |
 | 스킬·팀 단위 읽기 제한 | 없음. 전원 읽기 | 제한 스킬이 생길 때 둘째 저장소 + 저장소 접두 식별자 + 검색 병합 |
@@ -700,7 +681,7 @@ skills/yt-subs/
 | 변경 | 손대는 곳 |
 |---|---|
 | 스킬 추가·수정 | 브랜치 → 커밋 → PR → 병합(`write-skill`이 안내). 다음 fetch 주기에 반영 |
-| 스킬 폐기·은퇴 | SKILL.md `metadata.replaced-by` 한 줄 PR, 30일 뒤 디렉토리 삭제 PR |
+| 스킬 은퇴 | 디렉토리 삭제 PR. 그것뿐이다(§11 2026-10-18) |
 | 잘못 병합한 판 되돌리기 | revert PR |
 | 프로젝트에서 쓰기 시작 | 에이전트 MCP 설정에 URL 한 줄 + 로그인 한 번 |
 | 새 팀원 | 디렉터리(v3.0은 Synology LDAP)의 그룹 `harness-readers`에 추가(다음 토큰부터) + 카탈로그 저장소의 write 권한. 불변식은 "저장소를 읽을 수 있는 사람 = `harness-readers`"이고, `scripts/membership-diff.sh`가 두 명단을 뽑아 차이를 낸다(운영자가 팀원을 바꿀 때 돌린다) |
@@ -722,7 +703,7 @@ skills/yt-subs/
 - Dex + Synology LDAP 조합의 실측 둘. 장치 흐름이 공개 클라이언트로 되는지(이슈 #3983의 client_secret 요구), 클라이언트 자격 증명 토큰의 `sub`가 client ID로 나오는지. 앞이 안 되면 브라우저 없는 샌드박스 경로를 v3.0 범위에서 뺀다. **실측(2026-10-07, pilot r1, Dex v2.45.1 정적 사용자):** 장치 흐름은 공개 클라이언트로 **된다**(답). 클라이언트 자격 증명 그랜트는 Dex가 **지원하지 않는다**(서버 코드에 없음) — 무인 읽기의 토큰 취득 방식은 사용자 결정(PLAN §6-10) → **결정(2026-10-07): LDAP 기계 계정 + 비밀번호 그랜트**. 덤으로 `resource` 파라미터는 무시되고 `aud`는 client_id이며(§6-11 → **결정: RFC 9728 문서에 교차 클라이언트 스코프 광고**), 스코프 `skills:read`는 `invalid_scope`다(§6-12 → **결정: `openid groups`, 토큰 스코프 검사 없음**). LDAP 연합 판의 `groups` 평탄화는 NAS가 닿을 때 r2.
 - 파일럿 대상 에이전트(Claude Code·Codex·Cursor)가 어느 MCP 개정판을 말하는지(2026-07-28 무세션인지, 2025-11-25 세션 방식인지), RFC 9728 발견과 PKCE 로그인과 장치 인가를 실제로 지원하는지, 사전 등록 client ID와 Client ID Metadata Documents 중 무엇을 쓰는지.
 - 가정 셋의 실측. 매 반복 검색이 사본보다 사용자에게 싼가. 트라이그램 어휘 검색이 한국어 설명에서 쓸 만한가. 하루 요청 수백이라는 부하 추정이 맞는가.
-- 일반 하네스 세션에서 `load_skill` 본문이 언제까지 남는지(하네스 몫이라 이 설계는 기대지 않지만 사용자 안내에는 필요하다).
+- 일반 하네스 세션에서 `get_skill` 본문이 언제까지 남는지(하네스 몫이라 이 설계는 기대지 않지만 사용자 안내에는 필요하다).
 - 스킬 수가 몇 개를 넘으면 이름순 목록이 안 되는지. 그때가 순위의 시점이다.
 - 내려받기의 실측. `.agents/skills/` + `.claude/skills/` 심볼릭 링크 조합을 파일럿 하네스 셋(Claude Code·Codex·Cursor)이 실제로 한 번만 로드하는지(Cursor는 호환 경로도 읽어 두 번 보일 수 있다). `pin-skill`의 지시만으로 에이전트가 임시 디렉토리 → 대조 → 이름 바꾸기를 지키며 디렉토리 전체를 빠짐없이 쓰는지.
 - 서비스 주체 판별의 표지. Dex 클라이언트 자격 증명 토큰의 `sub`·`azp`·`groups` 실물(§2 가정). 그리고 무인 읽기(루프, Harbor 샌드박스의 라이브 소비 시험)용 정적 클라이언트 등록 절차(클라이언트 자격 증명 그랜트 켜기). **실측(2026-10-07, r1):** 그런 토큰은 없다(위 항목). 표지는 §6-10의 결정이 정한다.
@@ -1221,3 +1202,23 @@ skills/yt-subs/
 | 2026-10-12 "종료 코드 0/1/2" 행을 **대체**한다. `kind: script` 실행 ABI(§11 2026-10-12 보정): `runtime.command`를 셸 없이 argv로 직접 실행하고 cwd는 도구 디렉토리, 입력은 `inputSchema`에 맞는 JSON 객체 하나를 stdin으로. `outputSchema`를 선언한 도구는 정상 완료 시 그 스키마에 맞는 UTF-8 JSON 객체 **하나만** stdout에 내고 종료 0 — 통과·불통과 같은 도메인 판정은 오직 그 객체의 도구별 필드로 표현하고(공통 필드를 강제하지 않는다), 사람이 읽을 설명이 필요하면 `summary`·`message` 같은 스키마에 선언된 필드에 넣어 소비자가 렌더한다; 로그·진행 표시·별도 PASS/FAIL 줄을 stdout에 섞지 않는다. `outputSchema`가 없는 도구의 정상 결과는 stdout 텍스트와 종료 0. **0이 아닌 종료는 신뢰할 결과를 만들지 못한 도구 실행 실패**이며 사유를 stderr에 내고 stdout에 부분 결과를 두지 않는다 — 종료 1을 "결과가 부정"의 뜻으로 쓰지 않는다(mirror도 금지: 소비자마다 정본이 둘이 된다). 소비자 규약: 종료 코드·stdout·stderr를 **구분된 관측**으로 모델에 되돌리되 크기 상한과 잘림 표시를 적용한다; 구조화 결과는 JSON 파싱과 `outputSchema` 검증을 통과해야만 코드가 쓰고, 실패하면 정상 판정이 아니라 계약 오류 관측으로 바꾼다; 사전 승인 거부는 실행 결과와 구별된 `not_executed` 관측이다. 뒷날 MCP 어댑터는 검증된 정상 객체를 `structuredContent`와 같은 JSON의 `TextContent`로, 비정상 종료를 진단 `content`와 `isError: true`로 **결정적으로 변환**한다(무번역이 아니다) | 사용자 질문("자작하기보다 LangChain의 structured output을 따르는 것이 표준인가")과 Codex 리뷰(판정 `수정`). `[웹]` LangChain `with_structured_output`은 모델 출력 규약이라 층이 다르고 도구 결과는 `ToolMessage.status: success\|error` + `content`다; MCP 2025-06-18은 `Tool.outputSchema`(선택)를 선언하면 서버가 그 스키마에 맞는 `structuredContent`를 **MUST** 내고 클라이언트는 **SHOULD** 검증하며, 같은 JSON의 `TextContent` 사본은 SHOULD, 도구 유래 오류는 `isError: true`로 보고한다. 둘 다 "성공/오류 상태"와 "도메인 결과"를 가르고 후자를 내용에 둔다 — 어제의 종료 1은 그 둘을 전송 층에 섞은 것이었다. 정정 둘: pytest 종료 코드는 1 실패·2 사용자 중단·3 내부 오류·4 사용법·5 수집 0·6 경고 상한이라 "2 이상 러너 문제"는 부정확했고(grep·diff의 0/1/2는 맞다), 어댑터는 파싱·검증·`TextContent` 생성·`isError` 설정을 하므로 "번역 없이 통과"는 과장이다. **미확인 하나:** `/goal` 평가자(prompt Stop hook, 도구를 부르지 않음)가 Bash의 JSON stdout을 어떤 텍스트로 받는지는 공개 문서로 확정되지 않았다 — 파일럿 §9 측정 항목 |
 | `tool.json`에 선택 필드 **`outputSchema`**(MCP `Tool.outputSchema`와 같은 이름, JSON Schema object). 검사 11은 `inputSchema`·`outputSchema` 둘에 같은 규칙: 최상위 `type: object`, 직렬화 ≤ 32 KiB, 깊이 ≤ 16, **Draft 2020-12 메타스키마 통과**, `$ref`는 문서 안(`#…`)만 — 원격·상대 URI `$ref`는 등록 시 네트워크 해석을 하지 않기 위해 거부. core에 `jsonschema` 의존이 생긴다(서버 쪽 mcp가 이미 끌어오던 것) | Codex: "레지스트리가 출력 적합성은 못 보지만 스키마 자체의 유효성 검사까지 생략할 이유는 없다". 레지스트리가 쓰는 `outputSchema`와 이름·방언이 같아야 `get_tool.tool`이 어댑터의 `Tool` 정의로 그대로 간다. 기존 레코드 넷(graft·openwiki)은 `$ref` 없음 — 보정으로 깨지지 않는다(실측) |
 | 위험 처방: 소비자 둘의 드리프트는 이 ABI 문장이 유일한 명세이고 적합성 시험은 루프 엔진이 둔다; 채점기(loop-verify)와 일반 도구에 공통 결과 필드를 강제하지 않는다 — 엔진이 verdict를 읽으려면 그 도구가 `outputSchema`를 선언해야 하고, 선언 없는 도구는 verdict 소스가 될 수 없다; 세 채널을 모델에 무제한 주입하지 않는다(상한·잘림·비밀 정책은 엔진) | Codex 누락·위험 항목 다섯. write-skill 스크립트 규약(2 입력·3 대상 없음·4 도구 없음)은 "왜 실패했나"의 축이라 그대로 — 0이 아닌 값의 뜻은 도구가 stderr에 적는다 |
+
+
+### 2026-10-18: toolbox-next 묶음 — 도구 넷, 검사 일곱, 기본형은 공용 스킬, toolbox, CLI 다섯, 은퇴는 삭제뿐, 의존성은 스크립트 안에만
+
+사용자 결정 열 개를 한 묶음으로 적는다(0.5.0). 공통 원칙은 사용자의 말 그대로 "복잡한 조건 이것저것 다 고려하며 분기하기보다 간단한 게 최고"이고, 판단 잣대는 "이 분기가 막는 사고가 얼마나 자주 나고 사람이 그 자리에서 알아챌 수 있는가"다. Codex 적대 리뷰(`~/workspace/loop-engineering/codex-review-duplication-audit-2026-10-18.md`)가 여섯 항목을 확증·부분 확증·반박으로 가른 결과를 반영했다. 각 행의 구현 커밋은 "자리" 열에 있다.
+
+| 결정 | 근거 | 자리 |
+|---|---|---|
+| **레지스트리 도구 여섯 → 넷, 동사 `get` 통일.** `search_skills`·`get_skill(id, sha?, path?, archive?)`·`search_tools`·`get_tool(id, sha?, archive?)`. `load_skill`은 `get_skill`로 이름이 바뀌고, `get_skill_file(id, path)`은 `get_skill`의 `path` 인자로, `get_skill_archive`는 `archive` 옵트인으로 접힌다. `get_tool`의 `archive`도 옵트인으로 맞춘다(대칭) | 넷 다 "식별자(와 판) → 정의"이고 문맥에 넣는 것은 받아 간 쪽의 일이라 `load`라는 동사가 레지스트리의 일을 잘못 말했다(Oracle의 `load_skill`은 개념어로 산문에만). `get_skill_archive`는 쓰는 곳이 pin 하나뿐이었고 `get_tool`은 이미 `archive`를 응답에 싣고 있어 스킬 쪽 도구 셋이 비대칭이었다. 옵트인인 이유는 명세가 5분 토큰을 찍기 때문이다 | server `responses.py`(`GetSkillResponse`·`SkillFilePayload`, `LoadSkillResponse`·`SkillFileResponse`·`SkillArchiveResponse` 삭제), `mcp_tools.py`, core `Catalog.get_skill`, `authz.READ_TOOLS`; §3 표 |
+| **`replaced-by`와 "은퇴한 이름 재사용 금지"를 뺀다.** 은퇴는 디렉토리 삭제뿐, 후속은 검색으로, 남는 규칙은 "살아 있는 이름은 스킬·도구 합쳐 유일"(검사 11)만. 검사 5·6·9와 응답의 `replaced_by`, DB 생성 열, 이력 조회(`deleted_names`)를 지운다 | "지워질 디렉토리의 마지막 판에 적는 메타데이터"는 저자가 설명을 들어야 하는 모양이었고, 재사용 금지는 CI·색인에 전체 이력 클론을 요구하는 유일한 이유였다(`git log --diff-filter=D`). 이 둘이 막던 사고는 "pin해 둔 은퇴 스킬 X와 같은 이름의 무관한 새 스킬 X"뿐이고, pin의 새 판 확인이 받기 전에 description을 보여 사용자에게 묻는 것으로 충분하다고 봤다. 같은 이름으로 다른 내용을 올리는 것은 은퇴가 아니라 갱신이다 | core `check.py`(`_history_findings`·`_base_replaced_by`·`replaced_by_findings` 삭제, `check_commit`에서 `base` 제거), `ports.py`·`adapters/git.py`, 마이그레이션 `0003_drop_replaced_requires.sql`; §3·§5·§5.1·§8 |
+| **`requires-tools`를 뺀다 — 의존성은 스크립트 안에만.** 파이썬 패키지는 PEP 723 머리(uv가 집행), 바이너리는 없을 때 스크립트가 종료 4 + 설치 안내 한 줄. 검사 8, 규약 3절 "종속성 두 자리", 응답의 `requires_tools`, 조립기·toolbox의 사전 거르기를 지운다. `compatibility`는 스펙대로 선택 자유 문장 | 사용자 지적("버전 따로, required tools 따로면 안 맞을 때 또 검사하나, 정보는 한군데"). 같은 사실(스크립트가 무엇을 쓰는가)을 바깥에 베껴 적는 필드였고 검사 8은 문법만 봐 어긋남을 잡지도 못했다. 잃는 것은 루프가 호출 전에 바이너리 유무를 미리 못 거르는 것뿐이고 호출 한 번 실패로 같은 정보를 한 단계 늦게 얻는다 | 위와 같은 커밋; conventions·tool-contract(템플릿 커밋) |
+| **검사 10(복사 스크립트 드리프트)을 뺀다.** 남는 검사는 일곱(1·2·3·4·7·11·12)이고 번호는 비워 둔다. 기준 커밋이 사라져 `check`의 `--base`가 없어지고, `ci check`·`ci base` 명령도 없어진다(워크플로 한 줄이 `harness-catalog check --rev HEAD`). CI의 check 잡은 얕은 체크아웃으로 충분하고 evals 잡만 `fetch-depth: 0`이다 | 복사할 코드가 없어진다 — 여러 스킬이 쓰는 코드는 도구이고(아래 행), 템플릿의 scaffold 사본 둘도 `tools/scaffold` 하나가 된다. 검사 10이 보던 드리프트의 발생 조건 자체가 사라진다 | core `check.py`, cli `__main__.py`(`check`·`evals`), 템플릿 `.pre-commit-config.yaml`·`check.yml`·`.gitlab-ci.yml`; §2.1·§5 |
+| **`search_skills` 항목에 `has_scripts`.** `SkillEntry`가 트리에서 `scripts/` 유무를 계산해 인덱스에 들고, `SkillHit`에 실린다 | 루프 조립기가 세션 전용 스킬을 후보에서 빼는 유일한 신호(아래 "기본형" 행). 선언 키·검사 항목을 더하지 않고 사실에서 유도한다 | core `model.SkillEntry.has_scripts`, `catalog._build`, `SkillHit`; §3 표 |
+| **스킬의 기본형은 세션·루프 공용이다.** 저자 규칙: "코드가 필요하면 처음부터 `tools/<x>/tool.json`으로 만들고 스킬은 그 이름을 참조한다. `skills/*/scripts/`는 왜 세션 전용이어야 하는지 한 줄을 적을 때만 두는 예외이고, 루프는 그런 스킬을 쓰지 않는다(`has_scripts`)." 참조는 스킬 루트 기준 상대 경로·마크다운 링크·한 단계 깊이(agentskills 스펙 File references 절 원문). `@` 포함은 CLAUDE.md의 import 기제라 SKILL.md 규약 밖 | 사용자 질문("애초부터 둘 다 쓸 수 있는 형태로 구성하는 게 가장 좋은 방법 아닌가")이 순서를 뒤집었다. 승격의 진짜 비용은 플래그 인자→stdin JSON ABI 전환이라 처음부터 그 모양이면 0이고, 규칙이 "코드는 tools/에" 하나로 줄며, 전역 검색·중복 방지가 첫날부터 된다. 예외를 남기는 이유는 conventions 1절의 문턱(호출자 하나·열 줄 안·사람이 읽을 보고서)대로 저작 비용이 이득보다 큰 보조가 있어서다. 2026-10-13~17의 중간안(어댑터 보류, pin-tool·write-tool 분리, `metadata.tools`·`metadata.unattended`, "scripts/ 전면 금지")은 전부 철회 | 템플릿 커밋: `write`(첫 질문 "코드가 필요한가"), `tools/scaffold`(kind: skill\|tool, `--tool x`), conventions; §4·§5.1 |
+| **어댑터 `toolbox` — 이름은 역할어, 명령은 `hc toolbox <dir>` 하나, 어디서나 MCP.** 디렉토리의 `*/tool.json`을 MCP 도구로 노출하고, 호출이 오면 inputSchema 검증 → 셸 없는 argv 서브프로세스(cwd 도구 디렉토리, stdin JSON) → 종료 0의 stdout을 outputSchema로 검증해 structuredContent, ≠0은 isError. mcpServers의 서버 키도 `toolbox`라 승인 패턴은 `mcp__toolbox__<tool>`. 세션은 pin이 하네스 설정(`.mcp.json`)에 항목을 쓰고, 카탈로그 클론은 `init`이 `.mcp.json`(`hc toolbox ./tools`)을 두며, 루프는 조립기가 회차마다 등록한다. `run` 하위 명령과 "Bash 폴백"은 두지 않는다. 안전 요건(Codex 2026-10-18): 해시 고정 실행물, 셸 없는 argv, 경로 정규화, 최소 환경, 시간·자원·출력 상한, 비 JSON fail-closed, 감사 로그 | §7 toolbox 행의 보류("Bash 경로로 충분한지 파일럿 뒤")를 루프를 전제로 뒤집었다. 사람이 없는 자리에서 Bash 경로는 인자 검증·승인·관찰이 전부 모델의 성실성에 달리고, Claude Code는 스키마 있는 도구를 MCP로만 받는다. 레지스트리가 실행하면 안 되는 이유: MCP에서 호출은 서버가 실행하므로 팀의 임의 코드가 중앙에서 돌고 실행이 필요한 자리(워크트리·사용자 저장소)와 다른 머신에서 돈다 — Google MCP Toolbox가 서버에서 실행하는 것은 대상이 서버에서 닿는 DB라서다. 이름 `toolbox`는 Oracle "THE TOOLBOX PATTERN"·Google MCP Toolbox와 같은 자리의 낱말. 같은 날 세 번 좁혔다: Bash 폴백 → 같은 실행기의 `run` → 세션에도 어댑터를 늘 두어 길 하나 | cli 커밋: `toolbox.py`(stdio MCP 서버), `init`의 `.mcp.json`; §4·§7 |
+| **CLI는 다섯: `init`·`check`·`evals`·`toolbox`·`pin`. 별칭 `hc`.** `ci check`·`ci base`는 `check`가 이력을 안 보게 되어 사라지고, `ci evals`는 `evals`로, `schema tool`은 없애되 `check`가 저장된 `schemas/tool.schema.json`이 현재 모델과 다르면 경고하고 `init --refresh`가 생성 파일을 다시 쓴다. `hc`는 pyproject `[project.scripts]`의 두 번째 진입점이고, 사람이 치는 문서는 `hc`, 기계가 읽는 자리(pre-commit·CI yml·커밋 저자)는 긴 이름 | 사용자("harness-catalog init 이렇게 길게 하지 말고 hc"). Codex 반박을 반영: `schema tool`을 scaffold가 갱신하게 하는 것은 저자가 스킬 뼈대를 만들 때 저장소 공용 파일이 바뀌는 예상 밖 부작용이라 `check` 경고 + `init --refresh`로. `toolbox run`은 "세션에도 어댑터가 늘 있다"로 불필요 | cli 커밋 |
+| **pin의 결정적 꼬리는 CLI `hc pin <name> --scope … --descriptor …`.** 검색·판 확인·범위 묻기·`get_skill(archive=true)`(인증이 하네스의 OAuth 세션에 있다)는 스킬 `pin`의 산문이 맡고, 받기·크기와 sha256 대조·풀기·파일 목록 대조·PINNED 쓰기·원자적 교체·심링크는 CLI가 한 번에 한다. 경계를 건너는 것은 다운로드 명세 하나(길면 stdin). 도구 pin은 `.agents/tools/<name>/`에 놓고 `.mcp.json`에 `toolbox` 항목을 쓴다 | pin-skill 11단계 중 일곱은 모델 판단이 없는 파일 작업인데 모델이 셸을 한 줄씩 짓고 있었고, 저자에게 "결정적 연산은 코드로"라고 하면서 기본 스킬이 반대를 했다. §7 "내려받기 CLI 없음"의 근거(소비자 머신에 CLI 없음)는 루프가 toolbox 때문에 CLI를 설치하면서 깨진다. Google의 `npx skills`가 CLI만으로 되는 것은 인증 없는 공개 git을 읽기 때문이고 우리는 그 조건이 없다 | cli 커밋: `pin.py`; 템플릿 `pin` 스킬; §4·§7 |
+| **기본 스킬은 둘(`pin`·`write`), 기본 도구는 하나(`scaffold`).** write-skill·write-tool은 `write` 하나로 합치고 두 스킬에 복사돼 있던 scaffold*.py는 `tools/scaffold/`로 승격(kind: skill\|tool). `init`이 tools/도 찍는다. 옛 스킬·예외의 scripts/→tools/ 전환(승격) 분기는 우선순위를 낮춘다 | 규모(스킬·도구 수백) 전제: 집은 tools/ 하나. 기본형이 공용으로 바뀌면서 새 스킬에는 승격 절차가 필요 없다 | 템플릿 커밋 |
+| **루프 쪽은 이 저장소 밖으로 미루되 갈고리 셋은 지금 둔다.** `archive` 옵트인(조립기의 tree-sha 캐시가 받는 명세), `has_scripts`(조립기가 거르는 신호), `hc toolbox <dir>`(조립기가 mcpServers에 등록할 명령). 조립기 자체(상위 3 검색, tree-sha 캐시, 스킬·도구의 회차 워크트리 실체화, `needs_human`), loop-verify·loop-state 저장소, Tool Search 분담 측정, evals 보일러플레이트 축소는 루프 저장소와 `hc evals` 설계의 몫 | 사용자("루프를 제외하고 카탈로그 맞게 작업"). §7 "루프의 사본 없음" 행을 건드리는 "스킬도 회차 워크트리에 실체화" 제안은 루프 설계 때 §11 행으로 | 이 문서 §7 |
+| **Codex 감사에서 바꾸지 않기로 한 것.** `runtime.path`는 유지(검사 11이 "링크 아닌 일반 파일인 실행 구현"의 식별자로 쓴다. `command`만으로는 어느 인자가 실행 파일인지 계약이 없다). 스크립트 종료 코드 규약 둘(conventions 2·3·4, tool-contract 0/≠0)은 범위가 달라 충돌이 아니므로 둘 다 유지. 산문 사본(도구 표 세 곳, 검사 목록 두 곳, 하네스 디렉토리 표 두 곳)은 정본을 하나씩 정하고 나머지는 링크로 줄인다 — 실제 어긋남이 있었다(DESIGN §4 Cursor 행의 `.codex/skills/`가 pin-skill 표에 없음) | Codex 판정: ② 부분 확증, ③ 확증(어긋남 발견), ⑤ 반박 | 템플릿·문서 커밋 |

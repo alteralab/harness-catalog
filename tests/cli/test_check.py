@@ -5,7 +5,7 @@ from __future__ import annotations
 from typer.testing import CliRunner
 
 from harness_catalog_cli.__main__ import app
-from tests.conftest import CatalogRepo, commit_all, git, write_skill
+from tests.conftest import CatalogRepo, git
 
 runner = CliRunner()
 
@@ -25,20 +25,6 @@ def test_check_reports_violation_and_staged_tree(catalog_repo: CatalogRepo) -> N
     assert r.exit_code == 1 and "item 3" in r.output and "Bad_Name" in r.output
     r_head = runner.invoke(app, ["check", str(repo), "--rev", "HEAD"])
     assert r_head.exit_code == 0
-
-
-def test_check_name_reuse_against_base(catalog_repo: CatalogRepo) -> None:
-    repo = catalog_repo.path
-    base = catalog_repo.head
-    (repo / "skills" / "pin-skill" / "SKILL.md").unlink()
-    (repo / "skills" / "pin-skill").rmdir()
-    retired = commit_all(repo, "retire pin-skill without replaced-by")
-    r = runner.invoke(app, ["check", str(repo), "--rev", "HEAD", "--base", base])
-    assert r.exit_code == 0 and "warning: item 9" in r.output
-    write_skill(repo, "pin-skill", "reused name")
-    commit_all(repo, "reuse name")
-    r2 = runner.invoke(app, ["check", str(repo), "--rev", "HEAD", "--base", retired])
-    assert r2.exit_code == 1 and "item 5" in r2.output
 
 
 def test_version_flag() -> None:

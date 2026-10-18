@@ -11,6 +11,7 @@ dependencies = [
 
 [project.scripts]
 harness-catalog = "harness_catalog_cli.__main__:main"
+hc = "harness_catalog_cli.__main__:main"
 
 [tool.uv.sources]
 harness-catalog-core = { workspace = true }

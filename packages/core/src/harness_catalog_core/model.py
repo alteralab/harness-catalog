@@ -156,14 +156,6 @@ class ToolEntry:
         object.__setattr__(self, "metadata", _freeze(self.metadata))
 
     @property
-    def replaced_by(self) -> str | None:
-        return self.metadata.get("replaced-by") or None
-
-    @property
-    def requires_tools(self) -> tuple[str, ...]:
-        return tuple(self.metadata.get("requires-tools", "").split())
-
-    @property
     def search_text(self) -> str:
         values = " ".join(v for _, v in sorted(self.metadata.items()))
         return f"{self.name} {self.description} {values}".lower()
@@ -171,7 +163,7 @@ class ToolEntry:
 
 @dataclass(frozen=True)
 class SkillEntry:
-    """인덱스 행 하나. 생성 열(replaced_by·requires_tools)은 속성으로 유도한다."""
+    """인덱스 행 하나. `has_scripts`는 그 판의 트리에 `scripts/` 파일이 있는가(§11 2026-10-18: 루프 조립기가 거르는 유일한 신호)."""
 
     name: str
     description: str
@@ -179,17 +171,10 @@ class SkillEntry:
     metadata: Mapping[str, str]
     tree_sha: str
     commit_sha: str
+    has_scripts: bool = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "metadata", _freeze(self.metadata))
-
-    @property
-    def replaced_by(self) -> str | None:
-        return self.metadata.get("replaced-by") or None
-
-    @property
-    def requires_tools(self) -> tuple[str, ...]:
-        return tuple(self.metadata.get("requires-tools", "").split())
 
     @property
     def search_text(self) -> str:
@@ -223,18 +208,17 @@ class IndexSnapshot:
 
 @dataclass(frozen=True)
 class SkillListing:
-    """search_skills의 항목: 선택에 쓰이는 것만."""
+    """search_skills의 항목: 선택에 쓰이는 것만(식별자·설명·sha·compatibility·has_scripts)."""
 
     name: str
     description: str
     sha: str
-    replaced_by: str | None = None
-    requires_tools: tuple[str, ...] = ()
     compatibility: str | None = None
+    has_scripts: bool = False
 
     @classmethod
     def of(cls, e: SkillEntry) -> SkillListing:
-        return cls(e.name, e.description, e.tree_sha, e.replaced_by, e.requires_tools, e.compatibility)
+        return cls(e.name, e.description, e.tree_sha, e.compatibility, e.has_scripts)
 
 
 @dataclass(frozen=True)
@@ -245,19 +229,17 @@ class ListResult:
 
 @dataclass(frozen=True)
 class ToolListing:
-    """search_tools의 항목: 선택에 쓰이는 것만(식별자·설명·sha·kind·server·replaced_by·requires_tools)."""
+    """search_tools의 항목: 선택에 쓰이는 것만(식별자·설명·sha·kind·server)."""
 
     name: str
     description: str
     sha: str
     kind: str
     server: str | None = None
-    replaced_by: str | None = None
-    requires_tools: tuple[str, ...] = ()
 
     @classmethod
     def of(cls, e: ToolEntry) -> ToolListing:
-        return cls(e.name, e.description, e.tree_sha, e.kind, e.server, e.replaced_by, e.requires_tools)
+        return cls(e.name, e.description, e.tree_sha, e.kind, e.server)
 
 
 @dataclass(frozen=True)

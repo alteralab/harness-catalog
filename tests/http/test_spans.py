@@ -54,13 +54,13 @@ async def test_tool_spans_carry_subject_skill_and_query(client: tuple[httpx.Asyn
     c, issuer = client
     _exporter.clear()
     token = issuer.token(sub="user-7", aud=PUBLIC, groups=["harness-readers"])
-    r = await call(c, token, "load_skill", {"id": "yt-subs"})
+    r = await call(c, token, "get_skill", {"id": "yt-subs"})
     sha = r.json()["result"]["structuredContent"]["sha"]
     await call(c, token, "search_skills", {"query": "nothing-at-all"})
     spans = {s.name: s for s in _exporter.get_finished_spans() if s.name.startswith("tools/call")}
-    load = spans["tools/call load_skill"]
+    load = spans["tools/call get_skill"]
     assert load.kind.name == "SERVER" and load.attributes is not None
-    assert load.attributes["gen_ai.tool.name"] == "load_skill" and load.attributes["langfuse.user.id"] == "user-7"
+    assert load.attributes["gen_ai.tool.name"] == "get_skill" and load.attributes["langfuse.user.id"] == "user-7"
     assert load.attributes["harness_catalog.skill"] == "yt-subs" and load.attributes["harness_catalog.sha"] == sha
     search = spans["tools/call search_skills"]
     assert search.attributes is not None

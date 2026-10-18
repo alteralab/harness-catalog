@@ -26,7 +26,7 @@ metadata:
 5. `tool.json`의 `$schema`는 뼈대가 `../../schemas/tool.schema.json`으로 넣어 둔다. 편집기가 타이핑 중에 검증한다. 그 파일이 카탈로그에 없거나 낡았으면 `harness-catalog schema tool > schemas/tool.schema.json`으로 다시 쓴다(CLI 판은 `.pre-commit-config.yaml`의 핀과 같다).
 6. `references/tool-contract.md`의 점검표를 하나씩 지난다. 요지: `command`는 셸 없는 argv이고 `path`는 그 원소 정확히 하나, 입력은 stdin의 JSON 객체 하나, 결과는 stdout(`outputSchema`를 선언했으면 그 스키마의 JSON 객체 하나만), 종료 0 = 결과를 냈다·0 아님 = 실행 실패(사유는 stderr). 판정은 종료 코드가 아니라 결과 객체의 필드로. 조용히 끝나지 않는다. `inputSchema`는 `type: object`, 32 KiB·깊이 16 안. 시스템 도구는 `metadata.requires-tools`.
 7. `script`면 ABI대로 한 번 돌려 본다: `echo '{...}' | uv run --script tools/<name>/scripts/<x.py>`. 종료 코드와 stdout이 설명과 맞아야 한다.
-8. `harness-catalog check`를 돌린다(pre-commit 훅이 커밋 때, CI가 PR에서 다시 돈다). 항목 11(도구)·12(서버) 위반을 고친다.
+8. `hc check`를 돌린다(pre-commit 훅이 커밋 때, CI가 PR에서 다시 돈다). 항목 11(도구)·12(서버) 위반을 고친다.
 9. 사용자에게 브랜치·점검표 결과를 보고하고 **멈춘다**. "올려"라고 할 때만 커밋·push·`gh pr create`. 병합은 사람이 git 호스트에서 한다. 클라우드 샌드박스 세션(git 자격 없음)이면 여기서 멈추고 로컬 세션에서 하라고 알린다.
 
 ## 실패 대응
@@ -39,5 +39,5 @@ metadata:
 | `check` 항목 11: `runtime.path`가 `command`에 정확히 한 번 없다 | `command`는 argv 배열이고 `path`가 그 원소여야 한다. `sh -c`로 감싸지 않는다 |
 | `check` 항목 11: `runtime.server`가 없다 | `mcp-servers/<server>/server.json`을 먼저 만든다(3의 골격) |
 | `check` 항목 12: `isSecret: true` 항목에 `value`·`default` | 값을 지운다. 시크릿은 저장소에 없다 |
-| `schemas/tool.schema.json`이 없거나 편집기가 `$schema`를 못 푼다 | `harness-catalog schema tool > schemas/tool.schema.json`으로 다시 쓴다 |
+| `schemas/tool.schema.json`이 없거나 편집기가 `$schema`를 못 푼다 | `hc schema tool > schemas/tool.schema.json`으로 다시 쓴다 |
 | 클라우드 샌드박스 세션 | 9에서 멈춘다 |

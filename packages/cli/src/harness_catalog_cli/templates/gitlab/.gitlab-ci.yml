@@ -1,5 +1,5 @@
 # GitLab 판 — 문면대로 작성만 되었고 아직 실제로 돌린 적이 없다(README 참조). GitHub Actions 판이 먼저다.
-# 이 파일은 배선만 한다. 논리는 CLI `harness-catalog ci …`에 있다. 판을 올리려면 @v<판>을 바꾼다.
+# 이 파일은 배선만 한다. 논리는 CLI `harness-catalog check`·`evals`에 있다. 판을 올리려면 @v<판>을 바꾼다.
 stages: [check, evals]
 
 .code-repo-credentials:
@@ -20,14 +20,12 @@ check:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "main"
-  variables:
-    GIT_DEPTH: 0
   before_script:
     # uv 이미지(slim)에는 git·ssh가 없다 — `uvx --from git+…`와 deploy key 경로에 둘 다 필요하다(Codex 리뷰 2026-10-10)
     - apt-get update -qq && apt-get install -y -qq --no-install-recommends git openssh-client >/dev/null
     - !reference [.code-repo-credentials, before_script]
   script:
-    - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog ci check
+    - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog check --rev HEAD
 
 evals:
   extends: .code-repo-credentials
@@ -41,4 +39,4 @@ evals:
   variables:
     GIT_DEPTH: 0
   script:
-    - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog ci evals --agent "$AGENT"
+    - uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog evals --agent "$AGENT"

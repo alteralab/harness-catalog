@@ -28,7 +28,7 @@
 ## 4. 공유 스크립트 — 여러 스킬이 같은 코드를 쓸 때
 
 - [ ] 라이브러리 규모면 카탈로그 저장소의 `packages/<lib>/`(또는 별도 저장소)에 패키지로 두고, 각 스킬의 `scripts/x.py`는 PEP 723 `dependencies = ["<lib> @ git+<url>@<sha>#subdirectory=packages/<lib>"]`(SHA 고정)를 적은 얇은 진입점만 남긴다.
-- [ ] 작으면 복사한다. `harness-catalog check` 항목 10이 복사본 사이의 드리프트를 경고한다(어느 둘인지 출력).
+- [ ] 작으면 복사한다. `hc check` 항목 10이 복사본 사이의 드리프트를 경고한다(어느 둘인지 출력).
 - [ ] 스킬 간 호출과 `${CLAUDE_PLUGIN_ROOT}` 같은 하네스 전용 경로는 쓰지 않는다.
 
 ## 5. SKILL.md

@@ -1,4 +1,4 @@
-"""MCP 어댑터: 도구 여섯(스킬 넷 + toolbox 둘)을 앱 함수 호출로 바꾸고 결과를 MCP 응답으로. 응답 모양은 responses.py의 모델이 정본(outputSchema). 스팬 속성도 여기서 끝난다."""
+"""MCP 어댑터: 도구 넷(search_skills·get_skill·search_tools·get_tool)을 앱 함수 호출로 바꾸고 결과를 MCP 응답으로. 응답 모양은 responses.py의 모델이 정본(outputSchema). 스팬 속성도 여기서 끝난다."""
 
 from __future__ import annotations
 
@@ -26,12 +26,11 @@ from .responses import (
     DownloadDescriptor,
     ErrorResponse,
     FileEntry,
+    GetSkillResponse,
     GetToolResponse,
-    LoadSkillResponse,
     SearchSkillsResponse,
     SearchToolsResponse,
-    SkillArchiveResponse,
-    SkillFileResponse,
+    SkillFilePayload,
     SkillHit,
     ToolHit,
     dump,
@@ -92,35 +91,31 @@ class ToolBindings:
         except CatalogError as e:
             return _error(e.code, e.detail)
         span.set_attribute(ATTR_RESULT_COUNT, len(result.skills))
-        return _ok(SearchSkillsResponse(skills=[SkillHit(name=s.name, description=s.description, sha=s.sha, replaced_by=s.replaced_by, requires_tools=list(s.requires_tools), compatibility=s.compatibility) for s in result.skills], fetched_at=result.fetched_at))
+        return _ok(SearchSkillsResponse(skills=[SkillHit(name=s.name, description=s.description, sha=s.sha, compatibility=s.compatibility, has_scripts=s.has_scripts) for s in result.skills], fetched_at=result.fetched_at))
 
-    async def load_skill(self, id: str, sha: str | None = None) -> Annotated[CallToolResult, LoadSkillResponse]:  # noqa: A002
-        p = self._principal("load_skill")
+    async def get_skill(self, id: str, sha: str | None = None, path: str | None = None, archive: bool = False) -> Annotated[CallToolResult, GetSkillResponse]:  # noqa: A002
+        """한 판의 스킬. 기본은 SKILL.md 본문·메타데이터·파일 목록; `path`면 그 파일 하나(본문은 null); `archive`면 tar 다운로드 명세(SEP-2631 모양, 자격은 헤더에만). §11 2026-10-18: load_skill·get_skill_file·get_skill_archive를 접은 것."""
+        p = self._principal("get_skill")
         if isinstance(p, CallToolResult):
             return p
         try:
-            body = await anyio.to_thread.run_sync(self._catalog.load_skill, id, sha)
+            body = await anyio.to_thread.run_sync(self._catalog.get_skill, id, sha)
+            payload: SkillFilePayload | None = None
+            if path is not None:
+                f = await anyio.to_thread.run_sync(self._catalog.get_skill_file, id, path, body.sha)
+                payload = SkillFilePayload(path=f.path, size=f.size, blob=f.blob, text=f.text, base64=f.base64)
+            descriptor: DownloadDescriptor | None = None
+            if archive:
+                if self._signer is None or not self._public_url:
+                    return _error(ErrorCode.NOT_FOUND, "archive download is not enabled on this server")
+                descriptor = self._descriptor(await anyio.to_thread.run_sync(self._catalog.get_skill_archive, id, body.sha))
         except CatalogError as e:
             return _error(e.code, e.detail)
         trace.get_current_span().set_attributes({ATTR_SKILL: body.name, ATTR_SHA: body.sha})
-        return _ok(LoadSkillResponse(
-            id=body.name, body=body.body, sha=body.sha, commit=body.commit, metadata=dict(body.metadata),
-            files=[FileEntry(path=f.path, size=f.size) for f in body.files], has_scripts=body.has_scripts, fetched_at=body.fetched_at,
+        return _ok(GetSkillResponse(
+            id=body.name, sha=body.sha, commit=body.commit, body=None if path is not None else body.body, metadata=dict(body.metadata),
+            files=[FileEntry(path=f.path, size=f.size) for f in body.files], has_scripts=body.has_scripts, file=payload, archive=descriptor, fetched_at=body.fetched_at,
         ))
-
-    async def get_skill_archive(self, id: str, sha: str | None = None) -> Annotated[CallToolResult, SkillArchiveResponse]:  # noqa: A002
-        """SEP-2631 다운로드 명세 모양: uri·method·headers·expires_at·size·sha256·digest. 자격은 헤더에만 있다."""
-        p = self._principal("get_skill_archive")
-        if isinstance(p, CallToolResult):
-            return p
-        if self._signer is None or not self._public_url:
-            return _error(ErrorCode.NOT_FOUND, "archive download is not enabled on this server")
-        try:
-            info = await anyio.to_thread.run_sync(self._catalog.get_skill_archive, id, sha)
-        except CatalogError as e:
-            return _error(e.code, e.detail)
-        trace.get_current_span().set_attributes({ATTR_SKILL: info.name, ATTR_SHA: info.sha})
-        return _ok(SkillArchiveResponse(id=info.name, sha=info.sha, commit=info.commit, **dump(self._descriptor(info))))
 
     def _descriptor(self, info: ArchiveInfo) -> DownloadDescriptor:
         """SEP-2631 모양의 다운로드 명세. 자격(헤더 토큰)은 URL 밖. 종류가 서명 범위에 들어 스킬·도구 토큰이 섞이지 않는다."""
@@ -146,10 +141,10 @@ class ToolBindings:
         except CatalogError as e:
             return _error(e.code, e.detail)
         span.set_attribute(ATTR_RESULT_COUNT, len(result.tools))
-        return _ok(SearchToolsResponse(tools=[ToolHit(name=x.name, description=x.description, sha=x.sha, kind=_kind(x.kind), server=x.server, replaced_by=x.replaced_by, requires_tools=list(x.requires_tools)) for x in result.tools], fetched_at=result.fetched_at))
+        return _ok(SearchToolsResponse(tools=[ToolHit(name=x.name, description=x.description, sha=x.sha, kind=_kind(x.kind), server=x.server) for x in result.tools], fetched_at=result.fetched_at))
 
-    async def get_tool(self, id: str, sha: str | None = None) -> Annotated[CallToolResult, GetToolResponse]:  # noqa: A002
-        """tool.json 전체 + 판·커밋·파일 목록. kind=mcp면 server.json을 `server`에, kind=script면 다운로드 명세를 `archive`에. 레지스트리는 발견까지 — 도구를 부르지 않는다."""
+    async def get_tool(self, id: str, sha: str | None = None, archive: bool = False) -> Annotated[CallToolResult, GetToolResponse]:  # noqa: A002
+        """tool.json 전체 + 판·커밋·파일 목록. kind=mcp면 server.json을 `server`에; kind=script이고 `archive=true`면 다운로드 명세를 `archive`에(옵트인, get_skill과 대칭). 레지스트리는 발견까지 — 도구를 부르지 않는다."""
         p = self._principal("get_tool")
         if isinstance(p, CallToolResult):
             return p
@@ -158,42 +153,28 @@ class ToolBindings:
         except CatalogError as e:
             return _error(e.code, e.detail)
         trace.get_current_span().set_attributes({ATTR_TOOL: body.name, ATTR_SHA: body.sha})
-        archive: DownloadDescriptor | None = None
-        if body.kind == "script":
+        descriptor: DownloadDescriptor | None = None
+        if archive and body.kind == "script":
             if self._signer is None or not self._public_url:
-                return _error(ErrorCode.NOT_FOUND, "archive download is not enabled on this server — script tools cannot be served")
+                return _error(ErrorCode.NOT_FOUND, "archive download is not enabled on this server — script tools cannot be fetched")
             try:
-                archive = self._descriptor(await anyio.to_thread.run_sync(self._catalog.get_tool_archive, id, body.sha))
+                descriptor = self._descriptor(await anyio.to_thread.run_sync(self._catalog.get_tool_archive, id, body.sha))
             except CatalogError as e:
                 return _error(e.code, e.detail)
         return _ok(GetToolResponse(
             id=body.name, sha=body.sha, commit=body.commit, kind=_kind(body.kind), tool=ToolSpec.model_validate(dict(body.spec)),
-            server=ServerSpec.model_validate(dict(body.server)) if body.server is not None else None, archive=archive,
+            server=ServerSpec.model_validate(dict(body.server)) if body.server is not None else None, archive=descriptor,
             files=[FileEntry(path=f.path, size=f.size) for f in body.files], fetched_at=body.fetched_at,
         ))
 
-    async def get_skill_file(self, id: str, path: str, sha: str | None = None) -> Annotated[CallToolResult, SkillFileResponse]:  # noqa: A002
-        p = self._principal("get_skill_file")
-        if isinstance(p, CallToolResult):
-            return p
-        try:
-            f = await anyio.to_thread.run_sync(self._catalog.get_skill_file, id, path, sha)
-        except CatalogError as e:
-            return _error(e.code, e.detail)
-        trace.get_current_span().set_attributes({ATTR_SKILL: id, ATTR_SHA: f.sha})
-        return _ok(SkillFileResponse(id=id, path=f.path, size=f.size, sha=f.sha, blob=f.blob, text=f.text, base64=f.base64))
-
 
 def build_server(catalog: Catalog, *, issuer: str, public_url: str, verifier: TokenVerifier, signer: ArchiveSigner | None = None) -> MCPServer[None]:
-    """도구 여섯을 등록한 MCPServer. 인가 설정은 SDK가 RFC 9728·챌린지로 낸다(scopes_supported = required_scopes)."""
+    """도구 넷을 등록한 MCPServer. 인가 설정은 SDK가 RFC 9728·챌린지로 낸다(scopes_supported = required_scopes)."""
     auth = AuthSettings(issuer_url=AnyHttpUrl(issuer), resource_server_url=AnyHttpUrl(public_url), required_scopes=list(required_scopes(public_url)), validate_token_resource=True)
-    server: MCPServer[None] = MCPServer(name="harness-catalog", instructions="Skill and tool catalog: search and load skills and their files; search and read tool definitions (toolbox). No full-listing tools: search by topic.", auth=auth, token_verifier=verifier)
+    server: MCPServer[None] = MCPServer(name="harness-catalog", instructions="Skill and tool catalog: search skills and get one (body, a file, or a tar descriptor); search tools and get one definition (toolbox). No full-listing tools: search by topic.", auth=auth, token_verifier=verifier)
     b = ToolBindings(catalog, signer=signer, public_url=public_url)
-    server.tool(name="search_skills", description="Lexical search over id, description and metadata values; each hit: id, description, sha (tree), replaced_by, requires_tools, compatibility. There is no full-listing tool: search by topic. limit 1..20 (default 10).")(b.search_skills)
-    server.tool(name="load_skill", description="SKILL.md body with sha, commit, metadata and file list. sha optional (default: current main).")(b.load_skill)
-    server.tool(name="get_skill_file", description="One file of a skill (text or base64). Path traversal and symlinks are rejected; 1 MB per file.")(b.get_skill_file)
-    server.tool(name="search_tools", description="Toolbox: lexical search over tool definitions (name, description, metadata). Each hit: name, description, sha (tree), kind (script|mcp), server, replaced_by, requires_tools. limit 1..20 (default 10).")(b.search_tools)
-    server.tool(name="get_tool", description="Toolbox: one tool definition (tool.json: name, description, inputSchema, runtime) with sha, commit and files; for kind=mcp the referenced mcp-servers/<server>/server.json; for kind=script a download descriptor for its files. The registry never calls the tool. sha optional (default: current main).")(b.get_tool)
-    if signer is not None:
-        server.tool(name="get_skill_archive", description="Download descriptor for one skill version as a tar: uri + headers (5-minute token), size, sha256. Fetch it with curl; the files never pass through the model. sha optional (default: current main).")(b.get_skill_archive)
+    server.tool(name="search_skills", description="Lexical search over id, description and metadata values; each hit: id, description, sha (tree), compatibility, has_scripts. There is no full-listing tool: search by topic. limit 1..20 (default 10).")(b.search_skills)
+    server.tool(name="get_skill", description="One skill version: SKILL.md body with sha, commit, metadata and file list (default); with `path`, that one file instead of the body (text or base64; traversal and symlinks rejected, 1 MB); with `archive=true`, also a tar download descriptor (uri + headers with a 5-minute token, size, sha256) — fetch it with curl, the files never pass through the model. sha optional (default: current main).")(b.get_skill)
+    server.tool(name="search_tools", description="Toolbox: lexical search over tool definitions (name, description, metadata). Each hit: name, description, sha (tree), kind (script|mcp), server. limit 1..20 (default 10).")(b.search_tools)
+    server.tool(name="get_tool", description="Toolbox: one tool definition (tool.json: name, description, inputSchema, outputSchema, runtime) with sha, commit and files; for kind=mcp the referenced mcp-servers/<server>/server.json; for kind=script with `archive=true` a tar download descriptor for its files. The registry never calls the tool. sha optional (default: current main).")(b.get_tool)
     return server

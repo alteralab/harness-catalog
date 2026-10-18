@@ -131,10 +131,8 @@ class Catalog:
             base = self._snapshot.commit_sha if self._snapshot else self._facts.current_commit()
             if base is not None and not accept_rewind and not self._store.is_ancestor(base, commit):
                 return self._rewound(base, fetched_at)
-            if accept_rewind:
-                base = None  # 되감기를 받아들이면 옛 기준 커밋은 이력에 없을 수 있다 — 항목 5·9는 이번 빌드에서 건너뛴다
             try:
-                return self._build(commit, base, fetched_at, accept_rewind, write_facts=True)
+                return self._build(commit, fetched_at, accept_rewind, write_facts=True)
             except Exception as e:  # noqa: BLE001 — 장기 실행 루프: 어느 예외든 인덱스는 이전 판으로 남고 다음 주기에 다시 시도한다(상태에 기록)
                 # 빌드 실패: 인덱스는 이전 판으로 남고 다음 주기에 다시 시도한다
                 self._status = Status(ready=self._snapshot is not None, degraded=(f"rebuild_failed:{e}",),
@@ -161,7 +159,7 @@ class Catalog:
         """main이 base의 자손이 아니다: 아무것도 앞으로 가지 않는다. 메모리가 비어 있으면(재기동) base 세대를 git에서 다시 지어 읽기를 잇는다."""
         if self._snapshot is None:
             try:
-                self._build(base, None, fetched_at, accept_rewind=True, write_facts=False)  # DB에는 이미 base 세대가 있다
+                self._build(base, fetched_at, accept_rewind=True, write_facts=False)  # DB에는 이미 base 세대가 있다
             except Exception as e:  # noqa: BLE001 — base 세대를 못 지으면 unready로 남고 사유만 적는다
                 self._status = Status(ready=False, degraded=("main_rewound", f"rebuild_failed:{e}"), commit_sha=None, fetched_at=fetched_at)
                 return self._status
@@ -170,8 +168,8 @@ class Catalog:
                               built_at=snap.built_at if snap else None, rejected=snap.rejected if snap else ())
         return self._status
 
-    def _build(self, commit: str, base: str | None, fetched_at: datetime, accept_rewind: bool, *, write_facts: bool) -> Status:
-        report = check_commit(self._store, self._validator, commit, base=base, workdir=self._workdir)
+    def _build(self, commit: str, fetched_at: datetime, accept_rewind: bool, *, write_facts: bool) -> Status:
+        report = check_commit(self._store, self._validator, commit, workdir=self._workdir)
         if report.checker_failed:
             self._status = Status(ready=self._snapshot is not None, degraded=(f"checker_failed:{report.checker_failed}",),
                                   commit_sha=self._status.commit_sha, fetched_at=fetched_at, built_at=self._status.built_at)
@@ -184,7 +182,8 @@ class Catalog:
             props = self._inspect_tree(tree.tree_sha, tree.name).properties
             if props is None:
                 continue
-            entries.append(SkillEntry(tree.name, props.description, props.compatibility, props.metadata, tree.tree_sha, tree.commit_sha))
+            has_scripts = any(e.path.startswith("scripts/") and e.kind != "tree" for e in self._store.list_tree(tree.tree_sha))
+            entries.append(SkillEntry(tree.name, props.description, props.compatibility, props.metadata, tree.tree_sha, tree.commit_sha, has_scripts))
         rejected_tools = report.rejected_tools()
         tools: list[ToolEntry] = []
         for tree in self._store.list_trees(commit, "tools"):
@@ -299,7 +298,8 @@ class Catalog:
         tree, commit = self._version("tools", name, entry.tree_sha, entry.commit_sha, sha)
         return entry, tree, commit
 
-    def load_skill(self, name: str, sha: str | None = None) -> SkillBody:
+    def get_skill(self, name: str, sha: str | None = None) -> SkillBody:
+        """SKILL.md 본문과 파일 목록(§11 2026-10-18: load_skill → get_skill. 파일 하나는 get_skill_file, tar 명세는 get_skill_archive가 같은 도구의 path·archive 분기)."""
         entry, tree, commit = self._resolve(name, sha)
         body = self._store.read_blob(tree, "SKILL.md")
         if body is None:

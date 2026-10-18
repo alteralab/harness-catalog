@@ -23,8 +23,6 @@ class FakeStore:
         self.extra_top = extra_top
         self.commit = "c" * 40
         self.fetch_calls = 0
-        self.deleted: frozenset[str] = frozenset()  # skills의 은퇴 이름
-        self.deleted_tools: frozenset[str] = frozenset()
         self.history: dict[tuple[str, str], str] = {}  # (name, tree) -> commit — skills 뿌리
         self.tool_history: dict[tuple[str, str], str] = {}  # (name, tree) -> commit — tools 뿌리
         self.ancestors: set[tuple[str, str]] = set()  # (ancestor, descendant)
@@ -87,12 +85,6 @@ class FakeStore:
 
     def list_skill_trees(self, commit: str) -> tuple[SkillTree, ...]:
         return self.list_trees(commit, "skills")
-
-    def deleted_names(self, commit: str, root: Root) -> frozenset[str]:
-        return {"skills": self.deleted, "tools": self.deleted_tools}.get(root, frozenset())
-
-    def deleted_skill_names(self, commit: str) -> frozenset[str]:
-        return self.deleted
 
     def resolve_version(self, name: str, tree_sha: str, head: str, root: Root = "skills") -> str | None:
         table = self.tool_history if root == "tools" else self.history

@@ -72,7 +72,7 @@ def test_live_upgrade_then_tool_search_through_db(tmp_path: Path, catalog_repo: 
                     pytest.fail(f"server did not sync with the database: {body}")
                 with psycopg.connect(url) as conn, conn.cursor() as cur:
                     cur.execute("SELECT migration_id FROM _yoyo_migration ORDER BY migration_id")
-                    assert [r[0] for r in cur.fetchall()] == ["0001_schema", "0002_toolbox"]
+                    assert [r[0] for r in cur.fetchall()] == ["0001_schema", "0002_toolbox", "0003_drop_replaced_requires"]
                     cur.execute("SELECT commit_sha FROM index_state WHERE id = 1")
                     assert cur.fetchone() == (head,)
                     cur.execute("SELECT name FROM skill_index ORDER BY name")

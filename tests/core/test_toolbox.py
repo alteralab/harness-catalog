@@ -9,7 +9,7 @@ import pytest
 
 from harness_catalog_core.catalog import Catalog
 from harness_catalog_core.check import check_commit
-from harness_catalog_core.model import CatalogError, ErrorCode, ReadyReason, Root
+from harness_catalog_core.model import CatalogError, ErrorCode, ReadyReason
 from harness_catalog_core.toolbox import MAX_INPUT_SCHEMA_BYTES, parse_server, parse_tool, tool_json_schema
 
 from .fakes import FakeStore, FakeValidator, MemoryFacts
@@ -142,7 +142,7 @@ def make(tmp_path: Path, **kw: object) -> tuple[Catalog, FakeStore]:
 
 def test_check_items_11_and_12(tmp_path: Path) -> None:
     store = FakeStore({"yt-subs": SKILL}, tools={"subs-fetch": SCRIPT_TOOL, "graft-ask": MCP_TOOL}, servers={"graft": SERVER})
-    report = check_commit(store, FakeValidator(), store.commit, base=None, workdir=tmp_path)
+    report = check_commit(store, FakeValidator(), store.commit, workdir=tmp_path)
     assert report.errors == ()
     # 참조 서버 없음·스킬과 이름 충돌·경로가 트리에 없음·시크릿
     bad_tools = {
@@ -152,7 +152,7 @@ def test_check_items_11_and_12(tmp_path: Path) -> None:
         "leaky": {"tool.json": tool_json("leaky"), "scripts/fetch.py": b"SECRET=1\n"},
     }
     store = FakeStore({"yt-subs": SKILL}, tools=bad_tools, servers={"bad": {"server.json": server_json(name="other")}})
-    report = check_commit(store, FakeValidator(), store.commit, base=None, workdir=tmp_path)
+    report = check_commit(store, FakeValidator(), store.commit, workdir=tmp_path)
     by_name = {(f.item, f.skill, f.kind) for f in report.errors}
     assert (11, "graft-ask", "tool") in by_name and (11, "yt-subs", "tool") in by_name and (11, "ghost", "tool") in by_name
     assert (4, "leaky", "tool") in by_name and (12, "bad", "server") in by_name
@@ -166,30 +166,12 @@ def test_structure_violation_under_tools_makes_catalog_unready(tmp_path: Path) -
     assert any(d.startswith("check:11:tools/no-json/tool.json missing") for d in status.degraded)
 
 
-def test_retired_name_is_shared_between_skills_and_tools(tmp_path: Path) -> None:
-    store = FakeStore({"yt-subs": SKILL}, tools={"subs-fetch": SCRIPT_TOOL})
-    base = FakeStore({"yt-subs": SKILL})
-    base.commit = "b" * 40
-    base.deleted = frozenset({"subs-fetch"})  # 예전에 스킬로 쓰이다 은퇴한 이름
-
-    class Both(FakeStore):
-        def list_trees(self, commit: str, root: Root):  # noqa: ANN202
-            return base.list_trees(commit, root) if commit == base.commit else store.list_trees(commit, root)
-
-        def deleted_names(self, commit: str, root: Root):  # noqa: ANN202
-            return base.deleted_names(commit, root)
-
-    both = Both({"yt-subs": SKILL}, tools={"subs-fetch": SCRIPT_TOOL})
-    report = check_commit(both, FakeValidator(), both.commit, base=base.commit, workdir=tmp_path)
-    assert [(f.item, f.skill, f.kind) for f in report.errors] == [(5, "subs-fetch", "tool")]
-
-
 # ---- 카탈로그 ----
 def test_search_tools_and_get_tool(tmp_path: Path) -> None:
     cat, store = make(tmp_path, tools={"subs-fetch": SCRIPT_TOOL, "graft-ask": MCP_TOOL}, servers={"graft": SERVER})
     assert cat.rebuild().ready
     hits = cat.search_tools("유튜브 자막").tools
-    assert [t.name for t in hits] == ["subs-fetch"] and hits[0].kind == "script" and hits[0].requires_tools == ("uv", "yt-dlp")
+    assert [t.name for t in hits] == ["subs-fetch"] and hits[0].kind == "script"
     assert [t.name for t in cat.search_tools("graft").tools] == ["graft-ask"]
     assert cat.search_tools("graft").tools[0].server == "graft"
     assert [s.name for s in cat.search_skills("subtitles").skills] == ["yt-subs"]  # 스킬 검색에 도구가 섞이지 않는다
@@ -254,21 +236,3 @@ def test_tool_referencing_rejected_server_is_rejected(tmp_path: Path) -> None:
     reasons = {n: r for n, r in status.rejected}
     assert reasons["graft"].startswith("12:") and "rejected by item 12" in reasons["graft-ask"]
 
-
-def test_retired_name_seen_in_reviewed_commit_history(tmp_path: Path) -> None:
-    """기준 커밋 뒤에 지우고 다시 만든 이름도 항목 5가 잡는다(검사 대상 커밋의 전체 이력)."""
-    base = FakeStore({"yt-subs": SKILL})
-    base.commit = "b" * 40
-    now = FakeStore({"yt-subs": SKILL}, tools={"subs-fetch": SCRIPT_TOOL})
-    now.deleted_tools = frozenset({"subs-fetch"})  # 이 커밋의 이력에만 삭제가 있다(기준 커밋 뒤)
-
-    class Both(FakeStore):
-        def list_trees(self, commit: str, root: Root):  # noqa: ANN202
-            return base.list_trees(commit, root) if commit == base.commit else now.list_trees(commit, root)
-
-        def deleted_names(self, commit: str, root: Root):  # noqa: ANN202
-            return base.deleted_names(commit, root) if commit == base.commit else now.deleted_names(commit, root)
-
-    both = Both({"yt-subs": SKILL}, tools={"subs-fetch": SCRIPT_TOOL})
-    report = check_commit(both, FakeValidator(), both.commit, base=base.commit, workdir=tmp_path)
-    assert [(f.item, f.skill, f.kind) for f in report.errors] == [(5, "subs-fetch", "tool")]

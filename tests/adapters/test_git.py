@@ -40,7 +40,6 @@ def test_history_and_versions(tmp_path: Path, catalog_repo: CatalogRepo) -> None
     (repo / "skills" / "pin-skill").rmdir()
     second = commit_all(repo, "update yt-subs, retire pin-skill")
     assert store.fetch() == second
-    assert store.deleted_skill_names(second) == frozenset({"pin-skill"})
     assert store.resolve_version("yt-subs", old_tree, second) == first
     assert store.resolve_version("yt-subs", "f" * 40, second) is None
 
@@ -118,7 +117,6 @@ def test_tools_root_trees_versions_and_archive(tmp_path: Path, catalog_repo: Cat
     sub = next(t for t in tools if t.name == "subs-fetch")
     assert store.resolve_version("subs-fetch", sub.tree_sha, head, "tools") == head
     assert store.resolve_version("subs-fetch", sub.tree_sha, head) is None  # skills/ 뿌리에는 그런 판이 없다
-    assert store.deleted_names(head, "tools") == frozenset() and store.deleted_names(head, "skills") == frozenset()
     a, b = tmp_path / "a.tar", tmp_path / "b.tar"
     store.archive_tree(head, "tools", "subs-fetch", a, max_bytes=10_000_000)
     store.archive_tree(head, "tools", "subs-fetch", b, max_bytes=10_000_000)

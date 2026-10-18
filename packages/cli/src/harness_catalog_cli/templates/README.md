@@ -15,7 +15,7 @@
 ├── .harness-catalog                 # 표지: layout = 1. 레지스트리가 이 저장소를 카탈로그로 인식하는 근거
 ├── .pre-commit-config.yaml          # 커밋 전 `harness-catalog check` (CLI 판 v<판>에 핀)
 ├── .github/
-│   ├── workflows/check.yml          # PR·main push마다 `harness-catalog ci check`, 선택 잡 evals
+│   ├── workflows/check.yml          # PR·main push마다 `harness-catalog check`, 선택 잡 evals
 │   └── actions/code-repo-credentials/action.yml   # 코드 저장소가 비공개인 동안 CI가 CLI를 받을 deploy key
 ├── README.md
 ├── skills/                          # 스킬 하나 = 디렉토리 하나 (필수 디렉토리)
@@ -60,16 +60,14 @@ Claude Code는 다음 한 줄 뒤, `~/.claude.json`(프로젝트에만 두려면
 claude mcp add --transport http --scope user harness-catalog https://<레지스트리 호스트>/mcp
 ```
 
-레지스트리가 내는 도구는 여섯이고 전부 읽기입니다. 전체 목록 도구는 없고 주제로 좁혀 검색합니다.
+레지스트리가 내는 도구는 넷이고 전부 읽기입니다. 전체 목록 도구는 없고 주제로 좁혀 검색합니다. 응답 필드와 오류 코드는 코드 저장소 `docs/using.md`에 있습니다.
 
 | 도구 | 하는 일 |
 |---|---|
-| `search_skills(query)` | 스킬 어휘 검색: 이름·설명·`sha`(판)·`replaced_by`·`requires_tools` |
-| `load_skill(id, sha?)` | SKILL.md 본문과 파일 목록. `sha`를 주면 그 판 |
-| `get_skill_file(id, path, sha?)` | 참조 파일·스크립트 하나 |
-| `get_skill_archive(id, sha?)` | 한 판 전체를 tar로 받는 다운로드 명세(URI + 5분 헤더 토큰 + sha256). 파일은 모델을 지나지 않습니다 |
+| `search_skills(query)` | 스킬 어휘 검색: 이름·설명·`sha`(판)·`compatibility`·`has_scripts` |
+| `get_skill(id, sha?, path?, archive?)` | SKILL.md 본문과 파일 목록. `path`면 그 파일 하나, `archive=true`면 한 판 전체를 tar로 받는 다운로드 명세(URI + 5분 헤더 토큰 + sha256)를 함께 — 파일은 모델을 지나지 않습니다 |
 | `search_tools(query)` | 도구 어휘 검색: 이름·설명·`sha`·`kind`·`server` |
-| `get_tool(id, sha?)` | `tool.json` 전체. `kind: mcp`면 참조하는 `server.json`을, `kind: script`면 다운로드 명세를 함께 |
+| `get_tool(id, sha?, archive?)` | `tool.json` 전체. `kind: mcp`면 참조하는 `server.json`을, `kind: script`이고 `archive=true`면 다운로드 명세를 함께 |
 
 - **곁에 두기(pin).** 매일 쓰는 스킬은 `pin-skill`을 따라 `.agents/skills/<name>/`(프로젝트) 또는 `~/.agents/skills/<name>/`(사용자)에 내려받습니다. 사본이 낡았는지는 `search_skills(<name>)`의 `sha`와 사본의 `PINNED`를 견주면 압니다.
 - **도구를 쓸 때.** `get_tool`은 정의와 배선을 줄 뿐 도구를 부르지 않습니다. `kind: mcp`면 그 서버를 하네스 설정(`.mcp.json`·`mcpServers`)에 붙이는 것은 사용자의 일이고, `kind: script`면 받은 디렉토리에서 `runtime.command`를 **셸 없이 argv로** 실행합니다(입력은 `inputSchema`에 맞는 JSON 하나를 stdin으로, 결과는 stdout — `outputSchema`가 있으면 그 스키마의 JSON 객체 하나, 종료 0 = 결과를 냈다·0 아님 = 실행 실패. 판정은 결과 객체의 필드로).
@@ -79,19 +77,19 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 
 1. `main`을 최신으로 하고 브랜치를 땁니다. `main`에 직접 push하지 않고 강제 push도 하지 않습니다(브랜치 보호는 걸려 있지 않습니다 — 규율입니다).
 2. **스킬**은 `write-skill`을 따릅니다. `uv run --script skills/write-skill/scripts/scaffold.py <name> --description "<한 문장>"`이 `SKILL.md`와 Harbor 태스크 한 쌍(써야 하는 과제·쓰지 말아야 하는 과제)을 만들고, TODO만 채웁니다. 규약은 `skills/write-skill/references/conventions.md`.
-3. **도구**는 `write-tool`을 따릅니다. `uv run --script skills/write-tool/scripts/scaffold_tool.py <name> --description "<한 문장>" --kind script --script <x.py>`(또는 `--kind mcp --server <server> --tool <tool>`)가 `tools/<name>/tool.json`과 골격을 만들고, TODO만 채웁니다. `tool.json`의 `$schema`가 `schemas/tool.schema.json`을 가리켜 편집기가 타이핑 중에 검증합니다(그 파일이 낡았으면 `harness-catalog schema tool > schemas/tool.schema.json`). 계약은 `skills/write-tool/references/tool-contract.md`. 손으로 쓸 때의 요지 — `name`은 디렉토리명, `inputSchema`는 `type: object`, `runtime`은 둘 중 하나:
+3. **도구**는 `write-tool`을 따릅니다. `uv run --script skills/write-tool/scripts/scaffold_tool.py <name> --description "<한 문장>" --kind script --script <x.py>`(또는 `--kind mcp --server <server> --tool <tool>`)가 `tools/<name>/tool.json`과 골격을 만들고, TODO만 채웁니다. `tool.json`의 `$schema`가 `schemas/tool.schema.json`을 가리켜 편집기가 타이핑 중에 검증합니다(그 파일이 낡았으면 `hc schema tool > schemas/tool.schema.json`). 계약은 `skills/write-tool/references/tool-contract.md`. 손으로 쓸 때의 요지 — `name`은 디렉토리명, `inputSchema`는 `type: object`, `runtime`은 둘 중 하나:
    - `{"kind": "script", "path": "scripts/x.py", "command": ["uv", "run", "--script", "scripts/x.py"]}` — `command`는 argv 배열이고 `path`는 그 원소 정확히 하나, 디렉토리 안의 일반 파일.
    - `{"kind": "mcp", "server": "<mcp-servers의 이름>", "tool": "<그 서버가 내는 도구 이름>"}` — 서버 레코드가 먼저 있어야 합니다.
    `mcp-servers/<name>/server.json`은 MCP Registry 형식(`name`·`version`·`packages` 또는 `remotes`)이고, 시크릿 값은 적지 않습니다(`isSecret: true` 항목에 `value`·`default` 금지).
-4. 커밋 전에 `pre-commit install`을 한 번 해 두면 `harness-catalog check`가 커밋마다 돕니다. 같은 검사가 PR의 CI와 레지스트리의 색인에서도 돕니다. 붉으면 병합하지 않습니다.
+4. 커밋 전에 `pre-commit install`을 한 번 해 두면 `hc check`가 커밋마다 돕니다(`hc`는 `harness-catalog`의 짧은 이름이고 같은 명령입니다). 같은 검사가 PR의 CI와 레지스트리의 색인에서도 돕니다. 붉으면 병합하지 않습니다.
 5. PR을 열고 사람이 병합합니다. **병합한 사람이 그 판의 인증자**입니다. 레지스트리는 다음 fetch(기본 60초)에 새 판을 색인합니다.
-6. 고치기는 같은 디렉토리를 바꿔 병합하는 것, 은퇴는 디렉토리 삭제, 대체는 지우기 전 판의 `metadata.replaced-by`에 새 이름을 적는 것입니다(스킬·도구 같음).
+6. 고치기는 같은 디렉토리를 바꿔 병합하는 것, 은퇴는 디렉토리 삭제입니다(스킬·도구 같음). 후속은 검색으로 찾습니다.
 
-`harness-catalog check`의 항목: 1 저장소 구조 · 2 `skills/` 구조 · 3 SKILL.md 스펙 · 4 시크릿 없음(gitleaks) · 5 은퇴 이름 재사용 금지 · 6 `replaced-by` 대상 존재 · 7 크기 상한(파일 50개·1 MB·합 5 MB) · 8 `requires-tools` 문법 · 9 은퇴 때 `replaced-by` 권고(경고) · 10 복사 스크립트 드리프트(경고) · 11 `tool.json` · 12 `server.json`.
+`hc check`의 항목(일곱): 1 저장소 구조 · 2 `skills/` 구조 · 3 SKILL.md 스펙 · 4 시크릿 없음(gitleaks) · 7 크기 상한(파일 50개·1 MB·합 5 MB) · 11 `tool.json` · 12 `server.json`. 번호 5·6·8·9·10은 뺀 규칙의 자리라 비어 있습니다.
 
 ## 운영하는 사람: 체크리스트
 
-1. git 호스트에 빈 저장소를 만들고 `harness-catalog init <repo-url>`을 돌립니다(이 파일들이 그 결과입니다).
+1. git 호스트에 빈 저장소를 만들고 `hc init <repo-url>`을 돌립니다(이 파일들이 그 결과입니다).
 2. 읽기 전용 deploy key를 등록하고 레지스트리의 비밀 파일에 개인 키를 넣습니다. 확인: 레지스트리 컨테이너에서 `git fetch`는 되고 `git push --dry-run`은 거부됩니다.
 3. 저자에게 저장소 write, 병합·설정을 할 사람에게 admin을 줍니다. 저장소 read 이상 명단과 LDAP 그룹 `harness-readers`를 같게 유지합니다 — 레지스트리의 읽기 권한은 그 그룹 하나로 정해집니다.
 4. Dex에 하네스 제품의 정적 클라이언트(`claude-code`·`codex`·`cursor`)가 있는지, 첫 팀원이 `harness-readers`에 있는지 확인합니다(로그인 한 번으로 확인).

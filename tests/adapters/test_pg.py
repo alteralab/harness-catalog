@@ -37,9 +37,9 @@ def test_schema_applied_as_contract(database_url: str) -> None:
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
         cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'skill_index' ORDER BY ordinal_position")
         cols = [r[0] for r in cur.fetchall()]
-        assert cols == ["name", "description", "compatibility", "metadata", "tree_sha", "commit_sha", "indexed_at", "replaced_by", "requires_tools", "search_text", "search"]
+        assert cols == ["name", "description", "compatibility", "metadata", "tree_sha", "commit_sha", "indexed_at", "search_text", "search"]  # replaced_by·requires_tools는 0003에서 지웠다
         cur.execute("SELECT indexname FROM pg_indexes WHERE tablename = 'skill_index' ORDER BY 1")
-        assert {r[0] for r in cur.fetchall()} >= {"skill_index_search", "skill_index_trgm", "skill_index_tools"}
+        assert {r[0] for r in cur.fetchall()} >= {"skill_index_search", "skill_index_trgm"}
         cur.execute("SELECT extname FROM pg_extension WHERE extname = 'pg_trgm'")
         assert cur.fetchone() is not None
     assert migrate(database_url) == 0  # 멱등
@@ -59,8 +59,8 @@ def test_generation_check_and_search(database_url: str) -> None:
     assert facts.replace_index(snap(a, "yt-subs", "pin-skill"), lambda stored: stored == a) is IndexOutcome.STALE
     assert facts.current_commit() == b
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
-        cur.execute("SELECT name, replaced_by, requires_tools FROM skill_index ORDER BY name")
-        assert cur.fetchall() == [("yt-subs", None, ["uv"])]
+        cur.execute("SELECT name FROM skill_index ORDER BY name")
+        assert cur.fetchall() == [("yt-subs",)]
     assert facts.search("유튜브", 10) == ("yt-subs",)
     assert facts.search("subs", 10) == ("yt-subs",)
     assert facts.search("nothing-here", 10) == ()
@@ -133,8 +133,7 @@ def test_ddl_expressions_match_contract(database_url: str) -> None:
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
         cur.execute("SELECT column_name, pg_get_expr(d.adbin, d.adrelid) FROM pg_attribute a JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum JOIN information_schema.columns c ON c.column_name = a.attname AND c.table_name = 'skill_index' WHERE a.attrelid = 'skill_index'::regclass AND a.attgenerated = 's' ORDER BY a.attnum")
         gen = dict(cur.fetchall())
-        assert gen["replaced_by"] == "(metadata ->> 'replaced-by'::text)"
-        assert gen["requires_tools"] == "string_to_array(NULLIF((metadata ->> 'requires-tools'::text), ''::text), ' '::text)"
+        assert set(gen) == {"search_text", "search"}
         assert "to_tsvector('simple'::regconfig" in gen["search"] and "metadata_values(metadata)" in gen["search_text"]
         cur.execute("SELECT provolatile FROM pg_proc WHERE proname = 'metadata_values'")
         assert cur.fetchone() == ("i",)
@@ -181,11 +180,10 @@ def test_tool_index_contract_and_search(database_url: str) -> None:
     """toolbox(D19): tool_index의 열·생성식·제약·인덱스가 설계의 DDL 문자열과 같고, 두 표가 한 트랜잭션에 바뀐다."""
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
         cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'tool_index' ORDER BY ordinal_position")
-        assert [r[0] for r in cur.fetchall()] == ["name", "description", "kind", "server", "metadata", "tree_sha", "commit_sha", "indexed_at", "replaced_by", "requires_tools", "search_text", "search"]
+        assert [r[0] for r in cur.fetchall()] == ["name", "description", "kind", "server", "metadata", "tree_sha", "commit_sha", "indexed_at", "search_text", "search"]
         cur.execute("SELECT a.attname, pg_get_expr(d.adbin, d.adrelid) FROM pg_attribute a JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum WHERE a.attrelid = 'tool_index'::regclass AND a.attgenerated = 's' ORDER BY a.attnum")
         gen = dict(cur.fetchall())
-        assert gen["replaced_by"] == "(metadata ->> 'replaced-by'::text)"
-        assert gen["requires_tools"] == "string_to_array(NULLIF((metadata ->> 'requires-tools'::text), ''::text), ' '::text)"
+        assert set(gen) == {"search_text", "search"}
         assert "to_tsvector('simple'::regconfig" in gen["search"] and "metadata_values(metadata)" in gen["search_text"]
         cur.execute("SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'tool_index' ORDER BY 1")
         idx = dict(cur.fetchall())
@@ -201,8 +199,8 @@ def test_tool_index_contract_and_search(database_url: str) -> None:
     assert facts.search("자막", 10, "tools") == ("subs-fetch",) and facts.search("graft", 10, "tools") == ("graft-ask",)
     assert facts.search("자막", 10, "skills") == () and facts.search("x", 10, "nope") is None  # 표는 닫힌 사전에서만
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
-        cur.execute("SELECT name, kind, server, requires_tools FROM tool_index ORDER BY name")
-        assert cur.fetchall() == [("graft-ask", "mcp", "graft", ["uv"]), ("subs-fetch", "script", None, ["uv"])]
+        cur.execute("SELECT name, kind, server FROM tool_index ORDER BY name")
+        assert cur.fetchall() == [("graft-ask", "mcp", "graft"), ("subs-fetch", "script", None)]
     facts.close()
 
 
@@ -224,8 +222,8 @@ def test_replace_is_all_or_nothing_across_both_tables(database_url: str) -> None
     facts.close()
 
 
-def test_upgrade_0001_to_0002_on_populated_db() -> None:
-    """0001만 적용된 채 데이터가 있는 DB에 0002가 올라가고, 다시 migrate는 0이다."""
+def test_upgrade_from_0001_on_populated_db() -> None:
+    """0001만 적용된 채 데이터가 있는 DB에 0002·0003이 올라가고, 다시 migrate는 0이다."""
     from importlib.resources import as_file, files
     from yoyo import get_backend, read_migrations  # pyright: ignore[reportUnknownVariableType]
 
@@ -241,7 +239,7 @@ def test_upgrade_0001_to_0002_on_populated_db() -> None:
             cur.execute("INSERT INTO skill_index (name, description, metadata, tree_sha, commit_sha, indexed_at) VALUES ('old', 'd', '{}', %s, %s, now())", ("a" * 40, "b" * 40))
             cur.execute("INSERT INTO index_state (id, commit_sha, indexed_at) VALUES (1, %s, now())", ("b" * 40,))
             conn.commit()
-        assert migrate(url) == 1  # 0002만
+        assert migrate(url) == 2  # 0002·0003
         assert migrate(url) == 0
         with psycopg.connect(url) as conn, conn.cursor() as cur:
             cur.execute("SELECT name FROM skill_index")

@@ -32,16 +32,8 @@ class ContentStore(Protocol):
         """`<root>/` 바로 아래 디렉토리마다 (이름, tree SHA, 그 판을 넣은 커밋)."""
         ...
 
-    def deleted_names(self, commit: str, root: Root) -> frozenset[str]:
-        """이력에서 `<root>/<name>/<표지 파일>`이 지워진 적 있는 이름 전부(은퇴 이름). 얕은 클론이면 ContentError."""
-        ...
-
     def list_skill_trees(self, commit: str) -> tuple[SkillTree, ...]:
         """= list_trees(commit, "skills")."""
-        ...
-
-    def deleted_skill_names(self, commit: str) -> frozenset[str]:
-        """= deleted_names(commit, "skills")."""
         ...
 
     def resolve_version(self, name: str, tree_sha: str, head: str, root: Root = "skills") -> str | None:

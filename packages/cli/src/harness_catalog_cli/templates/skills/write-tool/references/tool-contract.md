@@ -36,6 +36,6 @@
 
 ## 5. 올리기
 
-- [ ] 브랜치 `tool/<name>` → `harness-catalog check`(항목 11·12 포함) → PR → 사람이 병합. 병합한 사람이 그 판의 인증자다. 레지스트리는 다음 fetch(기본 60초)에 `search_tools`·`get_tool`로 낸다.
+- [ ] 브랜치 `tool/<name>` → `hc check`(항목 11·12 포함) → PR → 사람이 병합. 병합한 사람이 그 판의 인증자다. 레지스트리는 다음 fetch(기본 60초)에 `search_tools`·`get_tool`로 낸다.
 - [ ] 판은 디렉토리의 tree SHA다. 과거 판은 `get_tool(id, sha)`.
 - [ ] 도구에는 Harbor evals를 두지 않는다. 결정적 호출이라 스크립트의 자체 시험(있다면)과 검사 11이 검증이다.

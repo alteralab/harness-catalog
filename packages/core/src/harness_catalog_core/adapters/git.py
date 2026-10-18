@@ -13,7 +13,7 @@ import threading
 from collections.abc import Mapping
 from pathlib import Path
 
-from ..model import ROOT_MARKERS, ArchiveTooLarge, ContentError, ReadyReason, Root, SkillTree, TreeEntry
+from ..model import ArchiveTooLarge, ContentError, ReadyReason, Root, SkillTree, TreeEntry
 
 MAIN_REF = "refs/remotes/origin/main"
 
@@ -165,18 +165,6 @@ class GitStore:
 
     def list_skill_trees(self, commit: str) -> tuple[SkillTree, ...]:
         return self.list_trees(commit, "skills")
-
-    def deleted_names(self, commit: str, root: Root) -> frozenset[str]:
-        """전체 이력이 필요하다: 얕은 클론이거나 log가 실패하면 빈 집합이 아니라 ContentError(fail-closed). 표지 파일(SKILL.md·tool.json·server.json)의 삭제가 은퇴다."""
-        if self._text("rev-parse", "--is-shallow-repository").strip() == "true":
-            raise ContentError(ReadyReason.REPO_UNREACHABLE, "shallow clone: full history required for retired-name check")
-        out = self._text("log", "--diff-filter=D", "--name-only", "--format=", "--end-of-options", commit, "--", f"{root}/*/{ROOT_MARKERS[root]}")
-        prefix = f"{root}/"
-        names = {line.split("/")[1] for line in out.splitlines() if line.startswith(prefix) and line.count("/") >= 2}
-        return frozenset(names)
-
-    def deleted_skill_names(self, commit: str) -> frozenset[str]:
-        return self.deleted_names(commit, "skills")
 
     def resolve_version(self, name: str, tree_sha: str, head: str, root: Root = "skills") -> str | None:
         commits = self._text("log", "--format=%H", head, "--", f"{root}/{name}").split()
