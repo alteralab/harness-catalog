@@ -32,7 +32,7 @@ description: 카탈로그(harness-catalog)의 스킬이나 도구를 내 하네�
    ```sh
    hc pin --scope project --response response.json          # 또는 --scope user; 저장소 루트가 아니면 --project-root <경로>
    ```
-   이 명령이 받고(헤더의 5분 토큰), 크기와 sha256을 대조하고, 임시 디렉토리에 풀고, 풀린 파일 집합을 응답의 `files`와 대조하고, `PINNED` 한 줄(`<name> <sha 40자> <ISO 8601 UTC 시각>`)을 쓰고, 한 번에 이름을 바꾸고, 링크(스킬) 또는 `.mcp.json`의 `toolbox` 항목(도구)을 둔다. 어느 단계에서 실패해도 기존 사본은 남는다. `hc`가 없으면 `uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" hc pin …`.
+   이 명령이 받고(헤더의 5분 토큰), 크기와 sha256을 대조하고, 임시 디렉토리에 풀고, 풀린 파일 집합을 응답의 `files`와 대조하고, `PINNED` 한 줄(`<name> <sha 40자> <ISO 8601 UTC 시각>`)을 쓰고, 한 번에 이름을 바꾸고, 링크(스킬) 또는 `.mcp.json`의 `toolbox` 항목(도구)을 둔다. 어느 단계에서 실패해도 기존 사본은 남는다. `hc`가 없으면 팀 인덱스에서 한 줄로: `uvx --index https://ds923plus.tail2f9fe3.ts.net:8443/repository/pypi-public/simple/ harness-catalog-cli==<판> hc pin …`(tailnet 안).
 6. 보고한다: 명령의 출력(경로, sha, 파일 수)과 "이 사본은 이 시점의 판이고 새 판은 다시 받아야 한다". 도구를 받았으면 하네스를 다시 열어야 `toolbox` 항목이 뜬다고 덧붙인다.
 
 ## 새 판 확인 — "새 판 있어?", "갱신해줘"

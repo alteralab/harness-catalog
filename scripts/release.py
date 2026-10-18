@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import argparse
 import re
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -83,17 +85,49 @@ def install_like_pip(tmp: Path) -> None:
     print(f"release: installed OK — {out.strip()}", file=sys.stderr)
 
 
+NEXUS_PUBLISH_URL = "https://ds923plus.tail2f9fe3.ts.net:8443/repository/pypi-internal/"
+NEXUS_SIMPLE_URL = "https://ds923plus.tail2f9fe3.ts.net:8443/repository/pypi-public/simple/"
+
+
+def publish(version: str) -> bool:
+    """core·cli 휠을 NAS Nexus pypi-internal 에 올린다(2026-10-18 결정 — hc 는 git+ssh 가 아니라 인덱스로 받는다).
+
+    자격은 uv publish 가 읽는 환경변수 UV_PUBLISH_USERNAME / UV_PUBLISH_PASSWORD (gopass nas/nexus-publish). URL 은
+    HC_PYPI_PUBLISH_URL / HC_PYPI_SIMPLE_URL 로 바꿀 수 있다(LAN 에서는 http://192.168.3.95:8081/...). 자격이 없으면
+    올리지 않고 안내만 한다 — 릴리스 자체(태그·push)는 이미 끝난 뒤라 실패로 만들지 않는다. 같은 판이 이미 있으면 --check-url 이 건너뛴다.
+    """
+    if not os.environ.get("UV_PUBLISH_PASSWORD"):
+        print("release: UV_PUBLISH_USERNAME/UV_PUBLISH_PASSWORD 가 없어 Nexus 업로드를 건너뛴다 — 나중에 `release.py --publish-only <판>`", file=sys.stderr)
+        return False
+    dist = ROOT / "dist"
+    shutil.rmtree(dist, ignore_errors=True)
+    for pkg in ("harness-catalog-core", "harness-catalog-cli"):
+        run("uv", "build", "-q", "--package", pkg, "-o", str(dist))
+    files = sorted(str(f) for f in dist.glob(f"harness_catalog_*-{version}*"))
+    if len(files) != 4:
+        print(f"release: expected 4 dist files for {version}, got {files}", file=sys.stderr)
+        raise SystemExit(1)
+    publish_url = os.environ.get("HC_PYPI_PUBLISH_URL", NEXUS_PUBLISH_URL)
+    simple_url = os.environ.get("HC_PYPI_SIMPLE_URL", NEXUS_SIMPLE_URL)
+    run("uv", "publish", "--publish-url", publish_url, "--check-url", simple_url, *files)
+    print(f"release: published {len(files)} files to {publish_url}", file=sys.stderr)
+    return True
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="release.py", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("version")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--skip-check", action="store_true")
+    ap.add_argument("--publish-only", action="store_true", help="태그·push 없이 그 판의 휠만 Nexus 에 올린다(이미 릴리스된 판)")
     ns = ap.parse_args(argv)
     version: str = ns.version
     if not VERSION_RE.match(version):
         print(f"release: version must be X.Y.Z, got {version!r}", file=sys.stderr)
         return 2
     tag = f"v{version}"
+    if ns.publish_only:
+        return 0 if publish(version) else 2
     if run("git", "tag", "--list", tag, capture=True).strip():
         print(f"release: tag {tag} already exists", file=sys.stderr)
         return 2
@@ -112,6 +146,7 @@ def main(argv: list[str]) -> int:
     run("git", "tag", "-a", tag, "-m", f"{tag}")
     run("git", "push", "--atomic", "origin", "main", tag)  # main과 태그가 함께 가거나 둘 다 안 간다
     print(f"release: {tag} pushed — CI가 이미지 ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:<짧은 SHA>·:{tag}를 NAS Harbor에 올린다", file=sys.stderr)
+    publish(version)
     return 0
 
 
