@@ -231,23 +231,38 @@ def scaffold_tool(root: Path, name: str, description: str, runtime: str, script:
     return [f"tools/{name}/tool.json: inputSchema·outputSchema를 그 서버의 도구 정의와 맞춘다", f"mcp-servers/{server}/server.json: version과 packages 또는 remotes(시크릿 값은 적지 않는다)"]
 
 
-def tool_line(root: Path, tool: str) -> str:
-    """SKILL.md 단계에 들어갈 호출 줄 하나 — tools/<tool>/tool.json에서 읽는다(설명 첫 문장, 입력 키는 required 먼저, 결과 키)."""
+def read_tool_spec(root: Path, tool: str) -> dict[str, object]:
+    """tools/<tool>/tool.json을 읽어 호출 줄에 필요한 모양만 검증한다(전체 계약은 hc check 항목 11). 틀리면 Input — 쓰기 전에."""
     path = root / "tools" / tool / "tool.json"
     try:
-        spec = json.loads(path.read_text(encoding="utf-8"))
+        spec: object = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
         raise Input(f"tools/{tool}/tool.json unreadable: {e}") from e
-    if not isinstance(spec, dict):
-        raise Input(f"tools/{tool}/tool.json is not an object")
-    schema = spec.get("inputSchema") if isinstance(spec.get("inputSchema"), dict) else {}
-    props = schema.get("properties") if isinstance(schema.get("properties"), dict) else {}
-    required = [k for k in schema.get("required", []) if k in props] if isinstance(schema.get("required"), list) else []
+    if not isinstance(spec, dict) or spec.get("name") != tool:
+        raise Input(f"tools/{tool}/tool.json: not an object with name {tool!r}")
+    schema = spec.get("inputSchema")
+    if not isinstance(schema, dict) or schema.get("type") != "object" or not isinstance(schema.get("properties", {}), dict):
+        raise Input(f"tools/{tool}/tool.json: inputSchema must be an object schema with properties")
+    props = schema.get("properties", {})
+    required = schema.get("required", [])
+    if not isinstance(required, list) or any(k not in props for k in required):
+        raise Input(f"tools/{tool}/tool.json: inputSchema.required must list keys of properties")
+    out = spec.get("outputSchema")
+    if out is not None and (not isinstance(out, dict) or not isinstance(out.get("properties"), dict)):
+        raise Input(f"tools/{tool}/tool.json: outputSchema must be an object schema with properties (omit it for a text tool)")
+    return spec  # type: ignore[return-value]
+
+
+def tool_line(tool: str, spec: dict[str, object]) -> str:
+    """SKILL.md 단계에 들어갈 호출 줄 하나 — 설명 첫 문장, 입력 키는 required 먼저, 결과 키(outputSchema 없으면 텍스트 도구)."""
+    schema: dict[str, object] = spec["inputSchema"]  # type: ignore[assignment]  # read_tool_spec이 모양을 보장
+    props: dict[str, object] = schema.get("properties", {})  # type: ignore[assignment]
+    required: list[str] = schema.get("required", [])  # type: ignore[assignment]
     keys = required + [k for k in props if k not in required]
     args = ", ".join(f'"{k}": …' for k in keys) or "…"
-    out = spec.get("outputSchema") if isinstance(spec.get("outputSchema"), dict) else {}
-    out_keys = list(out.get("properties", {})) if isinstance(out.get("properties"), dict) else []
-    desc = str(spec.get("description", "")).split(". ")[0].strip() or "TODO"
+    out = spec.get("outputSchema")
+    out_keys = list(out["properties"]) if isinstance(out, dict) else []  # type: ignore[arg-type]
+    desc = str(spec.get("description", "")).split(". ")[0].strip().rstrip(".") or "TODO"
     result = f" 결과: `{'`, `'.join(out_keys)}`" if out_keys else " 결과: 사람이 읽을 텍스트"
     return f"   - 도구 `{tool}`을 `{{{args}}}`로 부른다 — {desc}.{result}\n"
 
@@ -255,18 +270,32 @@ def tool_line(root: Path, tool: str) -> str:
 def scaffold_skill(root: Path, name: str, description: str, positive: str, negative: str, tools: list[str], created: list[str]) -> list[str]:
     neg = negative if negative.startswith("no-trigger-") else f"no-trigger-{negative}"
     d = root / "skills" / name
-    todo_tools: list[str] = []
+    # 1) 검증과 호출 줄을 전부 메모리에서 — 어느 하나라도 틀리면 아무것도 쓰지 않는다
+    missing: list[str] = []
+    lines: list[str] = []
     for tool in tools:
         if not NAME_RE.match(tool):
             raise Input(f"tools[] must match {NAME_RE.pattern}: {tool!r}")
-        if not (root / "tools" / tool / "tool.json").exists():
-            todo_tools += scaffold_tool(root, tool, f"TODO {name} 스킬이 부르는 결정적 연산 한 줄", "script", "main.py", None, None, created)
-    lines = "".join(tool_line(root, t) for t in tools)
-    put(d / "SKILL.md", SKILL_MD.format(name=name, description=description, tool_lines=lines), created, root)
+        if (root / "tools" / tool / "tool.json").exists():
+            spec = read_tool_spec(root, tool)
+        else:
+            missing.append(tool)
+            spec = json.loads(tool_json(tool, "TODO", {"kind": "script", "path": "scripts/main.py", "command": ["uv", "run", "--script", "scripts/main.py"]}))
+        lines.append(tool_line(tool, spec))
+    skill_md = d / "SKILL.md"
+    if skill_md.exists():  # 재실행: 있는 본문은 건드리지 않으므로, 본문이 모르는 도구를 새로 만들어 고아로 두지 않는다
+        body = skill_md.read_text(encoding="utf-8")
+        unlinked = [t for t in tools if f"도구 `{t}`" not in body]
+        if unlinked:
+            raise Input(f"skills/{name}/SKILL.md exists and does not call {', '.join(unlinked)} — add the call line by hand, then scaffold the tool with kind=tool")
+    # 2) 쓰기
+    put(skill_md, SKILL_MD.format(name=name, description=description, tool_lines="".join(lines)), created, root)
     case_files(d / "evals" / positive, name, "TODO 써야 하는 과제 한 줄", "TODO 스킬이 만들어야 하는 결과(파일·상태)가 있어야 1", "cd /work\n# TODO 끝 상태를 만든다", created, root)
     case_files(d / "evals" / neg, name, "TODO 쓰지 말아야 하는 과제 한 줄(비슷하지만 이 스킬이 아닌 상황)", "TODO 스킬이 발동했을 때 생길 흔적이 없어야 1", "exit 0  # 음성 케이스 — 아무것도 하지 않는 것이 정답", created, root)
     todo = [f"skills/{name}/SKILL.md: 본문 세 절(언제 쓰는가·단계·실패 대응)", f"skills/{name}/evals/{positive}·{neg}: instruction.md, tests/test_outputs.py의 단언, solution/solve.sh"]
-    return todo + todo_tools
+    for tool in missing:
+        todo += scaffold_tool(root, tool, f"TODO {name} 스킬이 부르는 결정적 연산 한 줄", "script", "main.py", None, None, created)
+    return todo
 
 
 def main() -> int:

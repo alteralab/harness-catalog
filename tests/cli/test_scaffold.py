@@ -77,6 +77,35 @@ def test_skill_composes_existing_tools_and_scaffolds_missing_ones(tmp_path: Path
     assert bad.returncode == 2 and "tools must be a list" in bad.stderr
 
 
+def test_skill_tools_preflight_writes_nothing_on_failure(tmp_path: Path) -> None:
+    """Codex 2026-10-18: 검증은 쓰기 전에 전부 — 뒤쪽 이름이 틀리거나 있는 tool.json이 깨져 있으면 앞쪽 도구도 생기지 않는다."""
+    bad_name = run(tmp_path, {"kind": "skill", "name": "s", "description": "x", "tools": ["valid-new", "Bad_Name"]})
+    assert bad_name.returncode == 2 and "Bad_Name" in bad_name.stderr and not (tmp_path / "tools").exists() and not (tmp_path / "skills").exists()
+    broken = tmp_path / "tools" / "broken"
+    broken.mkdir(parents=True)
+    for text, needle in (("{not json", "unreadable"),
+                         (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "object", "properties": {"a": {}}, "required": ["zzz"]}, "runtime": {}}), "required must list keys"),
+                         (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "array"}, "runtime": {}}), "inputSchema must be an object"),
+                         (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "object"}, "outputSchema": {"type": "string"}, "runtime": {}}), "outputSchema must be"),
+                         (json.dumps({"name": "other", "description": "d", "inputSchema": {"type": "object"}, "runtime": {}}), "name 'broken'")):
+        broken.joinpath("tool.json").write_text(text)
+        res = run(tmp_path, {"kind": "skill", "name": "s", "description": "x", "tools": ["valid-new", "broken"]})
+        assert res.returncode == 2 and needle in res.stderr, (text, res.stderr)
+        assert not (tmp_path / "tools" / "valid-new").exists() and not (tmp_path / "skills").exists()
+    broken.joinpath("tool.json").write_text(json.dumps({"name": "broken", "description": "Plain text tool.", "inputSchema": {"type": "object"}, "runtime": {}}))  # outputSchema 없음 = 텍스트 도구
+    ok = run(tmp_path, {"kind": "skill", "name": "s", "description": "x", "tools": ["broken"]})
+    assert ok.returncode == 0 and "도구 `broken`을 `{…}`로 부른다 — Plain text tool. 결과: 사람이 읽을 텍스트" in (tmp_path / "skills/s/SKILL.md").read_text()
+
+
+def test_skill_rerun_with_new_tool_is_refused_not_orphaned(tmp_path: Path) -> None:
+    """Codex 2026-10-18: 있는 SKILL.md는 건드리지 않으므로, 본문이 모르는 도구를 만들어 고아로 두지 않고 거부한다."""
+    assert run(tmp_path, {"kind": "skill", "name": "s", "description": "x", "tools": ["a-tool"]}).returncode == 0
+    res = run(tmp_path, {"kind": "skill", "name": "s", "description": "x", "tools": ["a-tool", "b-tool"]})
+    assert res.returncode == 2 and "does not call b-tool" in res.stderr and not (tmp_path / "tools" / "b-tool").exists()
+    same = run(tmp_path, {"kind": "skill", "name": "s", "description": "x", "tools": ["a-tool"]})
+    assert same.returncode == 0 and created(same) == []
+
+
 def test_script_tool_skeleton_is_valid_and_runs_abi(tmp_path: Path) -> None:
     first = run(tmp_path, {"kind": "tool", "name": "subs-fetch", "description": "Fetch subtitles. 자막.", "script": "fetch.py"})
     assert created(first) == ["tools/subs-fetch/tool.json", "tools/subs-fetch/scripts/fetch.py"]
