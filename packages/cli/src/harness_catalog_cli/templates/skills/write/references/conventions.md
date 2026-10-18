@@ -4,7 +4,7 @@
 
 ## 1. 결정과 판단의 분리 — 기본형은 세션·루프 공용
 
-- [ ] 결정적인 일(계산·변환·조회·파일 쓰기)은 **도구**(`tools/<name>/tool.json` + 스크립트)이고 스킬 본문은 그 도구를 **이름으로** 부른다("도구 `x`를 `{...}`로 부른다"). 판단(언제·무엇을·실패하면)만 본문에 적는다.
+- [ ] 스킬을 만들 때 먼저 절차를 결정적인 일과 판단으로 가른다. 결정적인 일(계산·변환·조회·파일 쓰기)은 **도구**(`tools/<name>/tool.json` + 스크립트)이고 — 이미 있으면 이름으로 엮고, 없으면 새로 만든다 — 스킬 본문은 그 도구를 **이름으로** 부른다("도구 `x`를 `{...}`로 부른다"). 판단(언제·무엇을·실패하면)만 본문에 적는다. 한 도구가 여러 스킬에 다른 조합으로 들어가는 것이 정상이다.
 - [ ] `skills/<name>/scripts/`는 두지 않는다. 예외는 세션에서만 뜻이 있는 보조(호출자가 이 스킬 하나뿐이고 열 줄 안, 사람이 읽을 보고서 찍기)이고, 그때는 SKILL.md에 왜 세션 전용인지 한 줄을 적는다. 그 스킬은 루프가 후보에서 뺀다(`has_scripts`).
 - [ ] 호출자가 이 스킬 하나뿐이고 열 줄 안에 끝나는 일은 스크립트가 아니라 본문의 지시다.
 - [ ] 참조 파일은 스킬 루트 기준 **상대 경로·마크다운 링크·한 단계 깊이**로 적는다(agentskills 스펙 File references). `@` 포함은 스펙 밖이라 쓰지 않는다.
@@ -43,7 +43,7 @@
 - [ ] `evals/<case>/`가 둘 이상: 써야 하는 과제 하나, 쓰지 말아야 하는 과제 하나(`no-trigger-*`).
 - [ ] 케이스마다 `task.toml`·`instruction.md`·`environment/Dockerfile`·`tests/test.sh`·`tests/test_outputs.py`·`solution/solve.sh`. 검증기의 인터페이스와 보고 형식은 Harbor 공식 뼈대(`harbor tasks init`)를 따른다 — bash 진입점 `tests/test.sh`가 `tests/test_outputs.py`를 pytest로 돌려 CTRF 보고(`/logs/verifier/ctrf.json`)와 함께 종료 코드로 `/logs/verifier/reward.txt`에 `1`/`0`을 쓴다. 검사 논리는 전부 pytest 단언에 둔다(셸 조건문 아님). 이미지는 공식 뼈대(`ubuntu:24.04` 두 줄)와 다르다: `python:3.12-slim` + git + uv(스킬 스크립트 규약) + pytest·pytest-json-ctrf 미리 설치 + `/skills` + `WORKDIR /work`. 미리 넣는 이유는 검증 중 PyPI 내려받기를 없애 검증 예산과 결정성을 지키는 것이다(Harbor PR #2596, Terminal-Bench `check-verifier-tooling-baked`) — `network_mode`는 기본 `public`이라 네트워크가 없어서가 아니다. uv는 PyPI에서 받는다(GHCR `COPY --from`은 self-hosted 러너에서 pull denied 실측). 검증기는 공유 모드(`[verifier] environment_mode = "shared"`)를 명시한다 — 에이전트 컨테이너의 끝 상태(`.agents/skills/`·`PINNED`·심볼릭 링크)를 직접 보기 위해서다; 분리 모드는 artifacts 선언과 `tests/Dockerfile`이 필요해 스킬 eval에는 비용이 크고, 대가(에이전트에 pytest 노출)는 무해하다. `solve.sh`는 검증기가 참으로 보는 끝 상태를 직접 만드는 Oracle용 스크립트다(Harbor 표준의 선택 디렉토리). 음성 케이스의 solve.sh는 `exit 0`이다.
 - [ ] 모델 없이 먼저 돈다: `harbor run -p skills/<name>/evals -a oracle -e docker` 로 전 케이스 reward 1(태스크가 풀리는 태스크인지, 검증기가 끝 상태를 받아들이는지). 2026-10-10 실측: 기본 스킬 둘의 넷이 각 1.0, 두 데이터셋 35초. Oracle은 잡 스킬(`--skill`)을 받지 않으므로(Harbor 0.24 `capabilities.skills`) solve.sh는 카탈로그의 도구에 기대지 않는 참조 해답이어야 한다.
-- [ ] 뼈대는 도구 `scaffold`(`tools/scaffold/`, 카탈로그 클론의 `.mcp.json`으로 MCP에 떠 있다)가 `{"kind": "skill", "name": …, "description": …, "positive": …, "negative": …, "tool": …}`로 만든다(멱등, 있는 파일은 건드리지 않음). task.toml(schema 1.4·`skills_dir`·타임아웃)·Dockerfile 머리·test.sh/solve.sh 골격의 문면은 그 도구가 소유한다 — 여기 다시 적지 않는다. 에이전트는 TODO 자리(description·instruction·검증 조건·solve 본문·절차)만 채운다.
+- [ ] 뼈대는 도구 `scaffold`(`tools/scaffold/`, 카탈로그 클론의 `.mcp.json`으로 MCP에 떠 있다)가 `{"kind": "skill", "name": …, "description": …, "positive": …, "negative": …, "tools": […]}`로 만든다(멱등, 있는 파일은 건드리지 않음; `tools`의 있는 이름은 tool.json을 읽어 본문에 호출 줄을 적고 없는 이름은 뼈대를 함께 만든다). task.toml(schema 1.4·`skills_dir`·타임아웃)·Dockerfile 머리·test.sh/solve.sh 골격의 문면은 그 도구가 소유한다 — 여기 다시 적지 않는다. 에이전트는 TODO 자리(description·instruction·검증 조건·solve 본문·절차)만 채운다.
 - [ ] 실행: `harbor run --path skills/<name>/evals --agent <하네스> --model <모델> --env docker --skill ./skills/<name> --plugin harbor_langfuse:LangfusePlugin`(스킬 있이)과 `--skill`을 뺀 같은 명령(없이) 두 잡. `--dataset`은 Harbor 레지스트리의 `name@version`용이라 로컬 경로에는 `--path`다. 둘 다 통과하면 스킬이 하는 일이 없는 것이고, 있이만 통과하면 값을 한 것이다.
 - [ ] 음성 케이스는 궤적(스킬 로드 여부)을 봐야 판정되므로 검증기가 없으면 사람이 눈으로 판정해 Langfuse annotation으로 남긴다.
 - [ ] 다시 돌리는 때 셋: 본문을 고쳤을 때, 주요 모델이 나왔을 때, 분기마다. 스킬 없이 2회 연속 전 케이스 통과면 폐기 심사 대상.

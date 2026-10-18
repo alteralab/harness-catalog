@@ -36,11 +36,11 @@ def test_shipped_tool_json_is_valid() -> None:
 
 
 def test_skill_with_tool_then_idempotent(tmp_path: Path) -> None:
-    first = run(tmp_path, {"kind": "skill", "name": "demo-skill", "description": "데모. '데모 돌려줘'.", "positive": "runs-demo", "negative": "explain", "tool": "demo-run"})
+    first = run(tmp_path, {"kind": "skill", "name": "demo-skill", "description": "데모. '데모 돌려줘'.", "positive": "runs-demo", "negative": "explain", "tools": ["demo-run"]})
     files = created(first)
     d = tmp_path / "skills" / "demo-skill"
     assert (d / "SKILL.md").read_text().startswith("---\nname: demo-skill\ndescription: 데모.")
-    assert "도구 `demo-run`" in (d / "SKILL.md").read_text() and not (d / "scripts").exists()  # 코드는 도구로, 스킬에 scripts/는 없다
+    assert "도구 `demo-run`을 `{\"TODO\": …}`로 부른다" in (d / "SKILL.md").read_text() and not (d / "scripts").exists()  # 코드는 도구로, 스킬에 scripts/는 없다
     assert "metadata" not in (d / "SKILL.md").read_text().split("---")[1]  # frontmatter는 name·description뿐
     for case in ("runs-demo", "no-trigger-explain"):  # 음성 이름에 no-trigger- 접두가 붙는다
         for f in ("task.toml", "instruction.md", "environment/Dockerfile", "tests/test.sh", "tests/test_outputs.py", "solution/solve.sh"):
@@ -50,8 +50,31 @@ def test_skill_with_tool_then_idempotent(tmp_path: Path) -> None:
     spec, errors = parse_tool((tmp_path / "tools/demo-run/tool.json").read_bytes())
     assert errors == [] and spec is not None and spec.runtime.kind == "script" and (tmp_path / "tools/demo-run/scripts/main.py").exists()
     assert len(files) == 13 + 2
-    second = run(tmp_path, {"kind": "skill", "name": "demo-skill", "description": "x", "positive": "runs-demo", "negative": "explain", "tool": "demo-run"})
+    second = run(tmp_path, {"kind": "skill", "name": "demo-skill", "description": "x", "positive": "runs-demo", "negative": "explain", "tools": ["demo-run"]})
     assert created(second) == [] and (d / "SKILL.md").read_text().startswith("---\nname: demo-skill\ndescription: 데모.")  # 있는 파일은 건드리지 않는다
+
+
+def test_skill_composes_existing_tools_and_scaffolds_missing_ones(tmp_path: Path) -> None:
+    """있는 도구는 tool.json을 읽어 호출 줄을 적고(건드리지 않음), 없는 도구는 뼈대를 함께 만든다 — 두 방향이 한 인자(2026-10-18)."""
+    existing = tmp_path / "tools" / "changelog-diff"
+    existing.mkdir(parents=True)
+    existing.joinpath("tool.json").write_text(json.dumps({
+        "name": "changelog-diff", "description": "Group commits between two tags by kind. Not for a single commit.",
+        "inputSchema": {"type": "object", "properties": {"to": {"type": "string"}, "from": {"type": "string"}, "limit": {"type": "integer"}}, "required": ["from", "to"]},
+        "outputSchema": {"type": "object", "properties": {"groups": {"type": "object"}, "count": {"type": "integer"}}},
+        "runtime": {"kind": "script", "path": "scripts/diff.py", "command": ["uv", "run", "--script", "scripts/diff.py"]}}))
+    before = existing.joinpath("tool.json").read_text()
+    res = run(tmp_path, {"kind": "skill", "name": "release-notes", "description": "릴리스 노트.", "tools": ["changelog-diff", "git-tags"]})
+    files = created(res)
+    assert "tools/git-tags/tool.json" in files and "tools/git-tags/scripts/main.py" in files and not any(f.startswith("tools/changelog-diff/") for f in files)
+    assert existing.joinpath("tool.json").read_text() == before
+    body = (tmp_path / "skills/release-notes/SKILL.md").read_text()
+    assert '   - 도구 `changelog-diff`을 `{"from": …, "to": …, "limit": …}`로 부른다 — Group commits between two tags by kind. 결과: `groups`, `count`' in body  # required 먼저, 설명 첫 문장, 결과 키
+    assert '   - 도구 `git-tags`을 `{"TODO": …}`로 부른다 — TODO' in body
+    assert body.index("`changelog-diff`") < body.index("`git-tags`") < body.index("2. TODO 사람 승인")
+    assert any("tools/git-tags/tool.json" in t for t in json.loads(res.stdout)["todo"]) and not any("changelog-diff" in t for t in json.loads(res.stdout)["todo"])
+    bad = run(tmp_path, {"kind": "skill", "name": "x", "description": "x", "tools": "changelog-diff"})
+    assert bad.returncode == 2 and "tools must be a list" in bad.stderr
 
 
 def test_script_tool_skeleton_is_valid_and_runs_abi(tmp_path: Path) -> None:

@@ -7,7 +7,8 @@
 실행 ABI(tool-contract): stdin으로 tool.json의 inputSchema에 맞는 JSON 객체 하나, stdout으로 outputSchema의 JSON 객체 하나({"created": [...], "todo": [...]}), 종료 0.
 입력이 틀리면 종료 2와 stderr 사유. 있는 파일은 건드리지 않는다(멱등). 판단은 여기 없다 — 내용(설명·과제 문장·검증 조건·절차·inputSchema 필드)은 에이전트가 TODO 자리에 쓴다.
 
-kind=skill: skills/<name>/SKILL.md + evals 양성·음성 한 쌍(Harbor 태스크 여섯 파일씩). `tool`을 주면 tools/<tool>/(script 런타임)도 함께 만들고 SKILL.md가 그 이름을 참조한다 —
+kind=skill: skills/<name>/SKILL.md + evals 양성·음성 한 쌍(Harbor 태스크 여섯 파일씩). `tools`(이름 목록)는 스킬이 이름으로 엮는 결정적 부분이다 — 이미 tools/<x>/가 있으면
+  그 tool.json(description·inputSchema·outputSchema)을 읽어 SKILL.md 단계에 호출 줄을 적고, 없으면 tools/<x>/(script 런타임)를 함께 만든다. 두 방향(있는 도구를 엮기, 새 도구 만들기)이 한 인자다.
   기본형은 세션·루프 공용 스킬이라 코드는 처음부터 도구다. skills/<name>/scripts/는 만들지 않는다(세션 전용 예외는 저자가 손으로, 이유 한 줄과 함께).
 kind=tool: tools/<name>/tool.json + runtime=script면 scripts/<script>(ABI 골격), runtime=mcp면 없을 때 mcp-servers/<server>/server.json 골격.
 검증기의 인터페이스와 보고 형식은 `harbor tasks init`의 공식 뼈대를 따른다 — tests/test.sh가 pytest로 tests/test_outputs.py를 돌려 CTRF 보고와 reward 0/1을 쓴다.
@@ -44,8 +45,8 @@ TODO 한 문단: 무엇을 하는가, 결과는 어디에 남는가.
 
 ## 단계
 
-1. TODO 판단은 여기 문장으로. 결정적인 일은 도구를 이름으로 부른다{tool_hint}.
-2. TODO 사람 승인 전까지는 되돌릴 수 있는 일만 한다 — 그 줄에 오면 루프는 멈춘다(needs_human).
+1. TODO 판단은 여기 문장으로. 결정적인 일은 도구를 이름으로 부른다.
+{tool_lines}2. TODO 사람 승인 전까지는 되돌릴 수 있는 일만 한다 — 그 줄에 오면 루프는 멈춘다(needs_human).
 
 ## 실패 대응
 
@@ -230,19 +231,42 @@ def scaffold_tool(root: Path, name: str, description: str, runtime: str, script:
     return [f"tools/{name}/tool.json: inputSchema·outputSchema를 그 서버의 도구 정의와 맞춘다", f"mcp-servers/{server}/server.json: version과 packages 또는 remotes(시크릿 값은 적지 않는다)"]
 
 
-def scaffold_skill(root: Path, name: str, description: str, positive: str, negative: str, tool: str | None, created: list[str]) -> list[str]:
+def tool_line(root: Path, tool: str) -> str:
+    """SKILL.md 단계에 들어갈 호출 줄 하나 — tools/<tool>/tool.json에서 읽는다(설명 첫 문장, 입력 키는 required 먼저, 결과 키)."""
+    path = root / "tools" / tool / "tool.json"
+    try:
+        spec = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        raise Input(f"tools/{tool}/tool.json unreadable: {e}") from e
+    if not isinstance(spec, dict):
+        raise Input(f"tools/{tool}/tool.json is not an object")
+    schema = spec.get("inputSchema") if isinstance(spec.get("inputSchema"), dict) else {}
+    props = schema.get("properties") if isinstance(schema.get("properties"), dict) else {}
+    required = [k for k in schema.get("required", []) if k in props] if isinstance(schema.get("required"), list) else []
+    keys = required + [k for k in props if k not in required]
+    args = ", ".join(f'"{k}": …' for k in keys) or "…"
+    out = spec.get("outputSchema") if isinstance(spec.get("outputSchema"), dict) else {}
+    out_keys = list(out.get("properties", {})) if isinstance(out.get("properties"), dict) else []
+    desc = str(spec.get("description", "")).split(". ")[0].strip() or "TODO"
+    result = f" 결과: `{'`, `'.join(out_keys)}`" if out_keys else " 결과: 사람이 읽을 텍스트"
+    return f"   - 도구 `{tool}`을 `{{{args}}}`로 부른다 — {desc}.{result}\n"
+
+
+def scaffold_skill(root: Path, name: str, description: str, positive: str, negative: str, tools: list[str], created: list[str]) -> list[str]:
     neg = negative if negative.startswith("no-trigger-") else f"no-trigger-{negative}"
     d = root / "skills" / name
-    hint = f" — 예: 도구 `{tool}`을 `{{...}}`로 부른다" if tool else ""
-    put(d / "SKILL.md", SKILL_MD.format(name=name, description=description, tool_hint=hint), created, root)
+    todo_tools: list[str] = []
+    for tool in tools:
+        if not NAME_RE.match(tool):
+            raise Input(f"tools[] must match {NAME_RE.pattern}: {tool!r}")
+        if not (root / "tools" / tool / "tool.json").exists():
+            todo_tools += scaffold_tool(root, tool, f"TODO {name} 스킬이 부르는 결정적 연산 한 줄", "script", "main.py", None, None, created)
+    lines = "".join(tool_line(root, t) for t in tools)
+    put(d / "SKILL.md", SKILL_MD.format(name=name, description=description, tool_lines=lines), created, root)
     case_files(d / "evals" / positive, name, "TODO 써야 하는 과제 한 줄", "TODO 스킬이 만들어야 하는 결과(파일·상태)가 있어야 1", "cd /work\n# TODO 끝 상태를 만든다", created, root)
     case_files(d / "evals" / neg, name, "TODO 쓰지 말아야 하는 과제 한 줄(비슷하지만 이 스킬이 아닌 상황)", "TODO 스킬이 발동했을 때 생길 흔적이 없어야 1", "exit 0  # 음성 케이스 — 아무것도 하지 않는 것이 정답", created, root)
     todo = [f"skills/{name}/SKILL.md: 본문 세 절(언제 쓰는가·단계·실패 대응)", f"skills/{name}/evals/{positive}·{neg}: instruction.md, tests/test_outputs.py의 단언, solution/solve.sh"]
-    if tool:
-        if not NAME_RE.match(tool):
-            raise Input(f"tool must match {NAME_RE.pattern}: {tool!r}")
-        todo += scaffold_tool(root, tool, f"TODO {name} 스킬이 부르는 결정적 연산 한 줄", "script", "main.py", None, None, created)
-    return todo
+    return todo + todo_tools
 
 
 def main() -> int:
@@ -266,8 +290,10 @@ def main() -> int:
         root = Path(str(args.get("root", ".")))
         created: list[str] = []
         if kind == "skill":
-            tool = args.get("tool")
-            todo = scaffold_skill(root, name, description, str(args.get("positive", "basic")), str(args.get("negative", "basic")), str(tool) if tool else None, created)
+            tools = args.get("tools", [])
+            if not isinstance(tools, list) or not all(isinstance(t, str) for t in tools):
+                raise Input("tools must be a list of tool names")
+            todo = scaffold_skill(root, name, description, str(args.get("positive", "basic")), str(args.get("negative", "basic")), list(dict.fromkeys(tools)), created)
         else:
             server, mcp_tool = args.get("server"), args.get("mcp_tool")
             todo = scaffold_tool(root, name, description, str(args.get("runtime", "script")), str(args.get("script", "main.py")), str(server) if server else None, str(mcp_tool) if mcp_tool else None, created)

@@ -23,7 +23,7 @@
 │   ├── pin/                         # 기본 스킬: 스킬·도구를 내 하네스 옆에 내려받는 절차(판단은 산문, 받기는 hc pin)
 │   │   ├── SKILL.md
 │   │   └── evals/<case>/            # Harbor 태스크: task.toml · instruction.md · environment/Dockerfile · tests/ · solution/
-│   └── write/                       # 기본 스킬: 새 스킬·도구의 뼈대와 팀 규약("코드가 필요한가"부터)
+│   └── write/                       # 기본 스킬: 새 스킬·도구의 뼈대와 팀 규약(판단과 결정적 부분을 가르기부터)
 │       ├── SKILL.md
 │       ├── references/conventions.md    # 스킬 규약 점검표
 │       ├── references/tool-contract.md  # 도구 계약 점검표(결과 ABI)
@@ -73,7 +73,7 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 ## 만드는 사람: 올리기
 
 1. `main`을 최신으로 하고 브랜치를 땁니다. `main`에 직접 push하지 않고 강제 push도 하지 않습니다(브랜치 보호는 걸려 있지 않습니다 — 규율입니다).
-2. 스킬이든 도구든 **`write` 스킬**을 따릅니다. 첫 질문은 "코드가 필요한가"입니다. 결정적 연산은 처음부터 도구(`tools/<name>/`)로 만들고 스킬은 그 이름을 참조합니다 — 세션과 루프가 같은 스킬을 쓰는 기본형입니다. 뼈대는 도구 `scaffold`가 만듭니다(이 저장소의 `.mcp.json`이 `hc toolbox ./tools`를 등록해 두어 하네스에서 MCP 도구로 뜹니다). 규약은 `skills/write/references/conventions.md`(스킬)와 `tool-contract.md`(도구). 손으로 쓸 때의 요지 — `tool.json`의 `name`은 디렉토리명, `inputSchema`는 `type: object`, `runtime`은 둘 중 하나:
+2. 스킬이든 도구든 **`write` 스킬**을 따릅니다. 첫 단계는 절차를 판단과 결정적 부분으로 가르는 것입니다. 판단은 스킬 본문이고, 결정적 부분은 도구(`tools/<name>/`)입니다 — 이미 있으면 이름으로 엮고 없으면 새로 만듭니다. 세션과 루프가 같은 스킬을 쓰는 기본형입니다. 뼈대는 도구 `scaffold`가 만듭니다(이 저장소의 `.mcp.json`이 `hc toolbox ./tools`를 등록해 두어 하네스에서 MCP 도구로 뜹니다). 규약은 `skills/write/references/conventions.md`(스킬)와 `tool-contract.md`(도구). 손으로 쓸 때의 요지 — `tool.json`의 `name`은 디렉토리명, `inputSchema`는 `type: object`, `runtime`은 둘 중 하나:
    - `{"kind": "script", "path": "scripts/x.py", "command": ["uv", "run", "--script", "scripts/x.py"]}` — `command`는 argv 배열이고 `path`는 그 원소 정확히 하나, 디렉토리 안의 일반 파일. 의존성은 스크립트 안에만.
    - `{"kind": "mcp", "server": "<mcp-servers의 이름>", "tool": "<그 서버가 내는 도구 이름>"}` — 서버 레코드가 먼저 있어야 합니다.
    `mcp-servers/<name>/server.json`은 MCP Registry 형식(`name`·`version`·`packages` 또는 `remotes`)이고, 시크릿 값은 적지 않습니다(`isSecret: true` 항목에 `value`·`default` 금지).
