@@ -254,6 +254,10 @@ CREATE FUNCTION metadata_values(m jsonb) RETURNS text
   $$ SELECT string_agg(v, ' ' ORDER BY k) FROM jsonb_each_text(m) AS t(k, v) $$;
 
 ALTER TABLE skill_index
+  ADD COLUMN replaced_by varchar(64)
+    GENERATED ALWAYS AS (metadata->>'replaced-by') STORED,
+  ADD COLUMN requires_tools text[]
+    GENERATED ALWAYS AS (string_to_array(nullif(metadata->>'requires-tools', ''), ' ')) STORED,
   ADD COLUMN search_text text
     GENERATED ALWAYS AS (name || ' ' || description || ' ' || coalesce(metadata_values(metadata), '')) STORED,
   ADD COLUMN search tsvector
@@ -261,6 +265,7 @@ ALTER TABLE skill_index
 
 CREATE INDEX skill_index_search ON skill_index USING gin (search);
 CREATE INDEX skill_index_trgm   ON skill_index USING gin (search_text gin_trgm_ops);
+CREATE INDEX skill_index_tools  ON skill_index USING gin (requires_tools);
 
 -- toolbox(§11 2026-10-11): 마이그레이션 0002. 생성 열·인덱스는 skill_index와 같은 식이다.
 CREATE TABLE tool_index (
@@ -274,12 +279,21 @@ CREATE TABLE tool_index (
   indexed_at    timestamptz  NOT NULL
 );
 ALTER TABLE tool_index
+  ADD COLUMN replaced_by varchar(64)
+    GENERATED ALWAYS AS (metadata->>'replaced-by') STORED,
+  ADD COLUMN requires_tools text[]
+    GENERATED ALWAYS AS (string_to_array(nullif(metadata->>'requires-tools', ''), ' ')) STORED,
   ADD COLUMN search_text text
     GENERATED ALWAYS AS (name || ' ' || description || ' ' || coalesce(metadata_values(metadata), '')) STORED,
   ADD COLUMN search tsvector
     GENERATED ALWAYS AS (to_tsvector('simple', name || ' ' || description || ' ' || coalesce(metadata_values(metadata), ''))) STORED;
 CREATE INDEX tool_index_search ON tool_index USING gin (search);
 CREATE INDEX tool_index_trgm   ON tool_index USING gin (search_text gin_trgm_ops);
+
+-- 0003(§11 2026-10-18): replaced-by·requires-tools를 계약에서 뺐다 — 두 생성 열과 그 인덱스를 두 표에서 지운다. 위 0001·0002 문장은 이력 그대로이고 현행 표는 이 셋을 적용한 모양이다
+DROP INDEX IF EXISTS skill_index_tools;
+ALTER TABLE skill_index DROP COLUMN IF EXISTS replaced_by, DROP COLUMN IF EXISTS requires_tools;
+ALTER TABLE tool_index DROP COLUMN IF EXISTS replaced_by, DROP COLUMN IF EXISTS requires_tools;
 
 
 
