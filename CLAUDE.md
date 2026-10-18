@@ -6,6 +6,7 @@
 - 세션 시작에 `openwiki: 마지막 갱신 이후 커밋 N개`가 뜨면 그 사이 바뀐 파일은 위키 대신 소스를 본다.
 - 설계 결정의 정본은 DESIGN.md와 `plans/*.md`의 원장이다. 계약을 바꾸는 변경은 DESIGN §11 행이 먼저다.
 - 개발 절차는 docs/development.md, 명령은 `make help`.
+- **Harbor는 둘이다.** `harbor run`·`harbor_langfuse`·evals 러너는 Terminal-Bench 쪽 **Harbor(evals 프레임워크)**, 이미지 push/pull·`ds923plus.tail2f9fe3.ts.net:9443`·portainer `stacks/harbor`는 **goharbor(NAS 이미지 레지스트리)**다. 문서와 대화에서 레지스트리는 "NAS Harbor"라고 부른다. 둘은 아무 관계가 없다.
 
 <!-- OPENWIKI:START -->
 
