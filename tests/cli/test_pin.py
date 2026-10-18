@@ -193,3 +193,27 @@ def test_concurrent_pin_of_same_name_is_refused(served: tuple[str, dict[str, byt
             pin.install(rec, pin.download(rec), scope="project", project_root=tmp_path)
     pin.install(rec, pin.download(rec), scope="project", project_root=tmp_path)  # 잠금이 풀리면 된다
     assert (root / "alpha" / "PINNED").exists()
+
+
+
+def test_link_replacement_is_atomic_and_keeps_old_link_on_failure(served: tuple[str, dict[str, bytes]], tmp_path: Path) -> None:
+    """Codex 2026-10-18 2차 medium: 기존 .claude 링크는 새 링크가 준비된 뒤 원자적으로 바뀐다. 새 링크를 못 만들면 옛 링크가 그대로다."""
+    import os
+    import stat
+
+    base, store = served
+    rec = pin.parse_response(response(base, store))
+    pin.install(rec, pin.download(rec), scope="project", project_root=tmp_path)
+    link = tmp_path / ".claude" / "skills" / "alpha"
+    before = os.readlink(link)
+    claude = link.parent
+    claude.chmod(stat.S_IRUSR | stat.S_IXUSR)  # 쓰기 금지 → 임시 링크 생성 실패
+    try:
+        rec2 = pin.parse_response(response(base, store, sha="b" * 40))
+        with pytest.raises(OSError):
+            pin.install(rec2, pin.download(rec2), scope="project", project_root=tmp_path, force=True)
+    finally:
+        claude.chmod(stat.S_IRWXU)
+    assert link.is_symlink() and os.readlink(link) == before  # 옛 링크 보존
+    assert (tmp_path / ".agents" / "skills" / "alpha" / "PINNED").read_text().split()[1] == "a" * 40  # 옛 사본도 돌아왔다
+    assert not any(p.name.startswith(".alpha.pin-link") for p in claude.iterdir())

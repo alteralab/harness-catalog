@@ -11,6 +11,7 @@ import hashlib
 import json
 import logging
 import os
+import signal
 import subprocess
 import sys
 import threading
@@ -104,8 +105,34 @@ def _drain(stream: Any, sink: list[bytes], limit: int, overflow: list[bool]) -> 
             overflow[0] = True
 
 
+def _wait_bounded(proc: subprocess.Popen[bytes], overflow: list[bool], deadline: float) -> bool:
+    """끝나거나, 출력이 넘치거나, 시간이 다할 때까지 기다린다. 뒤의 둘이면 그룹째 끝낸다. 시간 초과였는지 돌려준다."""
+    timed_out = False
+    while proc.poll() is None:
+        if overflow[0] or time.monotonic() > deadline:
+            timed_out = time.monotonic() > deadline and not overflow[0]
+            _kill_group(proc)
+            break
+        time.sleep(0.02)
+    proc.wait()
+    return timed_out
+
+
+def _reclaim(proc: subprocess.Popen[bytes], readers: list[threading.Thread]) -> None:
+    """reader 스레드를 회수한다. 파이프를 물고 있는 손자가 남았으면 그룹을 다시 끝내고 파이프를 닫는다."""
+    for t in readers:
+        t.join(timeout=5)
+    if any(t.is_alive() for t in readers):
+        _kill_group(proc)
+        for stream in (proc.stdout, proc.stderr):
+            if stream is not None:
+                stream.close()
+        for t in readers:
+            t.join(timeout=5)
+
+
 def run_tool(tool: LoadedTool, arguments: Mapping[str, Any], *, timeout: float = DEFAULT_TIMEOUT) -> Outcome:
-    """argv를 셸 없이 실행한다. 입력은 stdin의 JSON 객체 하나. stdout·stderr는 돌면서 상한까지만 모으고, 넘치면 프로세스를 끝낸다. 해시가 바뀐 실행물은 돌리지 않는다."""
+    """argv를 셸 없이 실행한다. 입력은 stdin의 JSON 객체 하나. stdout·stderr는 돌면서 상한까지만 모으고, 넘치면 프로세스 그룹째 끝낸다. 해시가 바뀐 실행물은 돌리지 않는다."""
     entry = tool.directory / tool.runtime.path
     if not entry.is_file() or _sha256(entry) != tool.entry_sha256:
         return Outcome(126, "", f"{tool.runtime.path}: changed since the toolbox started (hash pinned) — restart the toolbox", False, 0.0)
@@ -113,13 +140,14 @@ def run_tool(tool: LoadedTool, arguments: Mapping[str, Any], *, timeout: float =
     try:
         proc = subprocess.Popen(  # noqa: S603 — argv 배열, shell=False; command는 검사 11이 본 tool.json의 것
             list(tool.runtime.command), cwd=tool.directory, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=_env(),
+            start_new_session=True,  # 프로세스 그룹 하나 — 초과·시간 초과 때 자식까지 전부 끝낸다(Codex 2026-10-18 2차)
         )
     except FileNotFoundError as e:
         return Outcome(127, "", f"{tool.runtime.command[0]}: not found ({e})", False, time.monotonic() - started)
     out_parts: list[bytes] = []
     err_parts: list[bytes] = []
     overflow = [False]
-    assert proc.stdout is not None and proc.stderr is not None and proc.stdin is not None
+    assert proc.stdin is not None
     readers = [threading.Thread(target=_drain, args=(proc.stdout, out_parts, MAX_OUTPUT_BYTES, overflow), daemon=True),
                threading.Thread(target=_drain, args=(proc.stderr, err_parts, MAX_OUTPUT_BYTES, overflow), daemon=True)]
     for t in readers:
@@ -129,17 +157,8 @@ def run_tool(tool: LoadedTool, arguments: Mapping[str, Any], *, timeout: float =
         proc.stdin.close()
     except OSError:
         pass  # 입력을 안 읽고 끝난 프로세스
-    timed_out = False
-    deadline = started + timeout
-    while proc.poll() is None:
-        if overflow[0] or time.monotonic() > deadline:
-            timed_out = time.monotonic() > deadline and not overflow[0]
-            proc.kill()
-            break
-        time.sleep(0.02)
-    proc.wait()
-    for t in readers:
-        t.join(timeout=5)
+    timed_out = _wait_bounded(proc, overflow, started + timeout)
+    _reclaim(proc, readers)
     out = b"".join(out_parts).decode("utf-8", errors="replace")
     err = b"".join(err_parts).decode("utf-8", errors="replace")
     seconds = time.monotonic() - started
@@ -148,6 +167,16 @@ def run_tool(tool: LoadedTool, arguments: Mapping[str, Any], *, timeout: float =
     if overflow[0]:
         return Outcome(proc.returncode if proc.returncode not in (None, 0) else 1, out, err + f"\n[toolbox] output exceeded {MAX_OUTPUT_BYTES} bytes; process killed", True, seconds)
     return Outcome(proc.returncode, out, err, False, seconds)
+
+
+def _kill_group(proc: subprocess.Popen[bytes]) -> None:
+    """프로세스 그룹 전체(start_new_session=True로 띄운 것)에 SIGKILL. 이미 끝났으면 조용히."""
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    except PermissionError:
+        proc.kill()
 
 
 def _text(s: str) -> list[types.ContentBlock]:

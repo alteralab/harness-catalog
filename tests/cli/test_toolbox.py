@@ -101,6 +101,35 @@ def test_output_flood_is_killed_at_the_cap(tmp_path: Path) -> None:
     assert res.is_error
 
 
+def test_grandchild_holding_the_pipe_is_killed_with_the_group(tmp_path: Path) -> None:
+    """Codex 2026-10-18 2차 high: 도구가 띄운 자식이 파이프를 물고 있어도 그룹째 끝나고 reader가 회수된다."""
+    import os
+    import time
+
+    d = tmp_path / "spawner"
+    (d / "scripts").mkdir(parents=True)
+    (d / "scripts" / "run.py").write_text(
+        "import subprocess, sys, time\n"
+        "child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'])\n"  # stdout/stderr 파이프를 상속한 손자
+        "print(child.pid, file=sys.stderr, flush=True)\n"
+        "time.sleep(60)\n"
+    )
+    (d / "tool.json").write_text(json.dumps({"name": "spawner", "description": "d", "inputSchema": {"type": "object"}, "runtime": {"kind": "script", "path": "scripts/run.py", "command": [sys.executable, "scripts/run.py"]}}))
+    tools, _ = toolbox.load_tools(tmp_path)
+    started = time.monotonic()
+    outcome = toolbox.run_tool(tools["spawner"], {}, timeout=1.0)
+    assert outcome.exit_code is None and time.monotonic() - started < 15  # 시간 초과로 끝났고 reader에 묶이지 않았다
+    child_pid = int(outcome.stderr.split()[0])
+    for _ in range(50):
+        try:
+            os.kill(child_pid, 0)
+        except ProcessLookupError:
+            break
+        time.sleep(0.1)
+    else:
+        pytest.fail("grandchild survived the group kill")
+
+
 @pytest.mark.anyio
 async def test_stdio_end_to_end(tmp_path: Path) -> None:
     """`hc toolbox <dir>`를 실제 프로세스로 띄워 MCP 클라이언트로 tools/list·tools/call. 세션·루프가 보는 모양 그대로."""

@@ -196,17 +196,24 @@ def install(record: Record, tar_bytes: bytes, *, scope: Scope, project_root: Pat
 
 
 def link_claude(scope: Scope, project_root: Path, name: str) -> Path | None:
-    """`.claude/skills/<name>` → `.agents/skills/<name>` 상대 링크. 그 자리에 실제 디렉토리가 있으면 건드리지 않는다(None)."""
+    """`.claude/skills/<name>` → `.agents/skills/<name>` 상대 링크를 **원자적으로** 둔다: 임시 링크를 만든 뒤 제자리로 바꾼다(실패하면 기존 링크는 그대로 — Codex 2026-10-18 2차).
+    그 자리에 실제 디렉토리가 있으면 건드리지 않는다(None)."""
     base = project_root if scope == "project" else Path.home()
     claude = base / ".claude" / "skills"
     claude.mkdir(parents=True, exist_ok=True)
     link = claude / name
-    if link.is_symlink():
-        link.unlink()
-    elif link.exists():
+    if link.exists() and not link.is_symlink():
         return None
     rel = os.path.relpath(base / ".agents" / "skills" / name, start=claude)
-    link.symlink_to(rel, target_is_directory=True)
+    staged = claude / f".{name}.pin-link-{os.getpid()}"
+    if staged.is_symlink():
+        staged.unlink()
+    staged.symlink_to(rel, target_is_directory=True)
+    try:
+        os.replace(staged, link)  # 심볼릭 링크끼리의 교체는 원자적이다
+    except OSError:
+        staged.unlink(missing_ok=True)
+        raise
     return link
 
 
