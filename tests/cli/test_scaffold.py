@@ -84,7 +84,7 @@ def test_skill_tools_preflight_writes_nothing_on_failure(tmp_path: Path) -> None
     broken = tmp_path / "tools" / "broken"
     broken.mkdir(parents=True)
     for text, needle in (("{not json", "unreadable"),
-                         (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "object", "properties": {"a": {}}, "required": ["zzz"]}, "runtime": {}}), "required must list keys"),
+                         (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "object", "properties": {"a": {}}, "required": ["zzz"]}, "runtime": {}}), "inputSchema.required must list keys"),
                          (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "array"}, "runtime": {}}), "inputSchema must be an object"),
                          (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "object"}, "outputSchema": {"type": "string"}, "runtime": {}}), "outputSchema must be"),
                          (json.dumps({"name": "broken", "description": "d", "inputSchema": {"type": "object"}, "outputSchema": {"type": "string", "properties": {}}, "runtime": {}}), "outputSchema must be"),
@@ -188,3 +188,20 @@ def test_write_failure_rolls_back_this_calls_files_only(tmp_path: Path) -> None:
     assert res.returncode == 1 and "rolled back" in res.stderr
     assert not (tmp_path / "skills" / "s").exists() and (tmp_path / "skills" / "keep.txt").read_text() == "untouched"
     assert (tmp_path / "tools" / "new-x").read_text() == "not a directory"
+
+
+def test_put_is_exclusive_create_so_a_racing_file_is_neither_overwritten_nor_rolled_back(tmp_path: Path) -> None:
+    """Codex 2026-10-18 3차: exists()→write_text()의 경쟁 대신 O_EXCL — 이미 있는(또는 그 사이 생긴) 파일은 내용이 지켜지고 created에 들지 않는다."""
+    ns: dict[str, object] = {"__name__": "scaffold_put"}
+    exec(compile(SCAFFOLD.read_text(), str(SCAFFOLD), "exec"), ns)  # noqa: S102 — 저장소 안의 고정 파일, 입력 없음
+    put = ns["put"]
+    assert callable(put)
+    target = tmp_path / "skills" / "s" / "SKILL.md"
+    target.parent.mkdir(parents=True)
+    target.write_text("theirs")
+    created: list[str] = []
+    put(target, "ours", created, tmp_path)
+    assert target.read_text() == "theirs" and created == []
+    fresh = tmp_path / "tools" / "t" / "tool.json"
+    put(fresh, "new", created, tmp_path)
+    assert fresh.read_text() == "new" and created == ["tools/t/tool.json"]

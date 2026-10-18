@@ -21,6 +21,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import NamedTuple, cast
 
 # ast-grep-ignore: regex-on-structure — 어휘: 카탈로그 name 문법은 문자집합과 길이만 보는 정규 언어다(중첩 구조 아님)
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
@@ -159,11 +160,13 @@ class Input(Exception):
 
 
 def put(path: Path, text: str, created: list[str], root: Path) -> None:
-    """없는 파일만 쓴다."""
-    if path.exists():
-        return
+    """없는 파일만 쓴다 — 배타적 생성(O_EXCL)이라 검사와 쓰기 사이에 남이 만든 파일도 덮어쓰지 않고, created에는 실제로 만든 것만 남는다(롤백이 그것만 지운다)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
+    try:
+        with path.open("x", encoding="utf-8") as f:
+            f.write(text)
+    except FileExistsError:
+        return
     created.append(path.relative_to(root).as_posix())
 
 
@@ -233,38 +236,57 @@ def scaffold_tool(root: Path, name: str, description: str, runtime: str, script:
     return [f"tools/{name}/tool.json: inputSchema·outputSchema를 그 서버의 도구 정의와 맞춘다", f"mcp-servers/{server}/server.json: version과 packages 또는 remotes(시크릿 값은 적지 않는다)"]
 
 
-def read_tool_spec(root: Path, tool: str) -> dict[str, object]:
+class ToolShape(NamedTuple):
+    """호출 줄에 필요한 만큼의 tool.json 모양 — read_tool_spec이 검증해 만든다."""
+
+    description: str
+    input_keys: list[str]  # required 먼저
+    output_keys: list[str] | None  # None = outputSchema 없음(텍스트 도구)
+
+
+def _object_schema(value: object, what: str) -> tuple[dict[str, object], list[str]]:
+    """`{"type": "object", "properties": {...}, "required": [...]}` 모양인지 보고 (properties, required)를 돌려준다."""
+    if not isinstance(value, dict):
+        raise Input(f"{what} must be an object schema with properties")
+    schema = cast(dict[str, object], value)
+    props_raw, required_raw = schema.get("properties", {}), schema.get("required", [])
+    if schema.get("type") != "object" or not isinstance(props_raw, dict) or not isinstance(required_raw, list):
+        raise Input(f"{what} must be an object schema with properties")
+    props = cast(dict[str, object], props_raw)
+    required = [str(k) for k in cast(list[object], required_raw)]
+    if any(k not in props for k in required):
+        raise Input(f"{what}.required must list keys of properties")
+    return props, required
+
+
+def read_tool_spec(root: Path, tool: str) -> ToolShape:
     """tools/<tool>/tool.json을 읽어 호출 줄에 필요한 모양만 검증한다(전체 계약은 hc check 항목 11). 틀리면 Input — 쓰기 전에."""
     path = root / "tools" / tool / "tool.json"
     try:
-        spec: object = json.loads(path.read_text(encoding="utf-8"))
+        raw: object = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
         raise Input(f"tools/{tool}/tool.json unreadable: {e}") from e
-    if not isinstance(spec, dict) or spec.get("name") != tool:
+    if not isinstance(raw, dict):
         raise Input(f"tools/{tool}/tool.json: not an object with name {tool!r}")
-    schema = spec.get("inputSchema")
-    if not isinstance(schema, dict) or schema.get("type") != "object" or not isinstance(schema.get("properties", {}), dict):
-        raise Input(f"tools/{tool}/tool.json: inputSchema must be an object schema with properties")
-    props = schema.get("properties", {})
-    required = schema.get("required", [])
-    if not isinstance(required, list) or any(k not in props for k in required):
-        raise Input(f"tools/{tool}/tool.json: inputSchema.required must list keys of properties")
+    spec = cast(dict[str, object], raw)
+    if spec.get("name") != tool:
+        raise Input(f"tools/{tool}/tool.json: not an object with name {tool!r}")
+    props, required = _object_schema(spec.get("inputSchema"), f"tools/{tool}/tool.json: inputSchema")
     out = spec.get("outputSchema")
-    if out is not None and (not isinstance(out, dict) or out.get("type") != "object" or not isinstance(out.get("properties"), dict)):
-        raise Input(f"tools/{tool}/tool.json: outputSchema must be an object schema with properties (omit it for a text tool)")
-    return spec  # type: ignore[return-value]
+    output_keys = None
+    if out is not None:
+        try:
+            output_keys = list(_object_schema(out, "outputSchema")[0])
+        except Input as e:
+            raise Input(f"tools/{tool}/tool.json: {e} (omit it for a text tool)") from e
+    return ToolShape(str(spec.get("description", "")), required + [k for k in props if k not in required], output_keys)
 
 
-def tool_line(tool: str, spec: dict[str, object]) -> str:
+def tool_line(tool: str, shape: ToolShape) -> str:
     """SKILL.md 단계에 들어갈 호출 줄 하나 — 설명 첫 문장, 입력 키는 required 먼저, 결과 키(outputSchema 없으면 텍스트 도구)."""
-    schema: dict[str, object] = spec["inputSchema"]  # type: ignore[assignment]  # read_tool_spec이 모양을 보장
-    props: dict[str, object] = schema.get("properties", {})  # type: ignore[assignment]
-    required: list[str] = schema.get("required", [])  # type: ignore[assignment]
-    keys = required + [k for k in props if k not in required]
-    args = ", ".join(f'"{k}": …' for k in keys) or "…"
-    out = spec.get("outputSchema")
-    out_keys = list(out["properties"]) if isinstance(out, dict) else []  # type: ignore[arg-type]
-    desc = str(spec.get("description", "")).split(". ")[0].strip().rstrip(".") or "TODO"
+    args = ", ".join(f'"{k}": …' for k in shape.input_keys) or "…"
+    out_keys = shape.output_keys or []
+    desc = shape.description.split(". ")[0].strip().rstrip(".") or "TODO"
     result = f" 결과: `{'`, `'.join(out_keys)}`" if out_keys else " 결과: 사람이 읽을 텍스트"
     return f"   - 도구 `{tool}`을 `{{{args}}}`로 부른다 — {desc}.{result}\n"
 
@@ -277,13 +299,13 @@ def plan_tools(root: Path, skill: str, tools: list[str]) -> tuple[list[str], lis
         if not NAME_RE.match(tool):
             raise Input(f"tools[] must match {NAME_RE.pattern}: {tool!r}")
         if (root / "tools" / tool / "tool.json").exists():
-            spec = read_tool_spec(root, tool)
+            shape = read_tool_spec(root, tool)
         else:
             if tool == skill or (root / "skills" / tool).exists():
                 raise Input(f"tool {tool!r} would collide with a skill of the same name — names are unique across skills and tools")
             missing.append(tool)
-            spec = json.loads(tool_json(tool, "TODO", {"kind": "script", "path": "scripts/main.py", "command": ["uv", "run", "--script", "scripts/main.py"]}))
-        lines.append(tool_line(tool, spec))
+            shape = ToolShape("TODO", ["TODO"], ["summary", "received"])  # tool_json 뼈대와 같은 모양
+        lines.append(tool_line(tool, shape))
     return missing, lines
 
 
@@ -320,6 +342,8 @@ def main() -> int:
         print("input must be a JSON object", file=sys.stderr)
         return 2
     args: dict[str, object] = raw  # type: ignore[assignment]
+    root = Path(str(args.get("root", ".")))
+    created: list[str] = []
     try:
         kind, name, description = str(args.get("kind", "")), str(args.get("name", "")), str(args.get("description", ""))
         if kind not in ("skill", "tool"):
@@ -328,13 +352,12 @@ def main() -> int:
             raise Input(f"name must match {NAME_RE.pattern}: {name!r}")
         if not description:
             raise Input("description is required")
-        root = Path(str(args.get("root", ".")))
-        created: list[str] = []
         if kind == "skill":
-            tools = args.get("tools", [])
-            if not isinstance(tools, list) or not all(isinstance(t, str) for t in tools):
+            tools_raw = args.get("tools", [])
+            if not isinstance(tools_raw, list) or not all(isinstance(t, str) for t in cast(list[object], tools_raw)):
                 raise Input("tools must be a list of tool names")
-            todo = scaffold_skill(root, name, description, str(args.get("positive", "basic")), str(args.get("negative", "basic")), list(dict.fromkeys(tools)), created)
+            tools = list(dict.fromkeys(cast(list[str], tools_raw)))
+            todo = scaffold_skill(root, name, description, str(args.get("positive", "basic")), str(args.get("negative", "basic")), tools, created)
         else:
             server, mcp_tool = args.get("server"), args.get("mcp_tool")
             todo = scaffold_tool(root, name, description, str(args.get("runtime", "script")), str(args.get("script", "main.py")), str(server) if server else None, str(mcp_tool) if mcp_tool else None, created)
