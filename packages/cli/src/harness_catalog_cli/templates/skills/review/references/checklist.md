@@ -39,7 +39,7 @@
 
 ## E. 검증 — 측정되었는가
 
-- [ ] E1 evals 쌍이 있다(써야 하는 과제 하나, `no-trigger-*` 하나). [팀] conventions §5. [Anthropic] "At least three evaluations created"는 하한이다 — 쌍이 최소다.
+- [ ] E1 evals가 있다. 팀의 **최소**는 쌍(써야 하는 과제 하나, `no-trigger-*` 하나)이고 [팀 conventions §5], Anthropic은 **셋 이상**을 권한다 [Anthropic "At least three evaluations created"]. 둘뿐이면 "통과(최소)"로 적고 셋째 케이스(두 번째 양성 또는 경계 사례)를 제안한다. 둘 미만이면 수정.
 - [ ] E2 Oracle이 전 케이스 reward 1이다(`harbor run -a oracle`). [팀]
 - [ ] E3 스킬 **있이·없이** 결과가 있다. 없이도 통과하면 스킬이 하는 일이 없다 — 2회 연속이면 폐기 심사. [팀] conventions §5. [Anthropic] "Establish baseline: Measure Claude's performance without the Skill."
 - [ ] E4 쓰려는 모델 전부로 돌려 봤다. [Anthropic] "Test with all models you plan to use."
