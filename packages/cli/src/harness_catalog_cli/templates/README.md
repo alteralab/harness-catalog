@@ -39,7 +39,7 @@
     └── <name>/server.json           # MCP Registry 형식: name · version · packages | remotes
 ```
 
-`skills/`·`tools/`·`mcp-servers/` 바로 아래에는 디렉토리만 둡니다. 이름은 소문자·숫자·하이픈 1~64자이고, **스킬과 도구를 합쳐 저장소 전체에서 유일**합니다. 은퇴한 이름은 다시 쓰지 않습니다.
+`skills/`·`tools/`·`mcp-servers/` 바로 아래에는 디렉토리만 둡니다. 이름은 소문자·숫자·하이픈 1~64자이고, **스킬과 도구를 합쳐 저장소 전체에서 유일**합니다. 은퇴는 디렉토리 삭제이고, 같은 이름으로 다른 내용을 올리는 것은 은퇴가 아니라 갱신입니다.
 
 ## 쓰는 사람: 하네스에서 찾고 적재하기
 
@@ -77,7 +77,7 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
    - `{"kind": "script", "path": "scripts/x.py", "command": ["uv", "run", "--script", "scripts/x.py"]}` — `command`는 argv 배열이고 `path`는 그 원소 정확히 하나, 디렉토리 안의 일반 파일. 의존성은 스크립트 안에만.
    - `{"kind": "mcp", "server": "<mcp-servers의 이름>", "tool": "<그 서버가 내는 도구 이름>"}` — 서버 레코드가 먼저 있어야 합니다.
    `mcp-servers/<name>/server.json`은 MCP Registry 형식(`name`·`version`·`packages` 또는 `remotes`)이고, 시크릿 값은 적지 않습니다(`isSecret: true` 항목에 `value`·`default` 금지).
-   `mcp-servers/<name>/server.json`은 MCP Registry 형식(`name`·`version`·`packages` 또는 `remotes`)이고, 시크릿 값은 적지 않습니다(`isSecret: true` 항목에 `value`·`default` 금지).
+3. 도구는 한 번 돌려 봅니다. 이 저장소 안에서는 toolbox가 띄운 MCP 도구로 부르거나, 터미널에서 `echo '{...}' | uv run --script tools/<name>/scripts/<x>.py`로 칩니다. 스킬은 `harbor run -p skills/<name>/evals -a oracle -e docker`로 evals 쌍이 모델 없이 reward 1인지 봅니다.
 4. 커밋 전에 `pre-commit install`을 한 번 해 두면 `hc check`가 커밋마다 돕니다(`hc`는 `harness-catalog`의 짧은 이름이고 같은 명령입니다). 같은 검사가 PR의 CI와 레지스트리의 색인에서도 돕니다. 붉으면 병합하지 않습니다.
 5. PR을 열고 사람이 병합합니다. **병합한 사람이 그 판의 인증자**입니다. 레지스트리는 다음 fetch(기본 60초)에 새 판을 색인합니다.
 6. 고치기는 같은 디렉토리를 바꿔 병합하는 것, 은퇴는 디렉토리 삭제입니다(스킬·도구 같음). 후속은 검색으로 찾습니다.
@@ -90,7 +90,7 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 2. 읽기 전용 deploy key를 등록하고 레지스트리의 비밀 파일에 개인 키를 넣습니다. 확인: 레지스트리 컨테이너에서 `git fetch`는 되고 `git push --dry-run`은 거부됩니다.
 3. 저자에게 저장소 write, 병합·설정을 할 사람에게 admin을 줍니다. 저장소 read 이상 명단과 LDAP 그룹 `harness-readers`를 같게 유지합니다 — 레지스트리의 읽기 권한은 그 그룹 하나로 정해집니다.
 4. Dex에 하네스 제품의 정적 클라이언트(`claude-code`·`codex`·`cursor`)가 있는지, 첫 팀원이 `harness-readers`에 있는지 확인합니다(로그인 한 번으로 확인).
-5. 레지스트리를 띄우고 `/readyz`가 200인지 봅니다. 503이면 본문의 사유대로 1·2를 다시 봅니다: `not_a_catalog`(표지 없음) · `no_main_branch` · `repo_unreachable`(deploy key) · `layout_mismatch`(구조 항목 1·2·11·12 위반, 본문에 어느 항목인지).
+5. 레지스트리를 띄우고 `/readyz`가 200인지 봅니다. 503이면 본문의 사유대로 1·2를 다시 봅니다: `not_a_catalog`(표지 없음) · `unsupported_layout`(표지의 layout이 다른 판) · `no_main_branch` · `repo_unreachable`(deploy key) · `layout_mismatch`(구조 항목 1·2·11·12 위반, 본문에 어느 항목인지).
 6. 코드 저장소 `alteralab/harness-catalog`가 비공개인 동안은 CI가 CLI를 설치할 수 있게 그 저장소의 읽기 전용 deploy key 개인 키를 이 저장소(또는 조직) 시크릿 `HARNESS_CATALOG_DEPLOY_KEY`에 넣습니다(`ssh-keygen -t ed25519`, `gh repo deploy-key add`, `gh secret set`). `.github/actions/code-repo-credentials`가 그것을 잡 환경으로만 건넵니다. 코드 저장소가 공개면 필요 없습니다.
 7. CI evals(선택): git 호스트 변수 `HARNESS_EVALS=true`로 켜고 `false`로 끕니다. 하네스 자격은 self-hosted 러너의 `.env`(변수 이름은 코드 저장소 `.github/runner.env.example`), 하네스 목록은 변수 `HARNESS_EVALS_AGENTS`(JSON 배열, 기본 `["claude-code", "codex"]`; GitLab은 `.gitlab-ci.yml`의 matrix 줄을 고칩니다).
 8. CLI 판을 올릴 때는 `.pre-commit-config.yaml`과 `.github/workflows/check.yml`의 `@v<판>` 두 곳을 같은 태그로 바꿉니다. 검사 논리는 그 판을 따라옵니다.
