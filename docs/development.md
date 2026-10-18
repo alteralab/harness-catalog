@@ -102,3 +102,7 @@ make wiki-claims      # 바꾼 파일을 인용하는 claim 페이지
 ## 설계 문서와 원장
 
 설계 계약을 바꾸는 변경은 코드보다 DESIGN.md §11의 결정 행이 먼저입니다. 실행 계획은 PLAN.md(우산)와 `plans/{service,distribution,pilot,skills}.md`이고, 각 문서의 원장 절에 날짜·내용·근거를 남깁니다. 측정 결과(Dex 그랜트, LDAP, 하네스 첫 접촉)는 `plans/pilot/r1~r3.md`에 있습니다. 구현 단계마다 Codex 적대 리뷰를 걸어 반영했고 그 기록도 원장에 있습니다.
+
+## 검색 벤치마크
+
+`make bench-search N="100 1000"` — 합성 말뭉치(`bench/search/`)로 `search_skills`·`search_tools` 의 recall@k·MRR·지연을 잰다. 검색 엔진을 바꾸는 PR 은 이 숫자를 함께 적는다(DESIGN §11 2026-10-19). 방법과 한계는 `bench/search/README.md`.

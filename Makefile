@@ -5,7 +5,7 @@ COMPOSE_DEV := docker compose -f docker/compose.dev.yml
 
 
 .PHONY: mcp-pin
-.PHONY: release deploy help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image graft graft-init wiki-claims wiki-install
+.PHONY: bench-search release deploy help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image graft graft-init wiki-claims wiki-install
 
 help: ## 이 목록
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[1m%-16s\033[0m %s\n", $$1, $$2}'
@@ -71,3 +71,6 @@ release: ## 판 하나를 낸다: 판 넷+내부 핀 → lock → pip 경로 설
 deploy: ## 운영 호스트에 한 판 배포. 예: make deploy HOST=mini TAG=1b076d1 (REPO·OVERLAY 선택)
 	@test -n "$(HOST)" && test -n "$(TAG)" || { echo "HOST=<ssh host> TAG=<image tag> 가 필요하다"; exit 2; }
 	scripts/deploy.sh $(HOST) $(TAG) $(REPO) $(OVERLAY)
+
+bench-search: ## 검색 벤치마크(합성 말뭉치, Postgres testcontainer). 예: make bench-search N="100 1000"
+	TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=$${TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE:-/var/run/docker.sock} uv run python -m bench.search --n $(or $(N),100 1000)
