@@ -31,7 +31,7 @@ docker compose -f docker/compose.quickstart.yml logs welcome
 | 읽을 수 없는 사용자 | `outsider@example.com` / `password` (그룹 없음 — 로그인은 되고 도구 호출은 거부) |
 | 기계 계정용 클라이언트 | `ci-runner` / `quickstart` |
 
-카탈로그는 이 저장소의 `skills/`(`pin-skill`·`write-skill`)를 bare git 저장소로 심은 것입니다. 실제 git 호스트가 없어도 레지스트리는 똑같이 fetch·검사·색인을 합니다.
+카탈로그는 이 저장소의 `skills/`(`pin`·`write`)와 `tools/`(`scaffold`)를 bare git 저장소로 심은 것입니다. 실제 git 호스트가 없어도 레지스트리는 똑같이 fetch·검사·색인을 합니다.
 
 ## 2. 하네스에서 로그인
 

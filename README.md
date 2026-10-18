@@ -98,7 +98,7 @@ hc check . --rev HEAD                                # 직접 돌릴 때 (hc = h
 gh pr create
 ```
 
-PR의 CI가 같은 검사를 돌리고, 사람이 병합하면 레지스트리가 한 주기(기본 60초) 안에 색인합니다. 하네스에서 `write-skill` 스킬을 불러 "이 절차를 스킬로 만들자"라고 하면 뼈대를 잡아 줍니다. 규약과 검사 항목은 [docs/authoring.md](docs/authoring.md).
+PR의 CI가 같은 검사를 돌리고, 사람이 병합하면 레지스트리가 한 주기(기본 60초) 안에 색인합니다. 하네스에서 `write` 스킬을 불러 "이 절차를 스킬로 만들자"나 "도구 새로 만들자"라고 하면 뼈대를 잡아 줍니다. 규약과 검사 항목은 [docs/authoring.md](docs/authoring.md).
 
 ### 운영자: 레지스트리 띄우기
 
@@ -153,7 +153,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 │   ├── core/                    #   harness-catalog-core: 모델·카탈로그 앱·검사 항목·git/검증 어댑터
 │   ├── server/                  #   harness-catalog-server: MCP 서버·OIDC·PostgreSQL·스케줄러·마이그레이션
 │   ├── cli/                     #   harness-catalog-cli: check·init·config, 카탈로그 저장소 템플릿
-│   │   └── templates/           #     카탈로그 저장소 템플릿 + 기본 스킬 셋(skills/pin-skill·write-skill·write-tool, 각자 evals)과 생성되는 schemas/tool.schema.json. init이 새 카탈로그에 함께 쓴다
+│   │   └── templates/           #     카탈로그 저장소 템플릿 + 기본 스킬 둘(skills/pin·write, 각자 evals)·기본 도구 하나(tools/scaffold)와 생성되는 schemas/tool.schema.json. init이 새 카탈로그에 함께 쓴다
 │   └── harbor-langfuse/         #   harbor-langfuse: Harbor 플러그인 → Langfuse
 ├── plans/                       # 실행 계획과 원장 (PLAN.md가 우산)
 │   ├── pilot/                   #   측정 결과 r1~r3 (Dex 그랜트, LDAP, 하네스 첫 접촉)

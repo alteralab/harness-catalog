@@ -1,0 +1,33 @@
+{
+  "$schema": "../../schemas/tool.schema.json",
+  "name": "scaffold",
+  "description": "Create the skeleton of a new catalog skill or tool in the catalog clone — deterministic, idempotent (existing files are never touched). kind=skill: skills/<name>/SKILL.md plus an evals pair (one positive task, one no-trigger task, Harbor layout); with `tool` also tools/<tool>/ for the code the skill calls by name. kind=tool: tools/<name>/tool.json plus the stdin-JSON ABI script (script runtime) or the mcp-servers/<server>/server.json record (mcp runtime). Used by the write skill; not for editing existing records.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "kind": {"type": "string", "enum": ["skill", "tool"], "description": "skill = SKILL.md + evals pair; tool = tool.json (+ ABI script or server.json)"},
+      "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$", "description": "directory name; unique across skills and tools"},
+      "description": {"type": "string", "minLength": 1, "maxLength": 1024, "description": "one sentence with the words users actually say"},
+      "root": {"type": "string", "default": ".", "description": "catalog clone root (where skills/ and tools/ live)"},
+      "tool": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$", "description": "kind=skill only: also scaffold tools/<tool>/ (script runtime) that the skill refers to by name"},
+      "positive": {"type": "string", "default": "basic", "description": "kind=skill: name of the task the skill must handle"},
+      "negative": {"type": "string", "default": "basic", "description": "kind=skill: name of the look-alike task the skill must NOT fire on (no-trigger- prefix added)"},
+      "runtime": {"type": "string", "enum": ["script", "mcp"], "default": "script", "description": "kind=tool: script in the catalog, or a tool of a team MCP server"},
+      "script": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+\\.py$", "default": "main.py", "description": "kind=tool, runtime=script: file name under scripts/"},
+      "server": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$", "description": "kind=tool, runtime=mcp: mcp-servers/<server>"},
+      "mcp_tool": {"type": "string", "minLength": 1, "description": "kind=tool, runtime=mcp: the tool name that server exposes"}
+    },
+    "required": ["kind", "name", "description"],
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "created": {"type": "array", "items": {"type": "string"}, "description": "paths written, relative to root; empty when everything already existed"},
+      "todo": {"type": "array", "items": {"type": "string"}, "description": "what the author still has to fill in"}
+    },
+    "required": ["created", "todo"],
+    "additionalProperties": false
+  },
+  "runtime": {"kind": "script", "path": "scripts/scaffold.py", "command": ["uv", "run", "--script", "scripts/scaffold.py"]}
+}

@@ -19,26 +19,22 @@
 │   ├── workflows/check.yml          # PR·main push마다 `harness-catalog check`, 선택 잡 evals
 │   └── actions/code-repo-credentials/action.yml   # 코드 저장소가 비공개인 동안 CI가 CLI를 받을 deploy key
 ├── README.md
-├── skills/                          # 스킬 하나 = 디렉토리 하나 (필수 디렉토리)
-│   ├── pin-skill/                   # 기본 스킬: 스킬·도구를 내 하네스 옆에 내려받는 절차
+├── skills/                          # 스킬 하나 = 디렉토리 하나 (필수 디렉토리). 기본형은 세션·루프 공용: 코드는 tools/에, 스킬은 이름으로 참조
+│   ├── pin/                         # 기본 스킬: 스킬·도구를 내 하네스 옆에 내려받는 절차(판단은 산문, 받기는 hc pin)
 │   │   ├── SKILL.md
 │   │   └── evals/<case>/            # Harbor 태스크: task.toml · instruction.md · environment/Dockerfile · tests/ · solution/
-│   ├── write-skill/                 # 기본 스킬: 새 스킬의 뼈대와 팀 규약
-│   │   ├── SKILL.md
-│   │   ├── scripts/scaffold.py      # 결정적 뼈대 스크립트 (uv run --script)
-│   │   ├── references/conventions.md
-│   │   └── evals/<case>/
-│   └── write-tool/                  # 기본 스킬: 새 도구의 tool.json과 계약
+│   └── write/                       # 기본 스킬: 새 스킬·도구의 뼈대와 팀 규약("코드가 필요한가"부터)
 │       ├── SKILL.md
-│       ├── scripts/scaffold_tool.py # tool.json · ABI 골격 스크립트 · server.json 골격 (멱등)
-│       ├── references/tool-contract.md
+│       ├── references/conventions.md    # 스킬 규약 점검표
+│       ├── references/tool-contract.md  # 도구 계약 점검표(결과 ABI)
 │       └── evals/<case>/
 ├── schemas/
-│   └── tool.schema.json             # tool.json의 JSON Schema. init이 core 모델에서 생성; 갱신은 `harness-catalog schema tool`
-├── tools/                           # 선택. 도구 하나 = 디렉토리 하나
+│   └── tool.schema.json             # tool.json의 JSON Schema. init이 core 모델에서 생성; 낡으면 hc check가 경고하고 hc init <repo-url> --refresh가 다시 씁니다
+├── tools/                           # 도구 하나 = 디렉토리 하나. 기본 도구 scaffold가 들어 있다
+│   ├── scaffold/                    # 기본 도구: 새 스킬·도구의 뼈대(write 스킬이 부른다). tool.json + scripts/scaffold.py
 │   └── <name>/
-│       ├── tool.json                # $schema(선택) · name · description · inputSchema · outputSchema(선택) · runtime{kind: script|mcp} · metadata
-│       └── scripts/<x>.py           # kind: script일 때 runtime.path가 가리키는 파일
+│       ├── tool.json                # $schema(선택) · name · description · inputSchema · outputSchema(선택) · runtime{kind: script|mcp}
+│       └── scripts/<x>.py           # kind: script일 때 runtime.path가 가리키는 파일. 의존성은 이 안에만(PEP 723)
 └── mcp-servers/                     # 선택. kind: mcp 도구가 참조하는 서버 배선
     └── <name>/server.json           # MCP Registry 형식: name · version · packages | remotes
 ```
@@ -77,10 +73,10 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 ## 만드는 사람: 올리기
 
 1. `main`을 최신으로 하고 브랜치를 땁니다. `main`에 직접 push하지 않고 강제 push도 하지 않습니다(브랜치 보호는 걸려 있지 않습니다 — 규율입니다).
-2. **스킬**은 `write-skill`을 따릅니다. `uv run --script skills/write-skill/scripts/scaffold.py <name> --description "<한 문장>"`이 `SKILL.md`와 Harbor 태스크 한 쌍(써야 하는 과제·쓰지 말아야 하는 과제)을 만들고, TODO만 채웁니다. 규약은 `skills/write-skill/references/conventions.md`.
-3. **도구**는 `write-tool`을 따릅니다. `uv run --script skills/write-tool/scripts/scaffold_tool.py <name> --description "<한 문장>" --kind script --script <x.py>`(또는 `--kind mcp --server <server> --tool <tool>`)가 `tools/<name>/tool.json`과 골격을 만들고, TODO만 채웁니다. `tool.json`의 `$schema`가 `schemas/tool.schema.json`을 가리켜 편집기가 타이핑 중에 검증합니다(그 파일이 낡았으면 `hc schema tool > schemas/tool.schema.json`). 계약은 `skills/write-tool/references/tool-contract.md`. 손으로 쓸 때의 요지 — `name`은 디렉토리명, `inputSchema`는 `type: object`, `runtime`은 둘 중 하나:
-   - `{"kind": "script", "path": "scripts/x.py", "command": ["uv", "run", "--script", "scripts/x.py"]}` — `command`는 argv 배열이고 `path`는 그 원소 정확히 하나, 디렉토리 안의 일반 파일.
+2. 스킬이든 도구든 **`write` 스킬**을 따릅니다. 첫 질문은 "코드가 필요한가"입니다. 결정적 연산은 처음부터 도구(`tools/<name>/`)로 만들고 스킬은 그 이름을 참조합니다 — 세션과 루프가 같은 스킬을 쓰는 기본형입니다. 뼈대는 도구 `scaffold`가 만듭니다(이 저장소의 `.mcp.json`이 `hc toolbox ./tools`를 등록해 두어 하네스에서 MCP 도구로 뜹니다). 규약은 `skills/write/references/conventions.md`(스킬)와 `tool-contract.md`(도구). 손으로 쓸 때의 요지 — `tool.json`의 `name`은 디렉토리명, `inputSchema`는 `type: object`, `runtime`은 둘 중 하나:
+   - `{"kind": "script", "path": "scripts/x.py", "command": ["uv", "run", "--script", "scripts/x.py"]}` — `command`는 argv 배열이고 `path`는 그 원소 정확히 하나, 디렉토리 안의 일반 파일. 의존성은 스크립트 안에만.
    - `{"kind": "mcp", "server": "<mcp-servers의 이름>", "tool": "<그 서버가 내는 도구 이름>"}` — 서버 레코드가 먼저 있어야 합니다.
+   `mcp-servers/<name>/server.json`은 MCP Registry 형식(`name`·`version`·`packages` 또는 `remotes`)이고, 시크릿 값은 적지 않습니다(`isSecret: true` 항목에 `value`·`default` 금지).
    `mcp-servers/<name>/server.json`은 MCP Registry 형식(`name`·`version`·`packages` 또는 `remotes`)이고, 시크릿 값은 적지 않습니다(`isSecret: true` 항목에 `value`·`default` 금지).
 4. 커밋 전에 `pre-commit install`을 한 번 해 두면 `hc check`가 커밋마다 돕니다(`hc`는 `harness-catalog`의 짧은 이름이고 같은 명령입니다). 같은 검사가 PR의 CI와 레지스트리의 색인에서도 돕니다. 붉으면 병합하지 않습니다.
 5. PR을 열고 사람이 병합합니다. **병합한 사람이 그 판의 인증자**입니다. 레지스트리는 다음 fetch(기본 60초)에 새 판을 색인합니다.

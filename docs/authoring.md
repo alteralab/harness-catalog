@@ -7,7 +7,7 @@
 - 카탈로그 저장소의 로컬 clone과 write 권한(브랜치·PR).
 - `uv`(스크립트 실행과 CLI 설치), `gitleaks`(검사 항목 4가 필요로 함), `git`·`gh`.
 - evals를 돌리려면 `harbor`(0.24.0)와 Docker, 하네스의 모델 자격, Langfuse 키.
-- 하네스에서 `write-skill`을 적재하면 아래 절차를 에이전트가 대신 밟습니다. 손으로 해도 같습니다.
+- 하네스에서 `write`를 적재하면 아래 절차를 에이전트가 대신 밟습니다. 첫 질문은 "코드가 필요한가"입니다 — 결정적 연산은 처음부터 도구로, 스킬은 그 이름을 참조합니다. 손으로 해도 같습니다.
 
 ## 1. 스킬의 모양
 
@@ -56,7 +56,7 @@ metadata:
 
 **여러 스킬이 같은 코드를 쓸 때.** 그 코드는 도구입니다. `tools/<name>/`에 한 번 두고 스킬들은 이름으로 참조합니다. 라이브러리 규모면 `packages/<lib>/`로 빼고 도구의 스크립트가 PEP 723으로 그 패키지를 git 참조합니다.
 
-규약의 정본은 카탈로그의 `write-skill/references/conventions.md`입니다.
+규약의 정본은 카탈로그의 `skills/write/references/conventions.md`(스킬)와 `references/tool-contract.md`(도구)입니다.
 
 ## 3. 올리는 절차
 
@@ -117,7 +117,7 @@ mcp-servers/<name>/server.json  # kind: mcp 도구가 참조하는 배선 레코
 | `script` | `path`, `command` | `command`는 셸을 거치지 않는 argv 배열이고 `path`는 그 원소 정확히 하나. `path`는 디렉토리 안의 일반 파일(링크 금지) |
 | `mcp` | `server`, `tool` | `server`는 `mcp-servers/<server>/`가 있어야 하고 `tool`은 그 서버가 내는 도구 이름 |
 
-뼈대는 `write-tool` 스킬이 만듭니다(`skills/write-tool/scripts/scaffold_tool.py`, 멱등). `tool.json`의 선택 키 `$schema`가 `schemas/tool.schema.json`을 가리키면 편집기가 타이핑 중에 검증합니다. 그 파일은 `harness-catalog init`이 core 모델에서 생성해 두고, 낡았으면 `harness-catalog schema tool > schemas/tool.schema.json`으로 다시 씁니다. 레지스트리는 `$schema`를 해석하지 않습니다. 계약의 저자용 문면은 `skills/write-tool/references/tool-contract.md`입니다.
+뼈대는 `write` 스킬이 도구 `scaffold`(`tools/scaffold/`, 카탈로그 클론의 `.mcp.json`으로 MCP에 떠 있음)로 만듭니다(멱등). `tool.json`의 선택 키 `$schema`가 `schemas/tool.schema.json`을 가리키면 편집기가 타이핑 중에 검증합니다. 그 파일은 `harness-catalog init`이 core 모델에서 생성해 두고, 낡았으면 `hc check`가 경고하고 운영자가 `hc init <repo-url> --refresh`로 다시 씁니다. 레지스트리는 `$schema`를 해석하지 않습니다. 계약의 저자용 문면은 `skills/write/references/tool-contract.md`입니다.
 
 규칙은 스킬과 같은 것이 많습니다. 이름은 **스킬과 합쳐 전역 유일**입니다(검사 11). 시크릿은 저장소에 없습니다 — `server.json`의 `isSecret: true` 항목은 `value`·`default`를 가질 수 없습니다(검사 12). `metadata.requires-tools`·`replaced-by`는 스킬 규칙 그대로입니다. 검사 항목은 11(도구)·12(서버)이고 `harness-catalog check`가 함께 봅니다.
 

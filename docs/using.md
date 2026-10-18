@@ -67,9 +67,9 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 
 ```json
 {"skills": [
-  {"name": "pin-skill", "description": "카탈로그(harness-catalog)의 스킬을 내 하네스의 스킬 디렉토리에 내려받아(pin) 두고 …",
+  {"name": "pin", "description": "카탈로그(harness-catalog)의 스킬이나 도구를 내 하네스 옆에 내려받아(pin) 두고 …",
    "sha": "c8991b7e1bcd40ea1cf397ecec58fb1f21702b33", "compatibility": null, "has_scripts": false},
-  {"name": "write-skill", "description": "팀 카탈로그(harness-catalog)에 올릴 새 스킬의 뼈대를 만들고 …",
+  {"name": "write", "description": "팀 카탈로그(harness-catalog)에 올릴 새 스킬이나 새 도구의 뼈대를 만들고 …",
    "sha": "…", "compatibility": "카탈로그 저장소의 로컬 클론과 git·gh(PR 생성) …", "has_scripts": true}
 ]}
 ```
@@ -80,9 +80,9 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 
 ## 4. 곁에 두기(pin)
 
-매일 쓰는 스킬은 내려받아 둡니다. 서버에는 내려받기 도구가 없고, 카탈로그의 `pin-skill`이 그 절차를 압니다.
+매일 쓰는 스킬은 내려받아 둡니다. 서버에는 내려받기 도구가 없고, 카탈로그의 `pin` 스킬이 판단을, CLI `hc pin`이 결정적인 받기·대조·교체를 맡습니다.
 
-1. `pin-skill`을 적재합니다. "pin-skill 불러와".
+1. `pin`을 적재합니다. "pin 불러와".
 2. "yt-subs 스킬 pin 해줘"라고 합니다.
 3. 에이전트가 범위 하나만 묻습니다. **프로젝트**면 `.agents/skills/<name>/`에 들어가 저장소에 커밋되고 팀원과 공유됩니다. **사용자**면 `~/.agents/skills/<name>/`에 들어가 나만 씁니다.
 4. 에이전트가 파일 전부를 한 판(`sha`)으로 받아 임시 디렉토리에서 대조한 뒤 한 번에 제자리로 옮기고, `.claude/skills/<name>`에 그곳을 가리키는 심볼릭 링크를 둡니다. Claude Code·Codex·Cursor가 같은 사본을 봅니다.

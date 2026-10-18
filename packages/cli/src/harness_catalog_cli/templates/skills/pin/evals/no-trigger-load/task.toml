@@ -1,0 +1,19 @@
+schema_version = "1.4"
+
+[metadata]
+description = "세션에 잠깐 넣는 요청(get_skill)에는 내려받지 않는다"
+
+[environment]
+build_timeout_sec = 600.0
+skills_dir = "/skills"
+# 라이브 소비(레지스트리 MCP)가 필요한 케이스는 아래를 채운다 — tailnet에 닿는 --env docker에서만 된다.
+# [[environment.mcp_servers]]
+# name = "harness-catalog"
+# url = "<REGISTRY_URL>"
+
+[agent]
+timeout_sec = 600.0
+
+[verifier]
+timeout_sec = 120.0
+environment_mode = "shared"   # 검증기가 에이전트 컨테이너의 끝 상태를 직접 본다. 분리 모드(separate)면 artifacts 선언과 tests/Dockerfile이 필요하다

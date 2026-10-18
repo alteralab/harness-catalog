@@ -1,41 +1,94 @@
-"""write-skill의 scripts/scaffold.py — 결정적 뼈대 스크립트. 템플릿 패키지 데이터라 모듈이 아니므로 파일을 그대로 실행한다."""
+"""기본 도구 scaffold(templates/tools/scaffold) — stdin JSON → 뼈대 파일, stdout JSON. 템플릿 패키지 데이터라 모듈이 아니므로 파일을 그대로 실행한다."""
 
+import json
 import subprocess
 import sys
 import tomllib
+from collections.abc import Mapping
 from pathlib import Path
 
-SKILLS = Path(__file__).resolve().parents[2] / "packages/cli/src/harness_catalog_cli/templates/skills"
-SCAFFOLD = SKILLS / "write-skill/scripts/scaffold.py"
+import jsonschema
+
+from harness_catalog_core.toolbox import parse_server, parse_tool, tool_json_schema
+
+TEMPLATES = Path(__file__).resolve().parents[2] / "packages/cli/src/harness_catalog_cli/templates"
+SKILLS = TEMPLATES / "skills"
+SCAFFOLD = TEMPLATES / "tools/scaffold/scripts/scaffold.py"
+TOOL_JSON = TEMPLATES / "tools/scaffold/tool.json"
 
 
-def run(cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run([sys.executable, str(SCAFFOLD), *args], cwd=cwd, capture_output=True, text=True, check=False)
+def run(cwd: Path, payload: Mapping[str, object]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run([sys.executable, str(SCAFFOLD)], cwd=cwd, input=json.dumps(payload), capture_output=True, text=True, check=False)
 
 
-def test_creates_skill_and_eval_pair_then_is_idempotent(tmp_path: Path) -> None:
-    first = run(tmp_path, "demo-skill", "--description", "데모. '데모 돌려줘'.", "--positive", "runs-demo", "--negative", "explain", "--script", "demo.py")
-    assert first.returncode == 0, first.stderr
-    created = first.stdout.split()
+def created(proc: subprocess.CompletedProcess[str]) -> list[str]:
+    assert proc.returncode == 0, proc.stderr
+    out = json.loads(proc.stdout)
+    jsonschema.validate(out, json.loads(TOOL_JSON.read_text())["outputSchema"])
+    return list(out["created"])
+
+
+def test_shipped_tool_json_is_valid() -> None:
+    raw = TOOL_JSON.read_bytes()
+    spec, errors = parse_tool(raw)
+    assert errors == [] and spec is not None and spec.runtime.kind == "script" and spec.outputSchema is not None
+    jsonschema.validate(json.loads(raw), tool_json_schema())
+
+
+def test_skill_with_tool_then_idempotent(tmp_path: Path) -> None:
+    first = run(tmp_path, {"kind": "skill", "name": "demo-skill", "description": "데모. '데모 돌려줘'.", "positive": "runs-demo", "negative": "explain", "tool": "demo-run"})
+    files = created(first)
     d = tmp_path / "skills" / "demo-skill"
     assert (d / "SKILL.md").read_text().startswith("---\nname: demo-skill\ndescription: 데모.")
-    assert (d / "scripts" / "demo.py").read_text().startswith("# /// script")
+    assert "도구 `demo-run`" in (d / "SKILL.md").read_text() and not (d / "scripts").exists()  # 코드는 도구로, 스킬에 scripts/는 없다
+    assert "metadata" not in (d / "SKILL.md").read_text().split("---")[1]  # frontmatter는 name·description뿐
     for case in ("runs-demo", "no-trigger-explain"):  # 음성 이름에 no-trigger- 접두가 붙는다
         for f in ("task.toml", "instruction.md", "environment/Dockerfile", "tests/test.sh", "tests/test_outputs.py", "solution/solve.sh"):
             assert (d / "evals" / case / f).is_file(), f"{case}/{f}"
         cfg = tomllib.loads((d / "evals" / case / "task.toml").read_text())
-        assert cfg["schema_version"] == "1.4" and cfg["environment"]["skills_dir"] == "/skills"
-        assert cfg["verifier"]["environment_mode"] == "shared"  # 검증기가 에이전트 컨테이너의 끝 상태를 본다 — 묵시 기본값에 기대지 않는다
-    assert len(created) == 14
-    second = run(tmp_path, "demo-skill", "--description", "x", "--positive", "runs-demo", "--negative", "explain", "--script", "demo.py")
-    assert second.returncode == 0 and second.stdout == ""  # 있는 파일은 건드리지 않는다
-    assert (d / "SKILL.md").read_text().startswith("---\nname: demo-skill\ndescription: 데모.")
+        assert cfg["schema_version"] == "1.4" and cfg["environment"]["skills_dir"] == "/skills" and cfg["verifier"]["environment_mode"] == "shared"
+    spec, errors = parse_tool((tmp_path / "tools/demo-run/tool.json").read_bytes())
+    assert errors == [] and spec is not None and spec.runtime.kind == "script" and (tmp_path / "tools/demo-run/scripts/main.py").exists()
+    assert len(files) == 13 + 2
+    second = run(tmp_path, {"kind": "skill", "name": "demo-skill", "description": "x", "positive": "runs-demo", "negative": "explain", "tool": "demo-run"})
+    assert created(second) == [] and (d / "SKILL.md").read_text().startswith("---\nname: demo-skill\ndescription: 데모.")  # 있는 파일은 건드리지 않는다
 
 
-def test_rejects_bad_name_and_missing_description(tmp_path: Path) -> None:
-    assert run(tmp_path, "Bad_Name", "--description", "x").returncode == 2
-    assert run(tmp_path, "ok-name").returncode == 2
-    assert not (tmp_path / "skills").exists()
+def test_script_tool_skeleton_is_valid_and_runs_abi(tmp_path: Path) -> None:
+    first = run(tmp_path, {"kind": "tool", "name": "subs-fetch", "description": "Fetch subtitles. 자막.", "script": "fetch.py"})
+    assert created(first) == ["tools/subs-fetch/tool.json", "tools/subs-fetch/scripts/fetch.py"]
+    raw = (tmp_path / "tools/subs-fetch/tool.json").read_bytes()
+    spec, errors = parse_tool(raw)  # 검사 11의 파서 — 뼈대 그대로가 모양 규칙을 지킨다(내용은 TODO)
+    assert errors == [] and spec is not None and spec.schema_url == "../../schemas/tool.schema.json" and spec.runtime.kind == "script" and "metadata" not in json.loads(raw)
+    jsonschema.validate(json.loads(raw), tool_json_schema())
+    script = tmp_path / "tools/subs-fetch/scripts/fetch.py"
+    assert script.read_text().startswith("# /// script") and "uv run --script scripts/fetch.py" in script.read_text()
+    ok = subprocess.run([sys.executable, str(script)], input='{"url": "x"}', capture_output=True, text=True, check=False)
+    result = json.loads(ok.stdout)  # stdout은 JSON 객체 하나만
+    assert ok.returncode == 0 and result["received"] == ["url"]
+    jsonschema.validate(result, json.loads(raw)["outputSchema"])
+    bad = subprocess.run([sys.executable, str(script)], input="[]", capture_output=True, text=True, check=False)
+    assert bad.returncode != 0 and bad.stderr.strip() and bad.stdout == ""  # 실패면 stdout에 부분 결과를 두지 않는다
+    assert created(run(tmp_path, {"kind": "tool", "name": "subs-fetch", "description": "x", "script": "fetch.py"})) == []
+
+
+def test_mcp_tool_skeleton_makes_server_record_once(tmp_path: Path) -> None:
+    first = run(tmp_path, {"kind": "tool", "name": "graft-ask", "description": "Ask the code graph.", "runtime": "mcp", "server": "graft", "mcp_tool": "graft_find_code"})
+    assert created(first) == ["tools/graft-ask/tool.json", "mcp-servers/graft/server.json"]
+    spec, errors = parse_tool((tmp_path / "tools/graft-ask/tool.json").read_bytes())
+    assert errors == [] and spec is not None and spec.runtime.kind == "mcp"
+    server, s_errors = parse_server((tmp_path / "mcp-servers/graft/server.json").read_bytes(), "graft")
+    assert server is not None and s_errors == []
+    again = run(tmp_path, {"kind": "tool", "name": "graft-trace", "description": "Trace calls.", "runtime": "mcp", "server": "graft", "mcp_tool": "graft_trace_calls"})
+    assert created(again) == ["tools/graft-trace/tool.json"]  # 서버 레코드는 한 번만
+
+
+def test_rejects_bad_inputs(tmp_path: Path) -> None:
+    for payload in ({"kind": "skill", "name": "Bad_Name", "description": "x"}, {"kind": "tool", "name": "ok", "description": "x", "script": "dir/a.py"},
+                    {"kind": "tool", "name": "ok", "description": "x", "runtime": "mcp", "server": "graft"}, {"kind": "http", "name": "ok", "description": "x"}, {"kind": "skill", "name": "ok"}):
+        assert run(tmp_path, payload).returncode == 2, payload
+    assert subprocess.run([sys.executable, str(SCAFFOLD)], cwd=tmp_path, input="[]", capture_output=True, text=True, check=False).returncode == 2
+    assert not (tmp_path / "skills").exists() and not (tmp_path / "tools").exists() and not (tmp_path / "mcp-servers").exists()
 
 
 def _scaffold_constants() -> dict[str, str]:
@@ -46,10 +99,10 @@ def _scaffold_constants() -> dict[str, str]:
 
 
 def test_shipped_base_evals_match_scaffold() -> None:
-    """실린 기본 스킬 셋의 evals는 write-skill scaffold.py가 만드는 것과 같은 Dockerfile 머리·test.sh·공유 검증기 선언을 가진다 — 문면은 한 곳(scaffold.py)이 소유한다."""
+    """실린 기본 스킬 둘(pin·write)의 evals 여섯 케이스는 scaffold가 만드는 것과 같은 Dockerfile 머리·test.sh·공유 검증기 선언을 가진다 — 문면은 한 곳(scaffold.py)이 소유한다."""
     k = _scaffold_constants()
     cases = sorted(SKILLS.glob("*/evals/*"))
-    assert len(cases) == 6
+    assert len(cases) == 6 and sorted({c.parents[1].name for c in cases}) == ["pin", "write"]
     for case in cases:
         dockerfile = (case / "environment/Dockerfile").read_text()
         assert dockerfile.startswith(k["head"]), f"{case}: Dockerfile 머리가 scaffold.py DOCKERFILE_HEAD와 다르다"

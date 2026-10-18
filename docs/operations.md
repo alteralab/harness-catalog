@@ -24,7 +24,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
 ## 1. 카탈로그 저장소 세우기
 
 1. git 호스트에 빈 저장소를 만듭니다. 이름은 자유이고 비공개가 좋습니다.
-2. CLI로 초기화합니다. 운영자의 git 자격으로 clone해 표지 파일·기본 스킬 둘(`skills/pin-skill`·`skills/write-skill`)·README·pre-commit 설정·호스트별 CI 워크플로를 없는 것만 쓰고 커밋·push합니다. 두 번 돌리면 변경이 없습니다.
+2. CLI로 초기화합니다. 운영자의 git 자격으로 clone해 표지 파일·기본 스킬 둘(`skills/pin`·`skills/write`)과 기본 도구 하나(`tools/scaffold`)·README·pre-commit 설정·호스트별 CI 워크플로를 없는 것만 쓰고 커밋·push합니다. 두 번 돌리면 변경이 없습니다.
 
    ```sh
    uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v0.1.0#subdirectory=packages/cli" \

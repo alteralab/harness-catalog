@@ -55,11 +55,11 @@ def test_init_twice_is_idempotent(tmp_path: Path) -> None:
     remote = bare(tmp_path, "catalog.git")
     first = init_repository(str(remote), pin="deadbeef", host="gitlab")  # 로컬 경로는 호스트가 없다
     base = {".harness-catalog", "README.md", ".pre-commit-config.yaml", ".gitlab-ci.yml", "schemas/tool.schema.json", ".mcp.json"}  # 스키마는 core ToolSpec의 산출물, .mcp.json은 toolbox 항목(§11 2026-10-18)
-    skills = {w for w in first.written if w.startswith("skills/")}
+    skills = {w for w in first.written if w.startswith(("skills/", "tools/"))}
     assert set(first.written) - skills == base
     # 기본 스킬 셋이 init과 함께 들어간다(DESIGN §11 2026-10-10·2026-10-11). .gitkeep은 더 쓰지 않는다
-    assert {"skills/pin-skill/SKILL.md", "skills/write-skill/SKILL.md", "skills/write-tool/SKILL.md"} <= skills and "skills/.gitkeep" not in skills
-    assert all(w.startswith(("skills/pin-skill/", "skills/write-skill/", "skills/write-tool/")) for w in skills)
+    assert {"skills/pin/SKILL.md", "skills/write/SKILL.md", "tools/scaffold/tool.json", "tools/scaffold/scripts/scaffold.py"} <= skills and "skills/.gitkeep" not in skills
+    assert all(w.startswith(("skills/pin/", "skills/write/", "tools/scaffold/")) for w in skills)
     schema = json.loads(git(remote, "show", "main:schemas/tool.schema.json"))
     assert schema == tool_json_schema() and schema["additionalProperties"] is False and "$schema" in schema["properties"]
     assert listing(remote) == set(first.written)
