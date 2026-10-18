@@ -8,7 +8,7 @@
 
 | 서비스 | 이미지 | 역할 |
 |---|---|---|
-| `registry` | `ghcr.io/alteralab/harness-catalog:<짧은 SHA>` | MCP 서버 + 주기 fetch·색인 |
+| `registry` | `ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:<판 태그>` | MCP 서버 + 주기 fetch·색인 |
 | `postgres` | `postgres:17-alpine` | 색인(`harness_catalog`)과 Dex 저장소(별도 DB·역할) |
 | `dex` | `ghcr.io/dexidp/dex:v2.45.1` | LDAP을 OIDC로 감싸는 인가 서버 |
 
@@ -59,7 +59,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
    cp docker/.env.example docker/.env && chmod 600 docker/.env
    ```
 
-   채울 것: `REGISTRY_IMAGE`(GHCR 태그 또는 로컬 태그), `HC__CATALOG_REPO_URL`(deploy key로 받을 ssh URL), `HC__OIDC_ISSUER`(`https://<호스트>/dex`), `HC__PUBLIC_URL`(`https://<호스트>/mcp`). Dex의 issuer와 audience 클라이언트 ID는 compose가 이 두 값에서 그대로 건네므로 따로 적을 것이 없습니다. 끝에 `/`를 붙이면 레지스트리가 기동을 거부합니다. 설정값의 뜻은 [configuration.md](configuration.md).
+   채울 것: `REGISTRY_IMAGE`(NAS Harbor 태그 또는 로컬 태그), `HC__CATALOG_REPO_URL`(deploy key로 받을 ssh URL), `HC__OIDC_ISSUER`(`https://<호스트>/dex`), `HC__PUBLIC_URL`(`https://<호스트>/mcp`). Dex의 issuer와 audience 클라이언트 ID는 compose가 이 두 값에서 그대로 건네므로 따로 적을 것이 없습니다. 끝에 `/`를 붙이면 레지스트리가 기동을 거부합니다. 설정값의 뜻은 [configuration.md](configuration.md).
 2. 비밀 파일을 만듭니다. DB 비밀번호 셋과 `ci-runner` 시크릿은 무작위로 만들고, deploy key는 둘째 인자의 파일을 복사하며, DB 접속 문자열은 조립합니다. 있는 파일은 건드리지 않습니다.
 
    ```sh
@@ -74,7 +74,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
    ```
 
    `/healthz`는 프로세스가 살아 있는지, `/readyz`는 섬길 준비가 됐는지입니다. 준비되면 본문에 색인한 `commit`과 거부된 스킬 목록이 실립니다.
-4. 이미지는 `main` 병합마다 self-hosted 러너가 빌드해 GHCR에 올립니다(짧은 SHA 태그, 최근 5개 보존). 같은 호스트에서 `docker build -t harness-catalog:current .`로 만들어 써도 됩니다.
+4. 이미지는 `main` 병합마다 self-hosted 러너가 빌드해 NAS의 Harbor(`ds923plus.tail2f9fe3.ts.net:9443`, portainer 저장소 `stacks/harbor`)에 올립니다(짧은 SHA 태그와 판 태그; 보존은 Harbor 프로젝트 규칙). 프로젝트가 public이라 pull에는 로그인이 필요 없고, push는 robot 계정(GitHub 시크릿 `HARBOR_ROBOT_NAME`·`HARBOR_ROBOT_SECRET`)입니다. 같은 호스트에서 `docker build -t harness-catalog:current .`로 만들어 써도 됩니다.
 
 `HC__PUBLIC_URL`은 토큰의 audience이자 RFC 9728의 resource이고, Dex 설정의 audience 클라이언트 ID도 같은 값입니다. compose가 한 값에서 둘을 채우므로 어긋날 길이 없습니다.
 

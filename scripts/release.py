@@ -111,7 +111,7 @@ def main(argv: list[str]) -> int:
     run("git", "commit", "-q", "-m", f"release: {tag}\n\n판 넷과 내부 핀을 {version}으로. pip 경로 설치 실측 통과(scripts/release.py).")
     run("git", "tag", "-a", tag, "-m", f"{tag}")
     run("git", "push", "--atomic", "origin", "main", tag)  # main과 태그가 함께 가거나 둘 다 안 간다
-    print(f"release: {tag} pushed — CI가 이미지 ghcr.io/alteralab/harness-catalog:<짧은 SHA>·:{tag}를 만든다", file=sys.stderr)
+    print(f"release: {tag} pushed — CI가 이미지 ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:<짧은 SHA>·:{tag}를 NAS Harbor에 올린다", file=sys.stderr)
     return 0
 
 
