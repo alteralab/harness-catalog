@@ -8,7 +8,7 @@ name: harness-catalog
 
 services:
   registry:
-    image: ${REGISTRY_IMAGE:?.env의 REGISTRY_IMAGE (ghcr.io/alteralab/harness-catalog:<짧은 SHA> 또는 로컬 태그)}
+    image: ${REGISTRY_IMAGE:?.env의 REGISTRY_IMAGE (ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:<판 태그> 또는 로컬 태그)}
     environment:
       HC__CATALOG_REPO_URL: ${HC__CATALOG_REPO_URL:?.env의 HC__CATALOG_REPO_URL}
       HC__GIT_DEPLOY_KEY_FILE: /run/secrets/git_deploy_key

@@ -1,4 +1,4 @@
-# 코드 저장소 CI: PR마다 게이트·타입·시험. main 병합이면 이미지를 mini 러너에서 한 번 빌드해 GHCR로(짧은 SHA 태그, 보존 5개).
+# 코드 저장소 CI: PR마다 게이트·타입·시험. main 병합이면 이미지를 mini 러너에서 한 번 빌드해 NAS Harbor(portainer stacks/harbor)로(짧은 SHA 태그; 보존은 Harbor 프로젝트의 태그 보존 규칙).
 name: ci
 on:
   pull_request:
@@ -45,7 +45,6 @@ jobs:
     needs: test
     runs-on: [self-hosted, harness-catalog]   # 빌드 기계 = 실행 기계(mini). 운영 compose는 같은 데몬의 이미지를 pull 없이 쓴다
     permissions:
-      packages: write
       contents: read
     steps:
       - uses: actions/checkout@v4
@@ -57,30 +56,12 @@ jobs:
             refs/tags/v*) echo "sha=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT" ;;
             *) echo "sha=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT" ;;
           esac
-      - name: login ghcr
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: login harbor (NAS, tailnet 주소 — 러너 mini는 tailnet 안)
+        run: echo "${{ secrets.HARBOR_ROBOT_SECRET }}" | docker login ds923plus.tail2f9fe3.ts.net:9443 -u "${{ secrets.HARBOR_ROBOT_NAME }}" --password-stdin
       - name: build · push
         run: |
-          IMG=ghcr.io/alteralab/harness-catalog:${{ steps.tag.outputs.sha }}
+          IMG=ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:${{ steps.tag.outputs.sha }}
           docker build -t "$IMG" .
           docker push "$IMG"
           docker image inspect "$IMG" --format 'digest={{index .RepoDigests 0}}' | tee -a "$GITHUB_STEP_SUMMARY"
-      # 보존: 먼저 태그 없는 버전을 지우고, 그다음 최신 5개(= SHA 태그 5개)만 남긴다. 순서가 바뀌면 SHA 태그가 5개 미만이 된다.
-      # 이 저장소가 GHCR 패키지의 Actions access에서 Admin이어야 GITHUB_TOKEN으로 삭제할 수 있다(패키지 설정, 한 번).
-      - name: untagged
-        uses: actions/delete-package-versions@v5
-        continue-on-error: true   # 지울 것이 없으면 액션이 TypeError로 죽는다(2026-10-07 실측) — 보존은 best-effort, 빌드·push는 이미 끝났다
-        with:
-          package-name: harness-catalog
-          package-type: container
-          min-versions-to-keep: 0
-          delete-only-untagged-versions: true
-      - name: retention (SHA 태그 최근 5개 — 판 태그 vX.Y.Z는 지우지 않는다)
-        uses: actions/delete-package-versions@v5
-        continue-on-error: true
-        with:
-          package-name: harness-catalog
-          package-type: container
-          min-versions-to-keep: 5
-          delete-only-untagged-versions: false
-          ignore-versions: '^v\d+\.\d+\.\d+$'
+      # 보존: GHCR 때의 delete-package-versions 둘은 뺐다(2026-10-18). Harbor 프로젝트 alteralab의 태그 보존 규칙이 맡는다(판 태그 vX.Y.Z 전부, SHA 태그 최근 5개).

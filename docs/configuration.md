@@ -74,7 +74,7 @@ compose 파일은 `.env`(같은 디렉토리)와 셸 환경에서 변수를 채�
 
 | 변수 | 필수 | 기본값 | 뜻 |
 |---|---|---|---|
-| `REGISTRY_IMAGE` | 예 | | `ghcr.io/alteralab/harness-catalog:vX.Y.Z`(판 태그) 또는 짧은 SHA, 또는 로컬 태그 |
+| `REGISTRY_IMAGE` | 예 | | `ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:vX.Y.Z`(판 태그) 또는 짧은 SHA, 또는 로컬 태그 |
 | `HC__CATALOG_REPO_URL` · `HC__OIDC_ISSUER` · `HC__PUBLIC_URL` | 예 | | §1 그대로. Dex의 issuer와 audience 클라이언트 ID도 이 둘에서 채워진다 |
 | `HC__FETCH_INTERVAL_SECONDS` | 아니오 | 60 | §1 |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` · `_PROTOCOL` | 아니오 | §2 | 헤더는 변수가 아니라 비밀 파일 `otlp_headers` |

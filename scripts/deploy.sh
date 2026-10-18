@@ -11,7 +11,7 @@ tag="${2:?usage: deploy.sh <host> <image-tag> [repo-path] [overlay]}"
 repo="${3:-/Users/altera/harness-catalog}"
 overlay="${4:-docker/synology-ldap/compose.override.yml}"
 docker_bin="${DOCKER:-/opt/homebrew/bin/docker}"
-image="ghcr.io/alteralab/harness-catalog:$tag"
+image="ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:$tag"   # NAS Harbor(public 프로젝트 — 익명 pull)
 
 # shellcheck disable=SC2087  # 의도: 호스트 경로·이미지·오버레이는 이쪽에서 받은 인자라 클라이언트 쪽에서 치환해 보낸다. 서버 쪽 변수는 \$로 피했다
 ssh -o BatchMode=yes -o ConnectTimeout=10 "$host" "sh -s" <<EOF
