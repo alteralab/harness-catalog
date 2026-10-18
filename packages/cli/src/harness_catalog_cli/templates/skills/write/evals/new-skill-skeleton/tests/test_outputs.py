@@ -26,4 +26,4 @@ def test_evals_pair_with_negative_case() -> None:
 
 
 def test_main_untouched() -> None:
-    assert git("rev-list", "--count", "main").stdout.strip() == "1"
+    assert git("rev-parse", "main").stdout.strip() == open("/work/main.sha").read().strip()  # noqa: PTH123, SIM115

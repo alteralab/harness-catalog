@@ -148,7 +148,7 @@ def test_skill_calls_the_existing_tool_by_name_in_an_ordered_step() -> None:
 
 
 def test_tool_is_neither_duplicated_nor_replaced() -> None:
-    assert names_in(BRANCH, "tools") == {"scaffold", "changelog-diff"}
+    assert names_in(BRANCH, "tools") == names_in("main", "tools")  # scaffold + changelog-diff 그대로, 추가도 삭제도 없음
     assert git("diff", "--quiet", "main", BRANCH, "--", "tools/changelog-diff").returncode == 0
 
 
@@ -158,4 +158,4 @@ def test_skill_has_no_scripts_dir_and_a_real_evals_pair() -> None:
 
 
 def test_main_untouched() -> None:
-    assert git("rev-list", "--count", "main").stdout.strip() == "1"
+    assert git("rev-parse", "main").stdout.strip() == open("/work/main.sha").read().strip()  # noqa: PTH123, SIM115

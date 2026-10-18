@@ -6,10 +6,13 @@ description = "있는 도구 changelog-diff를 이름으로 엮는 새 스킬 re
 [environment]
 build_timeout_sec = 600.0
 skills_dir = "/skills"
-# 라이브 소비(레지스트리 MCP)가 필요한 케이스는 아래를 채운다 — tailnet에 닿는 --env docker에서만 된다.
-# [[environment.mcp_servers]]
-# name = "harness-catalog"
-# url = "<REGISTRY_URL>"
+
+# 카탈로그 클론의 도구(tools/scaffold)를 MCP 로 — 세션·루프와 같은 경로. Harbor 가 사용자 범위로 등록해 신뢰 대화상자 없이 뜬다(hc 는 이미지에 있다).
+[[environment.mcp_servers]]
+name = "toolbox"
+transport = "stdio"
+command = "hc"
+args = ["toolbox", "/work/catalog/tools"]
 
 [agent]
 timeout_sec = 600.0

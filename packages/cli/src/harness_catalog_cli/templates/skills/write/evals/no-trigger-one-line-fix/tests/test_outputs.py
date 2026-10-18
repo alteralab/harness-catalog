@@ -16,8 +16,8 @@ def skills_in(ref: str) -> set[str]:
 def test_no_new_skill_in_any_ref() -> None:
     refs = git("for-each-ref", "--format=%(refname:short)").stdout.split()
     for ref in [*refs, "HEAD"]:
-        assert skills_in(ref) <= {"yt-subs"}, (ref, skills_in(ref))
+        assert skills_in(ref) <= skills_in("main"), (ref, skills_in(ref))
 
 
 def test_no_new_skill_in_worktree() -> None:
-    assert {p.name for p in Path("/work/catalog/skills").iterdir() if p.is_dir()} <= {"yt-subs"}
+    assert {p.name for p in Path("/work/catalog/skills").iterdir() if p.is_dir()} <= skills_in("main")

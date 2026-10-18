@@ -137,7 +137,7 @@ def refs() -> list[str]:
 
 
 def new_skill_on(ref: str) -> str | None:
-    new = names_in(ref, "skills") - {"yt-subs"}
+    new = names_in(ref, "skills") - names_in("main", "skills")  # 기준은 main(기본 스킬 셋 + yt-subs)
     return next(iter(new)) if len(new) == 1 else None
 
 
@@ -167,8 +167,8 @@ def test_new_skill_has_a_real_evals_pair_and_no_scripts() -> None:
 
 def test_no_new_tool_on_any_ref() -> None:
     for ref in refs():
-        assert names_in(ref, "tools") <= {"scaffold"}, (ref, names_in(ref, "tools"))
+        assert names_in(ref, "tools") <= names_in("main", "tools"), (ref, names_in(ref, "tools"))
 
 
 def test_main_untouched() -> None:
-    assert git("rev-list", "--count", "main").stdout.strip() == "1"
+    assert git("rev-parse", "main").stdout.strip() == open("/work/main.sha").read().strip()  # noqa: PTH123, SIM115
