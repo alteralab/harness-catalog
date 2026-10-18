@@ -20,6 +20,8 @@ jobs:
       - run: uvx --from "harness-catalog-cli @ git+https://github.com/alteralab/harness-catalog@v<판>#subdirectory=packages/cli" harness-catalog check --rev HEAD
 
   evals:
+    # 신뢰 경계: 이 잡은 tailnet 안의 지속형 러너에서 PR 의 Dockerfile·검증기를 실행한다. 같은 저장소의 브랜치(쓰기 권한자)와 main push 만 — 포크 PR 은 돌리지 않는다(Codex 2026-10-18).
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     needs: [check]
     runs-on: [self-hosted, harness-catalog]   # Docker 가 있고 tailnet 안(eval 이미지가 NAS Nexus 에서 hc 를 받는다)
     steps:

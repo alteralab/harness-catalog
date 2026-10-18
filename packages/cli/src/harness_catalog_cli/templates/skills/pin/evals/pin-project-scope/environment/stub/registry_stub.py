@@ -111,8 +111,8 @@ def ok(payload: dict[str, Any]) -> types.CallToolResult:
     return types.CallToolResult(content=[types.TextContent(type="text", text=json.dumps(payload, ensure_ascii=False))], structured_content=payload)
 
 
-def err(code: str, message: str) -> types.CallToolResult:
-    payload = {"error": code, "message": message}
+def err(code: str, detail: str) -> types.CallToolResult:
+    payload = {"code": code, "detail": detail}  # 서버의 ErrorResponse 와 같은 모양(Codex 2026-10-18)
     return types.CallToolResult(content=[types.TextContent(type="text", text=json.dumps(payload, ensure_ascii=False))], structured_content=payload, is_error=True)
 
 
