@@ -23,10 +23,14 @@
 │   ├── pin/                         # 기본 스킬: 스킬·도구를 내 하네스 옆에 내려받는 절차(판단은 산문, 받기는 hc pin)
 │   │   ├── SKILL.md
 │   │   └── evals/<case>/            # Harbor 태스크: task.toml · instruction.md · environment/Dockerfile · tests/ · solution/
-│   └── write/                       # 기본 스킬: 새 스킬·도구의 뼈대와 팀 규약(판단과 결정적 부분을 가르기부터)
+│   ├── write/                       # 기본 스킬: 새 스킬·도구의 뼈대와 팀 규약(판단과 결정적 부분을 가르기부터)
+│   │   ├── SKILL.md
+│   │   ├── references/conventions.md    # 스킬 규약 점검표
+│   │   ├── references/tool-contract.md  # 도구 계약 점검표(결과 ABI)
+│   │   └── evals/<case>/
+│   └── review/                      # 기본 스킬: 있는 스킬 하나를 저작 지침·팀 규약으로 심사하고 다듬기
 │       ├── SKILL.md
-│       ├── references/conventions.md    # 스킬 규약 점검표
-│       ├── references/tool-contract.md  # 도구 계약 점검표(결과 ABI)
+│       ├── references/checklist.md      # 심사 점검표(출처: agentskills 스펙·Anthropic·Codex·팀)
 │       └── evals/<case>/
 ├── schemas/
 │   └── tool.schema.json             # tool.json의 JSON Schema. init이 core 모델에서 생성; 낡으면 hc check가 경고하고 hc init <repo-url> --refresh가 다시 씁니다
@@ -80,7 +84,7 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 3. 도구는 한 번 돌려 봅니다. 이 저장소 안에서는 toolbox가 띄운 MCP 도구로 부르거나, 터미널에서 `echo '{...}' | uv run --script tools/<name>/scripts/<x>.py`로 칩니다. 스킬은 `harbor run -p skills/<name>/evals -a oracle -e docker`로 evals 쌍이 모델 없이 reward 1인지 봅니다.
 4. 커밋 전에 `pre-commit install`을 한 번 해 두면 `hc check`가 커밋마다 돕니다(`hc`는 `harness-catalog`의 짧은 이름이고 같은 명령입니다). 같은 검사가 PR의 CI와 레지스트리의 색인에서도 돕니다. 붉으면 병합하지 않습니다.
 5. PR을 열고 사람이 병합합니다. **병합한 사람이 그 판의 인증자**입니다. 레지스트리는 다음 fetch(기본 60초)에 새 판을 색인합니다.
-6. 고치기는 같은 디렉토리를 바꿔 병합하는 것, 은퇴는 디렉토리 삭제입니다(스킬·도구 같음). 후속은 검색으로 찾습니다.
+6. 고치기는 같은 디렉토리를 바꿔 병합하는 것, 은퇴는 디렉토리 삭제입니다(스킬·도구 같음). 후속은 검색으로 찾습니다. 있는 스킬이 발동하지 않거나 다듬고 싶으면 **`review` 스킬**이 점검표(`skills/review/references/checklist.md`)로 심사해 표를 내고, 고른 항목을 브랜치에 고칩니다.
 
 `hc check`의 항목(일곱): 1 저장소 구조 · 2 `skills/` 구조 · 3 SKILL.md 스펙 · 4 시크릿 없음(gitleaks) · 7 크기 상한(파일 50개·1 MB·합 5 MB) · 11 `tool.json` · 12 `server.json`. 번호 5·6·8·9·10은 뺀 규칙의 자리라 비어 있습니다.
 

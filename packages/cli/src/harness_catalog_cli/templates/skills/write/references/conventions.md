@@ -46,7 +46,7 @@
 - [ ] 뼈대는 도구 `scaffold`(`tools/scaffold/`, 카탈로그 클론의 `.mcp.json`으로 MCP에 떠 있다)가 `{"kind": "skill", "name": …, "description": …, "positive": …, "negative": …, "tools": […]}`로 만든다(멱등, 있는 파일은 건드리지 않음; `tools`의 있는 이름은 tool.json을 읽어 본문에 호출 줄을 적고 없는 이름은 뼈대를 함께 만든다). task.toml(schema 1.4·`skills_dir`·타임아웃)·Dockerfile 머리·test.sh/solve.sh 골격의 문면은 그 도구가 소유한다 — 여기 다시 적지 않는다. 에이전트는 TODO 자리(description·instruction·검증 조건·solve 본문·절차)만 채운다.
 - [ ] 실행: `harbor run --path skills/<name>/evals --agent <하네스> --model <모델> --env docker --skill ./skills/<name> --plugin harbor_langfuse:LangfusePlugin`(스킬 있이)과 `--skill`을 뺀 같은 명령(없이) 두 잡. `--dataset`은 Harbor 레지스트리의 `name@version`용이라 로컬 경로에는 `--path`다. 둘 다 통과하면 스킬이 하는 일이 없는 것이고, 있이만 통과하면 값을 한 것이다.
 - [ ] 음성 케이스는 궤적(스킬 로드 여부)을 봐야 판정되므로 검증기가 없으면 사람이 눈으로 판정해 Langfuse annotation으로 남긴다.
-- [ ] 다시 돌리는 때 셋: 본문을 고쳤을 때, 주요 모델이 나왔을 때, 분기마다. 스킬 없이 2회 연속 전 케이스 통과면 폐기 심사 대상.
+- [ ] 다시 돌리는 때 셋: 본문을 고쳤을 때, 주요 모델이 나왔을 때, 분기마다. 스킬 없이 2회 연속 전 케이스 통과면 폐기 심사 대상 — 심사는 `review` 스킬의 점검표 E3.
 
 ## 6. 은퇴
 

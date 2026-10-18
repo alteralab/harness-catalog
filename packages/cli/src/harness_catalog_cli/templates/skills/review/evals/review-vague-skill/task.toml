@@ -1,0 +1,19 @@
+schema_version = "1.4"
+
+[metadata]
+description = "막연한 description·두 단계 참조·시간에 묶인 문장을 가진 yt-subs를 심사하고 브랜치에 고친다"
+
+[environment]
+build_timeout_sec = 600.0
+skills_dir = "/skills"
+# 라이브 소비(레지스트리 MCP)가 필요한 케이스는 아래를 채운다 — tailnet에 닿는 --env docker에서만 된다.
+# [[environment.mcp_servers]]
+# name = "harness-catalog"
+# url = "<REGISTRY_URL>"
+
+[agent]
+timeout_sec = 600.0
+
+[verifier]
+timeout_sec = 120.0
+environment_mode = "shared"   # 검증기가 에이전트 컨테이너의 끝 상태를 직접 본다. 분리 모드(separate)면 artifacts 선언과 tests/Dockerfile이 필요하다

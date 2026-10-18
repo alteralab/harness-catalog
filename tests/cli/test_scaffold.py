@@ -152,10 +152,10 @@ def _scaffold_constants() -> dict[str, str]:
 
 
 def test_shipped_base_evals_match_scaffold() -> None:
-    """실린 기본 스킬 둘(pin·write)의 evals 일곱 케이스는 scaffold가 만드는 것과 같은 Dockerfile 머리·test.sh·공유 검증기 선언을 가진다 — 문면은 한 곳(scaffold.py)이 소유한다."""
+    """실린 기본 스킬 셋(pin·write·review)의 evals 아홉 케이스는 scaffold가 만드는 것과 같은 Dockerfile 머리·test.sh·공유 검증기 선언을 가진다 — 문면은 한 곳(scaffold.py)이 소유한다."""
     k = _scaffold_constants()
     cases = sorted(SKILLS.glob("*/evals/*"))
-    assert len(cases) == 7 and sorted({c.parents[1].name for c in cases}) == ["pin", "write"]
+    assert len(cases) == 9 and sorted({c.parents[1].name for c in cases}) == ["pin", "review", "write"]
     for case in cases:
         dockerfile = (case / "environment/Dockerfile").read_text()
         assert dockerfile.startswith(k["head"]), f"{case}: Dockerfile 머리가 scaffold.py DOCKERFILE_HEAD와 다르다"

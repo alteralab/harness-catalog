@@ -57,7 +57,7 @@ def resolve_pin(pin: str | None, *, code_repo_url: str = CODE_REPO_URL) -> str:
 
 
 def template_files(host: str) -> Mapping[str, str]:
-    """상대 경로 → 내용. 호스트의 워크플로만 싣고, 기본 스킬 둘(templates/skills/)과 기본 도구 하나(templates/tools/)는 파일 전부를 싣고, tool.json의 JSON Schema는 core 모델에서 생성해 싣는다.
+    """상대 경로 → 내용. 호스트의 워크플로만 싣고, 기본 스킬 셋(templates/skills/: pin·write·review)과 기본 도구 하나(templates/tools/)는 파일 전부를 싣고, tool.json의 JSON Schema는 core 모델에서 생성해 싣는다.
 
     원본은 이 패키지 데이터 하나다(사본을 두지 않는다, C-DUP-2). 새 카탈로그는 init 직후부터 스킬 둘(pin·write)과 도구 하나(scaffold)가 검색된다(DESIGN §11 2026-10-18).
     schemas/tool.schema.json은 템플릿 파일이 아니라 `ToolSpec`의 산출물이다 — 모델이 바뀌면 다음 init(새 카탈로그)과 `init --refresh`(기존 카탈로그)가 따라간다; `check`가 낡음을 경고한다.

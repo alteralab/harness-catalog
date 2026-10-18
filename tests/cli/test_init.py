@@ -58,8 +58,8 @@ def test_init_twice_is_idempotent(tmp_path: Path) -> None:
     skills = {w for w in first.written if w.startswith(("skills/", "tools/"))}
     assert set(first.written) - skills == base
     # 기본 스킬 셋이 init과 함께 들어간다(DESIGN §11 2026-10-10·2026-10-11). .gitkeep은 더 쓰지 않는다
-    assert {"skills/pin/SKILL.md", "skills/write/SKILL.md", "tools/scaffold/tool.json", "tools/scaffold/scripts/scaffold.py"} <= skills and "skills/.gitkeep" not in skills
-    assert all(w.startswith(("skills/pin/", "skills/write/", "tools/scaffold/")) for w in skills)
+    assert {"skills/pin/SKILL.md", "skills/write/SKILL.md", "skills/review/SKILL.md", "tools/scaffold/tool.json", "tools/scaffold/scripts/scaffold.py"} <= skills and "skills/.gitkeep" not in skills
+    assert all(w.startswith(("skills/pin/", "skills/write/", "skills/review/", "tools/scaffold/")) for w in skills)
     schema = json.loads(git(remote, "show", "main:schemas/tool.schema.json"))
     assert schema == tool_json_schema() and schema["additionalProperties"] is False and "$schema" in schema["properties"]
     assert listing(remote) == set(first.written)
