@@ -6,17 +6,20 @@ import os
 import subprocess
 import sys
 import time
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import httpx
 import psycopg
 import pytest
+from harness_catalog_server.migrate import yoyo_url
 from testcontainers.community.postgres import PostgresContainer
 
-from harness_catalog_server.migrate import yoyo_url
 from tests.conftest import CatalogRepo, commit_all
 from tests.http.fake_issuer import FakeIssuer, start_fake_issuer
 from tests.http.test_server import PUBLIC_PATH, call_tool, free_port, result_of
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 pytestmark = pytest.mark.pg
 os.environ.setdefault("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "/var/run/docker.sock")

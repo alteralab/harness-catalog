@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from harness_catalog_cli.config import GENERATED_BEGIN, GENERATED_END, merge_docs, render_docs
+from harness_catalog_cli.config import (
+    GENERATED_BEGIN,
+    GENERATED_END,
+    merge_docs,
+    render_docs,
+)
 
 
 def test_fresh_file_has_title_and_table() -> None:

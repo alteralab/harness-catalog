@@ -8,7 +8,6 @@ import tarfile
 from pathlib import Path
 
 import pytest
-
 from harness_catalog_cli import gitleaks
 
 
@@ -52,7 +51,7 @@ def test_download_verifies_checksum_and_caches(tmp_path: Path) -> None:
 
 def test_checksum_mismatch_is_fail_closed(tmp_path: Path) -> None:
     data = tar_with_binary(b"x")
-    with pytest.raises(gitleaks.GitleaksUnavailable):
+    with pytest.raises(gitleaks.GitleaksUnavailableError):
         gitleaks.ensure_gitleaks(env={"XDG_CACHE_HOME": str(tmp_path)}, which=lambda _: None, download=lambda _: data, checksums={"linux_x64": "0" * 64}, key="linux_x64")
     assert not (tmp_path / "harness-catalog").exists() or not any((tmp_path / "harness-catalog").rglob("gitleaks"))
 
@@ -60,14 +59,14 @@ def test_checksum_mismatch_is_fail_closed(tmp_path: Path) -> None:
 def test_platform_key() -> None:
     assert gitleaks.platform_key("Darwin", "arm64") == "darwin_arm64"
     assert gitleaks.platform_key("Linux", "x86_64") == "linux_x64"
-    with pytest.raises(gitleaks.GitleaksUnavailable):
+    with pytest.raises(gitleaks.GitleaksUnavailableError):
         gitleaks.platform_key("Windows", "AMD64")
 
 
 def test_malformed_archive_is_unavailable_not_traceback(tmp_path: Path) -> None:
     env = {"XDG_CACHE_HOME": str(tmp_path)}
     bad = b"not a tarball"
-    with pytest.raises(gitleaks.GitleaksUnavailable):
+    with pytest.raises(gitleaks.GitleaksUnavailableError):
         gitleaks.ensure_gitleaks(env=env, which=lambda _: None, download=lambda _: bad, checksums={"linux_x64": hashlib.sha256(bad).hexdigest()}, key="linux_x64")
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
@@ -75,16 +74,15 @@ def test_malformed_archive_is_unavailable_not_traceback(tmp_path: Path) -> None:
         info.size = 1
         tar.addfile(info, io.BytesIO(b"x"))
     no_member = buf.getvalue()
-    with pytest.raises(gitleaks.GitleaksUnavailable):
+    with pytest.raises(gitleaks.GitleaksUnavailableError):
         gitleaks.ensure_gitleaks(env=env, which=lambda _: None, download=lambda _: no_member, checksums={"linux_x64": hashlib.sha256(no_member).hexdigest()}, key="linux_x64")
 
 
 def test_check_exits_2_when_gitleaks_unavailable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     import subprocess
 
-    from typer.testing import CliRunner
-
     from harness_catalog_cli import __main__ as cli_main
+    from typer.testing import CliRunner
 
     repo = tmp_path / "r"
     repo.mkdir()
@@ -94,7 +92,7 @@ def test_check_exits_2_when_gitleaks_unavailable(tmp_path: Path, monkeypatch: py
     subprocess.run(["git", "-C", str(repo), "-c", "user.email=t@x", "-c", "user.name=t", "commit", "-q", "-m", "c"], check=True)
 
     def boom() -> str:
-        raise gitleaks.GitleaksUnavailable("offline")
+        raise gitleaks.GitleaksUnavailableError("offline")
 
     monkeypatch.setattr(cli_main, "ensure_gitleaks", boom)
     r = CliRunner().invoke(cli_main.app, ["check", str(repo), "--rev", "HEAD"])

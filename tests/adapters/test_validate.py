@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-
 from harness_catalog_core.adapters.validate import SkillsRefValidator
 from harness_catalog_core.model import ValidatorFailure
+
 from tests.conftest import write_skill
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_inspect_pass_and_fail(tmp_path: Path) -> None:

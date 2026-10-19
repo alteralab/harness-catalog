@@ -13,9 +13,13 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
-
 from harness_catalog_cli import pin
-from harness_catalog_server.driving.responses import ErrorResponse, GetSkillResponse, SearchSkillsResponse, SearchToolsResponse
+from harness_catalog_server.driving.responses import (
+    ErrorResponse,
+    GetSkillResponse,
+    SearchSkillsResponse,
+    SearchToolsResponse,
+)
 
 STUB_DIR = Path(__file__).resolve().parents[2] / "packages/cli/src/harness_catalog_cli/templates/skills/pin/evals/pin-project-scope/environment/stub"
 
@@ -35,11 +39,11 @@ async def test_stub_get_skill_archive_feeds_hc_pin(tmp_path: Path) -> None:
         hits = await session.call_tool("search_skills", {"query": "자막"})
         assert not hits.is_error
         SearchSkillsResponse.model_validate(hits.structured_content)  # 서버 pydantic 모델이 그대로 받는다 — 스텁 모양의 드리프트는 여기서 깨진다
-        skills = cast(list[dict[str, Any]], cast(dict[str, Any], hits.structured_content)["skills"])
+        skills = cast("list[dict[str, Any]]", cast("dict[str, Any]", hits.structured_content)["skills"])
         assert [s["name"] for s in skills] == ["yt-subs"] and len(skills[0]["sha"]) == 40 and skills[0]["has_scripts"] is False
         got = await session.call_tool("get_skill", {"id": "yt-subs", "sha": skills[0]["sha"], "archive": True})
         assert not got.is_error
-        payload = cast(dict[str, Any], got.structured_content)
+        payload = cast("dict[str, Any]", got.structured_content)
         GetSkillResponse.model_validate(payload)
         SearchToolsResponse.model_validate((await session.call_tool("search_tools", {"query": "x"})).structured_content)
         assert payload["body"].startswith("# yt-subs") and {f["path"] for f in payload["files"]} == {"SKILL.md", "references/langs.md"}

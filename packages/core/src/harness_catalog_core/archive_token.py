@@ -12,8 +12,10 @@ import base64
 import hmac
 import re
 import time
-from collections.abc import Callable
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 TOKEN_HEADER = "X-Harness-Archive-Token"
 TOKEN_VERSION = "v2"

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from harness_catalog_core.archive_token import ArchiveSigner
 
 KEY = b"k" * 32

@@ -5,15 +5,16 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from collections.abc import Callable
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import psycopg
+from harness_catalog_core.model import IndexOutcome, IndexSnapshot
 from psycopg.rows import tuple_row
 from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool, PoolTimeout
 
-from harness_catalog_core.model import IndexOutcome, IndexSnapshot
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 log = logging.getLogger(__name__)
 

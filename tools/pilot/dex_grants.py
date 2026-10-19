@@ -24,12 +24,14 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Mapping
 from html.parser import HTMLParser
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import jwt
 from jwt import PyJWKClient
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
 
@@ -196,7 +198,7 @@ class Run:
         self.failures: list[str] = []
         self.redirect_uri = f"http://127.0.0.1:{a.callback_port}/callback"
 
-    def expect(self, case: str, ok: bool, detail: str) -> None:
+    def expect(self, case: str, *, ok: bool, detail: str) -> None:
         if not ok:
             self.failures.append(f"{case}: {detail}")
 
@@ -214,7 +216,7 @@ class Run:
         state_ok = qs.get("state", [""])[0] == state
         emit(label, request=q, login_trace=res.trace, final=res.final, state_verified=state_ok, error=res.error or None)
         if not code or not state_ok:
-            self.expect(label, not expect_ok, f"no code (state_ok={state_ok}) final={res.final[:120]}")
+            self.expect(label, ok=not expect_ok, detail=f"no code (state_ok={state_ok}) final={res.final[:120]}")
             return Tokens("", "")
         form = {"grant_type": "authorization_code", "code": code, "redirect_uri": self.redirect_uri, "client_id": self.a.client}
         if use_pkce:
@@ -224,14 +226,14 @@ class Run:
         r = dex.call("POST", "/token", form)
         tr = token_summary(r.body, self.verifier)
         emit(label + ".token", status=r.status, response=tr.summary, error=r.error or None)
-        self.expect(label + ".token", (r.status == 200) == expect_ok, f"status {r.status}")
+        self.expect(label + ".token", ok=(r.status == 200) == expect_ok, detail=f"status {r.status}")
         return tr.tokens
 
     def refresh(self, label: str, token: str, *, expect_ok: bool) -> Tokens:
         r = Dex(self.a.issuer).call("POST", "/token", {"grant_type": "refresh_token", "refresh_token": token, "client_id": self.a.client})
         tr = token_summary(r.body, self.verifier)
         emit(label, status=r.status, response=tr.summary, error=r.error or None)
-        self.expect(label, (r.status == 200) == expect_ok, f"status {r.status}")
+        self.expect(label, ok=(r.status == 200) == expect_ok, detail=f"status {r.status}")
         return tr.tokens
 
     def device_flow(self, label: str) -> None:
@@ -241,17 +243,17 @@ class Run:
         dev = parse_json(r.body) if r.status == 200 else None
         emit(label + ".device_code", status=r.status, response={k: v for k, v in (dev or {}).items() if k != "device_code"}, error=r.error or (None if dev else r.body.decode(errors="replace")[:200]))
         if dev is None:
-            self.expect(label, False, f"device_code status {r.status}")
+            self.expect(label, ok=False, detail=f"device_code status {r.status}")
             return
         interval = int(dev.get("interval", 5))
         poll = {"grant_type": DEVICE_GRANT, "device_code": str(dev["device_code"]), "client_id": self.a.client, "code_verifier": verifier}
         r = dex.call("POST", "/token", poll)  # 승인 전: authorization_pending이어야 한다
         emit(label + ".poll_before_approval", status=r.status, body=r.body.decode(errors="replace")[:200])
-        self.expect(label + ".poll_before_approval", r.status == 400 and b"authorization_pending" in r.body, f"status {r.status}")
+        self.expect(label + ".poll_before_approval", ok=r.status == 400 and b"authorization_pending" in r.body, detail=f"status {r.status}")
         r = dex.call("POST", "/device/auth/verify_code", {"user_code": str(dev["user_code"])})
         emit(label + ".verify_code", status=r.status, location=r.headers.get("Location"))
         if r.status not in (302, 303):
-            self.expect(label, False, f"verify_code status {r.status}")
+            self.expect(label, ok=False, detail=f"verify_code status {r.status}")
             return
         res = dex.login_via_form(r.headers["Location"], self.a.user, self.a.password)
         emit(label + ".login", trace=res.trace, final=res.final, error=res.error or None)
@@ -262,7 +264,7 @@ class Run:
         r = dex.call("POST", "/token", poll)
         tr = token_summary(r.body, self.verifier)
         emit(label + ".device_token", status=r.status, response=tr.summary, error=r.error or None)
-        self.expect(label + ".device_token", r.status == 200, f"status {r.status}")
+        self.expect(label + ".device_token", ok=r.status == 200, detail=f"status {r.status}")
 
 
 def main() -> int:
@@ -310,7 +312,7 @@ def main() -> int:
     basic = base64.b64encode(f"ci-runner:{a.ci_secret}".encode()).decode()
     r = Dex(a.issuer).call("POST", "/token", {"grant_type": "client_credentials", "scope": "openid groups"}, {"Authorization": "Basic " + basic})
     emit("b.client_credentials", status=r.status, body=r.body.decode(errors="replace")[:300], error=r.error or None)
-    run.expect("b.client_credentials", r.status == 400 and b"unsupported_grant_type" in r.body, f"status {r.status}")
+    run.expect("b.client_credentials", ok=r.status == 400 and b"unsupported_grant_type" in r.body, detail=f"status {r.status}")
     # (d) 장치 흐름 — 공개 클라이언트, client_secret 없이, /token 종단점
     run.device_flow("d.device_public")
 

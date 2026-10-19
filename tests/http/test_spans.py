@@ -3,22 +3,25 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator, Sequence
-from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import anyio
 import httpx
 import pytest
+from harness_catalog_core.settings import Settings
+from harness_catalog_server.bootstrap import bootstrap
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-from harness_catalog_core.settings import Settings
-from harness_catalog_server.bootstrap import bootstrap
-from tests.conftest import CatalogRepo
 from tests.http.fake_issuer import FakeIssuer, start_fake_issuer
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+    from pathlib import Path
+
+    from tests.conftest import CatalogRepo
 
 PUBLIC = "http://testserver/mcp"
 
@@ -66,7 +69,7 @@ async def test_tool_spans_carry_subject_skill_and_query(client: tuple[httpx.Asyn
     search = spans["tools/call search_skills"]
     assert search.attributes is not None
     assert search.attributes["langfuse.observation.metadata.query"] == "nothing-at-all" and search.attributes["langfuse.observation.metadata.result_count"] == 0
-    assert list(cast(Sequence[str], search.attributes["langfuse.observation.metadata.candidates"])) == []  # 보여 준 후보 목록(§11 2026-10-19) — 결과 0 이라 빈 목록
+    assert list(cast("Sequence[str]", search.attributes["langfuse.observation.metadata.candidates"])) == []  # 보여 준 후보 목록(§11 2026-10-19) — 결과 0 이라 빈 목록
     # Langfuse 의 Input/Output 칸은 OTel GenAI 도구 스팬 키에서 채워진다(0.9.1) — JSON 문자열
     assert json.loads(str(search.attributes["gen_ai.tool.call.arguments"])) == {"query": "nothing-at-all", "limit": 10}
     assert json.loads(str(search.attributes["gen_ai.tool.call.result"])) == {"skills": []}

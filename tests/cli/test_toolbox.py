@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import json
 import sys
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-
 from harness_catalog_cli import toolbox
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 SCRIPT = """# /// script
 # requires-python = ">=3.12"

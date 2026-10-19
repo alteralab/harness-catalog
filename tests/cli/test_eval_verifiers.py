@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 TEMPLATES = Path(__file__).resolve().parents[2] / "packages/cli/src/harness_catalog_cli/templates/skills"
 VERIFIERS = sorted(TEMPLATES.glob("*/evals/*/tests/test_outputs.py"))
@@ -14,7 +16,7 @@ VERIFIERS = sorted(TEMPLATES.glob("*/evals/*/tests/test_outputs.py"))
 
 def load(path: Path) -> dict[str, object]:
     ns: dict[str, object] = {"__name__": "verifier_under_test"}
-    exec(compile(path.read_text(), str(path), "exec"), ns)  # noqa: S102 — 저장소 안의 고정 파일, 입력 없음
+    exec(compile(path.read_text(), str(path), "exec"), ns)  # 저장소 안의 고정 파일, 입력 없음
     return ns
 
 
@@ -24,9 +26,9 @@ PARSERS = [p for p in VERIFIERS if "def md_links" in p.read_text()]
 @pytest.mark.parametrize("path", PARSERS, ids=lambda p: p.parents[2].name)
 def test_comments_and_code_blocks_do_not_count(path: Path) -> None:
     ns = load(path)
-    section = cast(Callable[[str, str], str], ns["section"])
-    ordered = cast(Callable[[str], list[str]], ns["ordered_items"])
-    has_prose = cast(Callable[[str], bool], ns["has_prose"])
+    section = cast("Callable[[str, str], str]", ns["section"])
+    ordered = cast("Callable[[str], list[str]]", ns["ordered_items"])
+    has_prose = cast("Callable[[str], bool]", ns["has_prose"])
     md = "---\nname: x\n---\n## 단계\n<!-- 도구 `changelog-diff`를 {…}로 -->\n```\n1. 도구 `changelog-diff`를 {…}로 부른다\n```\n## 실패 대응\n"
     assert ordered(section(md, "단계")) == []
     tilde = "## 단계\n~~~\n1. 도구 `changelog-diff`를 {…}로 부른다\n~~~\n\n    2. 들여쓰기 코드 블록의 단계\n"
@@ -50,6 +52,6 @@ def test_comments_and_code_blocks_do_not_count(path: Path) -> None:
 
 @pytest.mark.parametrize("path", PARSERS, ids=lambda p: p.parents[2].name)
 def test_link_variants_are_normalized(path: Path) -> None:
-    md_links = cast(Callable[[str], list[str]], load(path)["md_links"])
+    md_links = cast("Callable[[str], list[str]]", load(path)["md_links"])
     text = "[a](nested.md#section) [b](<nested two.md>) [c](nested.md \"title\") [d](x.md?v=1) [e](https://x/y.html)"
     assert [t for t in md_links(text) if t.endswith(".md")] == ["nested.md", "nested two.md", "nested.md", "x.md"]

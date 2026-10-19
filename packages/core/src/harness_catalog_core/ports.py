@@ -2,11 +2,20 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
-from pathlib import Path
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
-from .model import IndexOutcome, IndexSnapshot, Root, SkillReport, SkillTree, TreeEntry
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+    from pathlib import Path
+
+    from .model import (
+        IndexOutcome,
+        IndexSnapshot,
+        Root,
+        SkillReport,
+        SkillTree,
+        TreeEntry,
+    )
 
 
 class ContentStore(Protocol):

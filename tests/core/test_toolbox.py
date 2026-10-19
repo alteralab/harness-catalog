@@ -3,16 +3,23 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-
 from harness_catalog_core.catalog import Catalog
 from harness_catalog_core.check import check_commit
 from harness_catalog_core.model import CatalogError, ErrorCode, ReadyReason
-from harness_catalog_core.toolbox import MAX_INPUT_SCHEMA_BYTES, parse_server, parse_tool, tool_json_schema
+from harness_catalog_core.toolbox import (
+    MAX_INPUT_SCHEMA_BYTES,
+    parse_server,
+    parse_tool,
+    tool_json_schema,
+)
 
 from .fakes import FakeStore, FakeValidator, MemoryFacts
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 SKILL = {"SKILL.md": b"---\nname: yt-subs\ndescription: subtitles\n---\nbody\n"}
 

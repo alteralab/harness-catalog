@@ -8,15 +8,17 @@ import io
 import json
 import tarfile
 import threading
-from collections.abc import Iterator
 from datetime import UTC, datetime
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-from typer.testing import CliRunner
-
 from harness_catalog_cli import pin
 from harness_catalog_cli.__main__ import app
+from typer.testing import CliRunner
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from pathlib import Path
 
 FILES = {"SKILL.md": b"---\nname: alpha\ndescription: a\n---\nbody\n", "references/x.md": b"ref\n"}
 
@@ -37,7 +39,7 @@ def served() -> Iterator[tuple[str, dict[str, bytes]]]:
     store: dict[str, bytes] = {}
 
     class H(http.server.BaseHTTPRequestHandler):
-        def do_GET(self) -> None:  # noqa: N802
+        def do_GET(self) -> None:
             body = store.get(self.path)
             if body is None or self.headers.get("X-Harness-Archive-Token") != "tok":
                 self.send_response(403)
@@ -48,7 +50,7 @@ def served() -> Iterator[tuple[str, dict[str, bytes]]]:
             self.end_headers()
             self.wfile.write(body)
 
-        def log_message(self, format: str, *args: object) -> None:  # noqa: A002
+        def log_message(self, format: str, *args: object) -> None:
             pass
 
     srv = http.server.HTTPServer(("127.0.0.1", 0), H)

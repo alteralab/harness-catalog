@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import logging
 import math
-from collections.abc import Sequence
-from typing import Any, Final, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 import httpx
-
 from harness_catalog_core.search import embedding_generation
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 log = logging.getLogger(__name__)
 CONNECT_SECONDS: Final = 3.0  # 연결만 짧게 — 질의 임베딩 호출이 죽은 서비스에 매달리지 않게

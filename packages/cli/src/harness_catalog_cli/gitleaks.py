@@ -1,7 +1,7 @@
 """gitleaks 바이너리 확보: PATH의 같은 판 → 검증된 캐시 → 핀된 판 내려받기(체크섬). 검사 항목 4는 fail-closed.
 
 CI 워크플로가 curl·tar로 설치하던 단계를 CLI 안으로 들였다(DESIGN §11 2026-10-10). 판과 체크섬은 여기 한 곳이다.
-Codex 리뷰(2026-10-10) 반영: PATH 바이너리는 판이 같을 때만, 캐시는 기록된 해시와 대조, 임시 파일 뒤 원자적 교체, 모든 실패는 GitleaksUnavailable.
+Codex 리뷰(2026-10-10) 반영: PATH 바이너리는 판이 같을 때만, 캐시는 기록된 해시와 대조, 임시 파일 뒤 원자적 교체, 모든 실패는 GitleaksUnavailableError.
 """
 
 from __future__ import annotations
@@ -15,8 +15,11 @@ import subprocess
 import tarfile
 import tempfile
 import urllib.request
-from collections.abc import Callable, Mapping
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
 
 GITLEAKS_VERSION = "8.30.1"
 # gitleaks_8.30.1_checksums.txt (GitHub release, 2026-10-10 확인) — tar.gz의 sha256
@@ -28,7 +31,7 @@ CHECKSUMS: Mapping[str, str] = {
 }
 
 
-class GitleaksUnavailable(Exception):
+class GitleaksUnavailableError(Exception):
     """확보할 수 없거나 검증에 실패했다 — 검사기 실패(종료 2)로 이어진다."""
 
 
@@ -37,7 +40,7 @@ def platform_key(system: str | None = None, machine: str | None = None) -> str:
     m = (machine or platform.machine()).lower()
     arch = {"x86_64": "x64", "amd64": "x64", "arm64": "arm64", "aarch64": "arm64"}.get(m)
     if s not in ("linux", "darwin") or arch is None:
-        raise GitleaksUnavailable(f"no pinned gitleaks build for {s}/{m}")
+        raise GitleaksUnavailableError(f"no pinned gitleaks build for {s}/{m}")
     return f"{s}_{arch}"
 
 
@@ -47,7 +50,7 @@ def cache_dir(env: Mapping[str, str]) -> Path:
 
 
 def _http_get(url: str) -> bytes:
-    with urllib.request.urlopen(url, timeout=120) as r:  # noqa: S310 — 고정 https URL(release 자산)
+    with urllib.request.urlopen(url, timeout=120) as r:  # 고정 https URL(release 자산)
         return r.read()
 
 
@@ -85,10 +88,10 @@ def _extract_binary(archive: bytes) -> bytes:
             member = tar.getmember("gitleaks")
             f = tar.extractfile(member)
             if f is None or not member.isfile():
-                raise GitleaksUnavailable("archive has no regular file 'gitleaks'")
+                raise GitleaksUnavailableError("archive has no regular file 'gitleaks'")
             return f.read()
     except (tarfile.TarError, KeyError, OSError) as e:
-        raise GitleaksUnavailable(f"archive unreadable: {e}") from e
+        raise GitleaksUnavailableError(f"archive unreadable: {e}") from e
 
 
 def _install(target: Path, binary: bytes) -> None:
@@ -102,7 +105,7 @@ def _install(target: Path, binary: bytes) -> None:
         os.replace(tmp, target)
         target.with_suffix(".sha256").write_text(_sha256(binary) + "\n")
     except OSError as e:
-        raise GitleaksUnavailable(f"cannot write cache {target}: {e}") from e
+        raise GitleaksUnavailableError(f"cannot write cache {target}: {e}") from e
 
 
 def ensure_gitleaks(
@@ -128,9 +131,9 @@ def ensure_gitleaks(
     try:
         data = download(url)
     except OSError as e:
-        raise GitleaksUnavailable(f"download failed: {url}: {e}") from e
+        raise GitleaksUnavailableError(f"download failed: {url}: {e}") from e
     digest = _sha256(data)
     if digest != checksums.get(key):
-        raise GitleaksUnavailable(f"checksum mismatch for {url}: {digest}")
+        raise GitleaksUnavailableError(f"checksum mismatch for {url}: {digest}")
     _install(target, _extract_binary(data))
     return str(target)

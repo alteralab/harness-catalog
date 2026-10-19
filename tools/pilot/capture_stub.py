@@ -73,7 +73,7 @@ class CaptureHandler(BaseHTTPRequestHandler):
         self.send_header("Location", f"{redirect}?error=access_denied&error_description=capture_stub&state={state}")
         self.end_headers()
 
-    def do_GET(self) -> None:  # noqa: N802
+    def do_GET(self) -> None:
         self._record(b"")
         path = urlsplit(self.path).path
         if path == "/.well-known/openid-configuration" or (path == "/.well-known/oauth-authorization-server" and not self.oidc_only):
@@ -85,7 +85,7 @@ class CaptureHandler(BaseHTTPRequestHandler):
         else:
             self._json(404, {"error": "not_found"})
 
-    def do_POST(self) -> None:  # noqa: N802
+    def do_POST(self) -> None:
         n = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(n) if n else b""
         self._record(body)
@@ -95,7 +95,7 @@ class CaptureHandler(BaseHTTPRequestHandler):
         else:
             self._json(400, {"error": "invalid_grant", "error_description": "capture_stub issues no tokens"})
 
-    def log_message(self, format: str, *args: Any) -> None:  # noqa: A002 — 기반 클래스의 시그니처
+    def log_message(self, format: str, *args: Any) -> None:  # 기반 클래스의 시그니처
         _ = (format, args)  # 표준 오류 로그를 끈다(기록은 _record가 한다)
 
 

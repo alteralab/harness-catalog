@@ -9,14 +9,35 @@
 from __future__ import annotations
 
 import tempfile
-from collections.abc import Iterable
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from .catalog_file import MARKER_PATH, MarkerError, parse_marker
-from .model import ROOT_MARKERS, SUPPORTED_LAYOUT, ContentError, Root, SkillTree, ToolEntry, TreeEntry, ValidatorFailure
-from .ports import ContentStore, SkillValidator
-from .toolbox import NAME_RE, SERVER_FILE, TOOL_FILE, McpRuntime, ScriptRuntime, ToolSpec, parse_server, parse_tool
+from .model import (
+    ROOT_MARKERS,
+    SUPPORTED_LAYOUT,
+    ContentError,
+    Root,
+    SkillTree,
+    ToolEntry,
+    TreeEntry,
+    ValidatorFailure,
+)
+from .toolbox import (
+    NAME_RE,
+    SERVER_FILE,
+    TOOL_FILE,
+    McpRuntime,
+    ScriptRuntime,
+    ToolSpec,
+    parse_server,
+    parse_tool,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from .ports import ContentStore, SkillValidator
 
 MAX_FILES = 50
 MAX_FILE_BYTES = 1_000_000

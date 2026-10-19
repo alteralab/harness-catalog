@@ -8,15 +8,18 @@ import socket
 import subprocess
 import sys
 import time
-from collections.abc import Iterator, Mapping
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 import pytest
 
-from tests.conftest import CatalogRepo
 from tests.http.fake_issuer import FakeIssuer, start_fake_issuer
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Mapping
+    from pathlib import Path
+
+    from tests.conftest import CatalogRepo
 
 PUBLIC_PATH = "/mcp"
 

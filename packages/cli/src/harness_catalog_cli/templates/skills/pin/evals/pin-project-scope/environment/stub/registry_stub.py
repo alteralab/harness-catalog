@@ -72,16 +72,16 @@ class Skill:
         self.files: list[dict[str, Any]] = [{"path": rel, "size": self.sizes[rel]} for rel in self.paths]
         self.has_scripts = any(rel.startswith("scripts/") for rel in self.paths)
         self.tar = tar_of(d)
-        self.sha = hashlib.sha1(self.tar).hexdigest()  # noqa: S324 — git 과 같은 40자 식별자 모양이면 된다
-        self.commit = hashlib.sha1(b"commit:" + self.tar).hexdigest()  # noqa: S324
+        self.sha = hashlib.sha1(self.tar).hexdigest()  # git 과 같은 40자 식별자 모양이면 된다
+        self.commit = hashlib.sha1(b"commit:" + self.tar).hexdigest()
         ARCHIVES[f"{self.name}/{self.sha}.tar"] = self.tar
 
 
 class ArchiveHandler(http.server.BaseHTTPRequestHandler):
-    def log_message(self, format: str, *args: object) -> None:  # noqa: A002 — 상위 시그니처
+    def log_message(self, format: str, *args: object) -> None:  # 상위 시그니처
         log.info("http " + format, *args)
 
-    def do_GET(self) -> None:  # noqa: N802 — http.server 규약
+    def do_GET(self) -> None:  # http.server 규약
         key = self.path.removeprefix("/mcp/archive/")
         if self.headers.get("Authorization") != f"Bearer {TOKEN}":
             self.send_error(403, "bad token")
@@ -140,7 +140,7 @@ class Registry:
         if path not in s.sizes:
             return None
         text = (self.fixture / "skills" / s.name / path).read_text(encoding="utf-8")
-        return {"path": path, "size": s.sizes[path], "blob": hashlib.sha1(text.encode()).hexdigest(), "text": text, "base64": None}  # noqa: S324
+        return {"path": path, "size": s.sizes[path], "blob": hashlib.sha1(text.encode()).hexdigest(), "text": text, "base64": None}
 
     def get_skill(self, args: dict[str, Any]) -> types.CallToolResult:
         s = self.skills.get(str(args.get("id", "")))

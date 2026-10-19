@@ -47,7 +47,7 @@ def _github_event_before(env: Mapping[str, str]) -> str:
         return ""
     if not isinstance(payload, dict):
         return ""
-    return str(cast(dict[str, object], payload).get("before") or "")
+    return str(cast("dict[str, object]", payload).get("before") or "")
 
 
 def empty_tree(run: GitRun) -> str:

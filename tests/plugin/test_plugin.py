@@ -3,19 +3,26 @@
 from __future__ import annotations
 
 import subprocess
-from collections.abc import Mapping
 from datetime import UTC, datetime
-from pathlib import Path
-from typing import Any
 from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 import pytest
 from harbor.models.agent.context import AgentContext
 from harbor.models.trial.result import ExceptionInfo, TrialResult
 from harbor.models.verifier.result import VerifierResult
+from harbor_langfuse.plugin import (
+    SKILL_REF_ENV,
+    LangfusePlugin,
+    RunContext,
+    TrialRecord,
+    read_cases,
+)
 
-from harbor_langfuse.plugin import SKILL_REF_ENV, LangfusePlugin, RunContext, TrialRecord, read_cases
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from pathlib import Path
 
 
 class FakeSink:

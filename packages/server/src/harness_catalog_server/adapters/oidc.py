@@ -4,15 +4,16 @@ from __future__ import annotations
 
 import json
 import urllib.request
-from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import anyio
 import jwt
+from harness_catalog_core.model import required_scopes
 from jwt import PyJWKClient
 from mcp.server.auth.provider import AccessToken
 
-from harness_catalog_core.model import required_scopes
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 ALGORITHMS = ("RS256", "ES256")
 LEEWAY_SECONDS = 60

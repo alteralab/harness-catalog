@@ -156,7 +156,7 @@ set -eu
 """
 
 
-class Input(Exception):
+class InputError(Exception):
     """입력 오류(종료 2)."""
 
 
@@ -219,19 +219,19 @@ def server_json(server: str) -> str:
 def scaffold_tool(root: Path, name: str, description: str, runtime: str, script: str, server: str | None, mcp_tool: str | None, created: list[str]) -> list[str]:
     tool_dir = root / "tools" / name
     if (root / "skills" / name).exists():
-        raise Input(f"name {name!r} is already a skill (skills/{name}/) — names are unique across skills and tools")
+        raise InputError(f"name {name!r} is already a skill (skills/{name}/) — names are unique across skills and tools")
     if runtime == "script":
         if not SCRIPT_RE.match(script):
-            raise Input(f"script must be a file name like main.py, not {script!r}")
+            raise InputError(f"script must be a file name like main.py, not {script!r}")
         path = f"scripts/{script}"
         command = ["uv", "run", "--script", path]
         put(tool_dir / "tool.json", tool_json(name, description, {"kind": "script", "path": path, "command": command}), created, root)
         put(tool_dir / path, TOOL_SCRIPT_PY.format(command=" ".join(command)), created, root)
         return [f"tools/{name}/tool.json: inputSchema.properties·required, outputSchema 필드, description의 '쓰지 말 상황' 한 줄", f"tools/{name}/{path}: 본문(stdin JSON → 일 → stdout JSON)과 PEP 723 dependencies"]
     if not server or not mcp_tool:
-        raise Input("runtime=mcp needs server and mcp_tool")
+        raise InputError("runtime=mcp needs server and mcp_tool")
     if not NAME_RE.match(server):
-        raise Input(f"server must match {NAME_RE.pattern}: {server!r}")
+        raise InputError(f"server must match {NAME_RE.pattern}: {server!r}")
     put(tool_dir / "tool.json", tool_json(name, description, {"kind": "mcp", "server": server, "tool": mcp_tool}), created, root)
     put(root / "mcp-servers" / server / "server.json", server_json(server), created, root)
     return [f"tools/{name}/tool.json: inputSchema·outputSchema를 그 서버의 도구 정의와 맞춘다", f"mcp-servers/{server}/server.json: version과 packages 또는 remotes(시크릿 값은 적지 않는다)"]
@@ -248,38 +248,38 @@ class ToolShape(NamedTuple):
 def _object_schema(value: object, what: str) -> tuple[dict[str, object], list[str]]:
     """`{"type": "object", "properties": {...}, "required": [...]}` 모양인지 보고 (properties, required)를 돌려준다."""
     if not isinstance(value, dict):
-        raise Input(f"{what} must be an object schema with properties")
-    schema = cast(dict[str, object], value)
+        raise InputError(f"{what} must be an object schema with properties")
+    schema = cast("dict[str, object]", value)
     props_raw, required_raw = schema.get("properties", {}), schema.get("required", [])
     if schema.get("type") != "object" or not isinstance(props_raw, dict) or not isinstance(required_raw, list):
-        raise Input(f"{what} must be an object schema with properties")
-    props = cast(dict[str, object], props_raw)
-    required = [str(k) for k in cast(list[object], required_raw)]
+        raise InputError(f"{what} must be an object schema with properties")
+    props = cast("dict[str, object]", props_raw)
+    required = [str(k) for k in cast("list[object]", required_raw)]
     if any(k not in props for k in required):
-        raise Input(f"{what}.required must list keys of properties")
+        raise InputError(f"{what}.required must list keys of properties")
     return props, required
 
 
 def read_tool_spec(root: Path, tool: str) -> ToolShape:
-    """tools/<tool>/tool.json을 읽어 호출 줄에 필요한 모양만 검증한다(전체 계약은 hc check 항목 11). 틀리면 Input — 쓰기 전에."""
+    """tools/<tool>/tool.json을 읽어 호출 줄에 필요한 모양만 검증한다(전체 계약은 hc check 항목 11). 틀리면 InputError — 쓰기 전에."""
     path = root / "tools" / tool / "tool.json"
     try:
         raw: object = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as e:
-        raise Input(f"tools/{tool}/tool.json unreadable: {e}") from e
+        raise InputError(f"tools/{tool}/tool.json unreadable: {e}") from e
     if not isinstance(raw, dict):
-        raise Input(f"tools/{tool}/tool.json: not an object with name {tool!r}")
-    spec = cast(dict[str, object], raw)
+        raise InputError(f"tools/{tool}/tool.json: not an object with name {tool!r}")
+    spec = cast("dict[str, object]", raw)
     if spec.get("name") != tool:
-        raise Input(f"tools/{tool}/tool.json: not an object with name {tool!r}")
+        raise InputError(f"tools/{tool}/tool.json: not an object with name {tool!r}")
     props, required = _object_schema(spec.get("inputSchema"), f"tools/{tool}/tool.json: inputSchema")
     out = spec.get("outputSchema")
     output_keys = None
     if out is not None:
         try:
             output_keys = list(_object_schema(out, "outputSchema")[0])
-        except Input as e:
-            raise Input(f"tools/{tool}/tool.json: {e} (omit it for a text tool)") from e
+        except InputError as e:
+            raise InputError(f"tools/{tool}/tool.json: {e} (omit it for a text tool)") from e
     return ToolShape(str(spec.get("description", "")), required + [k for k in props if k not in required], output_keys)
 
 
@@ -298,12 +298,12 @@ def plan_tools(root: Path, skill: str, tools: list[str]) -> tuple[list[str], lis
     lines: list[str] = []
     for tool in tools:
         if not NAME_RE.match(tool):
-            raise Input(f"tools[] must match {NAME_RE.pattern}: {tool!r}")
+            raise InputError(f"tools[] must match {NAME_RE.pattern}: {tool!r}")
         if (root / "tools" / tool / "tool.json").exists():
             shape = read_tool_spec(root, tool)
         else:
             if tool == skill or (root / "skills" / tool).exists():
-                raise Input(f"tool {tool!r} would collide with a skill of the same name — names are unique across skills and tools")
+                raise InputError(f"tool {tool!r} would collide with a skill of the same name — names are unique across skills and tools")
             missing.append(tool)
             shape = ToolShape("TODO", ["TODO"], ["summary", "received"])  # tool_json 뼈대와 같은 모양
         lines.append(tool_line(tool, shape))
@@ -315,14 +315,14 @@ def scaffold_skill(root: Path, name: str, description: str, positive: str, negat
     d = root / "skills" / name
     # 1) 검증과 호출 줄을 전부 메모리에서 — 어느 하나라도 틀리면 아무것도 쓰지 않는다
     if (root / "tools" / name).exists():
-        raise Input(f"name {name!r} is already a tool (tools/{name}/) — names are unique across skills and tools")
+        raise InputError(f"name {name!r} is already a tool (tools/{name}/) — names are unique across skills and tools")
     missing, lines = plan_tools(root, name, tools)
     skill_md = d / "SKILL.md"
     if skill_md.exists():  # 재실행: 있는 본문은 건드리지 않으므로, 본문이 모르는 도구를 새로 만들어 고아로 두지 않는다
         body = skill_md.read_text(encoding="utf-8")
         unlinked = [t for t in tools if f"도구 `{t}`" not in body]
         if unlinked:
-            raise Input(f"skills/{name}/SKILL.md exists and does not call {', '.join(unlinked)} — add the call line by hand, then scaffold the tool with kind=tool")
+            raise InputError(f"skills/{name}/SKILL.md exists and does not call {', '.join(unlinked)} — add the call line by hand, then scaffold the tool with kind=tool")
     # 2) 쓰기
     put(skill_md, SKILL_MD.format(name=name, description=description, tool_lines="".join(lines)), created, root)
     case_files(d / "evals" / positive, name, "TODO 써야 하는 과제 한 줄", "TODO 스킬이 만들어야 하는 결과(파일·상태)가 있어야 1", "cd /work\n# TODO 끝 상태를 만든다", created, root)
@@ -348,21 +348,21 @@ def main() -> int:
     try:
         kind, name, description = str(args.get("kind", "")), str(args.get("name", "")), str(args.get("description", ""))
         if kind not in ("skill", "tool"):
-            raise Input("kind must be skill or tool")
+            raise InputError("kind must be skill or tool")
         if not NAME_RE.match(name):
-            raise Input(f"name must match {NAME_RE.pattern}: {name!r}")
+            raise InputError(f"name must match {NAME_RE.pattern}: {name!r}")
         if not description:
-            raise Input("description is required")
+            raise InputError("description is required")
         if kind == "skill":
             tools_raw = args.get("tools", [])
-            if not isinstance(tools_raw, list) or not all(isinstance(t, str) for t in cast(list[object], tools_raw)):
-                raise Input("tools must be a list of tool names")
-            tools = list(dict.fromkeys(cast(list[str], tools_raw)))
+            if not isinstance(tools_raw, list) or not all(isinstance(t, str) for t in cast("list[object]", tools_raw)):
+                raise InputError("tools must be a list of tool names")
+            tools = list(dict.fromkeys(cast("list[str]", tools_raw)))
             todo = scaffold_skill(root, name, description, str(args.get("positive", "basic")), str(args.get("negative", "basic")), tools, created)
         else:
             server, mcp_tool = args.get("server"), args.get("mcp_tool")
             todo = scaffold_tool(root, name, description, str(args.get("runtime", "script")), str(args.get("script", "main.py")), str(server) if server else None, str(mcp_tool) if mcp_tool else None, created)
-    except Input as e:
+    except InputError as e:
         print(str(e), file=sys.stderr)
         return 2
     except OSError as e:  # 쓰기 도중 실패 — 이번 호출이 만든 파일만 되돌린다(있던 파일은 put이 건드리지 않았다)

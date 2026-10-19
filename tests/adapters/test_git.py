@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import subprocess
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-
 from harness_catalog_core.adapters.git import GitStore
 from harness_catalog_core.model import ContentError, ReadyReason
+
 from tests.conftest import CatalogRepo, commit_all, git, write_skill
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_fetch_list_read_export(tmp_path: Path, catalog_repo: CatalogRepo) -> None:
@@ -75,7 +78,6 @@ def test_archive_skill_is_deterministic_capped_and_clean(tmp_path: Path, catalog
     import tarfile
 
     import pytest
-
     from harness_catalog_core.model import ArchiveTooLarge, ContentError
 
     store = GitStore(tmp_path / "work" / "clone", str(catalog_repo.path))

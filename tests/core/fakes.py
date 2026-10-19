@@ -4,10 +4,24 @@ from __future__ import annotations
 
 import io
 import tarfile
-from collections.abc import Callable, Sequence
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-from harness_catalog_core.model import ArchiveTooLarge, ContentError, IndexOutcome, IndexSnapshot, ReadyReason, Root, SkillProps, SkillReport, SkillTree, TreeEntry
+from harness_catalog_core.model import (
+    ArchiveTooLarge,
+    ContentError,
+    IndexOutcome,
+    IndexSnapshot,
+    ReadyReason,
+    Root,
+    SkillProps,
+    SkillReport,
+    SkillTree,
+    TreeEntry,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+    from pathlib import Path
 
 Files = dict[str, bytes]
 
@@ -150,7 +164,7 @@ class FakeValidator:
 
 
 class MemoryFacts:
-    def __init__(self, available: bool = True) -> None:
+    def __init__(self, *, available: bool = True) -> None:
         self.available = available
         self.snapshots: list[IndexSnapshot] = []
 
@@ -180,7 +194,7 @@ class MemoryFacts:
 class FakeEmbedder:
     """문서 텍스트를 결정적 2차원 벡터로 — 낱말 '자막' 쪽은 (1,0), '커밋' 쪽은 (0,1). 호출 횟수를 세어 재사용을 검증한다. available=False 면 None(닿지 않음)."""
 
-    def __init__(self, available: bool = True, model: str = "fake-model") -> None:
+    def __init__(self, *, available: bool = True, model: str = "fake-model") -> None:
         self.available = available
         self.model = model
         self.calls: list[list[str]] = []

@@ -41,7 +41,7 @@ def start_fake_issuer() -> FakeIssuer:
     state: dict[str, str] = {}
 
     class Handler(BaseHTTPRequestHandler):
-        def do_GET(self) -> None:  # noqa: N802
+        def do_GET(self) -> None:
             if self.path == "/.well-known/openid-configuration":
                 body = {"issuer": state["issuer"], "jwks_uri": state["issuer"] + "/keys", "authorization_endpoint": state["issuer"] + "/auth", "token_endpoint": state["issuer"] + "/token", "response_types_supported": ["code"], "code_challenge_methods_supported": ["S256"]}
             elif self.path == "/keys":
@@ -57,7 +57,7 @@ def start_fake_issuer() -> FakeIssuer:
             self.end_headers()
             self.wfile.write(data)
 
-        def log_message(self, format: str, *args: object) -> None:  # noqa: A002
+        def log_message(self, format: str, *args: object) -> None:
             return
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)

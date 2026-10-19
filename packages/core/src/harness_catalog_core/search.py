@@ -13,11 +13,14 @@ from __future__ import annotations
 import math
 import re
 from collections import Counter
-from collections.abc import Iterable, Sequence
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import numpy as np
-from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
+    from numpy.typing import NDArray
 
 ALPHA: Final = 0.85
 K1: Final = 1.5

@@ -2,17 +2,20 @@
 
 from __future__ import annotations
 
-from starlette.requests import Request
+from typing import TYPE_CHECKING
+
 from starlette.responses import JSONResponse
 
-from harness_catalog_core.catalog import Catalog
+if TYPE_CHECKING:
+    from harness_catalog_core.catalog import Catalog
+    from starlette.requests import Request
 
 
 def healthz(_: Request) -> JSONResponse:
     return JSONResponse({"status": "ok"})
 
 
-def make_readyz(catalog: Catalog):  # noqa: ANN201
+def make_readyz(catalog: Catalog):
     async def readyz(_: Request) -> JSONResponse:
         s = catalog.status()
         body = {

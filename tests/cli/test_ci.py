@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import json
 import subprocess
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-from typer.testing import CliRunner
-
 from harness_catalog_cli import ci
 from harness_catalog_cli.__main__ import app
+from typer.testing import CliRunner
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def git(repo: Path, *args: str) -> str:

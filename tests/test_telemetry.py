@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
+from harness_catalog_server.telemetry import DEFAULT_SERVICE_NAME, configure_tracing
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from harness_catalog_server.telemetry import DEFAULT_SERVICE_NAME, configure_tracing
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_no_endpoint_is_noop() -> None:

@@ -82,9 +82,9 @@ def parse_response(data: Mapping[str, Any]) -> Record:
 
 
 def download(record: Record, *, timeout: float = 60.0) -> bytes:
-    req = urllib.request.Request(record.uri, headers=dict(record.headers), method="GET")  # noqa: S310 — 레지스트리가 준 https URI
+    req = urllib.request.Request(record.uri, headers=dict(record.headers), method="GET")  # 레지스트리가 준 https URI
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = resp.read(record.size + 1)
     except OSError as e:
         raise PinError(f"download failed: {e} (the 5-minute token may have expired — fetch a fresh descriptor)") from e
@@ -174,7 +174,7 @@ def _swap(tmp: Path, target: Path, old: Path) -> bool:
     return had_old
 
 
-def _restore(target: Path, old: Path, had_old: bool) -> None:
+def _restore(target: Path, old: Path, *, had_old: bool) -> None:
     shutil.rmtree(target, ignore_errors=True)
     if had_old:
         old.rename(target)
@@ -201,7 +201,7 @@ def install(record: Record, tar_bytes: bytes, *, scope: Scope, project_root: Pat
             else:
                 ensure_toolbox_entry(scope, project_root)
         except BaseException:
-            _restore(target, old, had_old)
+            _restore(target, old, had_old=had_old)
             raise
         shutil.rmtree(old, ignore_errors=True)
     return target

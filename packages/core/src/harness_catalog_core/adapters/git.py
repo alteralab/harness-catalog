@@ -10,11 +10,20 @@ import subprocess
 import tarfile
 import tempfile
 import threading
-from collections.abc import Mapping
 from pathlib import Path
-from typing import IO
+from typing import IO, TYPE_CHECKING
 
-from ..model import ArchiveTooLarge, ContentError, ReadyReason, Root, SkillTree, TreeEntry
+from ..model import (
+    ArchiveTooLarge,
+    ContentError,
+    ReadyReason,
+    Root,
+    SkillTree,
+    TreeEntry,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 MAIN_REF = "refs/remotes/origin/main"
 

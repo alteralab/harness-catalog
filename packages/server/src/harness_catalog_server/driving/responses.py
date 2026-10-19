@@ -10,9 +10,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
-
 from harness_catalog_core.toolbox import ServerSpec, ToolSpec
+from pydantic import BaseModel, ConfigDict, Field
 
 TREE_SHA = Field(min_length=40, max_length=40, pattern=r"^[0-9a-f]{40}$", description="git tree SHA of the skill/tool directory = its version")
 COMMIT_SHA = Field(min_length=40, max_length=40, pattern=r"^[0-9a-f]{40}$", description="commit on main that carries this version")
@@ -59,7 +58,7 @@ class DownloadDescriptor(_Closed):
     method: Literal["GET"]
     headers: dict[str, str] = Field(description="send as-is; carries the 5-minute archive token")
     expires_at: datetime
-    mimeType: Literal["application/x-tar"]  # noqa: N815 — SEP-2631의 필드 이름 그대로
+    mimeType: Literal["application/x-tar"]  # SEP-2631의 필드 이름 그대로
     size: int = Field(ge=0, description="tar bytes; compare after download")
     sha256: str = Field(min_length=64, max_length=64, pattern=r"^[0-9a-f]{64}$", description="tar digest; compare after download")
     digest: str = Field(description="`git-tree:<tree sha>` of the version inside the tar")

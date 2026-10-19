@@ -8,16 +8,19 @@ URL에는 이름과 tree만 있어 uvicorn·프록시 접근 로그에 자격이
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
 import anyio
+from harness_catalog_core.archive_token import TOKEN_HEADER, ArchiveKind, ArchiveSigner
+from harness_catalog_core.model import CatalogError, ErrorCode
 from opentelemetry import trace
-from starlette.requests import Request
 from starlette.responses import FileResponse, Response
 
-from harness_catalog_core.archive_token import TOKEN_HEADER, ArchiveKind, ArchiveSigner
-from harness_catalog_core.catalog import Catalog
-from harness_catalog_core.model import CatalogError, ErrorCode
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from harness_catalog_core.catalog import Catalog
+    from starlette.requests import Request
 
 ARCHIVE_PATH = "/mcp/archive/{name}/{tree}.tar"
 TOOL_ARCHIVE_PATH = "/mcp/archive/tools/{name}/{tree}.tar"

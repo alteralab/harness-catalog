@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
 from harness_catalog_core.settings import Settings
+from pydantic import ValidationError
 
 BASE = {"catalog_repo_url": "file:///tmp/x.git", "git_deploy_key": "", "database_url": "postgresql://u:p@h/db"}
 

@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import psycopg
 import pytest
-from testcontainers.community.postgres import PostgresContainer
-
 from harness_catalog_core.model import IndexOutcome, IndexSnapshot, SkillEntry
 from harness_catalog_server.adapters.pg import Breaker, PgFactStore
 from harness_catalog_server.migrate import migrate, yoyo_url
+from testcontainers.community.postgres import PostgresContainer
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 pytestmark = pytest.mark.pg
 # Docker Desktop(macOS)은 소켓이 ~/.docker/run/docker.sock이라 reaper 컨테이너가 그 경로를 마운트하지 못한다(실측). 표준 경로로 알려 준다.
@@ -220,6 +222,7 @@ def test_replace_is_all_or_nothing_across_both_tables(database_url: str) -> None
 def test_upgrade_from_0001_on_populated_db() -> None:
     """0001만 적용된 채 데이터가 있는 DB에 0002~0005가 올라가고, 다시 migrate는 0이다."""
     from importlib.resources import as_file, files
+
     from yoyo import get_backend, read_migrations  # pyright: ignore[reportUnknownVariableType]
 
     with PostgresContainer("postgres:17-alpine", driver=None) as pg:
