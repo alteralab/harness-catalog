@@ -150,11 +150,11 @@ docker compose -f docker/compose.yml exec registry harness-catalog-server reinde
 **관측(Langfuse).** 레지스트리가 Langfuse를 직접 알지는 않습니다. 도구 호출마다 OpenTelemetry 스팬(`tools/call <tool>`, 속성 `langfuse.user.id`·`harness_catalog.skill`·`sha`·`query`·`result_count`)을 내고, 표준 OTLP 환경 변수가 있을 때만 내보냅니다. Langfuse로 보내려면 `.env`에 셋을 둡니다.
 
 ```sh
-OTEL_EXPORTER_OTLP_ENDPOINT=https://cloud.langfuse.com/api/public/otel     # US는 us.cloud.langfuse.com, 셀프호스팅은 <host>/api/public/otel
-printf 'Authorization=Basic %s' "$(printf '%s:%s' "$LANGFUSE_PUBLIC_KEY" "$LANGFUSE_SECRET_KEY" | base64)" > secrets/otlp_headers   # 운영은 비밀 파일(D10). 개발·빠른 시작은 환경 변수 OTEL_EXPORTER_OTLP_HEADERS
-OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf                                   # Langfuse는 gRPC를 받지 않는다
+# 수신처는 compose.yml 기본값(팀 Langfuse Cloud US)이라 .env 에 적을 것이 없다. 끄려면 .env 에 OTEL_EXPORTER_OTLP_ENDPOINT= (빈 값), 셀프호스팅으로 옮기면 <host>/api/public/otel
+LANGFUSE_PUBLIC_KEY=$(gopass show -o nas/langfuse-public) LANGFUSE_SECRET_KEY=$(gopass show -o nas/langfuse-secret) scripts/make-secrets.sh ./secrets   # otlp_headers 에 Basic 헤더(D10). 이미 채워져 있으면 그대로
+# 배포 뒤 deploy.sh 가 'tracing: tracing on: otlp/http -> <수신처>' 를 찍는다. 빈 줄이면 꺼진 것
 ```
 
-`ENDPOINT`가 비면 스팬은 no-op이고 아무 데도 가지 않습니다(`secrets/otlp_headers`가 비어 있어도 됩니다). 평가 결과는 다른 경로입니다. `harbor run`의 플러그인이 러너 환경의 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`로 Langfuse에 직접 씁니다. 같은 Langfuse 프로젝트의 키 한 쌍이면 둘 다 됩니다.
+`.env`에서 `ENDPOINT`를 빈 값으로 주면 스팬은 no-op이고 아무 데도 가지 않습니다(`secrets/otlp_headers`가 비어 있어도 됩니다). 셀프호스팅으로 옮기는 것은 수신처와 헤더 파일만 바꾸는 일이고 과거 trace 는 옮겨지지 않습니다(Langfuse 는 export API 만). 평가 결과는 다른 경로입니다. `harbor run`의 플러그인이 러너 환경의 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`로 Langfuse에 직접 씁니다. 같은 Langfuse 프로젝트의 키 한 쌍이면 둘 다 됩니다.
 
 **팀원 온보딩.** LDAP 계정을 `harness-readers`에 넣고, 카탈로그 저장소 read를 줍니다. 두 명단은 같아야 합니다. 그다음 [using.md](using.md)를 건넵니다.

@@ -2,7 +2,7 @@
 # 운영 호스트에 레지스트리 한 판을 배포한다 — 한 명령. (plans/distribution.md D25)
 #   scripts/deploy.sh <ssh 호스트> <이미지 태그(짧은 SHA 또는 vX.Y.Z)> [저장소 경로] [compose 오버레이]
 # 하는 일: 호스트에서 git pull → docker/.env의 REGISTRY_IMAGE 교체 → 이미지 확인(없으면 pull) → registry만 up -d →
-#          /readyz가 ready이고 db_unavailable이 없을 때까지 대기 → 적용된 마이그레이션·commit 출력.
+#          /readyz가 ready이고 db_unavailable이 없을 때까지 대기 → 적용된 마이그레이션·commit·tracing 수신처 출력.
 # 전제: 호스트에 ssh 키 로그인, 저장소 클론, docker/.env·SECRETS_DIR 준비(docs/operations.md §2). 비대화 PATH에 docker가 없을 수 있어 DOCKER로 절대 경로를 준다.
 # 예: scripts/deploy.sh mini 1b076d1 /Users/altera/harness-catalog docker/synology-ldap/compose.override.yml
 set -eu
@@ -37,4 +37,5 @@ echo "readyz: \$out"
 case "\$out" in *'"ready":true'*) ;; *) echo "deploy: registry did not become ready" >&2; exit 1 ;; esac
 echo "migrations: \$(\$compose exec -T postgres psql -U postgres -d harness_catalog -tAc 'select string_agg(migration_id, \$\$, \$\$ order by migration_id) from _yoyo_migration')"
 echo "image: \$("$docker_bin" inspect harness-catalog-registry-1 --format '{{.Config.Image}}')"
+echo "tracing: \$("$docker_bin" logs harness-catalog-registry-1 2>&1 | grep -o 'tracing on: otlp/http -> [^ ]*' | tail -1 || true)"   # 비면 스팬 no-op(ENDPOINT 비움)
 EOF

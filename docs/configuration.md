@@ -41,11 +41,11 @@ harness-catalog의 설정 표면 전부를 층별로 적은 참조입니다. 층
 
 ## 2. 관측 (OpenTelemetry → Langfuse)
 
-레지스트리의 설정값이 아니라 OTel SDK의 표준 변수입니다. `OTEL_EXPORTER_OTLP_ENDPOINT`가 비면 스팬은 no-op이고 아무것도 나가지 않습니다.
+레지스트리의 설정값이 아니라 OTel SDK의 표준 변수입니다. 운영 compose는 `OTEL_EXPORTER_OTLP_ENDPOINT`의 기본값으로 팀 Langfuse(Cloud US, `https://us.cloud.langfuse.com/api/public/otel`)를 넣어 두므로 `.env`에 아무것도 안 적으면 켜져 있습니다. `.env`에서 빈 값으로 주면 스팬은 no-op이고 아무것도 나가지 않습니다(2026-10-19).
 
 | 변수 | 기본값 | 뜻 |
 |---|---|---|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | (비움 = 끔) | OTLP/HTTP 수신 주소. Langfuse Cloud는 `https://cloud.langfuse.com/api/public/otel`(EU) · `https://us.cloud.langfuse.com/api/public/otel`(US), 셀프호스팅은 `<host>/api/public/otel` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | 운영 compose: 팀 Langfuse US(빈 값 = 끔) · 빠른 시작·개발: 비움 | OTLP/HTTP 수신 주소. Langfuse Cloud는 `https://cloud.langfuse.com/api/public/otel`(EU) · `https://us.cloud.langfuse.com/api/public/otel`(US), 셀프호스팅은 `<host>/api/public/otel` |
 | `OTEL_EXPORTER_OTLP_HEADERS` | | `k=v,k2=v2`. Langfuse는 `Authorization=Basic <base64(public_key:secret_key)>`. 개발·빠른 시작용 |
 | `OTEL_EXPORTER_OTLP_HEADERS_FILE` | | 같은 내용을 파일에서(운영 compose는 비밀 파일 `otlp_headers`). 비어 있으면 무시하고 위 변수를 쓴다 |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` | Langfuse는 gRPC를 받지 않는다 |
