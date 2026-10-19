@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any, cast
@@ -66,3 +67,8 @@ async def test_tool_spans_carry_subject_skill_and_query(client: tuple[httpx.Asyn
     assert search.attributes is not None
     assert search.attributes["langfuse.observation.metadata.query"] == "nothing-at-all" and search.attributes["langfuse.observation.metadata.result_count"] == 0
     assert list(cast(Sequence[str], search.attributes["langfuse.observation.metadata.candidates"])) == []  # 보여 준 후보 목록(§11 2026-10-19) — 결과 0 이라 빈 목록
+    # Langfuse 의 Input/Output 칸은 OTel GenAI 도구 스팬 키에서 채워진다(0.9.1) — JSON 문자열
+    assert json.loads(str(search.attributes["gen_ai.tool.call.arguments"])) == {"query": "nothing-at-all", "limit": 10}
+    assert json.loads(str(search.attributes["gen_ai.tool.call.result"])) == {"skills": []}
+    assert json.loads(str(load.attributes["gen_ai.tool.call.arguments"])) == {"id": "yt-subs", "sha": None, "path": None, "archive": False}
+    assert json.loads(str(load.attributes["gen_ai.tool.call.result"]))["id"] == "yt-subs"

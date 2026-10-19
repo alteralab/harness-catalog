@@ -44,6 +44,14 @@ ATTR_SHA = "langfuse.observation.metadata.sha"
 ATTR_QUERY = "langfuse.observation.metadata.query"
 ATTR_RESULT_COUNT = "langfuse.observation.metadata.result_count"
 ATTR_CANDIDATES = "langfuse.observation.metadata.candidates"  # 검색이 돌려준 이름 목록(§11 2026-10-19 검색 0.8.0) — 뒤의 get_skill/get_tool 과 묶어 "보여 준 것 중 무엇을 골랐나"
+# Langfuse 는 관측의 Input/Output 칸을 OTel GenAI 도구 스팬 규약 키에서 채운다(다른 입력·출력 키가 없을 때). 없으면 화면에 undefined — 2026-10-19 실측(0.9.1). 집계 필터는 metadata 가 맡고 이 둘은 사람이 트레이스를 읽는 칸이다
+ATTR_ARGS = "gen_ai.tool.call.arguments"
+ATTR_RESULT = "gen_ai.tool.call.result"
+
+
+def _io(span: trace.Span, args: Mapping[str, Any], result: Mapping[str, Any]) -> None:
+    """도구 호출의 입력·출력을 JSON 문자열로. 출력은 이름·판 같은 짧은 것만 — 스킬 본문은 넣지 않는다(크고, 선택 분석에 필요한 것은 이름뿐)."""
+    span.set_attributes({ATTR_ARGS: json.dumps(args, ensure_ascii=False), ATTR_RESULT: json.dumps(result, ensure_ascii=False)})
 
 
 def _ok(model: BaseModel) -> CallToolResult:
@@ -92,7 +100,9 @@ class ToolBindings:
             result = await anyio.to_thread.run_sync(self._catalog.search_skills, query, limit)
         except CatalogError as e:
             return _error(e.code, e.detail)
-        span.set_attributes({ATTR_RESULT_COUNT: len(result.skills), ATTR_CANDIDATES: [s.name for s in result.skills]})
+        names = [s.name for s in result.skills]
+        span.set_attributes({ATTR_RESULT_COUNT: len(names), ATTR_CANDIDATES: names})
+        _io(span, {"query": query, "limit": limit}, {"skills": names})
         return _ok(SearchSkillsResponse(skills=[SkillHit(name=s.name, description=s.description, sha=s.sha, compatibility=s.compatibility, has_scripts=s.has_scripts) for s in result.skills], fetched_at=result.fetched_at))
 
     async def get_skill(self, id: str, sha: str | None = None, path: str | None = None, archive: bool = False) -> Annotated[CallToolResult, GetSkillResponse]:  # noqa: A002
@@ -113,7 +123,9 @@ class ToolBindings:
                 descriptor = self._descriptor(await anyio.to_thread.run_sync(self._catalog.get_skill_archive, id, body.sha))
         except CatalogError as e:
             return _error(e.code, e.detail)
-        trace.get_current_span().set_attributes({ATTR_SKILL: body.name, ATTR_SHA: body.sha})
+        span = trace.get_current_span()
+        span.set_attributes({ATTR_SKILL: body.name, ATTR_SHA: body.sha})
+        _io(span, {"id": id, "sha": sha, "path": path, "archive": archive}, {"id": body.name, "sha": body.sha, "files": len(body.files)})
         return _ok(GetSkillResponse(
             id=body.name, sha=body.sha, commit=body.commit, body=None if path is not None else body.body, metadata=dict(body.metadata),
             files=[FileEntry(path=f.path, size=f.size) for f in body.files], has_scripts=body.has_scripts, file=payload, archive=descriptor, fetched_at=body.fetched_at,
@@ -142,7 +154,9 @@ class ToolBindings:
             result = await anyio.to_thread.run_sync(self._catalog.search_tools, query, limit)
         except CatalogError as e:
             return _error(e.code, e.detail)
-        span.set_attributes({ATTR_RESULT_COUNT: len(result.tools), ATTR_CANDIDATES: [t.name for t in result.tools]})
+        names = [t.name for t in result.tools]
+        span.set_attributes({ATTR_RESULT_COUNT: len(names), ATTR_CANDIDATES: names})
+        _io(span, {"query": query, "limit": limit}, {"tools": names})
         return _ok(SearchToolsResponse(tools=[ToolHit(name=x.name, description=x.description, sha=x.sha, kind=_kind(x.kind), server=x.server) for x in result.tools], fetched_at=result.fetched_at))
 
     async def get_tool(self, id: str, sha: str | None = None, archive: bool = False) -> Annotated[CallToolResult, GetToolResponse]:  # noqa: A002
@@ -154,7 +168,9 @@ class ToolBindings:
             body = await anyio.to_thread.run_sync(self._catalog.get_tool, id, sha)
         except CatalogError as e:
             return _error(e.code, e.detail)
-        trace.get_current_span().set_attributes({ATTR_TOOL: body.name, ATTR_SHA: body.sha})
+        span = trace.get_current_span()
+        span.set_attributes({ATTR_TOOL: body.name, ATTR_SHA: body.sha})
+        _io(span, {"id": id, "sha": sha, "archive": archive}, {"id": body.name, "sha": body.sha, "kind": body.kind})
         descriptor: DownloadDescriptor | None = None
         if archive and body.kind == "script":
             if self._signer is None or not self._public_url:

@@ -1282,6 +1282,14 @@ skills/yt-subs/
 **바뀌는 것.** core `search.py`(토크나이저·BM25·결합 — 순수 함수, Postgres·모델 없이 시험), `ports.py`(`FactStore.search` → `load_embeddings`, `Embedder` 포트), `catalog.py`(색인 둘 `skills`·`tools`, `_embed_missing`), 설정 둘, server `adapters/embed.py`(`HttpEmbedder`), `adapters/pg.py`(검색 SQL 삭제, 벡터 열 읽기·쓰기), 0004, compose 기본값 `HC__EMBED_URL=http://host.docker.internal:11434/api/embed`, MCP 도구 설명. k 는 레지스트리가 모르고 kata 가 고정 5(`plans/search.md` §3 6).
 
 
+### 2026-10-19: 도구 스팬에 입력·출력(0.9.1) — Langfuse 의 Input/Output 칸은 OTel GenAI 도구 규약 키로
+
+**결정.** 네 도구 스팬에 `gen_ai.tool.call.arguments`(호출 인자 JSON)와 `gen_ai.tool.call.result`(짧은 결과 JSON — 검색은 돌려준 이름 목록, get 은 이름·판·파일 수 또는 종류)를 더한다. 스킬 본문·파일 내용은 넣지 않는다.
+
+**근거(실측).** Langfuse 는 관측의 Input/Output 을 `langfuse.observation.input/output`·`gen_ai.prompt/completion`·`input.value/output.value`·`gen_ai.tool.call.arguments/result` 에서만 채우고, 우리는 `langfuse.observation.metadata.*` 만 보내 화면이 `undefined` 였다. 집계·필터는 영향이 없다 — v2 Metrics API 는 metadata 키 필터가 되고(`metadata.query = …`, `metadata.candidates contains …` 실측) input/output 은 필터 열이 아니다. 그래서 metadata 는 그대로 두고(대시보드·재튜닝의 자리), 입력·출력은 사람이 트레이스를 읽는 칸으로 채운다. 키는 Langfuse 전용이 아니라 OTel GenAI 도구 스팬 규약의 것이라 다른 백엔드에서도 같은 뜻이다.
+
+**바뀌는 것.** `driving/mcp_tools.py`(`_io`), 스팬 시험. 계약·설정·스키마 불변.
+
 ### 2026-10-19: 스키마 정리 판 — 어휘 검색의 생성 열·인덱스·함수를 0005 로 지운다
 
 **결정.** 검색 0.8.0(위 행)이 읽기 경로에서 뺀 SQL 어휘 검색의 잔재 — 두 표의 생성 열 `search_text`·`search`, GIN 인덱스 넷(`skill_index_search`·`skill_index_trgm`·`tool_index_search`·`tool_index_trgm`), IMMUTABLE 함수 `metadata_values` — 를 마이그레이션 0005 가 지운다. `pg_trgm` 확장은 슈퍼유저 소유라 앱 역할의 마이그레이션이 지울 수 없고 쓰는 곳도 없으므로 `docker/postgres/init.sql` 에서 만들기를 멈추고, 세 compose 의 postgres healthcheck 는 확장 대신 두 데이터베이스 접속으로 init 완료를 본다. 기존 DB 의 확장은 운영자가 슈퍼유저로 지우는 선택 절차(docs/operations.md). core `SkillEntry`·`ToolEntry` 의 죽은 `search_text` 속성도 뺀다.
