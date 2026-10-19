@@ -43,6 +43,7 @@ ATTR_TOOL = "langfuse.observation.metadata.tool"
 ATTR_SHA = "langfuse.observation.metadata.sha"
 ATTR_QUERY = "langfuse.observation.metadata.query"
 ATTR_RESULT_COUNT = "langfuse.observation.metadata.result_count"
+ATTR_CANDIDATES = "langfuse.observation.metadata.candidates"  # 검색이 돌려준 이름 목록(§11 2026-10-19 검색 0.8.0) — 뒤의 get_skill/get_tool 과 묶어 "보여 준 것 중 무엇을 골랐나"
 
 
 def _ok(model: BaseModel) -> CallToolResult:
@@ -91,7 +92,7 @@ class ToolBindings:
             result = await anyio.to_thread.run_sync(self._catalog.search_skills, query, limit)
         except CatalogError as e:
             return _error(e.code, e.detail)
-        span.set_attribute(ATTR_RESULT_COUNT, len(result.skills))
+        span.set_attributes({ATTR_RESULT_COUNT: len(result.skills), ATTR_CANDIDATES: [s.name for s in result.skills]})
         return _ok(SearchSkillsResponse(skills=[SkillHit(name=s.name, description=s.description, sha=s.sha, compatibility=s.compatibility, has_scripts=s.has_scripts) for s in result.skills], fetched_at=result.fetched_at))
 
     async def get_skill(self, id: str, sha: str | None = None, path: str | None = None, archive: bool = False) -> Annotated[CallToolResult, GetSkillResponse]:  # noqa: A002
@@ -141,7 +142,7 @@ class ToolBindings:
             result = await anyio.to_thread.run_sync(self._catalog.search_tools, query, limit)
         except CatalogError as e:
             return _error(e.code, e.detail)
-        span.set_attribute(ATTR_RESULT_COUNT, len(result.tools))
+        span.set_attributes({ATTR_RESULT_COUNT: len(result.tools), ATTR_CANDIDATES: [t.name for t in result.tools]})
         return _ok(SearchToolsResponse(tools=[ToolHit(name=x.name, description=x.description, sha=x.sha, kind=_kind(x.kind), server=x.server) for x in result.tools], fetched_at=result.fetched_at))
 
     async def get_tool(self, id: str, sha: str | None = None, archive: bool = False) -> Annotated[CallToolResult, GetToolResponse]:  # noqa: A002
@@ -174,8 +175,8 @@ def build_server(catalog: Catalog, *, issuer: str, public_url: str, verifier: To
     auth = AuthSettings(issuer_url=AnyHttpUrl(issuer), resource_server_url=AnyHttpUrl(public_url), required_scopes=list(required_scopes(public_url)), validate_token_resource=True)
     server: MCPServer[None] = MCPServer(name="harness-catalog", instructions="Skill and tool catalog: search skills and get one (body, a file, or a tar descriptor); search tools and get one definition (toolbox). No full-listing tools: search by topic.", auth=auth, token_verifier=verifier)
     b = ToolBindings(catalog, signer=signer, public_url=public_url)
-    server.tool(name="search_skills", description="Lexical search over id, description and metadata values; each hit: id, description, sha (tree), compatibility, has_scripts. There is no full-listing tool: search by topic. limit 1..20 (default 10).")(b.search_skills)
+    server.tool(name="search_skills", description="Search over id, description and metadata values (BM25 + description embeddings when the embedding service is up, else BM25); each hit: id, description, sha (tree), compatibility, has_scripts. There is no full-listing tool: search by topic. limit 1..20 (default 10).")(b.search_skills)
     server.tool(name="get_skill", description="One skill version: SKILL.md body with sha, commit, metadata and file list (default); with `path`, that one file instead of the body (text or base64; traversal and symlinks rejected, 1 MB); with `archive=true`, also a tar download descriptor (uri + headers with a 5-minute token, size, sha256) — fetch it with curl, the files never pass through the model. sha optional (default: current main).")(b.get_skill)
-    server.tool(name="search_tools", description="Toolbox: lexical search over tool definitions (name, description, metadata). Each hit: name, description, sha (tree), kind (script|mcp), server. limit 1..20 (default 10).")(b.search_tools)
+    server.tool(name="search_tools", description="Toolbox: search over tool definitions (same engine as search_skills) (name, description, metadata). Each hit: name, description, sha (tree), kind (script|mcp), server. limit 1..20 (default 10).")(b.search_tools)
     server.tool(name="get_tool", description="Toolbox: one tool definition (tool.json: name, description, inputSchema, outputSchema, runtime) with sha, commit and files; for kind=mcp the referenced mcp-servers/<server>/server.json; for kind=script with `archive=true` a tar download descriptor for its files. The registry never calls the tool. sha optional (default: current main).")(b.get_tool)
     return server

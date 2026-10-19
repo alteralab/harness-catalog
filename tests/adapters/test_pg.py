@@ -1,4 +1,4 @@
-"""PostgreSQL 어댑터: 실물 컨테이너(testcontainers)로 DDL 적용·세대 검사·검색·브레이커."""
+"""PostgreSQL 어댑터: 실물 컨테이너(testcontainers)로 DDL 적용·세대 검사·벡터 저장·브레이커. 검색은 앱의 메모리 색인이다(§11 2026-10-19)."""
 
 from __future__ import annotations
 
@@ -28,16 +28,17 @@ def database_url() -> Iterator[str]:
         yield url
 
 
-def snap(commit: str, *names: str) -> IndexSnapshot:
+def snap(commit: str, *names: str, generation: str | None = None) -> IndexSnapshot:
     entries = tuple(SkillEntry(n, f"{n} description 유튜브 자막" if n == "yt-subs" else f"{n} description", None, {"requires-tools": "uv"}, ("t" + n).ljust(40, "0")[:40], commit) for n in names)
-    return IndexSnapshot(entries, commit, datetime.now(UTC), datetime.now(UTC))
+    embeddings = {e.name: (1.0, 0.5, 0.25) for e in entries} if generation else {}
+    return IndexSnapshot(entries, commit, datetime.now(UTC), datetime.now(UTC), embeddings=embeddings, embedding_generation=generation)
 
 
 def test_schema_applied_as_contract(database_url: str) -> None:
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
         cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'skill_index' ORDER BY ordinal_position")
         cols = [r[0] for r in cur.fetchall()]
-        assert cols == ["name", "description", "compatibility", "metadata", "tree_sha", "commit_sha", "indexed_at", "search_text", "search"]  # replaced_by·requires_tools는 0003에서 지웠다
+        assert cols == ["name", "description", "compatibility", "metadata", "tree_sha", "commit_sha", "indexed_at", "search_text", "search", "embedding", "embedding_generation"]  # replaced_by·requires_tools는 0003에서 지웠고 벡터 둘은 0004
         cur.execute("SELECT indexname FROM pg_indexes WHERE tablename = 'skill_index' ORDER BY 1")
         assert {r[0] for r in cur.fetchall()} >= {"skill_index_search", "skill_index_trgm"}
         cur.execute("SELECT extname FROM pg_extension WHERE extname = 'pg_trgm'")
@@ -61,9 +62,14 @@ def test_generation_check_and_search(database_url: str) -> None:
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
         cur.execute("SELECT name FROM skill_index ORDER BY name")
         assert cur.fetchall() == [("yt-subs",)]
-    assert facts.search("유튜브", 10) == ("yt-subs",)
-    assert facts.search("subs", 10) == ("yt-subs",)
-    assert facts.search("nothing-here", 10) == ()
+    # 벡터 저장·세대별 읽기(§11 2026-10-19 검색 0.8.0): 세대가 다른 벡터는 돌아오지 않는다
+    assert facts.load_embeddings("m/doc1") == {}
+    c = "c" * 40
+    assert facts.replace_index(snap(c, "yt-subs", "pin-skill", generation="m/doc1"), lambda stored: stored == b) is IndexOutcome.REPLACED
+    got = facts.load_embeddings("m/doc1")
+    subs, pin = "tyt-subs".ljust(40, "0")[:40], "tpin-skill".ljust(40, "0")[:40]
+    assert got is not None and set(got) == {("yt-subs", subs), ("pin-skill", pin)} and got[("yt-subs", subs)] == (1.0, 0.5, 0.25)  # 키는 (name, tree_sha)
+    assert facts.load_embeddings("other/doc1") == {}
     facts.close()
 
 
@@ -86,7 +92,7 @@ def test_unreachable_db_is_unavailable_not_exception() -> None:
     facts.open()
     facts.enable()
     assert facts.replace_index(snap("c" * 40, "x"), lambda _s: True) is IndexOutcome.UNAVAILABLE
-    assert facts.breaker.is_open and facts.search("x", 5) is None
+    assert facts.breaker.is_open and facts.load_embeddings("m/doc1") is None
     facts.close()
 
 
@@ -163,7 +169,7 @@ def test_disabled_until_migrated(database_url: str) -> None:
     facts = PgFactStore(database_url)
     facts.open()
     assert facts.replace_index(snap("e" * 40, "x"), lambda _s: True) is IndexOutcome.UNAVAILABLE
-    assert facts.search("x", 5) is None and facts.current_commit() is None
+    assert facts.load_embeddings("m/doc1") is None and facts.current_commit() is None
     facts.enable()
     assert facts.current_commit() is not None or facts.replace_index(snap("e" * 40, "x"), lambda _s: True) is IndexOutcome.REPLACED
     facts.close()
@@ -180,7 +186,7 @@ def test_tool_index_contract_and_search(database_url: str) -> None:
     """toolbox(D19): tool_index의 열·생성식·제약·인덱스가 설계의 DDL 문자열과 같고, 두 표가 한 트랜잭션에 바뀐다."""
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
         cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'tool_index' ORDER BY ordinal_position")
-        assert [r[0] for r in cur.fetchall()] == ["name", "description", "kind", "server", "metadata", "tree_sha", "commit_sha", "indexed_at", "search_text", "search"]
+        assert [r[0] for r in cur.fetchall()] == ["name", "description", "kind", "server", "metadata", "tree_sha", "commit_sha", "indexed_at", "search_text", "search", "embedding", "embedding_generation"]
         cur.execute("SELECT a.attname, pg_get_expr(d.adbin, d.adrelid) FROM pg_attribute a JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum WHERE a.attrelid = 'tool_index'::regclass AND a.attgenerated = 's' ORDER BY a.attnum")
         gen = dict(cur.fetchall())
         assert set(gen) == {"search_text", "search"}
@@ -196,8 +202,6 @@ def test_tool_index_contract_and_search(database_url: str) -> None:
     facts.enable()
     c = "c" * 40
     assert facts.replace_index(tool_snap(c, ("subs-fetch", "script", None), ("graft-ask", "mcp", "graft")), lambda _s: True) is IndexOutcome.REPLACED
-    assert facts.search("자막", 10, "tools") == ("subs-fetch",) and facts.search("graft", 10, "tools") == ("graft-ask",)
-    assert facts.search("자막", 10, "skills") == () and facts.search("x", 10, "nope") is None  # 표는 닫힌 사전에서만
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
         cur.execute("SELECT name, kind, server FROM tool_index ORDER BY name")
         assert cur.fetchall() == [("graft-ask", "mcp", "graft"), ("subs-fetch", "script", None)]
@@ -223,7 +227,7 @@ def test_replace_is_all_or_nothing_across_both_tables(database_url: str) -> None
 
 
 def test_upgrade_from_0001_on_populated_db() -> None:
-    """0001만 적용된 채 데이터가 있는 DB에 0002·0003이 올라가고, 다시 migrate는 0이다."""
+    """0001만 적용된 채 데이터가 있는 DB에 0002·0003·0004가 올라가고, 다시 migrate는 0이다."""
     from importlib.resources import as_file, files
     from yoyo import get_backend, read_migrations  # pyright: ignore[reportUnknownVariableType]
 
@@ -239,7 +243,7 @@ def test_upgrade_from_0001_on_populated_db() -> None:
             cur.execute("INSERT INTO skill_index (name, description, metadata, tree_sha, commit_sha, indexed_at) VALUES ('old', 'd', '{}', %s, %s, now())", ("a" * 40, "b" * 40))
             cur.execute("INSERT INTO index_state (id, commit_sha, indexed_at) VALUES (1, %s, now())", ("b" * 40,))
             conn.commit()
-        assert migrate(url) == 2  # 0002·0003
+        assert migrate(url) == 3  # 0002·0003·0004
         assert migrate(url) == 0
         with psycopg.connect(url) as conn, conn.cursor() as cur:
             cur.execute("SELECT name FROM skill_index")

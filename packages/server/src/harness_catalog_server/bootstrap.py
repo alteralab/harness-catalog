@@ -19,6 +19,7 @@ from harness_catalog_core.catalog import Catalog
 from harness_catalog_core.model import IndexOutcome, IndexSnapshot
 from harness_catalog_core.settings import Settings
 
+from .adapters.embed import HttpEmbedder
 from .adapters.oidc import JwtTokenVerifier, discover_jwks_uri
 from .adapters.pg import PgFactStore
 from .driving.mcp_tools import build_server
@@ -27,12 +28,12 @@ from .driving.ops import healthz, make_readyz
 from .driving.scheduler import run_migrations, run_scheduler
 
 class NoFactStore:
-    """DB 없이 도는 판(시험·`reindex` 전 단계): 기록하지 않고 검색은 메모리 사본에 맡긴다."""
+    """DB 없이 도는 판(시험·`reindex` 전 단계): 기록하지 않는다. 검색은 어차피 앱의 메모리 색인이다(§11 2026-10-19)."""
 
     def replace_index(self, _snapshot: IndexSnapshot, _is_descendant: Callable[[str], bool], /) -> IndexOutcome:
         return IndexOutcome.REPLACED
 
-    def search(self, _query: str, _limit: int, /, kind: str = "skills") -> tuple[str, ...] | None:  # noqa: ARG002 — 포트 시그니처
+    def load_embeddings(self, _generation: str, /) -> dict[tuple[str, str], tuple[float, ...]] | None:
         return None
 
     def current_commit(self) -> str | None:
@@ -64,7 +65,8 @@ def make_catalog(settings: Settings, workdir: Path, *, use_db: bool = True) -> W
     (workdir / "tmp").mkdir(exist_ok=True)
     store = GitStore(workdir / "clone", settings.catalog_repo_url, settings.git_deploy_key.get_secret_value())
     facts: PgFactStore | NoFactStore = PgFactStore(settings.database_url.get_secret_value()) if use_db else NoFactStore()
-    return Wiring(Catalog(store, SkillsRefValidator(), facts, workdir=workdir / "tmp"), facts, store)
+    embedder = HttpEmbedder(settings.embed_url, settings.embed_model) if settings.embed_url else None  # 비면 BM25 만(§11 2026-10-19 검색 0.8.0)
+    return Wiring(Catalog(store, SkillsRefValidator(), facts, workdir=workdir / "tmp", embedder=embedder), facts, store)
 
 
 def bootstrap(settings: Settings, workdir: Path, *, jwks_uri: str | None = None, use_db: bool = True) -> App:

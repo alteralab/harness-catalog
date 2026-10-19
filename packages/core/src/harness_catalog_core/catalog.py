@@ -10,6 +10,7 @@ import tempfile
 import threading
 import time
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from types import MappingProxyType
@@ -41,7 +42,8 @@ from .model import (
     ToolListing,
     ToolListResult,
 )
-from .ports import ContentStore, FactStore, SkillValidator
+from .ports import ContentStore, Embedder, FactStore, SkillValidator
+from .search import SearchIndex, index_document
 from .toolbox import SERVER_FILE, TOOL_FILE, parse_tool
 
 MAX_QUERY_CHARS = 2000
@@ -88,24 +90,41 @@ def _size_and_sha256(path: Path) -> tuple[int, str]:
 class Catalog:
     """앱. 메서드는 동기이고 호출자가 스레드로 감싼다. 스냅샷 참조 교체가 유일한 상태 변경이다."""
 
-    def __init__(self, store: ContentStore, validator: SkillValidator, facts: FactStore, *, workdir: Path, limits: Limits = Limits()) -> None:
+    def __init__(self, store: ContentStore, validator: SkillValidator, facts: FactStore, *, workdir: Path, limits: Limits = Limits(), embedder: Embedder | None = None) -> None:
         self._store = store
         self._validator = validator
         self._facts = facts
+        self._embedder = embedder  # None 이면 BM25 만(§11 2026-10-19 검색 0.8.0)
         self._workdir = workdir
         self._limits = limits
-        self._snapshot: IndexSnapshot | None = None
+        self._live: tuple[IndexSnapshot, dict[str, SearchIndex]] | None = None  # (스냅샷, 검색 색인 둘) — 하나의 참조로 통째로 교체한다(동시 검색이 두 세대를 섞지 않게, Codex 2026-10-19 #3)
         self._status = Status(ready=False)
-        self._db_synced = False  # 마지막 스냅샷이 사실 저장소에도 반영됐는가 — 검색 순위를 DB에 맡기는 조건
+        self._db_synced = False  # 마지막 스냅샷이 사실 저장소에도 반영됐는가
+        self._vectors: dict[tuple[str, str], tuple[float, ...]] = {}  # (name, tree_sha) → 벡터, 현재 세대만. 재구축 때 바뀐 항목만 임베딩한다. 이름이 키에 드는 이유는 ports.load_embeddings
+        self._embedding_ok = embedder is not None  # dense 가 온전한가 — 색인 때와 질의 때 둘 다 갱신하고 status() 가 embedding_unavailable 로 보인다
+        self._vectors_loaded = False  # DB 의 저장 벡터를 한 번 읽었는가(재기동 뒤 재임베딩 회피)
         self._lock = threading.Lock()
         self._archive_lock = threading.Lock()  # 캐시 tar의 확인·생성·해시를 직렬화한다(동시 발급이 서로의 명세를 깨지 않게)
 
     # ---- For operating ----
+    @property
+    def _snapshot(self) -> IndexSnapshot | None:
+        return self._live[0] if self._live is not None else None
+
     def status(self) -> Status:
-        return self._status
+        """임베딩 사유는 상태 객체 밖에서 합친다: 색인 때 장애든 질의 때 장애든 지금 dense 가 온전하지 않으면 embedding_unavailable(설계 §11 2026-10-19)."""
+        s = self._status
+        if not self._embedding_ok and "embedding_unavailable" not in s.degraded:
+            return replace(s, degraded=s.degraded + ("embedding_unavailable",))
+        return s
 
     # ---- For maintaining the catalog ----
     def rebuild(self, *, accept_rewind: bool = False) -> Status:
+        """한 주기의 재구축. 돌려주는 상태는 status() 와 같은 것(임베딩 사유 포함)."""
+        self._rebuild(accept_rewind=accept_rewind)
+        return self.status()
+
+    def _rebuild(self, *, accept_rewind: bool = False) -> Status:
         """fetch → 구조 검사 → 세대 검사 → 검사 열 → 스냅샷 교체. 구조가 깨지면 이전 스냅샷을 유지하고 unready.
 
         뒤로 가지 않는다: 새 커밋이 이전 커밋의 자손이 아니면(main 되감기) 아무것도 바꾸지 않고 degraded에 main_rewound.
@@ -126,8 +145,8 @@ class Catalog:
                 # 저장소 구조가 깨졌다: 빌드 전체가 실패하고 /readyz는 503 (이전 스냅샷은 들고 있되 준비됨은 아니다)
                 self._status = Status(ready=False, reasons=reasons, degraded=details, commit_sha=commit, fetched_at=fetched_at)
                 return self._status
-            if self._snapshot is not None and self._snapshot.commit_sha == commit:
-                return self._resync(commit, fetched_at, accept_rewind)
+            if self._snapshot is not None and self._snapshot.commit_sha == commit and (self._embedding_ok or self._embedder is None):
+                return self._resync(commit, fetched_at, accept_rewind)  # 같은 커밋이라도 임베딩이 빠져 있으면 아래 전체 빌드로 다시 시도한다(Codex 2026-10-19 #1)
             base = self._snapshot.commit_sha if self._snapshot else self._facts.current_commit()
             if base is not None and not accept_rewind and not self._store.is_ancestor(base, commit):
                 return self._rewound(base, fetched_at)
@@ -197,7 +216,11 @@ class Catalog:
             tools.append(ToolEntry(tree.name, spec.description, spec.runtime.kind, server, spec.metadata, tree.tree_sha, tree.commit_sha))
         rejected = tuple(sorted({(f.skill, f"{f.item}: {f.reason}") for f in report.errors if f.skill}))
         repo_findings: tuple[str, ...] = ()  # 저장소 수준 위반은 _structure_reasons가 먼저 잡아 빌드를 막는다
-        snapshot = IndexSnapshot(tuple(sorted(entries, key=lambda e: e.name)), commit, _now(), fetched_at, rejected, tuple(sorted(tools, key=lambda t: t.name)))
+        entries.sort(key=lambda e: e.name)
+        tools.sort(key=lambda t: t.name)
+        vectors, embedding_ok = self._embed_missing(entries, tools)
+        snapshot = IndexSnapshot(tuple(entries), commit, _now(), fetched_at, rejected, tuple(tools),
+                                 embeddings=vectors, embedding_generation=self._embedder.generation if (self._embedder and vectors) else None)
         def is_descendant(stored: str) -> bool:
             return accept_rewind or self._store.is_ancestor(stored, commit)
 
@@ -207,11 +230,50 @@ class Catalog:
             self._status = Status(ready=self._snapshot is not None, degraded=repo_findings + ("main_rewound",), commit_sha=self._status.commit_sha,
                                   fetched_at=fetched_at, built_at=self._status.built_at, rejected=self._status.rejected)
             return self._status
-        self._snapshot = snapshot
+        self._live = (snapshot, self._indexes(entries, tools, vectors if embedding_ok else None))
         self._db_synced = outcome is IndexOutcome.REPLACED
         degraded = repo_findings + (("db_unavailable",) if outcome is IndexOutcome.UNAVAILABLE else ())
         self._status = Status(ready=True, degraded=degraded, commit_sha=commit, fetched_at=fetched_at, built_at=snapshot.built_at, rejected=rejected)
         return self._status
+
+    def _indexes(self, entries: list[SkillEntry], tools: list[ToolEntry], vectors: Mapping[str, tuple[float, ...]] | None) -> dict[str, SearchIndex]:
+        """검색 색인 둘. 벡터가 모두 있을 때만 dense(SearchIndex 가 하나라도 빠지거나 깨졌으면 BM25 만). vectors=None 은 이번 판에 dense 없음."""
+        indexes = {
+            "skills": SearchIndex([e.name for e in entries], [index_document(e.name, e.description, e.metadata.values()) for e in entries], [vectors.get(e.name) for e in entries] if vectors is not None else None),
+            "tools": SearchIndex([t.name for t in tools], [index_document(t.name, t.description, t.metadata.values()) for t in tools], [vectors.get(t.name) for t in tools] if vectors is not None else None),
+        }
+        if vectors is not None and not all(ix.dense for ix in indexes.values() if ix.names):
+            # 저장된 벡터가 깨져 있다(차원·NaN): 캐시를 버려 다음 빌드가 전부 다시 임베딩하게 하고 이번 판은 BM25 만
+            self._vectors = {}
+            self._embedding_ok = False
+        return indexes
+
+    def _embed_missing(self, entries: list[SkillEntry], tools: list[ToolEntry]) -> tuple[dict[str, tuple[float, ...]], bool]:
+        """현재 세대의 벡터를 (name → 벡터) 로 모은다: 메모리 캐시 → DB 저장분(한 번) → 없는 것만 임베딩 서비스.
+        돌려주는 bool 은 'dense 가 온전한가'. 임베더가 없거나(HC__EMBED_URL 비면) 닿지 않으면 False — 둘 다 embedding_unavailable(설계 §11 2026-10-19)."""
+        if self._embedder is None:
+            self._embedding_ok = False
+            return {}, False
+        gen = self._embedder.generation
+        if not self._vectors_loaded:
+            stored = self._facts.load_embeddings(gen)
+            if stored is not None:
+                self._vectors.update(stored)
+                self._vectors_loaded = True
+        wanted = [((e.name, e.tree_sha), index_document(e.name, e.description, e.metadata.values())) for e in entries] + [((t.name, t.tree_sha), index_document(t.name, t.description, t.metadata.values())) for t in tools]
+        missing = [(key, doc) for key, doc in wanted if key not in self._vectors]
+        keep = {key for key, _ in wanted}
+        ok = True
+        if missing:
+            got = self._embedder.embed([doc for _, doc in missing])
+            if got is None or len(got) != len(missing):
+                ok = False  # 이번 판은 dense 없이(BM25 만). 이미 있는 벡터는 돌려주어 DB 에 남긴다 — 일시 장애가 저장 벡터를 지우지 않게
+            else:
+                for (key, _), vec in zip(missing, got, strict=True):
+                    self._vectors[key] = tuple(vec)
+        self._vectors = {key: v for key, v in self._vectors.items() if key in keep}  # 은퇴한 판의 벡터는 버린다
+        self._embedding_ok = ok
+        return {name: v for (name, _), v in self._vectors.items()}, ok
 
     def _structure_reasons(self, commit: str) -> tuple[tuple[ReadyReason, ...], tuple[str, ...]]:
         """표지 → 배치. 표지가 없거나 깨졌으면 not_a_catalog, layout 값이 다르면 unsupported_layout, 구조 항목(1·2·11·12) 위반은 layout_mismatch."""
@@ -251,20 +313,29 @@ class Catalog:
             raise CatalogError(ErrorCode.INPUT_LIMIT, f"limit must be 1..{self._limits.max_limit}")
         return n
 
-    def _ranked(self, query: str, n: int, kind: str) -> tuple[str, ...] | None:
-        """DB 순위는 마지막 스냅샷이 DB에 반영됐을 때만 쓴다 — 아니면 복구된 DB의 구판 순위를 쓰게 된다(Codex 설계 리뷰 2026-10-11)."""
-        return self._facts.search(query, n, kind) if self._db_synced else None
+    def _ready_live(self) -> tuple[IndexSnapshot, dict[str, SearchIndex]]:
+        live = self._live
+        if live is None:
+            raise CatalogError(ErrorCode.NOT_FOUND, "index not built yet")
+        return live
+
+    def _ranked(self, query: str, n: int, index: SearchIndex | None) -> tuple[str, ...]:
+        """메모리 색인의 순위(§11 2026-10-19 검색 0.8.0): 벡터가 있고 임베딩 서비스가 답하면 BM25 + dense 볼록 결합, 아니면 BM25 만.
+        질의 임베딩이 실패하면 그 호출은 BM25 로 깎고 상태에 embedding_unavailable 을 올린다(돌아오면 내린다; 색인·세대는 그대로)."""
+        if index is None:
+            return ()
+        qv: list[float] | None = None
+        if index.dense and self._embedder is not None:
+            got = self._embedder.embed([query])
+            qv = got[0] if got else None
+            self._embedding_ok = qv is not None
+        return index.search(query, qv, n)
 
     def search_skills(self, query: str, limit: int | None = None) -> ListResult:
-        snap = self._ready_snapshot()
+        snap, indexes = self._ready_live()
         n = self._limit(query, limit)
-        ranked = self._ranked(query, n, "skills")
-        if ranked is not None:
-            by_name = {e.name: e for e in snap.entries}
-            hits = [by_name[name] for name in ranked if name in by_name]
-        else:
-            tokens = [t for t in query.lower().split() if t]
-            hits = [e for e in snap.entries if all(t in e.search_text for t in tokens)] if tokens else []
+        by_name = {e.name: e for e in snap.entries}
+        hits = [by_name[name] for name in self._ranked(query, n, indexes.get("skills")) if name in by_name]
         return ListResult(tuple(SkillListing.of(e) for e in hits[:n]), snap.fetched_at)
 
     def _version(self, root: ArchiveKind, name: str, current_tree: str, current_commit: str, sha: str | None) -> tuple[str, str]:
@@ -313,15 +384,10 @@ class Catalog:
 
     # ---- For consuming tools (toolbox, DESIGN §11 2026-10-11) ----
     def search_tools(self, query: str, limit: int | None = None) -> ToolListResult:
-        snap = self._ready_snapshot()
+        snap, indexes = self._ready_live()
         n = self._limit(query, limit)
-        ranked = self._ranked(query, n, "tools")
-        if ranked is not None:
-            by_name = {t.name: t for t in snap.tools}
-            hits = [by_name[name] for name in ranked if name in by_name]
-        else:
-            tokens = [t for t in query.lower().split() if t]
-            hits = [t for t in snap.tools if all(tok in t.search_text for tok in tokens)] if tokens else []
+        by_name = {t.name: t for t in snap.tools}
+        hits = [by_name[name] for name in self._ranked(query, n, indexes.get("tools")) if name in by_name]
         return ToolListResult(tuple(ToolListing.of(t) for t in hits[:n]), snap.fetched_at)
 
     def get_tool(self, name: str, sha: str | None = None) -> ToolBody:

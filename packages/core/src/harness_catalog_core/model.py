@@ -192,6 +192,8 @@ class IndexSnapshot:
     fetched_at: datetime
     rejected: tuple[tuple[str, str], ...] = ()  # (name, reason)
     tools: tuple[ToolEntry, ...] = ()  # toolbox(§11 2026-10-11). 스킬과 같은 커밋에서 파생한 한 스냅샷
+    embeddings: Mapping[str, tuple[float, ...]] = field(default_factory=lambda: MappingProxyType({}))  # name → 벡터(§11 2026-10-19 검색 0.8.0; 한 스냅샷 안에서 이름은 스킬·도구 합쳐 유일 — 검사 11). 비면 dense 없음
+    embedding_generation: str | None = None  # 벡터 세대 "<모델>/<문서형식 판>". 한 스냅샷에 한 세대만
 
     def get(self, name: str) -> SkillEntry | None:
         for e in self.entries:

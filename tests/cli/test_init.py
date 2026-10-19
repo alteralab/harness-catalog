@@ -103,7 +103,7 @@ def test_config_list_and_docs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     assert "HC__CATALOG_REPO_URL             missing" in r.output
     assert "HC__FETCH_INTERVAL_SECONDS       default  60" in r.output
     d = runner.invoke(app, ["config", "docs", "--out-dir", str(tmp_path / "docs")])
-    assert d.exit_code == 0 and (tmp_path / "docs" / "configuration.md").read_text().count("| `HC__") == 6
+    assert d.exit_code == 0 and (tmp_path / "docs" / "configuration.md").read_text().count("| `HC__") == 8
     assert "HC__PUBLIC_URL=" in d.output
 
 

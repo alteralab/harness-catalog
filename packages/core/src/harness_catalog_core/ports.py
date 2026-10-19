@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Protocol
 
@@ -79,10 +79,23 @@ class FactStore(Protocol):
         """트랜잭션 하나에 skill_index·tool_index를 통째로 바꾼다(저장된 커밋의 자손일 때만). 결과는 IndexOutcome."""
         ...
 
-    def search(self, query: str, limit: int, /, kind: str = "skills") -> tuple[str, ...] | None:
-        """어휘 검색 순위(이름 목록). kind는 skills | tools. DB가 닿지 않으면 None(앱이 메모리 검색으로 떨어진다)."""
+    def load_embeddings(self, generation: str, /) -> dict[tuple[str, str], tuple[float, ...]] | None:
+        """저장된 벡터 {(name, tree_sha): vector} — 같은 세대(모델/문서형식)만. 재기동 때 재임베딩을 피한다(§11 2026-10-19 검색 0.8.0). DB가 닿지 않으면 None.
+        키에 이름이 드는 이유: 색인 문서가 이름을 담는데 tree SHA 에는 디렉토리 이름이 없다(같은 내용을 다른 이름으로 두면 SHA 가 같다)."""
         ...
 
     def current_commit(self) -> str | None:
         """index_state의 커밋. DB가 닿지 않으면 None."""
         ...
+
+
+class Embedder(Protocol):
+    """문장 목록 → 정규화 벡터 목록. 모델이 있는 머신의 서비스(mini 는 호스트 Ollama, 리눅스는 TEI)를 HTTP 로 부르는 어댑터가 구현한다.
+    닿지 않으면 None 으로 말한다(예외가 아니라) — 앱은 BM25 만으로 깎아 답하고 degraded `embedding_unavailable` 을 올린다."""
+
+    @property
+    def generation(self) -> str:
+        """벡터 세대 이름 = "<모델>/<문서형식 판>". 이 값이 다른 벡터는 섞지 않는다."""
+        ...
+
+    def embed(self, texts: Sequence[str], /) -> list[list[float]] | None: ...

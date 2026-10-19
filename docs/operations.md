@@ -20,6 +20,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
 - 리버스 프록시(TLS 종단). 경로 셋을 열 수 있어야 합니다(§3).
 - LDAP: 그룹 `harness-readers`, 기계 계정 하나, 바인드 DN. 없으면 `docker/dex/config.yaml`의 정적 사용자로 시작할 수 있습니다.
 - 카탈로그 저장소와 읽기 전용 deploy key.
+- 임베딩 서비스(검색의 dense 쪽, DESIGN §11 2026-10-19). 호스트의 Ollama 에 `ollama pull hf.co/mykor/KURE-v1-gguf:BF16` 한 번이면 됩니다(1.2 GB; Mac 에서는 컨테이너가 GPU 에 닿지 못하므로 호스트 앱). compose 기본값 `HC__EMBED_URL=http://host.docker.internal:11434/api/embed` 가 그것을 가리킵니다. 없어도 레지스트리는 뜨되 `/readyz` 가 `degraded: embedding_unavailable` 로 BM25 만 씁니다.
 
 ## 1. 카탈로그 저장소 세우기
 
@@ -135,7 +136,7 @@ Dex에 등록된 클라이언트는 다음과 같습니다. 바꾸려면 설정 
 | `unsupported_layout` | 표지의 `layout`이 지원하지 않는 값 | 레지스트리 판을 올리거나 표지를 맞춘다 |
 | `layout_mismatch` | 표지와 실제 배치가 다름 | 저장소 구조를 본다 |
 
-`degraded`는 준비는 됐지만 온전하지 않은 상태입니다. `db_unavailable`이면 PostgreSQL이 끊긴 것이고 레지스트리는 메모리 사본으로 계속 섬기며 브레이커가 30초 뒤 재시도합니다. `main_rewound`는 아래 되감기입니다. `rebuild_failed:…`는 새 커밋의 색인 빌드가 실패해 이전 색인으로 섬기는 중입니다.
+`degraded`는 준비는 됐지만 온전하지 않은 상태입니다. `db_unavailable`이면 PostgreSQL이 끊긴 것이고 레지스트리는 메모리 사본으로 계속 섬기며 브레이커가 30초 뒤 재시도합니다. `main_rewound`는 아래 되감기입니다. `rebuild_failed:…`는 새 커밋의 색인 빌드가 실패해 이전 색인으로 섬기는 중입니다. `embedding_unavailable`이면 임베딩 서비스(`HC__EMBED_URL`)에 닿지 못해 어휘(BM25)만으로 답하는 중입니다 — Ollama 가 떠 있고 모델이 내려받아져 있는지(`curl -s http://127.0.0.1:11434/api/tags`) 본 뒤 다음 재빌드(fetch 간격)에서 사유가 사라집니다.
 
 **`main`이 되감겼을 때**(강제 push 등). 레지스트리는 색인을 멈추고 `/readyz`에 알립니다. 의도한 것이면 받아들이고 재기동합니다.
 

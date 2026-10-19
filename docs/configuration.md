@@ -34,6 +34,8 @@ harness-catalog의 설정 표면 전부를 층별로 적은 참조입니다. 층
 | `HC__PUBLIC_URL` | 예 |  | 레지스트리 공개 URL = 토큰의 audience = RFC 9728 resource |
 | `HC__DATABASE_URL` | 예 |  | PostgreSQL 접속 문자열 |
 | `HC__FETCH_INTERVAL_SECONDS` | 아니오 | 60 | 주기 fetch 간격(초) |
+| `HC__EMBED_URL` | 아니오 |  | 임베딩 서비스 주소(외부 서비스 — Ollama `…/api/embed` 또는 TEI `…/embed`). 비면 BM25 만(§11 2026-10-19 검색 0.8.0) |
+| `HC__EMBED_MODEL` | 아니오 | hf.co/mykor/KURE-v1-gguf:BF16 | 임베딩 모델 이름(Ollama 요청에 실리고 벡터 세대 키가 된다) |
 
 <!-- /generated -->
 

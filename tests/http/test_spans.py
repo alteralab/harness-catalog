@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import anyio
 import httpx
@@ -65,3 +65,4 @@ async def test_tool_spans_carry_subject_skill_and_query(client: tuple[httpx.Asyn
     search = spans["tools/call search_skills"]
     assert search.attributes is not None
     assert search.attributes["langfuse.observation.metadata.query"] == "nothing-at-all" and search.attributes["langfuse.observation.metadata.result_count"] == 0
+    assert list(cast(Sequence[str], search.attributes["langfuse.observation.metadata.candidates"])) == []  # 보여 준 후보 목록(§11 2026-10-19) — 결과 0 이라 빈 목록

@@ -9,7 +9,6 @@ from collections.abc import Callable
 from typing import Final
 
 import psycopg
-from psycopg import sql
 from psycopg.rows import tuple_row
 from psycopg.types.json import Jsonb
 from psycopg_pool import ConnectionPool, PoolTimeout
@@ -23,23 +22,18 @@ BREAKER_FAILURES: Final = 3
 BREAKER_OPEN_SECONDS: Final = 30.0
 
 INSERT_SKILL = """
-INSERT INTO skill_index (name, description, compatibility, metadata, tree_sha, commit_sha, indexed_at)
-VALUES (%s, %s, %s, %s::jsonb, %s, %s, %s)
+INSERT INTO skill_index (name, description, compatibility, metadata, tree_sha, commit_sha, indexed_at, embedding, embedding_generation)
+VALUES (%s, %s, %s, %s::jsonb, %s, %s, %s, %s::real[], %s)
 """
 INSERT_TOOL = """
-INSERT INTO tool_index (name, description, kind, server, metadata, tree_sha, commit_sha, indexed_at)
-VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s, %s)
+INSERT INTO tool_index (name, description, kind, server, metadata, tree_sha, commit_sha, indexed_at, embedding, embedding_generation)
+VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s::real[], %s)
 """
-# 표 이름은 닫힌 사전에서만 고른다 — 외부 입력이 SQL에 들어가지 않는다
-TABLES: Final[dict[str, str]] = {"skills": "skill_index", "tools": "tool_index"}
-SEARCH = """
-SELECT name
-FROM {table}
-WHERE search @@ plainto_tsquery('simple', %(q)s)
-   OR search_text %% %(q)s
-   OR search_text ILIKE %(like)s
-ORDER BY ts_rank(search, plainto_tsquery('simple', %(q)s)) DESC, similarity(search_text, %(q)s) DESC, name
-LIMIT %(n)s
+# 검색은 SQL 이 아니라 앱의 메모리 색인이 한다(§11 2026-10-19 검색 0.8.0). 여기 남은 일은 저장된 벡터를 세대별로 돌려주는 것뿐.
+LOAD_EMBEDDINGS = """
+SELECT name, tree_sha, embedding FROM skill_index WHERE embedding_generation = %(g)s AND embedding IS NOT NULL
+UNION ALL
+SELECT name, tree_sha, embedding FROM tool_index  WHERE embedding_generation = %(g)s AND embedding IS NOT NULL
 """
 
 
@@ -147,10 +141,13 @@ class PgFactStore:
                     return IndexOutcome.STALE
                 cur.execute("DELETE FROM skill_index")
                 cur.execute("DELETE FROM tool_index")
+                gen = snapshot.embedding_generation
                 for e in snapshot.entries:
-                    cur.execute(INSERT_SKILL, (e.name, e.description, e.compatibility, Jsonb(dict(e.metadata)), e.tree_sha, e.commit_sha, snapshot.built_at))
+                    vec = snapshot.embeddings.get(e.name)
+                    cur.execute(INSERT_SKILL, (e.name, e.description, e.compatibility, Jsonb(dict(e.metadata)), e.tree_sha, e.commit_sha, snapshot.built_at, list(vec) if vec else None, gen if vec else None))
                 for t in snapshot.tools:
-                    cur.execute(INSERT_TOOL, (t.name, t.description, t.kind, t.server, Jsonb(dict(t.metadata)), t.tree_sha, t.commit_sha, snapshot.built_at))
+                    vec = snapshot.embeddings.get(t.name)
+                    cur.execute(INSERT_TOOL, (t.name, t.description, t.kind, t.server, Jsonb(dict(t.metadata)), t.tree_sha, t.commit_sha, snapshot.built_at, list(vec) if vec else None, gen if vec else None))
                 cur.execute(
                     "INSERT INTO index_state (id, commit_sha, indexed_at) VALUES (1, %s, %s) "
                     "ON CONFLICT (id) DO UPDATE SET commit_sha = EXCLUDED.commit_sha, indexed_at = EXCLUDED.indexed_at",
@@ -163,18 +160,16 @@ class PgFactStore:
         self._breaker.record_success()
         return IndexOutcome.REPLACED
 
-    def search(self, query: str, limit: int, /, kind: str = "skills") -> tuple[str, ...] | None:
-        table = TABLES.get(kind)
-        if table is None or not self._gate():
+    def load_embeddings(self, generation: str, /) -> dict[tuple[str, str], tuple[float, ...]] | None:
+        if not self._gate():
             return None
-        like = "%" + "%".join(t for t in query.split() if t) + "%" if query.strip() else "%"
         try:
             with self._pool.connection() as conn, conn.cursor() as cur:
-                cur.execute(sql.SQL(SEARCH).format(table=sql.Identifier(table)), {"q": query, "like": like, "n": limit})
+                cur.execute(LOAD_EMBEDDINGS, {"g": generation})
                 rows = cur.fetchall()
         except (psycopg.Error, PoolTimeout) as e:
             self._breaker.record_failure()
-            log.warning("search failed: %s", e)
+            log.warning("load embeddings failed: %s", e)
             return None
         self._breaker.record_success()
-        return tuple(str(r[0]) for r in rows)
+        return {(str(r[0]), str(r[1])): tuple(float(x) for x in r[2]) for r in rows}

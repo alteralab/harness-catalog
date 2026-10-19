@@ -34,7 +34,7 @@ class _FileEnvSource(PydanticBaseSettingsSource):
 
 
 class Settings(BaseSettings):
-    """필수 다섯 + 기본값 있는 하나. 비면 기동 실패(어느 것이 비었는지 pydantic이 말한다)."""
+    """필수 다섯 + 기본값 있는 셋(fetch 간격, 임베딩 서비스 주소·모델). 비면 기동 실패(어느 것이 비었는지 pydantic이 말한다)."""
 
     model_config = SettingsConfigDict(env_prefix=ENV_PREFIX, env_nested_delimiter="__", extra="ignore")
 
@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     public_url: AnyHttpUrl = Field(description="레지스트리 공개 URL = 토큰의 audience = RFC 9728 resource")
     database_url: SecretStr = Field(description="PostgreSQL 접속 문자열")
     fetch_interval_seconds: int = Field(default=60, ge=1, description="주기 fetch 간격(초)")
+    embed_url: str = Field(default="", description="임베딩 서비스 주소(외부 서비스 — Ollama `…/api/embed` 또는 TEI `…/embed`). 비면 BM25 만(§11 2026-10-19 검색 0.8.0)")
+    embed_model: str = Field(default="hf.co/mykor/KURE-v1-gguf:BF16", description="임베딩 모델 이름(Ollama 요청에 실리고 벡터 세대 키가 된다)")
 
     @field_validator("oidc_issuer", "public_url", mode="before")
     @classmethod

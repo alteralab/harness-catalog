@@ -146,7 +146,7 @@ flowchart LR
 | For validating a skill | 요구 포트 | "이 저장소가 구조를 갖췄고 이 디렉토리가 스펙에 맞고 비밀이 없으며 이름·대체 규칙을 지키는지 판정해 달라" | `typing.Protocol` |
 | OIDC 어댑터 | 피구동 어댑터 | issuer의 JWKS로 서명을 검증하고 `iss`·`aud`·`exp`·`nbf`·`scope`·`groups`를 확인해 주체를 만든다. 바깥 통신은 JWKS 가져오기뿐 | SDK `TokenVerifier` 구현 |
 | git 어댑터 | 피구동 어댑터 | 로컬 클론을 유지하고 fetch와 읽기를 한다. commit·push는 없다 | git CLI 호출 |
-| PostgreSQL 어댑터 | 피구동 어댑터 | 인덱스의 SQL. 어휘 검색(`tsvector`·`pg_trgm`)도 여기 | psycopg 3 + SQL 파일 |
+| PostgreSQL 어댑터 | 피구동 어댑터 | 인덱스의 SQL — 행과 벡터(세대별)의 저장·읽기. 검색은 여기가 아니라 앱의 메모리 색인이다(§11 2026-10-19 검색 0.8.0; `tsvector`·`pg_trgm` 생성 열은 다음 스키마 정리 판까지만 남는다) | psycopg 3 + SQL 파일 |
 | 검증 어댑터 | 피구동 어댑터 | `skills-ref validate`·시크릿 스캔·저장소 구조·크기·`tool.json`·`server.json` 검사(일곱)를 돌려 판정으로 바꾼다. 이력은 보지 않는다(§11 2026-10-18). 같은 구현이 `harness-catalog check` CLI다 | 라이브러리 호출 + 서브프로세스 |
 | Configurator | 패턴 밖, 필수 | 설정값 다섯(과 기본값 있는 하나)을 읽어 피구동 어댑터 넷을 만들고, 앱을 만들어 넷을 꽂고, 구동 어댑터 셋(MCP·운영·스케줄러)을 만들어 앱을 건넨다. 모든 참가자를 아는 유일한 자리. OTel exporter는 여기서 조립하지 않는다 — 표준 환경 변수(`OTEL_EXPORTER_OTLP_*`)를 읽는 `opentelemetry-sdk`의 자동 구성이 켜며, 변수가 없으면 스팬은 no-op이다 | `bootstrap(settings) -> App` 함수 하나 + uvicorn 기동 |
 
@@ -199,7 +199,7 @@ Dex를 두면 v3.0 compose는 서비스 1 + PostgreSQL 1 + Dex 1이 된다. 클�
 |---|---|---|---|
 | SKILL.md 본문, `scripts/`·`references/`·`assets/` | git | 정본 | `[영상]` 13:14~14:25 파일은 쓰기 쉽고 POSIX 의미론을 따르며 비정형에 맞고 모델이 잘 다룬다. 이것을 "내용은 git"으로 옮긴 것은 이 설계의 판단이다 |
 | 스펙 앞머리(`name`·`description`·`license`·`compatibility`·`metadata`) | git (SKILL.md 안) | 정본 | `[웹]` 스펙이 정한 자리. DB에 따로 두지 않는다(v3.0의 중복을 뺐다). `metadata`는 자유 맵이고 팀 규약 키는 없다(§11 2026-10-18: `replaced-by`·`requires-tools`를 뺐다) |
-| 인덱스(식별자·설명·`compatibility`·`metadata`·`has_scripts`·tree SHA·commit, 어휘 검색용. 전부 `main`의 판) | DB | 파생. `main`에서 언제든 재구축 | `[it]` 파생 데이터는 잃어도 원본에서 다시 만든다 |
+| 인덱스(식별자·설명·`compatibility`·`metadata`·`has_scripts`·tree SHA·commit, 그리고 설명 임베딩 벡터와 그 세대(§11 2026-10-19). 전부 `main`의 판) | DB | 파생. `main`에서 언제든 재구축 | `[it]` 파생 데이터는 잃어도 원본에서 다시 만든다 |
 | 사용 기록 — 도구 호출마다 OpenTelemetry 스팬 하나. SDK가 내는 것: 이름 `tools/call <tool>`, `mcp.method.name`·`mcp.protocol.version`·`jsonrpc.request.id`·`gen_ai.operation.name=execute_tool`·`gen_ai.tool.name`, 오류 status. MCP 어댑터가 더하는 것: `langfuse.user.id`=`sub`, `langfuse.observation.metadata.skill`·`.sha`(load·file), `.query`·`.result_count`(search만. 검색어는 2000자에서 자르고 제어 문자 제거) | **Langfuse** (OTLP `/api/public/otel`, 표준 `OTEL_EXPORTER_OTLP_*` 환경 변수) | 정본이되 **v3.0은 쌓기만 하고 보지 않는다**(§5). 요청 경로에서 조회하는 색인이 아니라 쌓인 뒤 분석해 개선에 쓰는 데이터다 — 순위·폐기 후보·결과 0 검색어의 골든 편입(`[altera-skills]` `evals/search/queries.yml`)이 그 분석이고 Langfuse 위에서 한다(관측 API·metrics API, 또는 내보내기). 검색어는 사람의 발화라 개인 데이터일 수 있고 보존은 Langfuse 프로젝트의 것이다. 스팬이 빠지면(exporter 큐 초과) 그 호출의 기록만 사라진다 | 사용자 결정(2026-09-27, §11): "직접 발명하는 것은 관측 도구를 이기지 못한다". `[웹]` MCP Python SDK v2 `docs/run/opentelemetry.md`("Your server is already traced. You don't have to add anything"), `src/mcp/server/_otel.py`; OpenTelemetry GenAI 규약 `docs/gen-ai/mcp.md`(MCP 서버 스팬, Development); Langfuse OTel 수신(`langfuse.user.id`·`langfuse.observation.metadata.*` 매핑). 우리 표는 SDK가 이미 내는 사건을 우리 형식으로 한 번 더 적는 것이었다 |
 | 평가 결과 — Harbor 잡마다 dataset run(메타데이터 `skill`·`sha`·`scenario_sha`·`model`·`harness`·`baseline`), 트라이얼마다 trace(궤적·토큰·비용)와 `passed` score | **Langfuse** (카탈로그 밖. v3.0은 팀이 이미 쓰는 Cloud Hobby 프로젝트, 이후 셀프호스팅 가능) | 정본. `harbor run --plugin harbor_langfuse`가 남긴다(§5.1). 카탈로그 DB에는 없고 레지스트리는 Langfuse를 부르지 않는다. 사람은 Langfuse UI(dataset run 비교)로 읽고, 폐기 심사도 거기서 한다 | 사용자 결정(2026-09-27, §11): "직접 발명하는 것은 관측 도구를 이기지 못한다". `[웹]` Langfuse 데이터 모델(2026-09-27 확인): Score는 "references exactly one of Trace, Observation, Session, or DatasetRun", DatasetRunItem이 `traceId`로 궤적을 가리킨다 — 판정 한 줄이 궤적에 붙어 있어 실패한 행에서 원인으로 갈 수 있다(v3.3의 `eval_result`에는 이 연결이 없었다). `[영상]` 0qySk1fcf6k 14:29 "evaluation observability"는 중앙 플랫폼의 구성 요소이지 카탈로그 표가 아니다 |
 | 게시·인증 사실(누가 언제 무엇을 올리고 누가 병합했는가) | git 이력(커밋 author, PR, 병합 커밋) | 정본. DB의 인덱스 행이 커밋에서 이것을 파생한다 | 커밋과 PR이 곧 기록 |
@@ -294,6 +294,10 @@ CREATE INDEX tool_index_trgm   ON tool_index USING gin (search_text gin_trgm_ops
 DROP INDEX IF EXISTS skill_index_tools;
 ALTER TABLE skill_index DROP COLUMN IF EXISTS replaced_by, DROP COLUMN IF EXISTS requires_tools;
 ALTER TABLE tool_index DROP COLUMN IF EXISTS replaced_by, DROP COLUMN IF EXISTS requires_tools;
+
+-- 0004(§11 2026-10-19 검색 0.8.0): 설명 임베딩 벡터와 그 세대. 검색은 앱 메모리의 색인 사본 위에서 하므로 pgvector 없음 — 열은 재기동 때 다시 임베딩하지 않기 위한 캐시다. search_text·search 생성 열과 GIN 인덱스는 읽기 경로에서 빠졌고 다음 스키마 정리 판까지 남는다
+ALTER TABLE skill_index ADD COLUMN IF NOT EXISTS embedding real[], ADD COLUMN IF NOT EXISTS embedding_generation text;
+ALTER TABLE tool_index  ADD COLUMN IF NOT EXISTS embedding real[], ADD COLUMN IF NOT EXISTS embedding_generation text;
 
 
 
@@ -449,7 +453,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 | git | 이미지 안의 `git` 바이너리를 서브프로세스로. 레지스트리는 fetch·읽기만 한다 | 순수 파이썬 구현보다 단순하고 검증됐다 |
 | 검증 | `skills_ref.validate()` 라이브러리 호출 + 시크릿 스캔은 gitleaks 정적 바이너리 서브프로세스 + 저장소 구조·크기·`tool.json`·`server.json` 검사. 같은 구현이 `harness-catalog check` CLI로 나가 pre-commit·CI가 부른다 | 참조 구현 한 곳(DRY). 세 자리(pre-commit·CI·인덱스 빌드)가 같은 코드를 돈다. gitleaks는 런타임이 아니라 바이너리 하나라 "런타임 하나" 원칙을 깨지 않는다 |
 | 동시성 | SDK가 쓰는 anyio. 블로킹 호출(git·DB·검증)은 `anyio.to_thread.run_sync` | 프레임워크를 더 들이지 않는다 |
-| 설정 | pydantic-settings로 환경 변수 필수 다섯 + 선택 둘 | SDK 예제와 같은 방식 |
+| 설정 | pydantic-settings로 환경 변수 필수 다섯 + 선택 셋(fetch 간격, 임베딩 서비스 주소·모델 — §11 2026-10-19) | SDK 예제와 같은 방식 |
 | 시험 | pytest. 앱 시험은 SDK의 인메모리 `Client`로 서버 객체에 직접 붙는다. DB 어댑터 시험은 testcontainers로 실제 PostgreSQL | `[it]` DB 대역은 실물을 보장하지 않는다. git·OIDC 어댑터는 가짜로 |
 | 도구 | uv(잠금·이미지), ruff, pyright strict | 정적 타입으로 포트의 시그니처를 검사한다 |
 | 이미지 | `python:3.12-slim` + git + gitleaks, 다단계 빌드 | 런타임 하나, 아티팩트 하나 |
@@ -473,7 +477,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 
 이 검사로 세 경우가 갈린다. init을 거친 새 저장소는 표지가 있고 `skills/`가 비어 있어 **빈 인덱스로 준비됨**이다. 같은 레지스트리의 재기동이나 이전 레지스트리가 쓰던 저장소는 표지가 있어 그대로 인덱스를 다시 짓는다(은퇴한 이름은 이력에서 읽으므로 이력이 있는 저장소가 정확하다). 카탈로그 구조가 아닌 기존 저장소는 표지가 없어 거부된다. 표지는 스킬 파일 형식에 더하는 것이 아니라 저장소 수준의 선언이라 §1.4를 어기지 않고, 배치가 바뀔 때(§7 멀티 팀의 `teams/<team>/`) `layout = 2`로 올려 구판 레지스트리가 신판 저장소를 거부하게 한다.
 
-**운영자가 아는 것.** 둘로 나뉜다. **레지스트리:** 이미지 태그 하나, 필수 설정값 다섯(카탈로그 저장소 URL, git deploy key(읽기 전용), OIDC issuer, 레지스트리 공개 URL, PostgreSQL 접속), 기본값 있는 선택 설정값 하나(주기 fetch 간격 기본 60초). 도구 호출 스팬의 exporter는 표준 OTel 환경 변수(`OTEL_EXPORTER_OTLP_ENDPOINT`·`_HEADERS`·`_PROTOCOL`)로 켜며 레지스트리의 설정값이 아니다(없으면 스팬은 no-op). `[it]` 설정 매개변수는 복잡성을 위로 미는 것이라 이 여섯 밖의 튜닝 손잡이는 두지 않는다. **플랫폼(v3.0):** Dex 설정 파일 하나(issuer, LDAP 연결과 그룹 검색, 정적 클라이언트, 그랜트, 저장소), 저장소를 만들 때 한 번 돌리는 `harness-catalog init`. 백업 설정은 없다(§7). 사내 IdP로 옮기면 Dex 설정은 사라진다.
+**운영자가 아는 것.** 둘로 나뉜다. **레지스트리:** 이미지 태그 하나, 필수 설정값 다섯(카탈로그 저장소 URL, git deploy key(읽기 전용), OIDC issuer, 레지스트리 공개 URL, PostgreSQL 접속), 기본값 있는 선택 설정값 셋(주기 fetch 간격 기본 60초; 임베딩 서비스 주소 `HC__EMBED_URL`(외부 서비스의 주소 — 비면 BM25 만)과 모델 이름 `HC__EMBED_MODEL`, §11 2026-10-19 검색 0.8.0). 도구 호출 스팬의 exporter는 표준 OTel 환경 변수(`OTEL_EXPORTER_OTLP_ENDPOINT`·`_HEADERS`·`_PROTOCOL`)로 켜며 레지스트리의 설정값이 아니다(없으면 스팬은 no-op). `[it]` 설정 매개변수는 복잡성을 위로 미는 것이라 이 여섯 밖의 튜닝 손잡이는 두지 않는다. **플랫폼(v3.0):** Dex 설정 파일 하나(issuer, LDAP 연결과 그룹 검색, 정적 클라이언트, 그랜트, 저장소), 저장소를 만들 때 한 번 돌리는 `harness-catalog init`. 백업 설정은 없다(§7). 사내 IdP로 옮기면 Dex 설정은 사라진다.
 
 ---
 
@@ -487,9 +491,9 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 
 | 도구 | 하는 일 | UC 대응 |
 |---|---|---|
-| `search_skills(query, limit=10)` | 식별자·설명·SKILL.md `metadata` 값의 어휘 검색. 후보 기본 10, 상한 20. 항목은 **선택에 쓰이는 것만**: 식별자·설명·`sha`(tree)·`compatibility`(있을 때)·`has_scripts`. 응답에 한 번, 마지막 fetch 시각. 필드마다 소비자가 있다: 식별자·설명은 고르는 자리, `sha`는 pin 새 판 확인과 `get_skill(sha)`, `compatibility`는 사람이 로드 전에 읽는 문장, `has_scripts`는 루프 조립기가 세션 전용 스킬(scripts/를 품은 것)을 후보에서 빼는 유일한 신호. 그 밖(커밋 SHA, `metadata` 전체, 파일 목록)은 `get_skill`에 있다 — 후보마다 곱해지는 무관한 필드는 방해 문서와 같다(§4 예산). 평가 결과는 어느 응답에도 없다(Langfuse, §5.1). 읽기 권한은 reader 전부라 필터가 없다. 전체 목록 도구는 없다(§11 2026-10-11 `list_skills` 제거) | `list_skills` |
+| `search_skills(query, limit=10)` | 식별자·설명·SKILL.md `metadata` 값의 검색 — BM25(한글 2-gram) + 설명 임베딩 코사인의 볼록 결합(§11 2026-10-19; 임베딩 서비스가 없으면 BM25 만). 후보 기본 10, 상한 20. 항목은 **선택에 쓰이는 것만**: 식별자·설명·`sha`(tree)·`compatibility`(있을 때)·`has_scripts`. 응답에 한 번, 마지막 fetch 시각. 필드마다 소비자가 있다: 식별자·설명은 고르는 자리, `sha`는 pin 새 판 확인과 `get_skill(sha)`, `compatibility`는 사람이 로드 전에 읽는 문장, `has_scripts`는 루프 조립기가 세션 전용 스킬(scripts/를 품은 것)을 후보에서 빼는 유일한 신호. 그 밖(커밋 SHA, `metadata` 전체, 파일 목록)은 `get_skill`에 있다 — 후보마다 곱해지는 무관한 필드는 방해 문서와 같다(§4 예산). 평가 결과는 어느 응답에도 없다(Langfuse, §5.1). 읽기 권한은 reader 전부라 필터가 없다. 전체 목록 도구는 없다(§11 2026-10-11 `list_skills` 제거) | `list_skills` |
 | `get_skill(id, sha?, path?, archive?)` | 스킬 한 판. 기본은 SKILL.md 본문과 `sha`(tree)·`commit`·`metadata` 전체·파일 목록·`has_scripts`를 **돌려준다.** 컨텍스트에 넣고 빼는 것은 호출자다. `sha`를 생략하면 `main`의 현재 판이다 — 사람과 루프에게 같다. `sha`를 주면 그 판(재현·사고 조사용). `path`를 주면 본문 대신 그 파일 하나를 `file`에(텍스트 또는 base64, 경로 이탈·심볼릭 링크 거부, 파일당 1 MB — 2026-10-17까지의 `get_skill(path=…)`). `archive=true`면 한 판 전체를 받는 **다운로드 명세**를 `archive`에 함께 싣는다(2026-10-17까지의 `get_skill(archive=true)`): `uri`(`{public_url}/archive/<id>/<tree>.tar`), `headers`(`X-Harness-Archive-Token`, HMAC-SHA256, 5분), `size`·`sha256`(tar의 실제 바이트), `digest`(`git-tree:<sha>`), `expires_at`. 파일 내용은 MCP를 지나지 않는다 — 에이전트가 셸에서 `curl`로 받아 sha256을 대조하고 푼다(pin). tar 상한 20 MB(`input_limit`), 없는 판은 `unknown_version`. 서버는 그 URI를 bearer 없이, 헤더 토큰만 보고 낸다(라우트 `GET /mcp/archive/<id>/<tree>.tar`, 실패는 빈 403 하나). 옵트인인 이유: 명세는 5분 토큰을 찍으므로 pin이 아닌 호출마다 발급할 까닭이 없다 | `get_skill`·`get_skill_files` |
-| `search_tools(query, limit=10)` | **toolbox(§11 2026-10-11).** `tools/<name>/tool.json`의 식별자·설명·`metadata` 값의 어휘 검색. 결과 항목은 식별자·설명·`sha`(tree)·`kind`(`script`·`mcp`)·`server`(kind가 `mcp`일 때 참조하는 `mcp-servers/<name>`). 스킬과 섞지 않는다 — 응답도 표도 따로다 | (없음 — Anthropic Tool Search·AgentCore semantic search는 하네스/게이트웨이 쪽) |
+| `search_tools(query, limit=10)` | **toolbox(§11 2026-10-11).** `tools/<name>/tool.json`의 식별자·설명·`metadata` 값의 검색 — `search_skills` 와 같은 엔진(§11 2026-10-19). 결과 항목은 식별자·설명·`sha`(tree)·`kind`(`script`·`mcp`)·`server`(kind가 `mcp`일 때 참조하는 `mcp-servers/<name>`). 스킬과 섞지 않는다 — 응답도 표도 따로다 | (없음 — Anthropic Tool Search·AgentCore semantic search는 하네스/게이트웨이 쪽) |
 | `get_tool(id, sha?, archive?)` | 도구 한 판의 정의: `tool.json` 전체(`name`·`description`·`inputSchema`·`outputSchema`·`runtime`·`metadata`)와 `sha`·`commit`·파일 목록. `runtime.kind`가 `mcp`면 참조하는 `server.json`(MCP Registry 형식)을 `server`에 함께 싣고, `script`이고 `archive=true`면 `get_skill`과 같은 모양의 다운로드 명세를 `archive`에 싣는다(라우트 `GET /mcp/archive/tools/<id>/<tree>.tar`, 서명 범위에 `tools/` 접두가 들어가 스킬 토큰과 섞이지 않는다). 레지스트리는 **발견까지**다 — 도구를 부르지도 중계하지도 않는다 | (없음) |
 
 **응답 모양의 정본은 server `driving/responses.py`의 pydantic 모델이다(§11 2026-10-11).** 위 표는 그 모델의 산문이고, 같은 모델이 `tools/list`의 `outputSchema`로 공개되어 성공 응답마다 검증된다. 오류 응답은 `isError`와 `{code, detail}`이며 스키마 밖이다.
@@ -673,7 +677,7 @@ skills/yt-subs/
 | 세션 안의 스킬 사용 관측(로드된 스킬이 실제로 쓰였는가, 과제가 됐는가) | 없음. 카탈로그의 사용 기록은 가져간 사실(검색어·결과 수·로드·pin)까지다(§2 데이터 표, §6 감사) | 넣지 않는다 — 경계 밖이다(사용자 결정 2026-09-27). 그 관측은 하네스와 루프의 책임이고 저장소는 팀의 Langfuse다. `[웹]` Claude Code는 OpenTelemetry로 `claude_code.tool_result`(`tool_name`, `OTEL_LOG_TOOL_DETAILS=1`이면 `mcp_tool.name`·`skill_name`)와 `skill.name` 속성의 비용·토큰 메트릭, 베타로 스팬을 내보내며(2026-09-27 확인, https://code.claude.com/docs/en/monitoring-usage ), Langfuse는 OTLP/HTTP를 받는다. 레지스트리와 잇는 키는 사용자와 시각뿐이다(MCP가 무세션). 과제의 성패는 텔레메트리가 아니라 evals(§5.1)의 일이다 |
 | 레지스트리 안의 평가 결과 표·기록 도구(v3.3의 `eval_result`·`record_eval`) | 없음. 평가 결과의 정본은 Langfuse(§5.1)이고 카탈로그 응답에 평가가 없다 | 루프가 자기 모델·하네스의 최근 결과로 후보를 거르려는데 루프 안에서 Langfuse API를 부를 수 없을 때(지연·한도). 그때도 정본은 Langfuse이고 레지스트리에 두는 것은 스케줄러가 주기 복사한 파생 열(재구축 가능, 백업 대상 아님)이다. 기록 도구는 다시 두지 않는다 |
 | Langfuse 셀프호스팅 | 없음. 팀이 이미 쓰는 Langfuse Cloud Hobby 프로젝트 | 30일 데이터 접근이 폐기 심사(분기, 2회 연속)나 미사용 스킬 판정(90일)에 모자랄 때, 사용자 2명·월 50k units을 넘을 때, 프롬프트·스킬 본문의 SaaS 반출이 §5의 경계에 걸릴 때. 형태는 `[웹]` web·worker·Postgres·ClickHouse·Redis/Valkey·S3 여섯, 권장 4코어·16 GiB·약 100 GB, compose는 "lacks high-availability, scaling capabilities, and backup functionality"(2026-09-27 확인). 라이선스는 MIT(`ee` 폴더 제외, 저작권자 ClickHouse, Inc.). 카탈로그 compose와 별개 스택이고 이 설계는 그 운영을 정하지 않는다 |
-| 벡터·하이브리드 검색 | 없음. `tsvector`+`pg_trgm` 어휘 검색(§2.1) | 파일럿(§9)에서 바꿔 말한 질의의 miss가 실측될 때. 한 후보는 `pgvector`로 설명 임베딩 열 하나를 더하고 어휘 순위와 코사인 순위를 RRF로 융합하는 것(같은 DB 안, 새 의존은 임베딩 모델 호출). 실제 형태는 파일럿의 miss 유형을 보고 정한다. `[웹]` 참조 구현(Oracle 노트북)은 toolbox·skillbox에 벡터만, 지식 메모리에만 하이브리드(RRF k=60)를 쓰며 그 이유를 "순수 벡터는 정확한 토큰을 저평가한다"로 적는다. 우리는 그 반대쪽(토큰)에서 시작한다 |
+| 벡터·하이브리드 검색 | **있음(§11 2026-10-19 검색 0.8.0)** — 메모리 사본 위 BM25 + 설명 임베딩(KURE-v1, 호스트 Ollama) 볼록 결합. 아래 조건 글은 그 전 판의 것 | 파일럿(§9)에서 바꿔 말한 질의의 miss가 실측될 때. 한 후보는 `pgvector`로 설명 임베딩 열 하나를 더하고 어휘 순위와 코사인 순위를 RRF로 융합하는 것(같은 DB 안, 새 의존은 임베딩 모델 호출). 실제 형태는 파일럿의 miss 유형을 보고 정한다. `[웹]` 참조 구현(Oracle 노트북)은 toolbox·skillbox에 벡터만, 지식 메모리에만 하이브리드(RRF k=60)를 쓰며 그 이유를 "순수 벡터는 정확한 토큰을 저평가한다"로 적는다. 우리는 그 반대쪽(토큰)에서 시작한다 |
 | 멀티 팀(팀별 경로·그룹·권한) | 없음. 팀 하나, 읽기 그룹 `harness-readers` 하나, 쓰기는 저장소 권한, 경로 `skills/<name>/` | 둘째 팀이 생겨 "자기 팀 것만 고친다"가 필요할 때. 그때 바뀌는 것은 넷이다. 경로가 `teams/<team>/<name>/`, 읽기 그룹이 `skills-<team>-readers`(그리고 `<team>` 문법·정규화·중첩 그룹 규칙, v3.1 §2에 있던 것), 쓰기 권한은 git 호스트의 CODEOWNERS 또는 팀별 저장소, 응답에 소유 팀 필드. 이행 비용은 생산자·운영자에게 남는다(저장소 경로 이동과 그에 걸린 CI·열린 PR, 인덱스 재구축). **바뀌지 않는 것**은 `name` 전역 유일과 식별자 `<name>`이라, 소비자 쪽(내려받은 사본·사용 기록)은 그대로 유효하다(v3.1 §3의 B+ 결정이 이것을 위해 남아 있다) |
 | 서비스 주체의 게시 | 없음. 서비스 주체는 읽기뿐이고 게시는 git 호스트의 PR이다 | 무인 루프가 사람 개입 없이 게시해야 할 때. 그때도 레지스트리가 아니라 CI 봇 계정이 PR을 여는 것이 자리다 |
 | 그룹→역할 매핑 설정 | 없음. 그룹 이름 `harness-readers` 하나가 역할 reader에 고정 | 역할이 셋 이상 필요할 때. 선례는 `[웹]` Airflow/FAB의 `AUTH_ROLES_MAPPING`(§10) |
@@ -1251,3 +1255,19 @@ skills/yt-subs/
 **바뀌는 것(P1, kata 쪽 일정에 맞춰).** `.harness-catalog`의 `layout = 2`; `check` 항목 하나(머리 스키마, `description` 길이·발동 낱말은 스킬과 같은 규칙); 색인에 `loop_index`; 도구 `search_loops`·`get_loop(id, sha?)`(응답은 `get_skill`과 같은 모양, archive 옵트인 포함); `scaffold`에 `kind=loop`; `write`·`review` 스킬의 점검표에 루프 행. 그 전까지 `loops/`는 check가 무시하고 색인하지 않으며, kata P0는 카탈로그 클론을 트리 SHA로 직접 읽는다.
 
 **근거.** `[it]` Pragmatic Programmer Tip 28(모든 것이 버전 관리 아래), Topic 32(설정으로 빼는 것은 환경·자격 증명·기계 이름 — 곧 바인딩), Cockburn(포트는 외부 시스템에). 검토해 버린 대안: kata 데이터 디렉터리(비git), 대상 저장소 `.kata/`(저장소마다 중복), 별도 루프 저장소(새 저장소). 결정의 전말은 kata `DESIGN.md` §5·§9.3·§16.
+
+### 2026-10-19: 검색 0.8.0 — 메모리 하이브리드(BM25 + dense 볼록 결합), 임베딩은 호스트 Ollama, 벤치가 게이트
+
+**결정.** `search_skills`·`search_tools`의 엔진을 Postgres 어휘 검색(`tsvector` AND + `pg_trgm` + ILIKE)에서 **레지스트리 프로세스 메모리의 하이브리드 색인**으로 바꾼다: BM25(소문자 낱말 + 한글 글자 2-gram + 식별자 분리, Lucene idf, k1 1.5·b 0.75) 와 설명 임베딩(KURE-v1, 1,024차원 하나) 코사인을 질의마다 min-max 정규화해 **0.85·dense + 0.15·BM25** 로 합친다. RRF 없음, 리랭커 없음, 가중치는 상수(설정 아님). 응답 계약·`limit`(기본 10, 최대 20)은 그대로.
+
+**근거(실측, `plans/search.md` §2).** v2 말뭉치 720 항목·4,320 질의(exact·synonym·cross-lang·task·name·jargon): 현행 SQL R@3 0.505 → BM25 0.940 → dense 0.979 → **볼록 결합 0.982**(R@1 0.947, 식별자 1.00). holdout 영역에서도 이득 유지. RRF 는 dense 를 끌어내리고(0.961), 리랭커(bge-reranker-v2-m3, Jev)는 이득 없음. 기준은 하나 — 측정된 품질이 가장 좋은 모양을 고르고 제 몫을 못 하는 부품만 뺀다(`[it]` DPR Table 2: 어휘가 이미 강한 자리에서 결합의 이득; Codex 검토 둘 `~/workspace/loop-engineering/codex-review-search-*.md`). 회귀 게이트: 벤치에 서버 모듈을 그대로 꽂은 `app-hybrid(core.search)` R@3 0.981 / `app-bm25` 0.940(실행 K) — 검색을 바꾸는 PR 은 이 표를 다시 찍는다.
+
+**어디서 계산하나.** 레지스트리는 이미 색인 행 전체를 메모리에 든다(§2.1). 수백~수천 문서의 BM25 와 1,024차원 내적은 그 사본 위에서 numpy 로 끝난다 — pgvector·pg_search 없음. **임베딩 런타임은 프로세스 밖**: mini 의 Docker 는 colima VM(2 vCPU·2 GB)이고 GPU(Metal)는 호스트에만 있어 인프로세스 torch(이미지 +3.4 GB, RSS 2.1 GB)는 들어가지 않는다. 호스트의 **Ollama**(이미 설치된 앱) 에 `hf.co/mykor/KURE-v1-gguf:BF16`(MIT) 을 올리고 레지스트리는 `HC__EMBED_URL`(Ollama `/api/embed` 또는 TEI `/embed`)·`HC__EMBED_MODEL` 로 부른다. GGUF BF16 은 fp32 와 순위가 같고(실행 J) 질의 p50 68 ms·720 문서 15 s. 새 컨테이너 없음. 이 설정값은 `[it]` 외부 설정 목록의 "기계 이름·포트" 쪽이지 튜닝 값이 아니다.
+
+**저장·세대.** 마이그레이션 0004: 두 색인 표에 `embedding real[]`·`embedding_generation text`. 세대 키는 `<모델>/doc1`(모델 또는 색인 문서 형식이 바뀌면 값이 바뀌어 자연히 전부 다시 임베딩). 재빌드는 메모리 캐시 → DB 의 같은 세대 벡터 → 빠진 것만 임베딩 순이라 재기동·`main` 전진에서 바뀐 항목만 임베딩한다. 캐시 키는 `(name, tree_sha)` — 색인 문서가 이름을 담는데 tree SHA 에는 디렉토리 이름이 없다(Codex 구현 검토 #6). 임베더가 잠시 죽은 재빌드는 dense 를 끄되 저장 벡터를 지우지 않는다. 벡터는 파생 데이터(정본은 git `main`, §2.1)라 지워도 다시 만들어진다.
+
+**실패 양상.** `HC__EMBED_URL` 이 비었거나 서비스가 안 닿으면(색인 때든 질의 때든) `/readyz` 의 `degraded` 에 `embedding_unavailable` 하나를 더하고 BM25 만으로 답한다(DB 단절 때 메모리로 깎는 것과 같은 모양). 시간 분기("먼저 BM25, 나중에 dense")는 없다 — 같은 커밋이라도 다음 주기의 재빌드가 임베딩을 다시 시도하고, 성공하면 사유가 사라진다. 깨진 응답(차원 불일치·NaN·0 벡터)은 서비스 오류와 같은 실패다. 스냅샷과 검색 색인은 참조 하나로 통째로 교체돼 동시 검색이 두 세대를 섞지 않는다. 구현 검토: `plans/search.md` §2c(Codex 7건 반영).
+
+**관측.** 검색 스팬에 `langfuse.observation.metadata.candidates`(돌려준 이름 목록) 를 더한다. 후속 `get_skill`/`get_tool` 과 같은 trace 로 "보여 준 것 중 무엇을 골랐나"를 사후 결합하고, 그 실제 질의로 α·k 를 다시 잰다(`plans/search.md` §3 7).
+
+**바뀌는 것.** core `search.py`(토크나이저·BM25·결합 — 순수 함수, Postgres·모델 없이 시험), `ports.py`(`FactStore.search` → `load_embeddings`, `Embedder` 포트), `catalog.py`(색인 둘 `skills`·`tools`, `_embed_missing`), 설정 둘, server `adapters/embed.py`(`HttpEmbedder`), `adapters/pg.py`(검색 SQL 삭제, 벡터 열 읽기·쓰기), 0004, compose 기본값 `HC__EMBED_URL=http://host.docker.internal:11434/api/embed`, MCP 도구 설명. k 는 레지스트리가 모르고 kata 가 고정 5(`plans/search.md` §3 6).

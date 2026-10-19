@@ -187,6 +187,28 @@ Kiwi 는 단독으로는 2-gram 보다 못하고(짧은 설명에서 어간 하�
 
 **Holdout(영역 반반 — train: youtube·git·docs·data 에서 α 선택, test: infra·slack·pdf·calendar 1,920 질의에서 한 번 평가)**: 선택된 α=0.85(두 토크나이저 모두). test 에서 dense 0.925/0.988(R@1/R@3) → CC 0.959/0.990. **하이브리드 이득은 안 본 영역에서도 유지**(R@1 +0.034)되고 과적합의 증거는 없다. 다만 Codex 지적대로 이것은 "같은 템플릿의 다른 영역"이지 실제 질의가 아니다.
 
+**실행 J — Ollama(mini 호스트, Metal) 의 KURE-v1 GGUF BF16 vs fp32 sentence-transformers (v2 말뭉치, 확장 문서, 질의 4,320)**
+
+| 엔진 | R@1 | R@2 | R@3 | R@5 | R@10 | MRR | name R@3 | synonym R@3 |
+|---|---|---|---|---|---|---|---|---|
+| dense fp32 (sentence-transformers, MPS) | 0.923 | 0.966 | 0.979 | 0.989 | 0.995 | 0.952 | 0.98 | 0.90 |
+| **dense Ollama BF16 GGUF** (`hf.co/mykor/KURE-v1-gguf:BF16`) | 0.923 | 0.966 | 0.979 | 0.989 | 0.995 | 0.952 | 0.98 | 0.90 |
+| CC α=0.85 fp32 + BM25 | 0.947 | 0.972 | 0.982 | 0.990 | 0.995 | 0.965 | 1.00 | 0.89 |
+| **CC α=0.85 Ollama + BM25** | 0.947 | 0.973 | 0.982 | 0.990 | 0.995 | 0.965 | 1.00 | 0.89 |
+
+GGUF BF16 변환은 순위를 바꾸지 않는다(모든 지표·스타일 동일). 지연은 ssh 터널 경유 p50 99 ms(mini 로컬 68 ms). **Ollama 경로 확정.**
+
+**실행 K — 회귀 게이트: 서버 모듈 `harness_catalog_core.search` 를 벤치에 그대로 꽂음 (`--app`, v2 말뭉치, 확장 문서, 질의 4,320, 2026-10-19 밤)**
+
+| 엔진 | R@1 | R@2 | R@3 | R@5 | R@10 | MRR | synonym R@3 | name R@3 |
+|---|---|---|---|---|---|---|---|---|
+| current(0.7.x SQL: tsvector AND + trgm + ILIKE — 벤치 전용 기준선으로만 남김) | 0.505 | 0.505 | 0.505 | 0.505 | 0.505 | 0.505 | — | — |
+| bm25 (벤치 엔진, rank_bm25) | 0.902 | 0.927 | 0.940 | 0.947 | 0.953 | 0.921 | 0.64 | 1.00 |
+| **app-bm25(core.search)** — `SearchIndex.search(q, None)` | 0.902 | 0.928 | 0.940 | 0.948 | 0.954 | 0.922 | 0.64 | 1.00 |
+| **app-hybrid(core.search)** — `SearchIndex.search(q, qvec)`, KURE-v1 fp32 | 0.947 | 0.972 | 0.981 | 0.990 | 0.995 | 0.966 | 0.89 | 1.00 |
+
+앱 모듈(자체 BM25: Lucene idf·k1 1.5·b 0.75, min-max 볼록 결합 α=0.85)이 벤치 엔진과 같은 자리다(하이브리드 0.981 vs 0.982, BM25 0.940 = 0.940). 이 표가 검색 PR 의 게이트다 — `make bench-search` 가 아니라 `uv run --group bench python -m bench.search --n 720 --app --expanded --good-only --alphas 0.85`.
+
 **TEI 운영 경로 실측 (같은 arm64 Mac, Docker VM 8 GB, `text-embeddings-inference:cpu-arm64-1.9`, KURE-v1)**
 
 | 경로 | 질의 p50 / p95 / p99 | 720 문서 색인 | RSS |
@@ -200,14 +222,30 @@ KURE-v2 는 모델이 작은데도 CPU 에서 질의 1.5배·색인 4.8배 느�
 
 TEI 는 기본 워밍업(`--max-batch-tokens` 16384·4096)에서 **8 GB VM 안에서 OOM(137)** 으로 두 번 죽었고 `--max-batch-tokens 512 --max-batch-requests 2` 로 줄여야 떴다. 뜬 뒤에도 candle CPU 가 torch CPU 보다 질의 3.5배, 색인 **29배** 느리다. HF 직접 다운로드도 한 번 실패해 로컬 스냅샷을 마운트했다. **결론: Apple Silicon Docker 에서 TEI arm64 CPU 이미지는 이 모델에 맞는 런타임이 아니다.** 옆 컨테이너를 고집하지 않는다 — 레지스트리 프로세스 안에서 torch CPU 로 돌리거나(이미지 +1.5 GB, 질의 55ms), ONNX 로 내보내 onnxruntime 으로 돌린다(가벼움, 미측정). Codex 의 "TEI 자원 예산" 지적이 실측으로 확인된 셈이다.
 
+### 2c. Codex 구현 검토 (2026-10-19 밤, 작업 트리 diff) — 7건, 전부 반영
+
+원문 `~/workspace/loop-engineering/codex-review-search-impl-0.8.0.md`. 정상 경로(BM25 공식·α 결합·limit·응답·스팬·Postgres 교체 트랜잭션)는 적합 판정. 지적과 조치:
+
+| # | 심각도 | 지적 | 조치 |
+|---|---|---|---|
+| 1 | 높음 | 같은 커밋에서 임베더가 한 번 실패하면 `_resync` 로만 빠져 영영 BM25 | `rebuild` 가 같은 커밋이라도 `_embedding_ok` 가 아니면 전체 빌드로 다시 시도. 시험 `test_embedder_recovers_on_same_commit` |
+| 2 | 높음 | 임베딩 응답의 차원·유한성·0 벡터를 검증하지 않아 degraded 대신 예외 | `HttpEmbedder._one` 이 깨진 본문(빈 벡터·행마다 다른 차원·NaN/Inf·0 벡터)을 실패로; 배치 간 차원 불일치도 실패. `SearchIndex` 는 깨진 저장 벡터면 dense 를 끄고, 질의 벡터는 차원·유한·0 검사 뒤 아니면 BM25 만. 카탈로그는 깨진 저장분을 만나면 캐시를 비워 다음 빌드가 전부 다시 임베딩 |
+| 3 | 높음 | 스냅샷과 색인을 따로 대입해 동시 검색이 두 세대를 섞음 | `_live = (snapshot, indexes)` 하나의 참조로 교체; 검색은 그 참조 하나를 읽는다 |
+| 4 | 중간 | 빈 질의·전 점수 0 에서 하이브리드가 이름순 전체를 냄 | 빈 질의는 빈 결과. 0·NaN 질의 벡터는 2 로 BM25 만. "dense 는 언제나 상위 limit 을 낸다"는 설계대로(동의어 구조가 그것) — 문턱은 넣지 않는다 |
+| 5 | 중간 | `HC__EMBED_URL` 비면 degraded 가 아니었음(설계와 반대) | 임베더 없음도 `embedding_unavailable` — 운영자가 /readyz 로 설정 누락을 본다. 시험 뒤집음 |
+| 6 | 중간 | 캐시 키가 `tree_sha` 뿐 — 같은 내용 다른 이름이면 SHA 가 같아 벡터를 잘못 재사용 | 키를 `(name, tree_sha)` 로; `load_embeddings` 도 그 키, 스냅샷의 `embeddings` 는 `name` 키(한 스냅샷 안 이름 유일) |
+| 7 | 중간 | 질의 때 임베더 장애가 /readyz 에 안 보임 | `_ranked` 가 질의 임베딩 성패로 `_embedding_ok` 를 갱신, `status()` 가 그 값으로 `embedding_unavailable` 을 합성. 시험 `test_query_time_embedder_outage_is_visible_in_status` |
+
+내 쪽에서 먼저 잡은 둘(Codex 와 겹침): 임베더 장애 때 저장 벡터를 지우지 않기(`test_embedder_outage_keeps_stored_vectors_and_recovers`), 질의 임베딩 호출의 connect timeout 3 s(죽은 서비스에 검색이 120 s 매달리지 않게).
+
 ## 3. 결정 (벤치마크 뒤 제안 — 사용자 확정 뒤 DESIGN §11 행)
 
 1. **문서 쪽**: description 규약(발동 낱말·쓰지 말 상황)을 유지하고, 색인 문서를 `name + description + 발동 낱말(description 안의 따옴표 구절)` 로 넓힌다 — 실측 +0.068 R@1. 합성 질의(Re-Invoke)는 넣지 않는다(레지스트리에 LLM 의존 없음; 넣는다면 write 스킬이 저자 앞에서).
 2. **질의 쪽**: kata 조립기는 과제 문장에서 의도를 뽑아 짧은 질의로(Re-Invoke), 도구는 `server`·`tool` 두 필드로(MCP-Zero). 세션의 모델은 이미 그렇게 쓴다. 레지스트리는 바뀌지 않는다.
-3. **엔진 — 실측으로 정한 모양(5-0 뒤에는 "dense 를 넣는 판의 모양"으로 읽는다; 0.8.0 은 5 의 BM25 뿐)**: **dense + BM25 의 볼록 결합**(α 설정값, 기본 0.85 — holdout 에서 유지됨, 0.7~0.95 평평). dense 는 KURE-v1(MIT, 568M, 문서당 1,024 차원 하나). 어휘는 BM25(낱말 + 한글 2-gram; Kiwi 형태소는 이득 없어 넣지 않음). **임베딩 런타임은 옆 컨테이너가 아니라 레지스트리 프로세스 안**(torch CPU, 질의 55ms, 720 문서 13s) — TEI arm64 CPU 이미지는 실측에서 OOM 과 29배 느린 색인으로 탈락. 이미지가 +1.5 GB 커지는 것이 비용이고, 줄이려면 ONNX + onnxruntime 으로 내보낸다(다음 단계, 미측정). **RRF 는 쓰지 않는다**. 임베딩 모델을 못 올리면 **BM25 단독으로 깎아서** 답한다(가용성 보장이지 품질 보장은 아님 — 동의어 질의 0.64). 리랭커는 넣지 않는다(본전 이하).
+3. **엔진 — 실측으로 정한 모양(0.8.0 에 통째로, 5-0·5 항)**: **dense + BM25 의 볼록 결합**(α 설정값, 기본 0.85 — holdout 에서 유지됨, 0.7~0.95 평평). dense 는 KURE-v1(MIT, 568M, 문서당 1,024 차원 하나). 어휘는 BM25(낱말 + 한글 2-gram; Kiwi 형태소는 이득 없어 넣지 않음). **임베딩 런타임은 모델이 있는 머신의 GPU 쪽 작은 서비스**(5 항 참조; mini 호스트 MPS 질의 24 ms·색인 6.6 s. 2026-10-19 밤 정정 — 그 전 판의 '프로세스 안 torch CPU' 는 mini Docker VM 이 2 GB 라 성립하지 않았다). TEI arm64 CPU 이미지는 OOM 과 29배 느린 색인으로 탈락. **RRF 는 쓰지 않는다**. 임베딩 모델을 못 올리면 **BM25 단독으로 깎아서** 답한다(가용성 보장이지 품질 보장은 아님 — 동의어 질의 0.64). 리랭커는 넣지 않는다(본전 이하).
    **대안으로 기록해 두는 것 — KURE-v2 late interaction**(154M, Apache-2.0): 단독으로 KURE-v1+BM25 와 같은 품질(R@3 0.981), 식별자 1.00, BM25 가 필요 없어 결합 코드가 사라진다. 대신 CPU 질의 1.5배·색인 4.8배, 저장 10배(문서당 39 KB), MaxSim 계산. 한국어 동의어가 실제 질의에서 더 큰 문제로 드러나거나 BM25 쪽 유지가 부담이 되면 그때 이쪽으로 바꾼다 — 메모리 계산이라 바꾸는 비용은 모듈 하나다.
    **어디서 계산하나 — 메모리에서.** 카탈로그는 수백~수천 항목이고 레지스트리는 이미 색인 행 전체를 메모리에 들고 있다(DESIGN §2.1, DB 단절 때 깎아 답하기 위해). BM25(0.3ms)와 1,024차원 코사인(수천 × 1,024 내적)은 그 메모리 사본 위에서 numpy 로 끝난다 — **pgvector 도 pg_search 도 필요 없다.** Postgres 에는 벡터를 `real[]` 열로 저장해 재기동 때 다시 임베딩하지 않게만 한다. pgvector 는 항목이 수만을 넘을 때의 다음 단계다(그때 가서 HNSW). 이것이 단순함 기준([[feedback-simplicity-over-branching]])에 맞는 모양이다 — 이미지 교체도 확장도 없이 열 하나, 컨테이너 하나(TEI), 설정값 하나.
-4. **게이트**: 검색 변경 PR은 벤치마크 숫자를 함께 적는다(DESIGN §11 2026-10-19). 벤치에 서버 경로 그대로의 엔진(`pg-cc`)을 꽂아 같은 표로 잰다.
+4. **게이트**: 검색 변경 PR은 벤치마크 숫자를 함께 적는다(DESIGN §11 2026-10-19). 벤치에 서버 모듈 그대로의 엔진(`--app` → `app-hybrid(core.search)`·`app-bm25(core.search)`)을 꽂아 같은 표로 잰다.
 5-0. **설계 결정의 기준(2026-10-19 밤, 사용자 정정: "최소 구현 비용은 중요하지 않다, 처음부터 올바른 설계로").** 이 절은 세 번 흔들렸다 — dense 단독(v1 벤치) → dense+BM25 볼록 결합(v2 벤치) → BM25 단독(Codex 단순함 검토). 흔들린 이유는 검토마다 기준을 바꿔 들었기 때문이다(최고 숫자 → 최소 부품). 기준은 하나여야 한다: **측정된 품질이 가장 좋은 모양을 고르고, 그 안에서 제 몫을 못 하는 부품만 뺀다.** 그 기준으로 답은 **dense + BM25 볼록 결합 하나**이고, 단계도 플래그도 없이 0.8.0 에 통째로 들어간다. Codex 2차의 "BM25 만 먼저"는 미룬 결정이지 설계가 아니다 — 받아들이지 않는다. Codex 2차가 맞게 잡아 준 것은 그대로 받는다: 설정값 없음, a/b 두 단계 없음, 관측 최소 셋, 꼬리 문턱은 kata, 전환·롤백 규칙 명시, 제안서 안의 모순 제거.
    채택하지 않은 대안과 이유 — (a) **BM25 단독**(R@3 0.940, 동의어 0.64): 어휘가 못 잡는 바꿔 말하기를 사용자가 겪게 하고 "나중에 dense"는 설계를 미루는 것. (b) **dense 단독**(0.979, R@1 0.923, 식별자 0.979): 결합 대비 R@1 −0.024 — 사람이 첫 번째를 집는 세션에서 100번에 2~3번 더 틀리고, 식별자(이름·명령·API)를 100번에 2번 놓친다. 문헌(DPR 부록 C, Contextual Retrieval)이 말하는 임베딩의 약점 그대로라 제거할 수 없는 부품이다. (c) **KURE-v2 late interaction 단독**(0.981, R@1 0.943, 식별자 1.00, RSS 0.9 GB): 부품은 가장 적지만 CPU 질의 1.5배·색인 4.8배·저장 10배이고 2026년에 나온 단일 공급 모델이다. 품질 차이는 잡음 안이라 **RSS 가 제약이 되면 바꿀 수 있는 대안**으로 둔다.
 5-1. **정본 KB(syntopicon `it`)가 같은 결론을 떠받치는 자리** (2026-10-19, kb-query).
@@ -219,13 +257,21 @@ TEI 는 기본 워밍업(`--max-batch-tokens` 16384·4096)에서 **8 GB VM 안�
    - `[it]` 기록 시스템과 파생 데이터 — 인덱스는 파생, 정본은 git `main`. 재기동 때 다시 만드는 쪽이 구분을 지킨다.
 5. **0.8.0 범위 — 하이브리드 검색 하나, 통째로.**
    - **엔진**: dense(KURE-v1, MIT, 1,024차원 하나) + BM25(소문자 낱말 + 한글 글자 2-gram, 라틴·한글 붙은 토큰 분리). 질의마다 두 점수를 min-max 정규화해 0.85·dense + 0.15·BM25 (상수 — holdout 에서 고른 값, 0.7~0.95 평평). 계산은 전부 레지스트리 프로세스 메모리의 색인 사본 위에서 numpy. RRF 없음, 리랭커 없음.
-   - **임베딩 런타임**: 레지스트리 프로세스 안 torch CPU fp32 (실측 질의 p50 56 ms, 720 문서 13 s, 프로세스 RSS 2.1 GB; bf16 은 36 ms 이나 적재 피크 3.8 GB 라 쓰지 않음). 가중치는 이미지에 넣는다(빌드 때 받음, 오프라인 기동, 시작 때 내려받지 않음). TEI 옆 컨테이너 없음(§2b 실측). **새 컨테이너 없음.** 이미지는 torch CPU 휠 + 가중치 2.3 GB 만큼 커진다. mini(Docker VM 8 GB)에서 registry+postgres+dex 동반 RSS 를 배포 뒤 한 번 잰다 — 넘치면 (c) KURE-v2 로 바꾼다.
-   - **저장**: 마이그레이션 0004 — `skill_index`·`tool_index` 에 `embedding real[1024]`, `embedding_model text` 두 열. `replace_index` 는 새 행의 (tree sha, embedding_model) 이 옛 행에 있으면 벡터를 재사용하고 없는 것만 임베딩한 뒤 한 트랜잭션으로 교체 — 재기동 때 재임베딩 없음, main 이 바뀌면 바뀐 항목만. `embedding_model` 값에 색인 문서 형식 판을 함께 적는다(`kure-v1/doc1`) — 모델이나 문서 형식이 바뀌면 값이 바뀌어 자연히 전부 다시 임베딩되고, 한 세대만 존재한다.
-   - **ready·degraded**: 지금 규칙 그대로 — 인덱스(벡터 포함)가 있으면 ready. 모델을 못 올리면 `degraded` 사유 `embedding_unavailable` 하나를 더하고 BM25 만으로 답한다(DB 단절 때 메모리로 깎는 것과 같은 모양). "BM25 먼저 떠서 나중에 dense" 같은 시간 분기는 없다.
+   - **임베딩 런타임 — 2026-10-19 밤 정정: 레지스트리 프로세스 밖, 모델이 있는 머신의 GPU 쪽으로 분리한다.** 사용자 질문 "하나의 큰 이미지가 맞나, 분리가 맞나"에 실측으로 답했다.
+     - mini 의 Docker 는 **colima VM(vz, CPU 2, 메모리 2 GB)** 이고 open-webui(617 MB) 등 다른 일도 그 안에 산다. 레지스트리 이미지는 119 MB. 인프로세스 모델(RSS 2.1 GB, 이미지 +~3.4 GB: torch aarch64 휠 454 MB + 가중치 2.3 GB)은 **이 VM 에 들어가지 않는다.** VM 을 키워도(colima 재시작) 2~4 vCPU 리눅스에서 CPU 임베딩이다.
+     - 같은 mini 의 **호스트(macOS, Apple M4 GPU)** 에서 KURE-v1 을 직접 돌린 실측: **MPS 질의 p50 23.7 ms · p95 25.8 ms, 720 문서 색인 6.6 s, RSS 2.2 GB**(호스트 16 GB 중). CPU 로도 43 ms / 14.5 s. 즉 GPU 는 호스트에만 있고 메모리도 호스트에 있다.
+     - 따라서 **분리가 맞다.** "모델을 컨테이너로 올리지 않지 않나"(사용자)에 대한 답: 리눅스 서버에서는 컨테이너(TEI·vLLM·Ollama 이미지)가 표준이되 가중치는 이미지에 굽지 않고 마운트한다; **Mac 에서는 컨테이너가 Metal 에 닿지 못해 호스트 앱이 표준**(Ollama·LM Studio·MLX). 우리 실측이 그대로다.
+     - **mini 에서는 이미 설치되어 돌고 있는 Ollama.app(0.18.0, 호스트, Metal) 을 쓴다** — 우리가 만들 서비스가 없다(사용자 승인 2026-10-19 밤 "그렇게 하라"). 모델은 KURE-v1 의 GGUF 변환본 `hf.co/mykor/KURE-v1-gguf:BF16`(MIT, 1.2 GB; F32 2.3 GB·Q8_0 635 MB 도 있음). 실측: 1024 차원·정규화 벡터, **질의 p50 68 ms, 720 문서 색인 15 s**(네이티브 torch MPS 24 ms·6.6 s 보다 느리나 TEI 194 ms·375 s 와는 급이 다름). GGUF BF16 의 순위 품질은 실행 J(아래)로 fp32 와 대조한다 — 떨어지면 F32 GGUF.
+     - 레지스트리 설정값 하나가 생긴다: `HC__EMBED_URL`(외부 서비스 주소 — [it] 외부 설정 목록의 "앱이 쓰는 포트·IP·기계 이름"에 해당하므로 DESIGN §2 규칙 안이다; α 같은 가중치가 아니다)과 그 모델 이름 `HC__EMBED_MODEL`(Ollama 는 요청에 모델 이름이 필요; 이 값이 `embedding_generation` 열의 세대 키가 된다). 비면 BM25 만, 닿지 않으면 degraded `embedding_unavailable` + BM25. mini 에서는 `http://host.docker.internal:11434`(Ollama `/api/embed`; colima 에서 192.168.5.2 로 풀림). mini 의 Ollama 는 `~/Library/LaunchAgents/com.ollama.server.plist`(`/usr/local/bin/ollama serve`)로 떠 있고 colima 컨테이너에서 `http://host.docker.internal:11434/api/version` 이 이미 닿는다(2026-10-19 확인 — 별도 설정 불필요). 인증 없는 서비스이므로 tailnet·LAN 신뢰 경계 안(Nexus·Harbor 와 같음). 리눅스 서버라면 같은 자리에 TEI 컨테이너(`/embed`) — 어댑터는 "문장 목록 → 벡터 목록" 클라이언트 하나에 Ollama/TEI 두 요청 모양을 둔다.
+     - 레지스트리 이미지는 그대로 119 MB, compose 서비스 셋 그대로. **새 컨테이너 없음, 새 서비스도 없음(이미 있는 Ollama).** 질의 임베딩 HTTP 왕복은 호스트 로컬이라 1~2 ms.
+     - bf16 은 품질 동일(R@3 0.9204 = fp32, top-1 일치 98.6%)이나 CPU 색인이 6.6배 느려(148 s vs 22.6 s) 쓰지 않는다. MPS fp32 가 기준.
+     - 대안으로 남기는 것: colima 를 8 GB/4 CPU 로 키우고 인프로세스 — 토폴로지는 단순하지만 CPU 임베딩(미측정)·3.4 GB 이미지·VM 안 메모리 경쟁. GPU 가 호스트에 있는 한 택하지 않는다.
+   - **저장**: 마이그레이션 0004 — `skill_index`·`tool_index` 에 `embedding real[]`, `embedding_generation text` 두 열. `replace_index` 는 새 행의 (tree sha, embedding_generation) 이 옛 행에 있으면 벡터를 재사용하고 없는 것만 임베딩한 뒤 한 트랜잭션으로 교체 — 재기동 때 재임베딩 없음, main 이 바뀌면 바뀐 항목만. `embedding_generation` 값에 색인 문서 형식 판을 함께 적는다(`hf.co/mykor/KURE-v1-gguf:BF16/doc1`) — 모델이나 문서 형식이 바뀌면 값이 바뀌어 자연히 전부 다시 임베딩되고, 한 세대만 존재한다.
+   - **ready·degraded**: 지금 규칙 그대로 — 인덱스(벡터 포함)가 있으면 ready. 임베딩 서비스에 닿지 못하면(`HC__EMBED_URL` 비었거나 오류) `degraded` 사유 `embedding_unavailable` 하나를 더하고 BM25 만으로 답한다(DB 단절 때 메모리로 깎는 것과 같은 모양). "BM25 먼저 떠서 나중에 dense" 같은 시간 분기는 없다.
    - **전환 규칙**: 배포 순간부터 모든 검색은 메모리 하이브리드가 정본. `PgFactStore.search`(tsvector·trgm·ILIKE)와 DB 단절 때의 부분 일치 폴백은 읽기 경로에서 뺀다. 생성 열·GIN 인덱스는 이번 판에 그대로 두고 다음 스키마 정리 판에서 지운다. 롤백은 이전 이미지(0004 는 열 추가뿐이라 이전 이미지와 공존).
-   - **설정값 없음**(DESIGN §2 여섯 그대로). **응답 계약 불변**(`search_skills`/`search_tools` 모양, `limit` 기본 10·최대 20).
+   - **설정값 하나** `HC__EMBED_URL`(외부 서비스 주소 — 임베딩 런타임 항 참조; 가중치 α 같은 튜닝 값은 설정으로 열지 않는다). **응답 계약 불변**(`search_skills`/`search_tools` 모양, `limit` 기본 10·최대 20).
    - **관측 최소 셋**: 검색 스팬에 `query`(있음)·`result_count`(있음)·**후보 이름 목록**(추가). 선택은 후속 `get_skill`/`get_tool` 스팬과 같은 trace 로 사후 결합, 재질의는 같은 trace 의 후속 검색으로 유도. 점수·selected·result_0 은 넣지 않는다.
-   - **검색 모듈 `search.py`** 는 앱 안의 순수 함수(토크나이저·BM25·코사인·결합)라 Postgres·모델 없이 시험되고, 벤치에 그대로 꽂아(`app-hybrid`) 같은 표로 회귀를 잡는다(기대 R@3 0.982).
+   - **검색 모듈 `search.py`** 는 앱 안의 순수 함수(토크나이저·BM25·코사인·결합)라 Postgres·모델 없이 시험되고, 벤치에 그대로 꽂아(`--app`, `app-hybrid(core.search)`) 같은 표로 회귀를 잡는다 — 실행 K: R@3 0.981(기대 0.982 와 같은 자리).
 6. **k — 레지스트리는 모르고, kata 는 당분간 고정 5.** 꼬리 문턱·재요청은 넣지 않는다(k 3→5 synonym 0.89→0.94 — 잘릴 것이 바로 동의어 후보). 확정은 kata Harbor 과제(k 별 모델 선택 정확도·토큰)와 Langfuse 실제 질의.
 7. **재튜닝 경로**: Langfuse 검색 스팬(후보 이름)과 후속 get 스팬의 trace 결합 → 시간순 train/valid/test → α·k 의 주기적 offline replay. 합성 벤치는 회귀 방지와 상대 비교용.
 

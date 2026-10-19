@@ -10,6 +10,7 @@ dependencies = [
   "skills-ref==0.1.1",
   "anyio==4.15.1",
   "jsonschema==4.26.0",  # 검사 11: inputSchema·outputSchema의 Draft 2020-12 메타스키마(§11 2026-10-12 보정)
+  "numpy>=2.3",  # 검색 0.8.0: 메모리 사본 위의 코사인·볼록 결합(§11 2026-10-19)
 ]
 
 [build-system]

@@ -199,24 +199,16 @@ def test_rejected_tool_is_excluded_but_skills_still_indexed(tmp_path: Path) -> N
     assert ("graft-ask", "11: runtime.server 'graft' not found under mcp-servers/ (or rejected by item 12)") in status.rejected
 
 
-def test_db_rank_only_when_synced(tmp_path: Path) -> None:
+def test_search_is_memory_index_regardless_of_db(tmp_path: Path) -> None:
     """DB 교체가 실패한 뒤에는 복구된 DB의 구판 순위를 쓰지 않고 메모리 검색으로 떨어진다(Codex 설계 리뷰 2026-10-11)."""
     store = FakeStore({"yt-subs": SKILL}, tools={"subs-fetch": SCRIPT_TOOL})
     facts = MemoryFacts(available=False)
-    calls: list[str] = []
-
-    def search(query: str, limit: int, kind: str = "skills") -> tuple[str, ...] | None:
-        calls.append(kind)
-        return ("nothing",)
-
-    facts.search = search  # type: ignore[method-assign]
     cat = Catalog(store, FakeValidator(), facts, workdir=tmp_path)
     assert "db_unavailable" in cat.rebuild().degraded
-    assert [t.name for t in cat.search_tools("subs").tools] == ["subs-fetch"] and calls == []  # DB를 묻지 않았다
+    assert [t.name for t in cat.search_tools("subs").tools] == ["subs-fetch"]  # 검색은 메모리 색인 — DB 가 없어도 같은 순위(§11 2026-10-19)
     facts.available = True
-    assert cat.rebuild().degraded == ()
-    cat.search_tools("subs")
-    assert calls == ["tools"]  # 반영된 뒤에는 DB 순위를 쓴다
+    assert cat.rebuild().degraded == ("embedding_unavailable",)  # 임베더 없음만 남는다
+    assert [t.name for t in cat.search_tools("subs").tools] == ["subs-fetch"]
 
 
 def test_secret_rule_scoped_to_registry_collections() -> None:

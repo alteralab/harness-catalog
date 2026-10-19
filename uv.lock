@@ -976,6 +976,7 @@ source = { editable = "packages/core" }
 dependencies = [
     { name = "anyio" },
     { name = "jsonschema" },
+    { name = "numpy" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "skills-ref" },
@@ -985,6 +986,7 @@ dependencies = [
 requires-dist = [
     { name = "anyio", specifier = "==4.15.1" },
     { name = "jsonschema", specifier = "==4.26.0" },
+    { name = "numpy", specifier = ">=2.3" },
     { name = "pydantic", specifier = "==2.13.5" },
     { name = "pydantic-settings", specifier = "==2.15.0" },
     { name = "skills-ref", specifier = "==0.1.1" },
@@ -996,6 +998,7 @@ version = "0.7.1"
 source = { editable = "packages/server" }
 dependencies = [
     { name = "harness-catalog-core" },
+    { name = "httpx" },
     { name = "mcp" },
     { name = "opentelemetry-exporter-otlp-proto-http" },
     { name = "opentelemetry-sdk" },
@@ -1009,6 +1012,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "harness-catalog-core", editable = "packages/core" },
+    { name = "httpx", specifier = ">=0.28" },
     { name = "mcp", specifier = "==2.3.0" },
     { name = "opentelemetry-exporter-otlp-proto-http", specifier = "==1.45.0" },
     { name = "opentelemetry-sdk", specifier = "==1.45.0" },
