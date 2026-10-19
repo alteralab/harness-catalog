@@ -1,6 +1,6 @@
 [project]
 name = "harbor-langfuse"
-version = "0.9.0"
+version = "0.9.1"
 description = "Harbor job plugin that records eval runs in Langfuse (installed on the evals runner, not in the registry image)"
 requires-python = ">=3.12"
 license = "Apache-2.0"
