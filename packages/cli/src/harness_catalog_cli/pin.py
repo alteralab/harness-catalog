@@ -48,22 +48,34 @@ class Record:
     sha256: str
 
 
-def parse_response(data: Mapping[str, Any]) -> Record:
-    """get_skill / get_tool 응답에서 필요한 것만. `tool` 키가 있으면 도구, 아니면 스킬. `archive`가 없으면 archive=true로 다시 부르라고 말한다."""
-    kind: Literal["skill", "tool"] = "tool" if "tool" in data else "skill"
+def _identity(data: Mapping[str, Any]) -> tuple[str, str]:
+    """(이름, 판). 이름은 디렉토리 이름이 되므로 카탈로그 이름 문법만, 판은 40자 hex 만 받는다(Codex 2026-10-18)."""
     name, sha = str(data.get("id", "")), str(data.get("sha", ""))
     if not NAME_RE.match(name):
         raise PinError(f"response id {name!r} is not a catalog name — it becomes a directory name, so only [a-z0-9-] is accepted (Codex 2026-10-18)")
     if len(sha) != 40 or not set(sha) <= SHA_HEX:
         raise PinError("response lacks a 40-hex sha — pass the structuredContent of get_skill or get_tool as-is")
-    archive = data.get("archive")
-    if not isinstance(archive, Mapping):
-        raise PinError("response has no archive descriptor — call the registry tool again with archive=true")
-    a = cast("Mapping[str, Any]", archive)
+    return name, sha
+
+
+def _file_paths(data: Mapping[str, Any]) -> tuple[str, ...]:
+    """응답이 적은 파일 목록(풀린 tar 와 대조할 것). 비면 받을 것이 없다는 뜻이라 멈춘다."""
     raw_files = data.get("files")
     files = tuple(str(cast("Mapping[str, Any]", f)["path"]) for f in cast("list[Any]", raw_files or [])) if isinstance(raw_files, list) else ()
     if not files:
         raise PinError("response lists no files")
+    return files
+
+
+def parse_response(data: Mapping[str, Any]) -> Record:
+    """get_skill / get_tool 응답에서 필요한 것만. `tool` 키가 있으면 도구, 아니면 스킬. `archive`가 없으면 archive=true로 다시 부르라고 말한다."""
+    kind: Literal["skill", "tool"] = "tool" if "tool" in data else "skill"
+    name, sha = _identity(data)
+    archive = data.get("archive")
+    if not isinstance(archive, Mapping):
+        raise PinError("response has no archive descriptor — call the registry tool again with archive=true")
+    a = cast("Mapping[str, Any]", archive)
+    files = _file_paths(data)
     headers_obj = a.get("headers")
     headers = {str(k): str(v) for k, v in cast("Mapping[str, Any]", headers_obj or {}).items()}
     return Record(kind, name, sha, files, str(a["uri"]), headers, int(a["size"]), str(a["sha256"]))

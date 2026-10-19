@@ -28,26 +28,47 @@ _HANGUL = re.compile(r"[가-힣]+")
 _WORD = re.compile(r"[0-9a-zA-Z가-힣_+#]+(?:[.-][0-9a-zA-Z가-힣_+#]+)*")  # 안쪽의 . - 는 붙이고(conversations.history, yt-dlp) 끝의 문장부호는 뗀다
 
 
+def _pieces(w: str) -> list[str]:
+    """구분 문장부호(- _ .)로 쪼갠 조각들. 빈 조각은 버린다."""
+    # ast-grep-ignore: regex-on-structure — 어휘: 문자 집합(한글·라틴·숫자·구분 문장부호)으로 낱말 경계를 자르는 토크나이저이지 중첩 구조가 아니다
+    return [p for p in re.split(r"[-_.]", w) if p]
+
+
+def _mixed_script(w: str) -> list[str]:
+    """한글과 라틴·숫자가 한 낱말에 섞였을 때의 추가 토큰: 한글 아닌 구간과 그 조각들, 그리고 한글 구간들.
+
+    "yt-dlp을" → yt-dlp, yt, dlp, 을 ; "renovate을" → renovate, 을
+    """
+    out: list[str] = []
+    # ast-grep-ignore: regex-on-structure — 어휘: 문자 집합(한글·라틴·숫자·구분 문장부호)으로 낱말 경계를 자르는 토크나이저이지 중첩 구조가 아니다
+    for raw in re.findall(r"[^가-힣]+", w):
+        run = raw.strip(".-_")
+        if run:
+            out.append(run)
+            out.extend(p for p in _pieces(run) if p != run)
+    out.extend(_HANGUL.findall(w))
+    return out
+
+
+def _bigrams(w: str) -> list[str]:
+    """한글 구간마다 글자 2-gram(형태소 분석기 없이 활용·조사를 어느 정도 잇는다)."""
+    out: list[str] = []
+    for run in _HANGUL.findall(w):
+        if len(run) >= 2:
+            out.extend(run[i : i + 2] for i in range(len(run) - 1))
+    return out
+
+
 def tokenize(text: str) -> list[str]:
     out: list[str] = []
     for w in _WORD.findall(text.lower()):
         out.append(w)
         if "-" in w or "_" in w or "." in w:
-            # ast-grep-ignore: regex-on-structure — 어휘: 문자 집합(한글·라틴·숫자·구분 문장부호)으로 낱말 경계를 자르는 토크나이저이지 중첩 구조가 아니다
-            out.extend(p for p in re.split(r"[-_.]", w) if p)
+            out.extend(_pieces(w))
         # ast-grep-ignore: regex-on-structure — 어휘: 문자 집합(한글·라틴·숫자·구분 문장부호)으로 낱말 경계를 자르는 토크나이저이지 중첩 구조가 아니다
-        if _HANGUL.search(w) and re.search(r"[0-9a-z]", w):  # "yt-dlp을" → yt-dlp, yt, dlp, 을 ; "renovate을" → renovate, 을
-            # ast-grep-ignore: regex-on-structure — 어휘: 문자 집합(한글·라틴·숫자·구분 문장부호)으로 낱말 경계를 자르는 토크나이저이지 중첩 구조가 아니다
-            for run in re.findall(r"[^가-힣]+", w):
-                run = run.strip(".-_")
-                if run:
-                    out.append(run)
-                    # ast-grep-ignore: regex-on-structure — 어휘: 문자 집합(한글·라틴·숫자·구분 문장부호)으로 낱말 경계를 자르는 토크나이저이지 중첩 구조가 아니다
-                    out.extend(p for p in re.split(r"[-_.]", run) if p and p != run)
-            out.extend(_HANGUL.findall(w))
-        for run in _HANGUL.findall(w):
-            if len(run) >= 2:
-                out.extend(run[i : i + 2] for i in range(len(run) - 1))
+        if _HANGUL.search(w) and re.search(r"[0-9a-z]", w):
+            out.extend(_mixed_script(w))
+        out.extend(_bigrams(w))
     return out
 
 
@@ -99,20 +120,33 @@ def _minmax(x: NDArray[np.float32]) -> NDArray[np.float32]:
     return np.zeros_like(x) if hi - lo < 1e-9 else (x - lo) / (hi - lo)
 
 
+def _complete(rows: list[list[float]], count: int, given: int) -> bool:
+    """벡터가 문서마다 하나씩 다 있고, 차원이 서로 같고, 0 차원이 아닌가."""
+    return len(rows) == count == given and len({len(r) for r in rows}) == 1 and bool(rows[0])
+
+
+def _document_matrix(count: int, vectors: Sequence[Sequence[float] | None] | None) -> NDArray[np.float32] | None:
+    """문서 벡터 행렬(행마다 정규화). 벡터는 전부 있고, 차원이 같고 0 이 아니며, 유한해야 dense —
+    아니면(저장분이 깨졌거나 세대가 섞임) None 이고 색인은 BM25 만으로 돈다. Codex 2026-10-19 #2"""
+    if not count or vectors is None:
+        return None
+    rows = [list(v) for v in vectors if v is not None]
+    if not _complete(rows, count, len(vectors)):
+        return None
+    m = np.asarray(rows, dtype=np.float32)
+    if not bool(np.isfinite(m).all()):
+        return None
+    norms = np.linalg.norm(m, axis=1, keepdims=True)
+    return (m / np.where(norms == 0, 1.0, norms)).astype(np.float32)
+
+
 class SearchIndex:
     """한 종류(스킬 또는 도구)의 검색 색인. 이름 순서가 고정되고 벡터는 그 순서의 행렬(없으면 None)."""
 
     def __init__(self, names: Sequence[str], docs: Sequence[str], vectors: Sequence[Sequence[float] | None] | None = None) -> None:
         self.names = tuple(names)
         self.bm25 = Bm25([tokenize(d) for d in docs])
-        self.vectors: NDArray[np.float32] | None = None
-        rows = [list(v) for v in vectors if v is not None] if vectors is not None else []
-        # 벡터는 전부 있고, 차원이 같고 0 이 아니며, 유한해야 dense — 아니면(저장분이 깨졌거나 세대가 섞임) BM25 만. Codex 2026-10-19 #2
-        if names and len(rows) == len(names) == len(vectors or ()) and len({len(r) for r in rows}) == 1 and rows[0]:
-            m = np.asarray(rows, dtype=np.float32)
-            if bool(np.isfinite(m).all()):
-                norms = np.linalg.norm(m, axis=1, keepdims=True)
-                self.vectors = (m / np.where(norms == 0, 1.0, norms)).astype(np.float32)
+        self.vectors: NDArray[np.float32] | None = _document_matrix(len(self.names), vectors)
 
     @property
     def dense(self) -> bool:

@@ -49,16 +49,24 @@ class HttpEmbedder:
         try:
             r = self._client.post(self._url, json=body)
             r.raise_for_status()
-            raw = r.json()
-            rows = cast(list[list[float]], raw["embeddings"] if self._ollama else raw)
-            vecs = [[float(x) for x in row] for row in rows]
-            # HTTP 200 의 깨진 본문도 실패다: 빈 벡터, 행마다 다른 차원, NaN/Inf, 0 벡터(Codex 2026-10-19 #2)
-            if vecs and any(not v or len(v) != len(vecs[0]) or not all(math.isfinite(x) for x in v) or not any(v) for v in vecs):
-                raise ValueError("malformed embedding payload")
-            return [_normalize(v) for v in vecs]
+            return _checked(r.json(), ollama=self._ollama)
         except (httpx.HTTPError, KeyError, TypeError, ValueError) as e:
             log.warning("embed failed (%s): %s", self._url, e)
             return None
+
+
+def _broken(v: list[float], width: int) -> bool:
+    """못 쓰는 행: 빈 벡터, 다른 차원, NaN/Inf, 0 벡터(Codex 2026-10-19 #2)."""
+    return not v or len(v) != width or not all(math.isfinite(x) for x in v) or not any(v)
+
+
+def _checked(raw: Any, *, ollama: bool) -> list[list[float]]:
+    """응답 본문 → 정규화 벡터들. HTTP 200 의 깨진 본문도 실패다 — ValueError 로 올려 호출자가 None(BM25 만)으로 바꾼다."""
+    rows = cast("list[list[float]]", raw["embeddings"] if ollama else raw)
+    vecs = [[float(x) for x in row] for row in rows]
+    if vecs and any(_broken(v, len(vecs[0])) for v in vecs):
+        raise ValueError("malformed embedding payload")
+    return [_normalize(v) for v in vecs]
 
 
 def _normalize(v: list[float]) -> list[float]:

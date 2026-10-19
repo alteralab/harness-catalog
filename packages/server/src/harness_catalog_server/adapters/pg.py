@@ -6,7 +6,7 @@ import logging
 import threading
 import time
 from collections.abc import Callable
-from typing import Final
+from typing import Any, Final
 
 import psycopg
 from psycopg.rows import tuple_row
@@ -35,6 +35,17 @@ SELECT name, tree_sha, embedding FROM skill_index WHERE embedding_generation = %
 UNION ALL
 SELECT name, tree_sha, embedding FROM tool_index  WHERE embedding_generation = %(g)s AND embedding IS NOT NULL
 """
+
+
+def _insert_rows(cur: psycopg.Cursor[tuple[Any, ...]], snapshot: IndexSnapshot) -> None:
+    """두 표의 행 전부. 벡터가 없는 행은 세대도 비운다 — 세대가 적힌 행은 벡터가 있다는 뜻이어야 load_embeddings가 섞이지 않는다."""
+    gen = snapshot.embedding_generation
+    for e in snapshot.entries:
+        vec = snapshot.embeddings.get(e.name)
+        cur.execute(INSERT_SKILL, (e.name, e.description, e.compatibility, Jsonb(dict(e.metadata)), e.tree_sha, e.commit_sha, snapshot.built_at, list(vec) if vec else None, gen if vec else None))
+    for t in snapshot.tools:
+        vec = snapshot.embeddings.get(t.name)
+        cur.execute(INSERT_TOOL, (t.name, t.description, t.kind, t.server, Jsonb(dict(t.metadata)), t.tree_sha, t.commit_sha, snapshot.built_at, list(vec) if vec else None, gen if vec else None))
 
 
 class Breaker:
@@ -141,13 +152,7 @@ class PgFactStore:
                     return IndexOutcome.STALE
                 cur.execute("DELETE FROM skill_index")
                 cur.execute("DELETE FROM tool_index")
-                gen = snapshot.embedding_generation
-                for e in snapshot.entries:
-                    vec = snapshot.embeddings.get(e.name)
-                    cur.execute(INSERT_SKILL, (e.name, e.description, e.compatibility, Jsonb(dict(e.metadata)), e.tree_sha, e.commit_sha, snapshot.built_at, list(vec) if vec else None, gen if vec else None))
-                for t in snapshot.tools:
-                    vec = snapshot.embeddings.get(t.name)
-                    cur.execute(INSERT_TOOL, (t.name, t.description, t.kind, t.server, Jsonb(dict(t.metadata)), t.tree_sha, t.commit_sha, snapshot.built_at, list(vec) if vec else None, gen if vec else None))
+                _insert_rows(cur, snapshot)
                 cur.execute(
                     "INSERT INTO index_state (id, commit_sha, indexed_at) VALUES (1, %s, %s) "
                     "ON CONFLICT (id) DO UPDATE SET commit_sha = EXCLUDED.commit_sha, indexed_at = EXCLUDED.indexed_at",
