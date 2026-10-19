@@ -66,9 +66,9 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 
 | 도구 | 하는 일 |
 |---|---|
-| `search_skills(query)` | 스킬 어휘 검색: 이름·설명·`sha`(판)·`compatibility`·`has_scripts` |
+| `search_skills(query)` | 스킬 검색(이름·설명의 BM25 + 설명 임베딩 — 바꿔 말한 질의도 잡힌다): 이름·설명·`sha`(판)·`compatibility`·`has_scripts` |
 | `get_skill(id, sha?, path?, archive?)` | SKILL.md 본문과 파일 목록. `path`면 그 파일 하나, `archive=true`면 한 판 전체를 tar로 받는 다운로드 명세(URI + 5분 헤더 토큰 + sha256)를 함께 — 파일은 모델을 지나지 않습니다 |
-| `search_tools(query)` | 도구 어휘 검색: 이름·설명·`sha`·`kind`·`server` |
+| `search_tools(query)` | 도구 검색(엔진은 스킬과 같다): 이름·설명·`sha`·`kind`·`server` |
 | `get_tool(id, sha?, archive?)` | `tool.json` 전체. `kind: mcp`면 참조하는 `server.json`을, `kind: script`이고 `archive=true`면 다운로드 명세를 함께 |
 
 - **곁에 두기(pin).** 매일 쓰는 스킬은 `pin` 스킬을 따라 `.agents/skills/<name>/`(프로젝트) 또는 `~/.agents/skills/<name>/`(사용자)에 내려받습니다. 무엇을 어느 범위에 받을지는 대화로 정하고, 받기부터 PINNED까지는 `hc pin`이 한 번에 합니다. 사본이 낡았는지는 `search_skills(<name>)`의 `sha`와 사본의 `PINNED`를 견주면 압니다.
