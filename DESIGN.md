@@ -1288,7 +1288,7 @@ skills/yt-subs/
 1. **compose 의 `OTEL_EXPORTER_OTLP_ENDPOINT` 기본값을 비운다**(비면 내보내지 않음). 2026-10-19 의 "기본값 = Langfuse Cloud US" 를 거둔다 — 사례 전부(Polaris·Airflow·DataHub·Langfuse·Grafana)가 수집기 주소를 비우거나 localhost 로 두고, 벤더 URL 기본값은 자기 제품 텔레메트리뿐이다(`plans/research/2026-10-20-config-management.md` §5). 우리 값은 운영 호스트의 `.env` 에.
 2. **읽기 그룹 이름은 설정 `HC__READER_GROUP`**(기본 `harness-readers`). §7 의 "그룹→역할 매핑 설정 없음"은 그대로다 — 역할은 하나, 이름만 환경값. 설정값은 필수 다섯 + 선택 넷.
 3. **코드 저장소 주소는 패키지 메타데이터(`[project.urls] Repository`)에서 읽는다** — `hc init` 의 핀 URL 과 도구 스키마 `$id` 의 근거. 포크가 pyproject 한 줄로 자기 주소를 얻는다.
-4. **문서 사이트가 배포물에 더해진다** — `docs/` 를 소스로 MkDocs(Material, Zensical 호환 부분집합)가 정적 사이트와 `llms.txt`·`llms-full.txt` 를 만들고, CI 가 strict 빌드로 링크 깨짐을 막으며, 운영 compose 의 정적 컨테이너가 리버스 프록시 뒤에서 섬긴다. `[it]` 문서를 코드처럼 — 배포와 주기적 평가 둘을 더한다.
+4. **문서 사이트는 별도 정적 호스팅에 별도 파이프라인으로** — `docs/` 를 소스로 MkDocs(Material, Zensical 호환 부분집합)가 정적 사이트와 `llms.txt`·`llms-full.txt` 를 만들고, 문서 전용 워크플로(`docs.yml`)가 strict 빌드로 링크 깨짐을 막은 뒤 GitHub Pages 에 올린다. 앱 CI·compose·배포 스크립트와는 **묶지 않는다** — 사례 전부(Polaris·Material: GitHub Pages, Airflow: ASF 퍼블리시, DataHub·Langfuse: Vercel, Dex: Netlify, 2026-10-20 저장소 확인)가 그렇고, 문서의 변경 주기는 앱 릴리스와 다르다. (정정: 처음 안은 운영 compose 의 nginx 이미지였고 사용자 지적으로 거둠 — `plans/refactor.md` R7.) `[it]` 문서를 코드처럼 — 배포와 주기적 평가 둘을 더한다.
 
 **바뀌지 않는 것(명시).** `HC__EMBED_URL` 의 호스트 Ollama 기본값(로컬 관례, 비면 BM25 만), Dex 의 정적 클라이언트(제품마다 하나, 배포 설정 파일), `docker/synology-ldap/` 오버레이(우리 팀 변형 예시), 검색 α·k·브레이커·보존 같은 상수, 이 코드 저장소 자신의 CI(규칙 저장소·러너 라벨). `hc init` 템플릿의 재배치(스킬·도구를 starter 카탈로그 저장소로, `plans/refactor.md` R6)는 **사용자 결정 대기** — 결정 뒤 별도 행.
 

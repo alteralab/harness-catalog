@@ -118,7 +118,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 
 ## 문서
 
-아래 전부가 사이트로도 올라가 있습니다: **<https://alteraui-macmini.tail2f9fe3.ts.net/docs/>** (tailnet 안에서만. 에이전트용 목차는 `/docs/llms.txt`, 전체 본문은 `/docs/llms-full.txt`).
+아래 전부가 문서 사이트로도 만들어집니다(`mkdocs`, 워크플로 `docs.yml`): **<https://alteralab.github.io/harness-catalog/>** — 저장소가 공개되면 GitHub Pages 에 올라가고, 그 전까지는 워크플로 산출물 `github-pages` 로 받습니다. 에이전트용 목차는 `llms.txt`, 전체 본문은 `llms-full.txt`.
 
 | 문서 | 누구에게 | 내용 |
 |---|---|---|

@@ -4,7 +4,7 @@
 site_name: harness-catalog
 site_description: 팀의 에이전트 스킬을 git 저장소에 두고 하네스에서 MCP 로 찾아 쓰게 하는 스킬·툴 카탈로그.
 # llmstxt 플러그인의 필수값이고 llms.txt 의 절대 URL 근거다. 공개 전환 때 공개 도메인으로 교체한다.
-site_url: https://alteraui-macmini.tail2f9fe3.ts.net/docs/
+site_url: https://alteralab.github.io/harness-catalog/
 repo_url: https://github.com/alteralab/harness-catalog
 docs_dir: docs
 strict: true

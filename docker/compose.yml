@@ -90,18 +90,6 @@ services:
       retries: 10
     restart: unless-stopped
 
-  docs:
-    # 문서 사이트(DESIGN §11 2026-10-20 4항): mkdocs 가 만든 정적 파일을 nginx 가 섬긴다. 비밀도 볼륨도 의존도 없다 — 레지스트리가 죽어도 살아 있다.
-    image: ${DOCS_IMAGE:?.env의 DOCS_IMAGE (<레지스트리>/<org>/harness-catalog-docs:<판 태그>)}
-    ports:
-      - "127.0.0.1:${DOCS_PORT:-8001}:8080"   # 프록시: tailscale serve --bg --set-path /docs http://127.0.0.1:8001
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-    restart: unless-stopped
-
 secrets:
   git_deploy_key:
     file: ${SECRETS_DIR:-../secrets}/git_deploy_key

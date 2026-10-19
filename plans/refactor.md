@@ -67,6 +67,20 @@ Ousterhout 의 물음에 "예"다: 디렉터리에 이미 있는 그룹을 쓰�
 리서치(docs §5) 권고대로: **MkDocs + Material**(Zensical 호환 부분집합 — search·include-markdown·mkdocstrings·llmstxt·superfences), `mkdocs-llmstxt` 가 `llms.txt`·`llms-full.txt` 를 생성, `docs/` 를 그대로 소스로(`docs/index.md` 가 README 를, `docs/design.md` 가 DESIGN 을 include). 테마는 흰 바탕 + 파란 액센트(LangChain `docs.json` 의 `#161F34`/`#006DDD`), Inter + Noto Sans KR, 누런 토큰 금지. 서빙은 **mini compose 의 nginx 정적 컨테이너를 `tailscale serve` 뒤에**(비용 0, 사내 호스트 이름 노출 문제 없음, 기존 러너·Harbor 그대로); CI 가 `mkdocs build --strict` 로 링크 깨짐을 막고 이미지로 올린다. 공개 전환 때 같은 `site/` 를 Cloudflare Pages 로. Material 이 유지보수 모드(2027-05 까지 치명 버그만)라 **CI 에 `zensical build` 를 비차단으로 함께 돌려** 0.1.0(2026-11-05) 뒤 전환할 때 무엇이 안 맞는지 미리 본다(호환성 게이트는 아니다 — 전환 때 따로 검증한다, Codex #5). `site_url` 은 지금 mini 의 tailnet 주소이고 공개 전환 때 바꾼다.
 `[it]` 문서를 코드처럼(winters2020) — 소스 관리·리뷰·소유자·정본 지정은 이미 있고(docs/ + DESIGN + 원장), 이 항목이 더하는 것은 **배포(서빙)와 주기적 평가(strict 빌드)** 둘이다.
 
+### R7′. 정정(2026-10-20, 사용자 지적) — 서빙은 앱 배포와 분리된 정적 호스팅
+R7 의 "mini compose 의 nginx 컨테이너 + deploy.sh 통합"은 **틀렸다**. 사례를 설정·템플릿에는 적용하고 서빙에는 적용하지 않은 채 "지금 있는 인프라"로 답을 정했고, 그 결과 변경 주기가 다른 문서를 앱 릴리스·compose·Harbor 이미지에 묶었다(이미지 빌드도 runner 의 legacy builder 가 per-Dockerfile ignore 를 못 읽어 v0.10.0 CI 에서 실패). 저장소에서 확인한 사례(2026-10-20):
+
+| 프로젝트 | 근거 | 호스팅 |
+|---|---|---|
+| Apache Polaris | `.asf.yaml` `ghp_branch: gh-pages` | GitHub Pages |
+| Apache Airflow | `airflow-site/.asf.yaml` `publish:` | ASF 정적 퍼블리시 |
+| DataHub | `docs-website/vercel-setup.sh` | Vercel |
+| Dex | `website/netlify.toml` | Netlify |
+| Langfuse | `langfuse-docs/vercel.json` | Vercel |
+| MkDocs Material | `.github/workflows/documentation.yml` | GitHub Pages |
+
+전부 "정적 산출물을 별도 호스팅에, 별도 파이프라인으로". 결정: `docker/docs.Dockerfile`·nginx 설정·compose `docs` 서비스·`DOCS_IMAGE`·deploy.sh 의 docs 줄·ci.yml 의 docs 잡/push 를 전부 제거하고, **`.github/workflows/docs.yml`**(PR: strict 빌드; main: 빌드 + 산출물 + GitHub Pages 배포, 비공개+free 플랜이면 배포 잡 건너뜀)로 간다. `site_url` 은 Pages 주소. 호스팅 자체의 결정(저장소 공개 → Pages / 비공개 유지 → Cloudflare Pages·Netlify 토큰)은 사용자 몫. DESIGN §11 2026-10-20 행 4항 정정.
+
 ### R8. 실행 방식 — Opus 가 고치고 Codex 가 본다
 단위마다: (1) Opus 에이전트가 worktree 에서 구현 + 시험 + 게이트(`make check`), (2) Codex 적대적 리뷰(원문은 `~/workspace/loop-engineering/codex-review-refactor-<단위>.md`), (3) 지적 반영 뒤 main 에 병합. 단위는 서로 파일이 겹치지 않게 나눈다. 릴리스는 전부 모아 **0.10.0** 하나(계약 변경: R1·R2·R4 설정/기본값; 마이그레이션 없음).
 
@@ -174,6 +188,7 @@ grep -q '^DOCS_IMAGE=' docker/.env && sed -i '' "s|^DOCS_IMAGE=.*|DOCS_IMAGE=$do
 **남은 미확인.** ① `site_url` 이 tailnet 호스트라 공개 전환 때 교체 필요(주석으로 표시). ② `docs/api/*.md`(mkdocstrings `:::` 페이지)는 아직 없다 — 플러그인만 꽂혀 있고 쓰는 쪽수가 없다. ③ mini 에 띄워 `tailscale serve --set-path /docs` 로 실제 경로 라우팅을 확인하지 않았다(compose 가 U1 뒤라서). ④ `pymdownx.tabbed` 의 Zensical 지원은 쓰는 쪽수가 없어 가려지지 않았다. ⑤ Material 이 `primary: white` 에서 잡는 링크 색은 `extra.css` 가 덮어 버려 기본값 자체는 재지 않았다.
 | 2026-10-20 | U2 코드 정리 | R5 전부(분할·중복·복잡도·PEP). 계약 불변: 시험 186 전부 통과, pyright 0, 게이트 넷 통과, 검색 회귀 게이트 동일(아래 상세) | 이 문서 §4 "U2 상세" |
 | 2026-10-20 | U2 Codex 리뷰·병합 | 동작 불변(잠금 범위·원자 교체·잠금 없는 읽기·VectorCache·ArchiveCache)·접은 쌍·복잡도 분해·토크나이저 전후 동일은 Codex 가 실행 검증(지적 없음). major 2: (1) 지운 noqa 중 10건은 필요했던 것(템플릿 scaffold 의 `print` 5, 픽스처·프로토콜 시그니처의 미사용 인자 5) → 사유를 붙여 복원, ruff 기준 설정으로 0건; (2) main(U1) 과의 텍스트 충돌(`cli/__main__.py` import, `tests/http/test_server.py` TYPE_CHECKING 블록, 원장) → 손으로 해결(`Generator` 를 TYPE_CHECKING 으로). 병합 뒤 pyright 0·게이트 4/4 | `~/workspace/loop-engineering/codex-review-refactor-U2.md` |
+| 2026-10-20 | R7′ 정정 | 사용자 지적("docs 를 이미지로 굽고 mini 에 배포하는 것은 사례와 맞지 않고 deploy.sh 와 분리돼야 한다")으로 서빙 설계를 거둠. 사례 여섯을 저장소에서 확인(위 표), docs 전용 워크플로 `docs.yml`(Pages)로 교체, compose·deploy.sh·ci.yml·이미지에서 문서 제거, 문서·DESIGN 정정. GitHub Pages 는 free 플랜 비공개 저장소에서 불가(실측) — 호스팅 결정은 사용자 | 이 문서 R7′ |
 
 ### U2 상세 (R5, 계약 불변)
 

@@ -41,22 +41,6 @@ jobs:
       - name: pytest
         run: uv run pytest -q tests
 
-  docs:
-    # 문서 사이트(DESIGN §11 2026-10-20): strict 빌드가 링크·앵커 깨짐을 막는다. Zensical 은 전환 준비용 비차단 — 같은 site/ 에 쓰므로 먼저 돌리고 MkDocs 결과가 남게 한다.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-        with:
-          version: "0.11.8"
-      - run: uv sync --frozen -p 3.12 --group docs
-      - name: "zensical build (전환 준비 — 비차단)"
-        run: uv run zensical build || true
-      - name: "mkdocs build --strict"
-        run: uv run mkdocs build --strict
-      - name: llms.txt 확인
-        run: head -20 site/llms.txt && test -s site/llms-full.txt
-
   image:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     needs: test
@@ -94,8 +78,3 @@ jobs:
           docker push "$IMG"
           docker image inspect "$IMG" --format 'digest={{index .RepoDigests 0}}' | tee -a "$GITHUB_STEP_SUMMARY"
       # 보존: GHCR 때의 delete-package-versions 둘은 뺐다(2026-10-18). Harbor 프로젝트 alteralab의 태그 보존 규칙이 맡는다(판 태그 vX.Y.Z 전부, SHA 태그 최근 5개).
-      - name: build · push docs
-        run: |
-          IMG=${{ vars.IMAGE_REGISTRY }}/${{ vars.IMAGE_REPOSITORY }}-docs:${{ steps.tag.outputs.sha }}
-          docker build -f docker/docs.Dockerfile -t "$IMG" .
-          docker push "$IMG"

@@ -105,9 +105,8 @@ make wiki-claims      # 바꾼 파일을 인용하는 claim 페이지
 소스는 `docs/`의 마크다운 그대로입니다. 사이트용 사본을 따로 두지 않고, 루트의 `README.md`·`DESIGN.md`는 `docs/index.md`·`docs/design.md`가 `include-markdown`으로 끌어옵니다. **README·DESIGN·docs/\*.md를 사이트 때문에 고치지 않습니다** — 저장소에서 읽는 사람에게 맞는 링크는 그대로 두고, 사이트에서만 어긋나는 링크(`../DESIGN.md`·`../PLAN.md`·`../.github/runner.env.example`)는 `tools/mkdocs_hooks.py`의 표 한 곳에서 돌립니다. 그 표의 왼쪽이 원본에서 사라지면 빌드가 경고를 내므로 조용히 썩지 않습니다.
 
 ```sh
-make docs          # 미리보기 — http://127.0.0.1:8001/docs/ (운영의 서빙 경로와 같다)
+make docs          # 미리보기 — http://127.0.0.1:8001/
 make docs-build    # site/ 에 짓는다(strict). llms.txt·llms-full.txt 가 여기서 나온다
-make docs-image    # nginx 이미지(비루트, /docs/ 하위 경로)
 ```
 
 의존성은 `uv sync --group docs`(mkdocs-material·mkdocs-llmstxt·mkdocstrings·include-markdown·zensical)이고 판은 `uv.lock`에 고정됩니다.
@@ -118,11 +117,7 @@ make docs-image    # nginx 이미지(비루트, /docs/ 하위 경로)
 
 **Zensical 전환 계획.** Material은 2027-05까지 치명 버그만 고칩니다. 후속인 Zensical이 같은 `mkdocs.yml`을 읽으므로 CI가 `zensical build`를 **비차단**으로 함께 돌려 전환 비용을 0에 가깝게 둡니다. 2026-10-20 실측에서 Zensical 0.0.71은 include-markdown·llmstxt·한국어 검색·mermaid·slugify·`extra_css`를 그대로 냈지만 **`hooks:`를 무시하고 링크 검증을 하지 않습니다**. 전환하려면 위 링크 표를 다른 방법으로 옮겨야 합니다. 또 `zensical build`는 같은 `site/`에 쓰므로 둘을 이어 돌릴 때는 **Zensical을 먼저, MkDocs를 나중에** 돌립니다(남는 `site/`가 배포물이어야 합니다).
 
-**서빙.** 이미지는 `docker/docs.Dockerfile`(빌드 단계에서 `mkdocs build --strict` → `nginx:alpine`, 비루트 uid 101, 8080 포트)이고 설정은 `docker/docs.nginx.conf`입니다. 경로는 `/docs/` 하위로, `mkdocs.yml`의 `site_url` 경로와 같아야 합니다. 운영 호스트에서는 compose의 `docs` 서비스가 `127.0.0.1:8001`에 붙고 앞에 tailscale이 섭니다.
-
-```sh
-tailscale serve --bg --set-path /docs http://127.0.0.1:8001
-```
+**서빙 — 별도 파이프라인, 정적 호스팅.** 문서는 앱 배포(compose·`deploy.sh`·이미지)와 **묶지 않습니다**. 사례 전부가 그렇습니다(2026-10-20 저장소 확인: Polaris·MkDocs Material 은 GitHub Pages `gh-pages`, Airflow 는 ASF 정적 퍼블리시, DataHub·Langfuse 는 Vercel, Dex 는 Netlify). 이 저장소는 `.github/workflows/docs.yml` 하나가 맡습니다 — PR 에서는 `docs/`·`mkdocs.yml`·README·DESIGN 이 바뀔 때 strict 빌드만, `main` 에서는 빌드 + `site/` 산출물 업로드 + **GitHub Pages 배포**(`actions/deploy-pages`). 사이트 주소는 `mkdocs.yml` 의 `site_url`(`https://alteralab.github.io/harness-catalog/`)이고 `llms.txt` 의 절대 링크도 거기서 옵니다. Pages 는 공개 저장소 또는 Pro/Team 이상 조직의 비공개 저장소에서만 켜지므로(이 조직은 free 플랜, 저장소는 비공개 — 2026-10-20 실측), 그 전까지 배포 잡은 건너뛰고 워크플로의 `github-pages` 산출물(site 전체)만 남습니다. 다른 정적 호스팅(Cloudflare Pages·Netlify)으로 가려면 `deploy` 잡 하나만 바꿉니다.
 
 ## 설계 문서와 원장
 

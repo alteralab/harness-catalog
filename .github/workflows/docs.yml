@@ -1,0 +1,51 @@
+# 문서 사이트 파이프라인 — 앱 CI(ci.yml)·배포(deploy.sh)와 분리한다(DESIGN §11 2026-10-20 4항 정정).
+# 사례(2026-10-20 저장소 확인): Polaris·MkDocs Material 은 GitHub Pages(gh-pages), Airflow 는 ASF 정적 퍼블리시, DataHub·Langfuse 는 Vercel, Dex 는 Netlify —
+# 전부 "정적 산출물을 별도 호스팅에, 별도 파이프라인으로". 이 저장소는 GitHub Pages 를 겨냥한다(공개 저장소이거나 조직 플랜이 Pages 를 허용할 때 배포 잡이 돈다;
+# 그 전까지는 strict 빌드와 산출물(site) 업로드까지).
+name: docs
+
+on:
+  pull_request:
+    paths: ["docs/**", "mkdocs.yml", "README.md", "DESIGN.md", "tools/mkdocs_hooks.py", "pyproject.toml", "uv.lock", ".github/workflows/docs.yml"]
+  push:
+    branches: [main]
+    paths: ["docs/**", "mkdocs.yml", "README.md", "DESIGN.md", "tools/mkdocs_hooks.py", "pyproject.toml", "uv.lock", ".github/workflows/docs.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.11.8"
+      - run: uv sync --frozen -p 3.12 --group docs
+      # Zensical 을 먼저 — 둘 다 같은 site/ 에 쓴다. 산출물이 되어야 할 것은 MkDocs 의 결과다. 비차단(전환 준비).
+      - name: "zensical build (전환 준비 — 비차단)"
+        run: uv run zensical build || true
+      - name: "mkdocs build --strict (링크·앵커가 깨지면 실패)"
+        run: uv run mkdocs build --strict
+      - name: llms.txt 확인
+        run: head -20 site/llms.txt && test -s site/llms-full.txt
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  # GitHub Pages 배포. 비공개 저장소는 조직이 Pro/Team 이상일 때만 Pages 가 켜진다 — 그 밖에는 이 잡이 건너뛰고 위 산출물만 남는다.
+  deploy:
+    if: github.event_name != 'pull_request' && github.event.repository.visibility == 'public'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

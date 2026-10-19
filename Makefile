@@ -5,7 +5,7 @@ COMPOSE_DEV := docker compose -f docker/compose.dev.yml
 
 
 .PHONY: mcp-pin
-.PHONY: bench-search release deploy help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image docs docs-build docs-image trail trail-init wiki-claims wiki-install
+.PHONY: bench-search release deploy help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image docs docs-build trail trail-init wiki-claims wiki-install
 
 help: ## 이 목록
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[1m%-16s\033[0m %s\n", $$1, $$2}'
@@ -49,8 +49,6 @@ docs: ## 문서 사이트를 미리 본다(http://127.0.0.1:8001/docs/ — 운�
 docs-build: ## 문서 사이트를 site/ 에 짓는다(strict — 링크·앵커가 깨지면 실패). llms.txt·llms-full.txt 도 여기서 나온다
 	uv run --group docs mkdocs build --strict
 
-docs-image: ## 문서 사이트 이미지를 로컬 태그로 빌드한다(nginx, 비루트, /docs/ 하위 경로)
-	docker build -f docker/docs.Dockerfile -t harness-catalog-docs:current .
 
 trail: ## Trail 코드 지도(graft/)를 (다시) 만든다 — 판은 package.json에 고정(npm ci로 받는다). 이미지와 무관
 	npm ci --silent
