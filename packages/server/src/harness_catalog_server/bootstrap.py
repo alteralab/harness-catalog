@@ -76,7 +76,7 @@ def bootstrap(settings: Settings, workdir: Path, *, jwks_uri: str | None = None,
     verifier = JwtTokenVerifier(issuer, public_url, jwks_uri or discover_jwks_uri(issuer))
     signer = ArchiveSigner(secrets.token_bytes(32))  # 프로세스 수명 키: 복제본 하나 전제, 재기동이 곧 회전(DESIGN §11 2026-10-11)
     catalog.evict_archives(retention_seconds=0)  # 새 키라 옛 토큰은 전부 403 — 캐시 tar는 쓸모가 없다
-    server = build_server(catalog, issuer=issuer, public_url=public_url, verifier=verifier, signer=signer)
+    server = build_server(catalog, issuer=issuer, public_url=public_url, verifier=verifier, signer=signer, reader_group=settings.reader_group)
     mcp_app = server.streamable_http_app(streamable_http_path="/mcp", stateless_http=True, json_response=True, host="0.0.0.0")  # noqa: S104
 
     @contextlib.asynccontextmanager

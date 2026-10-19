@@ -13,6 +13,11 @@ dependencies = [
   "numpy>=2.3",  # 검색 0.8.0: 메모리 사본 위의 코사인·볼록 결합(§11 2026-10-19)
 ]
 
+# 코드 저장소 주소의 정본 — 이 한 줄이다(§11 2026-10-20). `distribution.code_repo_url()`이 설치된 메타데이터에서 읽어
+# `hc init`의 핀 URL과 도구 스키마 `$id`를 조립한다. 포크는 이 줄을 자기 주소로 고친다(cli·server의 pyproject에는 적지 않는다 — 정본은 하나).
+[project.urls]
+Repository = "https://github.com/alteralab/harness-catalog"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

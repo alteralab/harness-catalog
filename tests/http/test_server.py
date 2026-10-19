@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import socket
 import subprocess
 import sys
 import time
-from collections.abc import Iterator, Mapping
+from collections.abc import Generator, Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +37,13 @@ def issuer() -> Iterator[FakeIssuer]:
 
 @pytest.fixture
 def server(tmp_path: Path, catalog_repo: CatalogRepo, issuer: FakeIssuer) -> Iterator[tuple[str, FakeIssuer]]:
+    with serve(tmp_path, catalog_repo, issuer) as running:
+        yield running
+
+
+@contextlib.contextmanager
+def serve(tmp_path: Path, catalog_repo: CatalogRepo, issuer: FakeIssuer, extra_env: Mapping[str, str] | None = None) -> Generator[tuple[str, FakeIssuer]]:
+    """레지스트리 프로세스 하나. `extra_env`로 설정값을 바꿔 띄운다(예: HC__READER_GROUP)."""
     port = free_port()
     public_url = f"http://127.0.0.1:{port}{PUBLIC_PATH}"
     env = {
@@ -46,6 +54,7 @@ def server(tmp_path: Path, catalog_repo: CatalogRepo, issuer: FakeIssuer) -> Ite
         "HC__PUBLIC_URL": public_url,
         "HC__DATABASE_URL": "postgresql://unused",
         "HC__FETCH_INTERVAL_SECONDS": "3600",
+        **(extra_env or {}),
     }
     proc = subprocess.Popen([sys.executable, "-m", "harness_catalog_server", "serve", "--host", "127.0.0.1", "--port", str(port), "--workdir", str(tmp_path / "work"), "--log-level", "warning"], env=env)
     base = f"http://127.0.0.1:{port}"
@@ -60,9 +69,11 @@ def server(tmp_path: Path, catalog_repo: CatalogRepo, issuer: FakeIssuer) -> Ite
     else:
         proc.kill()
         pytest.fail("server did not become ready")
-    yield base, issuer
-    proc.terminate()
-    proc.wait(10)
+    try:
+        yield base, issuer
+    finally:
+        proc.terminate()
+        proc.wait(10)
 
 
 def call_tool(base: str, token: str | None, name: str, arguments: dict[str, Any]) -> httpx.Response:
@@ -138,6 +149,16 @@ def test_wrong_audience_expired_and_not_a_member(server: tuple[str, FakeIssuer])
     assert r.status_code == 200 and "www-authenticate" not in {k.lower() for k in r.headers}
     res = result_of(r)
     assert res["isError"] is True and res["structuredContent"]["code"] == "not_a_member"
+
+
+def test_reader_group_follows_the_setting(tmp_path: Path, catalog_repo: CatalogRepo, issuer: FakeIssuer) -> None:
+    """HC__READER_GROUP을 바꾼 프로세스는 그 그룹의 토큰만 받는다 — 기본값 harness-readers는 더 이상 reader가 아니다(§11 2026-10-20)."""
+    with serve(tmp_path, catalog_repo, issuer, {"HC__READER_GROUP": "platform-readers"}) as (base, fi):
+        allowed = fi.token(sub="u", aud=base + PUBLIC_PATH, groups=["platform-readers"])
+        assert [s["name"] for s in result_of(call_tool(base, allowed, "search_skills", {"query": "pin"}))["structuredContent"]["skills"]] == ["pin-skill"]
+        refused = result_of(call_tool(base, fi.token(sub="u2", aud=base + PUBLIC_PATH, groups=["harness-readers"]), "search_skills", {"query": "pin"}))
+        assert refused["isError"] is True and refused["structuredContent"]["code"] == "not_a_member"
+        assert "platform-readers" in refused["structuredContent"]["detail"]
 
 
 def test_machine_account_reads_by_group(server: tuple[str, FakeIssuer]) -> None:

@@ -13,10 +13,10 @@ from typing import NamedTuple
 from urllib.parse import urlsplit
 
 from harness_catalog_core.catalog_file import MARKER_PATH, MarkerError, parse_marker
+from harness_catalog_core.distribution import code_repo_url
 from harness_catalog_core.model import SUPPORTED_LAYOUT
 from harness_catalog_core.toolbox import tool_json_schema
 
-CODE_REPO_URL = "https://github.com/alteralab/harness-catalog"
 VERSION_PLACEHOLDER = "<판>"
 SCHEMA_PATH = "schemas/tool.schema.json"
 MCP_CONFIG_PATH = ".mcp.json"
@@ -45,14 +45,18 @@ def detect_host(repo_url: str) -> str:
     raise InitError(f"unsupported git host in {repo_url!r} (github.com·*.github.com·gitlab.com·gitlab.<domain> only — otherwise pass --host)")
 
 
-def resolve_pin(pin: str | None, *, code_repo_url: str = CODE_REPO_URL) -> str:
-    """템플릿의 판 참조. --pin이 없으면 cli 자기 판이고 그 태그가 코드 저장소에 있어야 한다(오핀 방지)."""
+def resolve_pin(pin: str | None, *, repo_url: str | None = None) -> str:
+    """템플릿의 판 참조. --pin이 없으면 cli 자기 판이고 그 태그가 코드 저장소에 있어야 한다(오핀 방지).
+
+    저장소 주소는 배포물 메타데이터에서 온다(§11 2026-10-20) — 포크는 자기 저장소의 태그를 본다. `repo_url`은 시험이 바꿔 끼우는 자리다.
+    """
     if pin:
         return pin
+    url = repo_url if repo_url is not None else code_repo_url()
     tag = f"v{version('harness-catalog-cli')}"
-    proc = subprocess.run(["git", "ls-remote", "--tags", "--exit-code", code_repo_url, tag], capture_output=True, text=True, check=False, timeout=60)
+    proc = subprocess.run(["git", "ls-remote", "--tags", "--exit-code", url, tag], capture_output=True, text=True, check=False, timeout=60)
     if proc.returncode != 0:
-        raise InitError(f"tag {tag} not found in {code_repo_url} (development build?) — pass --pin <ref> to use an explicit ref")
+        raise InitError(f"tag {tag} not found in {url} (development build?) — pass --pin <ref> to use an explicit ref")
     return tag
 
 

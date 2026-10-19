@@ -1,4 +1,5 @@
-# 코드 저장소 CI: PR마다 게이트·타입·시험. main 병합이면 이미지를 mini 러너에서 한 번 빌드해 NAS Harbor(portainer stacks/harbor)로(짧은 SHA 태그; 보존은 Harbor 프로젝트의 태그 보존 규칙).
+# 코드 저장소 CI: PR마다 게이트·타입·시험. main 병합이면 이미지를 self-hosted 러너에서 한 번 빌드해 저장소 변수 IMAGE_REGISTRY/IMAGE_REPOSITORY 가 가리키는
+# 레지스트리로(짧은 SHA 태그). 우리 값은 NAS Harbor(portainer stacks/harbor)이고 보존은 그 프로젝트의 태그 보존 규칙이다.
 name: ci
 on:
   pull_request:
@@ -56,15 +57,23 @@ jobs:
             refs/tags/v*) echo "sha=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT" ;;
             *) echo "sha=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT" ;;
           esac
-      - name: login harbor (NAS, tailnet 주소 — 러너 mini는 tailnet 안)
+      # 이미지 주소는 저장소 변수가 정한다(§11 2026-10-20) — 기본값을 두지 않아 변수가 없으면 이 잡이 그 자리에서 실패한다(빈 주소로 조용히 push 하지 않는다).
+      - name: registry 주소 확인
+        env:
+          IMAGE_REGISTRY: ${{ vars.IMAGE_REGISTRY }}
+          IMAGE_REPOSITORY: ${{ vars.IMAGE_REPOSITORY }}
+        run: |
+          : "${IMAGE_REGISTRY:?저장소 변수 IMAGE_REGISTRY 가 없다 — gh variable set IMAGE_REGISTRY --body <host:port>}"
+          : "${IMAGE_REPOSITORY:?저장소 변수 IMAGE_REPOSITORY 가 없다 — gh variable set IMAGE_REPOSITORY --body <org>/<name>}"
+      - name: login registry (우리 값은 NAS Harbor의 tailnet 주소 — 러너 mini는 tailnet 안)
         env:
           # robot 이름에 $가 있다(robot$alteralab+ci-push) — run 문자열에 직접 넣으면 bash가 $alteralab을 지운다(2026-10-18 실측 unauthorized). env로 넘긴다.
           HARBOR_USER: ${{ secrets.HARBOR_ROBOT_NAME }}
           HARBOR_SECRET: ${{ secrets.HARBOR_ROBOT_SECRET }}
-        run: printf '%s' "$HARBOR_SECRET" | docker login ds923plus.tail2f9fe3.ts.net:9443 -u "$HARBOR_USER" --password-stdin
+        run: printf '%s' "$HARBOR_SECRET" | docker login "${{ vars.IMAGE_REGISTRY }}" -u "$HARBOR_USER" --password-stdin
       - name: build · push
         run: |
-          IMG=ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:${{ steps.tag.outputs.sha }}
+          IMG=${{ vars.IMAGE_REGISTRY }}/${{ vars.IMAGE_REPOSITORY }}:${{ steps.tag.outputs.sha }}
           docker build -t "$IMG" .
           docker push "$IMG"
           docker image inspect "$IMG" --format 'digest={{index .RepoDigests 0}}' | tee -a "$GITHUB_STEP_SUMMARY"

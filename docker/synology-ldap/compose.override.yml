@@ -2,15 +2,17 @@
 # docker compose -f docker/compose.yml -f docker/synology-ldap/compose.override.yml up -d
 # 운영 compose 전용이다. dev compose에는 registry 서비스가 없어 아래 registry 블록(hairpin) 때문에 config가 실패한다(실측 2026-10-10). 개발의 Dex는 정적 사용자다.
 # LDAP 바인드 비밀번호는 파일 비밀(SECRETS_DIR/ldap_bind_pw)이거나 환경 변수 LDAP_BIND_PW 둘 중 하나.
+# 디렉터리 주소·DN과 hairpin 값은 기본값을 두지 않는다(§11 2026-10-20) — 한 팀의 주소가 다른 팀의 기본값일 수 없고,
+# 틀린 기본값으로 조용히 뜨는 것보다 compose가 그 자리에서 멈추는 쪽이 낫다. 예시는 docker/.env.example의 자리표시자.
 services:
   dex:
     environment:
-      LDAP_HOST: ${LDAP_HOST:-192.168.3.95:636}
-      LDAP_BIND_DN: ${LDAP_BIND_DN:-uid=admin,cn=users,dc=gyojunan,dc=synology,dc=me}
+      LDAP_HOST: ${LDAP_HOST:?.env의 LDAP_HOST (예 ldap.example.com:636)}
+      LDAP_BIND_DN: ${LDAP_BIND_DN:?.env의 LDAP_BIND_DN (예 uid=admin,cn=users,dc=example,dc=com)}
       LDAP_BIND_PW: ${LDAP_BIND_PW:-}
       LDAP_BIND_PW_FILE: ${LDAP_BIND_PW_FILE:-/run/secrets/ldap_bind_pw}
-      LDAP_USER_BASE_DN: ${LDAP_USER_BASE_DN:-cn=users,dc=gyojunan,dc=synology,dc=me}
-      LDAP_GROUP_BASE_DN: ${LDAP_GROUP_BASE_DN:-cn=groups,dc=gyojunan,dc=synology,dc=me}
+      LDAP_USER_BASE_DN: ${LDAP_USER_BASE_DN:?.env의 LDAP_USER_BASE_DN (예 cn=users,dc=example,dc=com)}
+      LDAP_GROUP_BASE_DN: ${LDAP_GROUP_BASE_DN:?.env의 LDAP_GROUP_BASE_DN (예 cn=groups,dc=example,dc=com)}
       LDAP_INSECURE_NO_SSL: ${LDAP_INSECURE_NO_SSL:-false}
       LDAP_INSECURE_SKIP_VERIFY: ${LDAP_INSECURE_SKIP_VERIFY:-true}
     secrets:
@@ -20,7 +22,7 @@ services:
   registry:
     # 프록시(tailscale serve) 뒤에서 자기 공개 호스트 이름으로 issuer에 닿아야 한다(hairpin). 컨테이너 안에서 그 이름을 호스트의 tailscale IP로 푼다.
     extra_hosts:
-      - "${HC_PUBLIC_HOSTNAME:-alteraui-macmini.tail2f9fe3.ts.net}:${HC_HOST_TAILSCALE_IP:-100.97.103.14}"
+      - "${HC_PUBLIC_HOSTNAME:?.env의 HC_PUBLIC_HOSTNAME (HC__PUBLIC_URL의 호스트 이름)}:${HC_HOST_TAILSCALE_IP:?.env의 HC_HOST_TAILSCALE_IP (프록시가 듣는 호스트 IP)}"
 
 secrets:
   ldap_bind_pw:

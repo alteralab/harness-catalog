@@ -14,6 +14,8 @@ from typing import Annotated, Any, Literal, cast
 import jsonschema
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from .distribution import code_repo_url
+
 TOOL_FILE = "tool.json"
 SERVER_FILE = "server.json"
 MAX_DESCRIPTION_CHARS = 1024
@@ -79,7 +81,12 @@ class ServerSpec(BaseModel):
     meta: dict[str, Any] | None = Field(default=None, alias="_meta")
 
 
-TOOL_SCHEMA_ID = "https://github.com/alteralab/harness-catalog/schemas/tool.schema.json"
+SCHEMA_REPO_PATH = "schemas/tool.schema.json"  # 카탈로그 안의 자리와 같은 경로를 코드 저장소 주소에 붙여 `$id`를 만든다
+
+
+def tool_schema_id() -> str:
+    """tool.json 스키마의 `$id`. 주소는 배포물 메타데이터에서 온다 — 포크는 자기 저장소의 `$id`를 얻는다(§11 2026-10-20)."""
+    return f"{code_repo_url()}/{SCHEMA_REPO_PATH}"
 
 
 def tool_json_schema() -> dict[str, Any]:
@@ -88,7 +95,7 @@ def tool_json_schema() -> dict[str, Any]:
     문법 밖의 규칙(이름 정규식·경로 정규형·inputSchema 상한·command가 path를 정확히 한 번)은 검사 11만 본다 — 스키마는 모양까지다.
     """
     schema = ToolSpec.model_json_schema(by_alias=True)
-    return {"$schema": "https://json-schema.org/draft/2020-12/schema", "$id": TOOL_SCHEMA_ID, **schema}
+    return {"$schema": "https://json-schema.org/draft/2020-12/schema", "$id": tool_schema_id(), **schema}
 
 
 def _messages(e: ValidationError) -> list[str]:

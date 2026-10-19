@@ -1,4 +1,4 @@
-"""설정값 여섯 — 정의의 유일한 자리. 환경 변수 HC__<이름>, 비밀은 HC__<이름>_FILE로 파일 경로도 받는다."""
+"""설정값 아홉 — 정의의 유일한 자리. 환경 변수 HC__<이름>, 비밀은 HC__<이름>_FILE로 파일 경로도 받는다."""
 
 from __future__ import annotations
 
@@ -9,6 +9,8 @@ from typing import Any
 from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
+
+from .model import HARNESS_READERS
 
 ENV_PREFIX = "HC__"
 
@@ -34,7 +36,7 @@ class _FileEnvSource(PydanticBaseSettingsSource):
 
 
 class Settings(BaseSettings):
-    """필수 다섯 + 기본값 있는 셋(fetch 간격, 임베딩 서비스 주소·모델). 비면 기동 실패(어느 것이 비었는지 pydantic이 말한다)."""
+    """필수 다섯 + 기본값 있는 넷(읽기 그룹 이름, fetch 간격, 임베딩 서비스 주소·모델). 비면 기동 실패(어느 것이 비었는지 pydantic이 말한다)."""
 
     model_config = SettingsConfigDict(env_prefix=ENV_PREFIX, env_nested_delimiter="__", extra="ignore")
 
@@ -43,6 +45,7 @@ class Settings(BaseSettings):
     oidc_issuer: AnyHttpUrl = Field(description="OIDC issuer URL (토큰의 iss, JWKS 발견)")
     public_url: AnyHttpUrl = Field(description="레지스트리 공개 URL = 토큰의 audience = RFC 9728 resource")
     database_url: SecretStr = Field(description="PostgreSQL 접속 문자열")
+    reader_group: str = Field(default=HARNESS_READERS, min_length=1, description="읽기 권한을 주는 디렉터리의 그룹 이름 — 환경값. 토큰의 groups에 이 이름이 있으면 reader다")
     fetch_interval_seconds: int = Field(default=60, ge=1, description="주기 fetch 간격(초)")
     embed_url: str = Field(default="", description="임베딩 서비스 주소(외부 서비스 — Ollama `…/api/embed` 또는 TEI `…/embed`). 비면 BM25 만(§11 2026-10-19 검색 0.8.0)")
     embed_model: str = Field(default="hf.co/mykor/KURE-v1-gguf:BF16", description="임베딩 모델 이름(Ollama 요청에 실리고 벡터 세대 키가 된다)")

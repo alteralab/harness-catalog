@@ -18,6 +18,7 @@ import anyio
 from harness_catalog_core.adapters.git import GitStore
 from harness_catalog_core.adapters.validate import SkillsRefValidator
 from harness_catalog_core.check import check_commit
+from harness_catalog_core.distribution import code_repo_url
 from harness_catalog_core.model import ContentError
 
 from . import ci as ci_logic
@@ -25,7 +26,7 @@ from . import pin as pin_logic
 from . import toolbox as toolbox_logic
 from .config import effective_values, merge_docs, render_docs, render_env_example
 from .gitleaks import GitleaksUnavailable, ensure_gitleaks
-from .init import CODE_REPO_URL, SCHEMA_PATH, InitError, generated_schema, init_repository
+from .init import SCHEMA_PATH, InitError, generated_schema, init_repository
 
 app = typer.Typer(add_completion=False, help="harness-catalog: 카탈로그 저장소의 검사와 초기화")
 config_app = typer.Typer(help="설정값: 실효값 보기, 참조 문서 생성")
@@ -108,7 +109,7 @@ def evals(
     except ci_logic.CIError as e:
         print(f"ci: {e}", file=sys.stderr)
         raise typer.Exit(2)
-    plan = ci_logic.evals_plan(repo, dirs, agent, cli_version=version("harness-catalog-cli"), code_repo_url=CODE_REPO_URL)
+    plan = ci_logic.evals_plan(repo, dirs, agent, cli_version=version("harness-catalog-cli"), code_repo_url=code_repo_url())
     print(f"base {base[:12]}; changed skills: {' '.join(dirs) or '(none)'}; harbor jobs: {len(plan)}")
     if not plan:
         return
