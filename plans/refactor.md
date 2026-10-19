@@ -83,3 +83,46 @@ U1·U2 는 동시에, U3 는 U1 병합 뒤. 각 단위의 끝 조건: 시험 전
 | 일자 | 단위 | 내용 | 근거 |
 |---|---|---|---|
 | 2026-10-20 | 계획 | 리서치 셋(plans/research/)·KB·코드 감사로 §1~3 작성; DESIGN §11 2026-10-20 행 | 이 문서 |
+| 2026-10-20 | U2 코드 정리 | R5 전부(분할·중복·복잡도·PEP). 계약 불변: 시험 186 전부 통과, pyright 0, 게이트 넷 통과, 검색 회귀 게이트 동일(아래 상세) | 이 문서 §4 "U2 상세" |
+
+### U2 상세 (R5, 계약 불변)
+
+**분할.** `catalog.py` 523줄 → 조립·읽기 253줄 + `indexing.py` 316줄(재구축 상태 기계 `Indexer` + 벡터 캐시 `VectorCache`) + `archives.py` 118줄(tar 발급·캐시·퇴거 `ArchiveCache`). MI: `catalog.py` B(10.3) → A(34.4), 새 둘 A(34.4·59.8).
+보존 계약 셋이 어디로 갔는가(Codex #4): ① 잠금 — `Indexer._lock` 하나가 `Indexer.rebuild()` 안에서 fetch → 구조 검사 → 빌드 → 교체를 통째로 감싼다(소유자·범위 그대로, `ArchiveCache._lock` 은 분할 전 `Catalog._archive_lock` 과 똑같이 별개). ② 원자 교체 — `Indexer._build()` 끝의 `self.live = (snapshot, self._indexes(...))` 한 줄, 즉 (스냅샷, 검색 색인 둘)을 한 참조로. ③ 잠금 없는 읽기 — `Catalog._ready_live()` 가 `self._index.live` 한 참조를 읽고 검색·get 이 그것만 쓴다.
+
+**접은 쌍**(이름·타입만 다른 것):
+- `Catalog.search_skills`/`search_tools` → 공통 몸통은 `Catalog._hits(query, limit, index, records)` 하나(제약 TypeVar). 남은 차이는 색인 키와 응답 모델뿐.
+- `Catalog._resolve`/`_resolve_tool` → 뿌리를 받는 `_resolve(root, name, sha)` 하나. 오류 문구의 낱말은 `RECORD_WORD` 표에서.
+- 빌드의 검색 색인 둘 → `indexing._index_for(records, vectors)` 하나(스킬·도구에 같은 함수).
+
+**접지 않은 쌍과 이유**:
+- `get_skill`/`get_tool` — 모양이 다르다(본문·파일·`path`·archive vs tool.json·server.json·kind). 공통 추상에 분기를 숨기는 것이 더 나쁘다(메모리 "분기보다 규칙 하나").
+- MCP 어댑터(`driving/mcp_tools.py`)의 `search_skills`/`search_tools` — 응답 모델과 스팬 속성이 달라 이름만 다른 쌍이 아니다(Codex #4). 그 파일은 U1 이 맡아 손대지 않았다.
+- `get_skill_archive`/`get_tool_archive` — 이미 `get_archive(kind, …)` 한 함수를 부르는 두 줄짜리 별칭이다.
+- `inspect_skill`/`inspect_tool`/`inspect_server`(check.py) — 적용하는 검사 항목이 다르다(3·4·7 / 11 / 12).
+
+**복잡도**(radon CC, 전 → 후. 보조 함수는 괄호 안):
+
+| 함수 | 전 | 후 |
+|---|---|---|
+| `catalog._build` → `indexing.Indexer._build` | 20 | 8 (`_skill_entries` 6·`_tool_entries` 6) |
+| `catalog._embed_missing` → `VectorCache.resolve` | 17 | 7 (`_embed` 6·`_load_once` 3·`Indexer._dense` 4) |
+| `catalog._rebuild` → `Indexer.rebuild` | 14 | 6 (`_unreachable` 3·`_already_built` 4·`_rewind_base` 5) |
+| `catalog._indexes` → `Indexer._indexes` | 13 | 6 (`_index_for` 5) |
+| `catalog.get_tool` | 13 | 3 (`_tool_spec` 4·`_server_record` 8) |
+| `check.inspect_tool` | 18 | 7 (`_tool_spec_findings` 8·`_accepted_entry` 5) |
+| `check.check_commit` | 12 | 7 (`_server_pass` 6) |
+| `search.tokenize` | 17 | 7 (`_pieces` 3·`_mixed_script` 5·`_bigrams` 4) |
+| `search.SearchIndex.__init__` | 12 | 2 (`_document_matrix` 7·`_complete` 4) |
+| `adapters/git.GitStore.archive_tree` | 14 | 6 (`_stream_archive` 9) |
+| `server adapters/pg.PgFactStore.replace_index` | 13 | 7 (`_insert_rows` 7) |
+| `server adapters/embed.HttpEmbedder._one` | 14 | 3 (`_checked` 8·`_broken` 5) |
+| `cli/pin.parse_response` | 12 | 5 (`_identity` 4·`_file_paths` 5) |
+
+남긴 것(U2 범위 밖): `cli/toolbox.py load_tools`(14)·`call`(11)은 U1 이 맡는 파일, `cli/ci.py base_commit`(14)·`missing_credentials`(12)와 템플릿 `scaffold.main`(14)·eval 시험의 `strip_markup`(18)·`eval_cases_are_real`(15)은 R5-3 의 목록에 없다.
+
+**PEP 정합.** I001 45 → 0, TC00x 81 → 0, TC006 17 → 0, N818 2건(지정된 둘), FBT 7건, 죽은 noqa 33건 — 모두 U2 범위 안에서 0. 범위 밖으로 남긴 것: U1 이 맡는 파일 여덟(`settings.py`·`authz.py`·`model.py`·`core/toolbox.py`·`cli/init.py`·`cli/toolbox.py`·`bootstrap.py`·`mcp_tools.py`), pydantic 이 런타임에 주석을 해석하는 `driving/responses.py` 의 TC00x 셋, typer 관례인 `cli/__main__.py` 의 FBT 아홉, `model.py` 의 N818 둘(`ArchiveTooLarge`·`ValidatorFailure` — R5-4 가 지정한 둘이 아니고 그 파일은 U1 범위).
+**사람의 결정이 필요한 것 하나**: ruff 의 isort 는 `harness_catalog_*` 를 (설치된 배포물이므로) 서드파티로 분류한다 — I001 을 고친 뒤 `from harness_catalog_core… `가 `psycopg`·`httpx` 와 같은 블록에 섞였다. `[tool.ruff.lint.isort] known-first-party` 한 줄이면 "우리 코드" 구분이 돌아오지만 **U2 는 ruff 설정을 건드리지 않기로 해서 그대로 두었다**.
+**RUF100 측정 주의**: `--select RUF100` 은 선택을 *대체*하므로 집행 중인 규칙(BLE001 등)의 noqa 까지 "불필요"로 잡는다. 실제 측정·수정은 `--extend-select RUF100,RUF105` 로 했다(40 → 8, 남은 여덟은 위의 범위 밖 파일들).
+
+**검색 회귀 게이트**(`search.py` 를 건드렸으므로): `python -m bench.search --n 720 --app --expanded --good-only --alphas 0.85` → `app-hybrid(core.search)` R@3 **0.981**, `app-bm25` R@3 **0.940** — 기대값과 같다(synonym R@3 0.89 / 0.64 도 같다).
