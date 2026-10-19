@@ -1,9 +1,9 @@
 {
   "name": "harness-catalog-tooling",
   "private": true,
-  "description": "개발 도구 고정용(배포물 아님). Graft(코드 그래프 컨텍스트)를 이 저장소에 정확한 판으로 묶는다 — npm ci 뒤 npx graft …",
+  "description": "개발 도구 고정용(배포물 아님). Trail Code(코드 그래프 + 세션 학습, 옛 이름 graft)를 이 저장소에 정확한 판으로 묶는다 — npm ci 뒤 npx trail …",
   "devDependencies": {
-    "@nanonets/graft": "0.21.1",
+    "@trailhq/trail-code": "0.23.0",
     "openwiki": "0.6.1"
   }
 }

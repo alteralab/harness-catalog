@@ -174,9 +174,9 @@ curl -fsS http://127.0.0.1:8000/readyz
 │   └── pilot/                   #   Dex 그랜트 실측 · 하네스 첫 접촉 캡처 stub
 ├── Dockerfile                   # registry 이미지 (python:3.12-slim + git + gitleaks)
 ├── Makefile                     # make help — 자주 치는 명령의 이름
-├── package.json                 # 개발 도구 고정(Graft 0.21.1 · OpenWiki 0.6.1). 배포물 아님, 이미지에 안 들어감
-├── .mcp.json · .claude/         # Graft·OpenWiki의 Claude Code 배선(훅·skill·MCP). docs/development.md
-├── CLAUDE.md                    # 에이전트 지시: Graft(위치)·OpenWiki(이유) 역할 분담
+├── package.json                 # 개발 도구 고정(Trail Code 0.23.0 · OpenWiki 0.6.1). 배포물 아님, 이미지에 안 들어감
+├── .mcp.json · .claude/ · .trail/  # Trail(코드 지도 + 세션 학습)·OpenWiki의 Claude Code 배선(훅·skill·MCP). docs/development.md
+├── CLAUDE.md                    # 에이전트 지시: Trail(위치)·OpenWiki(이유) 역할 분담
 ├── openwiki/                    # 설계 이유 위키(한국어, claim에 file:line 증거). 커밋됨
 ├── pyproject.toml               # 워크스페이스 루트 (배포물 아님)
 ├── uv.lock
