@@ -1282,6 +1282,18 @@ skills/yt-subs/
 **바뀌는 것.** core `search.py`(토크나이저·BM25·결합 — 순수 함수, Postgres·모델 없이 시험), `ports.py`(`FactStore.search` → `load_embeddings`, `Embedder` 포트), `catalog.py`(색인 둘 `skills`·`tools`, `_embed_missing`), 설정 둘, server `adapters/embed.py`(`HttpEmbedder`), `adapters/pg.py`(검색 SQL 삭제, 벡터 열 읽기·쓰기), 0004, compose 기본값 `HC__EMBED_URL=http://host.docker.internal:11434/api/embed`, MCP 도구 설명. k 는 레지스트리가 모르고 kata 가 고정 5(`plans/search.md` §3 6).
 
 
+### 2026-10-20: 어디서든 설치되는 모양으로 — 환경 특정 기본값을 비우고, 읽기 그룹 이름·코드 저장소 주소를 설정·메타데이터로, 문서 사이트를 배포물에 (0.10.0)
+
+**결정.** 사용자 요구("오픈소스처럼 설정값으로 원하는 환경에 맞게 설치되게"). 기준은 하나 — **운영자의 환경이 정하는 값(주소·이름·자격·이미지)만 설정이고, 알고리즘 매개변수는 상수다**(`[it]` 외부 설정의 목록과 그 정정 "게을러서 결정을 설정으로 밀지 마라", ousterhout §8.2 "사용자가 더 나은 값을 정할 수 있는가"). 바뀌는 계약 넷:
+1. **compose 의 `OTEL_EXPORTER_OTLP_ENDPOINT` 기본값을 비운다**(비면 내보내지 않음). 2026-10-19 의 "기본값 = Langfuse Cloud US" 를 거둔다 — 사례 전부(Polaris·Airflow·DataHub·Langfuse·Grafana)가 수집기 주소를 비우거나 localhost 로 두고, 벤더 URL 기본값은 자기 제품 텔레메트리뿐이다(`plans/research/2026-10-20-config-management.md` §5). 우리 값은 운영 호스트의 `.env` 에.
+2. **읽기 그룹 이름은 설정 `HC__READER_GROUP`**(기본 `harness-readers`). §7 의 "그룹→역할 매핑 설정 없음"은 그대로다 — 역할은 하나, 이름만 환경값. 설정값은 필수 다섯 + 선택 넷.
+3. **코드 저장소 주소는 패키지 메타데이터(`[project.urls] Repository`)에서 읽는다** — `hc init` 의 핀 URL 과 도구 스키마 `$id` 의 근거. 포크가 pyproject 한 줄로 자기 주소를 얻는다.
+4. **문서 사이트가 배포물에 더해진다** — `docs/` 를 소스로 MkDocs(Material, Zensical 호환 부분집합)가 정적 사이트와 `llms.txt`·`llms-full.txt` 를 만들고, CI 가 strict 빌드로 링크 깨짐을 막으며, 운영 compose 의 정적 컨테이너가 리버스 프록시 뒤에서 섬긴다. `[it]` 문서를 코드처럼 — 배포와 주기적 평가 둘을 더한다.
+
+**바뀌지 않는 것(명시).** `HC__EMBED_URL` 의 호스트 Ollama 기본값(로컬 관례, 비면 BM25 만), Dex 의 정적 클라이언트(제품마다 하나, 배포 설정 파일), `docker/synology-ldap/` 오버레이(우리 팀 변형 예시), 검색 α·k·브레이커·보존 같은 상수, 이 코드 저장소 자신의 CI(규칙 저장소·러너 라벨). `hc init` 템플릿의 재배치(스킬·도구를 starter 카탈로그 저장소로, `plans/refactor.md` R6)는 **사용자 결정 대기** — 결정 뒤 별도 행.
+
+**코드 정리(계약 불변, 같은 판).** `catalog.py` 를 유지·아카이브로 나누고, 이름만 다른 스킬·도구 쌍을 접고, 복잡도 상위 함수를 한 단계 내리고, PEP 8 정합(import 정렬·예외 이름·타입 전용 import·불리언 키워드 인자). ruff 규칙 집합은 늘리지 않는다(린트 정책은 altera-rules 의 조항). 원장: `plans/refactor.md`.
+
 ### 2026-10-19: 도구 스팬에 입력·출력(0.9.1) — Langfuse 의 Input/Output 칸은 OTel GenAI 도구 규약 키로
 
 **결정.** 네 도구 스팬에 `gen_ai.tool.call.arguments`(호출 인자 JSON)와 `gen_ai.tool.call.result`(짧은 결과 JSON — 검색은 돌려준 이름 목록, get 은 이름·판·파일 수 또는 종류)를 더한다. 스킬 본문·파일 내용은 넣지 않는다.
