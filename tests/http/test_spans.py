@@ -61,7 +61,7 @@ async def test_tool_spans_carry_subject_skill_and_query(client: tuple[httpx.Asyn
     load = spans["tools/call get_skill"]
     assert load.kind.name == "SERVER" and load.attributes is not None
     assert load.attributes["gen_ai.tool.name"] == "get_skill" and load.attributes["langfuse.user.id"] == "user-7"
-    assert load.attributes["harness_catalog.skill"] == "yt-subs" and load.attributes["harness_catalog.sha"] == sha
+    assert load.attributes["langfuse.observation.metadata.skill"] == "yt-subs" and load.attributes["langfuse.observation.metadata.sha"] == sha
     search = spans["tools/call search_skills"]
     assert search.attributes is not None
-    assert search.attributes["harness_catalog.query"] == "nothing-at-all" and search.attributes["harness_catalog.result_count"] == 0
+    assert search.attributes["langfuse.observation.metadata.query"] == "nothing-at-all" and search.attributes["langfuse.observation.metadata.result_count"] == 0

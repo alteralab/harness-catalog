@@ -37,11 +37,12 @@ from .responses import (
 )
 
 ATTR_USER = "langfuse.user.id"
-ATTR_SKILL = "harness_catalog.skill"
-ATTR_TOOL = "harness_catalog.tool"
-ATTR_SHA = "harness_catalog.sha"
-ATTR_QUERY = "harness_catalog.query"
-ATTR_RESULT_COUNT = "harness_catalog.result_count"
+# Langfuse 는 `langfuse.observation.metadata.<key>` 접두의 속성만 observation metadata 의 1급 키로 올린다(그 밖은 metadata.attributes 안에 묻힘) — DESIGN §2 사용 기록 행. 2026-10-19 실측 정정(0.7.1).
+ATTR_SKILL = "langfuse.observation.metadata.skill"
+ATTR_TOOL = "langfuse.observation.metadata.tool"
+ATTR_SHA = "langfuse.observation.metadata.sha"
+ATTR_QUERY = "langfuse.observation.metadata.query"
+ATTR_RESULT_COUNT = "langfuse.observation.metadata.result_count"
 
 
 def _ok(model: BaseModel) -> CallToolResult:

@@ -32,7 +32,7 @@ def make_archive_route(catalog: Catalog, signer: ArchiveSigner, kind: ArchiveKin
         if not signer.verify(name, tree, request.headers.get(TOKEN_HEADER), kind=kind):
             return Response(status_code=403)
         span = trace.get_current_span()
-        span.set_attributes({"harness.archive.kind": kind, "harness.archive.name": name, "harness.archive.sha": tree})
+        span.set_attributes({"langfuse.observation.metadata.archive_kind": kind, "langfuse.observation.metadata.archive_name": name, "langfuse.observation.metadata.sha": tree})
         try:
             info = await anyio.to_thread.run_sync(catalog.get_archive, kind, name, tree)
         except CatalogError as e:

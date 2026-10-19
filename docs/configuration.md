@@ -51,7 +51,7 @@ harness-catalog의 설정 표면 전부를 층별로 적은 참조입니다. 층
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` | Langfuse는 gRPC를 받지 않는다 |
 | `OTEL_SERVICE_NAME` | `harness-catalog`(코드 기본값) | 스팬의 `service.name`. compose·`docker/.env.example`에는 없고 바꿀 때만 표준 변수로 준다 |
 
-스팬 하나는 도구 호출 하나(`tools/call <tool>`)이고 속성은 `langfuse.user.id`(토큰의 `sub`), `harness_catalog.skill`, `harness_catalog.sha`, `harness_catalog.query`(검색어, 2000자까지), `harness_catalog.result_count`입니다. 검색어가 기록에 남는다는 것이 "검색어에 비밀 금지"의 이유입니다.
+스팬 하나는 도구 호출 하나(`tools/call <tool>`)이고 속성은 `langfuse.user.id`(토큰의 `sub`), `langfuse.observation.metadata.skill`, `langfuse.observation.metadata.sha`, `langfuse.observation.metadata.query`(검색어, 2000자까지), `langfuse.observation.metadata.result_count`입니다. 검색어가 기록에 남는다는 것이 "검색어에 비밀 금지"의 이유입니다.
 
 ## 3. 서버 명령의 옵션
 
