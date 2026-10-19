@@ -40,7 +40,7 @@ while [ \$i -lt 40 ]; do
 done
 echo "readyz: \$out"
 case "\$out" in *'"ready":true'*) ;; *) echo "deploy: registry did not become ready" >&2; exit 1 ;; esac
-echo "migrations: \$(\$compose exec -T postgres psql -U postgres -d harness_catalog -tAc 'select string_agg(migration_id, \$\$, \$\$ order by migration_id) from _yoyo_migration')"
+echo "migrations: \$(\$compose exec -T postgres psql -U postgres -d harness_catalog -tAc 'select string_agg(migration_id, \$\$, \$\$ order by migration_id) from _yoyo_migration' </dev/null)"   # ssh 로 흘려보낸 이 스크립트가 stdin 이다 — exec -T 의 psql 이 그것을 읽어 버리면 뒤 줄(image·tracing)이 사라진다(실측 2026-10-20)
 echo "image: \$("$docker_bin" inspect harness-catalog-registry-1 --format '{{.Config.Image}}')"
 # 수신처는 비어 있는 것이 기본이다(§11 2026-10-20) — 끈 것과 못 보낸 것을 가르려면 "off"를 글자로 찍어야 한다(빈 줄은 둘을 못 가른다)
 endpoint=\$("$docker_bin" logs harness-catalog-registry-1 2>&1 | sed -n 's|.*tracing on: otlp/http -> ||p' | tail -1 || true)
