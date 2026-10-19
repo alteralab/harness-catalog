@@ -8,15 +8,17 @@ import io
 import json
 import tarfile
 import threading
-from collections.abc import Iterator
 from datetime import UTC, datetime
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-from typer.testing import CliRunner
-
 from harness_catalog_cli import pin
 from harness_catalog_cli.__main__ import app
+from typer.testing import CliRunner
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from pathlib import Path
 
 FILES = {"SKILL.md": b"---\nname: alpha\ndescription: a\n---\nbody\n", "references/x.md": b"ref\n"}
 
@@ -37,7 +39,7 @@ def served() -> Iterator[tuple[str, dict[str, bytes]]]:
     store: dict[str, bytes] = {}
 
     class H(http.server.BaseHTTPRequestHandler):
-        def do_GET(self) -> None:  # noqa: N802
+        def do_GET(self) -> None:
             body = store.get(self.path)
             if body is None or self.headers.get("X-Harness-Archive-Token") != "tok":
                 self.send_response(403)
@@ -48,7 +50,7 @@ def served() -> Iterator[tuple[str, dict[str, bytes]]]:
             self.end_headers()
             self.wfile.write(body)
 
-        def log_message(self, format: str, *args: object) -> None:  # noqa: A002
+        def log_message(self, format: str, *args: object) -> None:
             pass
 
     srv = http.server.HTTPServer(("127.0.0.1", 0), H)
@@ -147,7 +149,7 @@ def test_cli_pin_reads_response_from_stdin(served: tuple[str, dict[str, bytes]],
     assert r2.exit_code == 2
 
 
-def test_traversal_id_is_rejected_before_any_path_is_built(served: tuple[str, dict[str, bytes]], tmp_path: Path) -> None:
+def test_traversal_id_is_rejected_before_any_path_is_built(served: tuple[str, dict[str, bytes]], tmp_path: Path) -> None:  # noqa: ARG001 — 픽스처·콜백 시그니처가 요구하는 인자
     """Codex 2026-10-18 critical: id가 디렉토리명이 되므로 카탈로그 name 문법 밖은 거부한다(.. 등)."""
     base, store = served
     doc = response(base, store)

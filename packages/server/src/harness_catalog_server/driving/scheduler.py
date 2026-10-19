@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import anyio
 
-from harness_catalog_core.catalog import Catalog
-from harness_catalog_core.model import Status
-
 from ..migrate import migrate
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from harness_catalog_core.catalog import Catalog
+    from harness_catalog_core.model import Status
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +43,7 @@ MAX_BACKOFF_FACTOR = 16
 FAILURE_PREFIXES = ("checker_failed:", "rebuild_failed:", "repo_unreachable")
 
 
-def next_backoff(current: int, failed: bool) -> int:
+def next_backoff(current: int, *, failed: bool) -> int:
     """실패면 2배(상한 16배), 성공이면 1로 되돌린다. 순수 함수 — 시험은 시계 없이 이것을 부른다."""
     return min(current * 2, MAX_BACKOFF_FACTOR) if failed else 1
 
@@ -64,11 +67,11 @@ async def run_scheduler(catalog: Catalog, interval_seconds: int, stop: anyio.Eve
             await anyio.to_thread.run_sync(catalog.evict_archives)  # 토큰 수명이 지난 캐시 tar 정리(DESIGN §11 2026-10-11)
             status = await anyio.to_thread.run_sync(catalog.rebuild)
         # ast-grep-ignore: handler-swallows-failure — 장기 실행 루프: 실패는 백오프 배수와 /readyz의 degraded로 전파된다
-        except Exception:  # noqa: BLE001 — 장기 실행 루프는 죽지 않는다; 사유는 로그로, 다음 주기에 다시 시도
+        except Exception:  # 장기 실행 루프는 죽지 않는다; 사유는 로그로, 다음 주기에 다시 시도
             log.exception("rebuild raised")
-            backoff = next_backoff(backoff, True)
+            backoff = next_backoff(backoff, failed=True)
         else:
-            backoff = next_backoff(backoff, rebuild_failed(status))
+            backoff = next_backoff(backoff, failed=rebuild_failed(status))
             if status.reasons or status.degraded or status.rejected:
                 log.warning("rebuild reasons=%s degraded=%s rejected=%s backoff=x%d", [str(r) for r in status.reasons], status.degraded, status.rejected, backoff)
         with anyio.move_on_after(interval_seconds * backoff):

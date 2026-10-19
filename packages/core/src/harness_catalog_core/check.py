@@ -9,14 +9,35 @@
 from __future__ import annotations
 
 import tempfile
-from collections.abc import Iterable
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from .catalog_file import MARKER_PATH, MarkerError, parse_marker
-from .model import ROOT_MARKERS, SUPPORTED_LAYOUT, ContentError, Root, SkillTree, ToolEntry, TreeEntry, ValidatorFailure
-from .ports import ContentStore, SkillValidator
-from .toolbox import NAME_RE, SERVER_FILE, TOOL_FILE, McpRuntime, ScriptRuntime, parse_server, parse_tool
+from .model import (
+    ROOT_MARKERS,
+    SUPPORTED_LAYOUT,
+    ContentError,
+    Root,
+    SkillTree,
+    ToolEntry,
+    TreeEntry,
+    ValidatorFailure,
+)
+from .toolbox import (
+    NAME_RE,
+    SERVER_FILE,
+    TOOL_FILE,
+    McpRuntime,
+    ScriptRuntime,
+    ToolSpec,
+    parse_server,
+    parse_tool,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from .ports import ContentStore, SkillValidator
 
 MAX_FILES = 50
 MAX_FILE_BYTES = 1_000_000
@@ -167,11 +188,32 @@ class ToolInspection(NamedTuple):
     entry: ToolEntry | None  # 위반이 없을 때만
 
 
+def _tool_spec_findings(spec: ToolSpec, tree: SkillTree, files: tuple[TreeEntry, ...], servers: frozenset[str]) -> list[Finding]:
+    """항목 11의 tool.json 내용: 이름 = 디렉토리 이름, script의 runtime.path는 그 판의 정규 파일, mcp의 runtime.server는 검사 12를 통과한 서버."""
+    out: list[Finding] = []
+    if spec.name != tree.name:
+        out.append(Finding(11, tree.name, f"name {spec.name!r} != directory", kind="tool"))
+    if isinstance(spec.runtime, ScriptRuntime):
+        blob = next((f for f in files if f.path == spec.runtime.path), None)
+        if blob is None or blob.kind != "blob":
+            out.append(Finding(11, tree.name, f"runtime.path {spec.runtime.path!r} is not a regular file in this version", kind="tool"))
+    elif spec.runtime.server not in servers:
+        out.append(Finding(11, tree.name, f"runtime.server {spec.runtime.server!r} not found under mcp-servers/ (or rejected by item 12)", kind="tool"))
+    return out
+
+
+def _accepted_entry(spec: ToolSpec | None, tree: SkillTree, findings: Iterable[Finding]) -> ToolEntry | None:
+    """위반이 하나도 없을 때만 인덱스 항목이 된다. kind=mcp면 참조 서버 이름을 함께 든다."""
+    if spec is None or any(not f.warning for f in findings):
+        return None
+    server = spec.runtime.server if isinstance(spec.runtime, McpRuntime) else None
+    return ToolEntry(tree.name, spec.description, spec.runtime.kind, server, spec.metadata, tree.tree_sha, tree.commit_sha)
+
+
 def inspect_tool(store: ContentStore, validator: SkillValidator, tree: SkillTree, workdir: Path, *, servers: frozenset[str], skills: frozenset[str]) -> ToolInspection:
     """항목 11(tool.json의 모양·이름·경로·참조 서버·스킬과의 이름 충돌)과 공통 4·7을 도구 하나에 적용한다."""
     files = store.list_tree(tree.tree_sha)
     findings = _size_findings(tree.name, files, kind="tool")
-    entry: ToolEntry | None = None
     if (bad := _bad_dir_name(tree, 11, "tool")) is not None:
         return ToolInspection(tree.name, (*findings, bad), None)
     raw = store.read_blob(tree.tree_sha, TOOL_FILE)
@@ -180,20 +222,10 @@ def inspect_tool(store: ContentStore, validator: SkillValidator, tree: SkillTree
     if tree.name in skills:
         findings.append(Finding(11, tree.name, "name also exists as a skill — names are unique across skills and tools", kind="tool"))
     if spec is not None:
-        if spec.name != tree.name:
-            findings.append(Finding(11, tree.name, f"name {spec.name!r} != directory", kind="tool"))
-        if isinstance(spec.runtime, ScriptRuntime):
-            blob = next((f for f in files if f.path == spec.runtime.path), None)
-            if blob is None or blob.kind != "blob":
-                findings.append(Finding(11, tree.name, f"runtime.path {spec.runtime.path!r} is not a regular file in this version", kind="tool"))
-        elif spec.runtime.server not in servers:
-            findings.append(Finding(11, tree.name, f"runtime.server {spec.runtime.server!r} not found under mcp-servers/ (or rejected by item 12)", kind="tool"))
+        findings.extend(_tool_spec_findings(spec, tree, files, servers))
     with _export(store, tree, workdir, "check-tool.") as tmp:
         findings.extend(Finding(4, tree.name, m, kind="tool") for m in validator.scan_secrets(Path(tmp) / tree.name))
-    if spec is not None and not any(not f.warning for f in findings):
-        server = spec.runtime.server if isinstance(spec.runtime, McpRuntime) else None
-        entry = ToolEntry(tree.name, spec.description, spec.runtime.kind, server, spec.metadata, tree.tree_sha, tree.commit_sha)
-    return ToolInspection(tree.name, tuple(findings), entry)
+    return ToolInspection(tree.name, tuple(findings), _accepted_entry(spec, tree, findings))
 
 
 def inspect_server(store: ContentStore, validator: SkillValidator, tree: SkillTree, workdir: Path) -> tuple[Finding, ...]:
@@ -214,6 +246,15 @@ def _present(store: ContentStore, commit: str, root: Root, top_paths: set[str]) 
     return tuple(t for t in store.list_trees(commit, root) if f"{root}/{t.name}/{ROOT_MARKERS[root]}" in top_paths)
 
 
+def _server_pass(store: ContentStore, validator: SkillValidator, trees: tuple[SkillTree, ...], workdir: Path) -> tuple[list[Finding], frozenset[str]]:
+    """항목 12를 서버 레코드마다 적용하고 그 판정과 **통과한 서버 이름**을 돌려준다 — 도구의 runtime.server는 그중에서만 찾는다(Codex 코드 리뷰)."""
+    findings: list[Finding] = []
+    for tree in trees:
+        findings.extend(inspect_server(store, validator, tree, workdir))
+    rejected = {f.skill for f in findings if not f.warning}
+    return findings, frozenset(t.name for t in trees if t.name not in rejected)
+
+
 def check_commit(store: ContentStore, validator: SkillValidator, commit: str, *, workdir: Path) -> CheckReport:
     """저장소 구조 + 스킬·도구·서버마다. 커밋(또는 스테이징 트리) 하나만 보고 이력은 보지 않는다(§11 2026-10-18)."""
     try:
@@ -222,13 +263,8 @@ def check_commit(store: ContentStore, validator: SkillValidator, commit: str, *,
         findings = _structure_findings(store, commit, top)
         trees = _present(store, commit, "skills", top_paths)
         tool_trees = _present(store, commit, "tools", top_paths)
-        server_trees = _present(store, commit, "mcp-servers", top_paths)
-        server_findings: list[Finding] = []
-        for tree in server_trees:
-            server_findings.extend(inspect_server(store, validator, tree, workdir))
+        server_findings, servers = _server_pass(store, validator, _present(store, commit, "mcp-servers", top_paths), workdir)
         findings.extend(server_findings)
-        rejected_servers = {f.skill for f in server_findings if not f.warning}
-        servers = frozenset(t.name for t in server_trees if t.name not in rejected_servers)  # 검사 12를 통과한 서버만 참조 대상(Codex 코드 리뷰)
         skill_names = frozenset(t.name for t in trees)
         for tree in trees:
             findings.extend(inspect_skill(store, validator, tree, workdir).findings)

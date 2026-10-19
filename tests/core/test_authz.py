@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from harness_catalog_core.authz import READ_TOOLS, authorize, principal_from_claims
 from harness_catalog_core.model import ErrorCode
 

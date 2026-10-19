@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from harness_catalog_core.search import ALPHA, Bm25, SearchIndex, embedding_generation, index_document, tokenize
+from harness_catalog_core.search import (
+    ALPHA,
+    Bm25,
+    SearchIndex,
+    embedding_generation,
+    index_document,
+    tokenize,
+)
 
 
 def test_tokenize_korean_bigrams_identifiers_and_mixed_tokens() -> None:

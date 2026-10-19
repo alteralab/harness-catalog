@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-
 import os
 import sys
 import tempfile
@@ -11,10 +10,8 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import cast
 
-import typer
-
 import anyio
-
+import typer
 from harness_catalog_core.adapters.git import GitStore
 from harness_catalog_core.adapters.validate import SkillsRefValidator
 from harness_catalog_core.check import check_commit
@@ -25,7 +22,7 @@ from . import ci as ci_logic
 from . import pin as pin_logic
 from . import toolbox as toolbox_logic
 from .config import effective_values, merge_docs, render_docs, render_env_example
-from .gitleaks import GitleaksUnavailable, ensure_gitleaks
+from .gitleaks import GitleaksUnavailableError, ensure_gitleaks
 from .init import SCHEMA_PATH, InitError, generated_schema, init_repository
 
 app = typer.Typer(add_completion=False, help="harness-catalog: 카탈로그 저장소의 검사와 초기화")
@@ -56,7 +53,7 @@ def _run_check(repo_root: Path, rev: str) -> int:
             return 2
         try:
             gitleaks = ensure_gitleaks()
-        except GitleaksUnavailable as e:
+        except GitleaksUnavailableError as e:
             print(f"checker failed: {e}", file=sys.stderr)
             return 2
         report = check_commit(store, SkillsRefValidator(gitleaks=gitleaks), head, workdir=work)

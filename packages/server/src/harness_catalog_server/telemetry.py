@@ -23,7 +23,7 @@ def headers_from_file(path: str) -> dict[str, str]:
     """OTEL_EXPORTER_OTLP_HEADERS_FILE(docker secret) — 내용은 표준 변수와 같은 `k=v,k2=v2`. 없거나 비면 {} (그때 exporter는 환경 변수를 쓴다)."""
     if not path.strip() or not os.path.exists(path):
         return {}
-    text = open(path, encoding="utf-8").read().strip()  # noqa: SIM115, PTH123 — 한 번 읽고 닫는다
+    text = open(path, encoding="utf-8").read().strip()  # 한 번 읽고 닫는다
     out: dict[str, str] = {}
     for pair in filter(None, (p.strip() for p in text.split(","))):
         key, sep, value = pair.partition("=")
@@ -38,7 +38,9 @@ def configure_tracing(environ: dict[str, str] | None = None) -> TracerProvider |
     endpoint = env.get("OTEL_EXPORTER_OTLP_ENDPOINT", "").strip()
     if not endpoint:
         return None
-    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter  # noqa: PLC0415 — ENDPOINT가 있을 때만 적재
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+        OTLPSpanExporter,  # ENDPOINT가 있을 때만 적재
+    )
 
     provider = TracerProvider(resource=Resource.create({SERVICE_NAME: env.get("OTEL_SERVICE_NAME", DEFAULT_SERVICE_NAME)}))
     headers = headers_from_file(env.get("OTEL_EXPORTER_OTLP_HEADERS_FILE", ""))

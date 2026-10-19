@@ -9,15 +9,18 @@ import socket
 import subprocess
 import sys
 import time
-from collections.abc import Generator, Iterator, Mapping
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 import pytest
 
-from tests.conftest import CatalogRepo
 from tests.http.fake_issuer import FakeIssuer, start_fake_issuer
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterator, Mapping
+    from pathlib import Path
+
+    from tests.conftest import CatalogRepo
 
 PUBLIC_PATH = "/mcp"
 
@@ -169,7 +172,7 @@ def test_machine_account_reads_by_group(server: tuple[str, FakeIssuer]) -> None:
     assert json.loads(res["content"][0]["text"])["skills"]
 
 
-def test_archive_descriptor_then_download_without_bearer(server: tuple[str, FakeIssuer], tmp_path: Path) -> None:
+def test_archive_descriptor_then_download_without_bearer(server: tuple[str, FakeIssuer], tmp_path: Path) -> None:  # noqa: ARG001 — 픽스처·콜백 시그니처가 요구하는 인자
     """get_skill(archive=true): 명세(uri·헤더 토큰·크기·sha256) → 헤더만으로 GET → tar가 파일 목록과 같다. 자격은 URL에 없다."""
     import hashlib
     import io

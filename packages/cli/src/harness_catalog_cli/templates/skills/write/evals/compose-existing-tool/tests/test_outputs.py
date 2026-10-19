@@ -158,4 +158,4 @@ def test_skill_has_no_scripts_dir_and_a_real_evals_pair() -> None:
 
 
 def test_main_untouched() -> None:
-    assert git("rev-parse", "main").stdout.strip() == open("/work/main.sha").read().strip()  # noqa: PTH123, SIM115
+    assert git("rev-parse", "main").stdout.strip() == open("/work/main.sha").read().strip()

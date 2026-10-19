@@ -8,7 +8,6 @@ from collections.abc import Mapping
 from pathlib import Path
 
 import jsonschema
-
 from harness_catalog_core.toolbox import parse_server, parse_tool, tool_json_schema
 
 TEMPLATES = Path(__file__).resolve().parents[2] / "packages/cli/src/harness_catalog_cli/templates"
@@ -147,7 +146,7 @@ def test_rejects_bad_inputs(tmp_path: Path) -> None:
 def _scaffold_constants() -> dict[str, str]:
     """스크립트 소스를 실행해 템플릿 상수를 읽는다(__main__ 가드가 있어 부작용 없음). import 경로를 쓰지 않는 이유: 패키지 데이터 안에 __pycache__가 생기면 init이 .pyc를 텍스트로 읽는다(실측)."""
     ns: dict[str, object] = {"__name__": "scaffold_constants"}
-    exec(compile(SCAFFOLD.read_text(), str(SCAFFOLD), "exec"), ns)  # noqa: S102 — 저장소 안의 고정 파일, 입력 없음
+    exec(compile(SCAFFOLD.read_text(), str(SCAFFOLD), "exec"), ns)  # 저장소 안의 고정 파일, 입력 없음
     return {"head": str(ns["DOCKERFILE_HEAD"]), "test_sh": str(ns["TEST_SH"])}
 
 
@@ -193,7 +192,7 @@ def test_write_failure_rolls_back_this_calls_files_only(tmp_path: Path) -> None:
 def test_put_is_exclusive_create_so_a_racing_file_is_neither_overwritten_nor_rolled_back(tmp_path: Path) -> None:
     """Codex 2026-10-18 3차: exists()→write_text()의 경쟁 대신 O_EXCL — 이미 있는(또는 그 사이 생긴) 파일은 내용이 지켜지고 created에 들지 않는다."""
     ns: dict[str, object] = {"__name__": "scaffold_put"}
-    exec(compile(SCAFFOLD.read_text(), str(SCAFFOLD), "exec"), ns)  # noqa: S102 — 저장소 안의 고정 파일, 입력 없음
+    exec(compile(SCAFFOLD.read_text(), str(SCAFFOLD), "exec"), ns)  # 저장소 안의 고정 파일, 입력 없음
     put = ns["put"]
     assert callable(put)
     target = tmp_path / "skills" / "s" / "SKILL.md"

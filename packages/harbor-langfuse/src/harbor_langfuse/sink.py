@@ -18,7 +18,7 @@ from .plugin import SCORE_NAME, RunContext, TrialRecord
 
 
 def _case_of(item: Any) -> str | None:
-    meta = cast(Mapping[str, Any] | None, getattr(item, "metadata", None))
+    meta = cast("Mapping[str, Any] | None", getattr(item, "metadata", None))
     return str(meta["case"]) if isinstance(meta, Mapping) and "case" in meta else None
 
 

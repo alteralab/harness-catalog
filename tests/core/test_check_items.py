@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from harness_catalog_core.catalog import Catalog
 from harness_catalog_core.check import check_commit
 from harness_catalog_core.model import ReadyReason
 
 from .fakes import FakeStore, FakeValidator, MemoryFacts
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 GOOD = {"SKILL.md": b"---\nname: good\ndescription: fine\n---\nbody\n"}
 

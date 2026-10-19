@@ -8,7 +8,6 @@ import tarfile
 from pathlib import Path
 
 import pytest
-
 from harness_catalog_core.catalog import Catalog, Limits
 from harness_catalog_core.model import CatalogError, ErrorCode
 

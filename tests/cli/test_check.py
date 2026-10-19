@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from harness_catalog_cli.__main__ import app
 from typer.testing import CliRunner
 
-from harness_catalog_cli.__main__ import app
 from tests.conftest import CatalogRepo, git
 
 runner = CliRunner()

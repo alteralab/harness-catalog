@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import os
-from typing import NamedTuple
-
-from pydantic import SecretStr
-from pydantic_settings import BaseSettings
+from typing import TYPE_CHECKING, NamedTuple
 
 from harness_catalog_core.settings import ENV_PREFIX, Settings
+from pydantic import SecretStr
+
+if TYPE_CHECKING:
+    from pydantic_settings import BaseSettings
 
 
 class EffectiveValue(NamedTuple):

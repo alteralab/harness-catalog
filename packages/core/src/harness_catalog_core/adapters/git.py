@@ -10,12 +10,48 @@ import subprocess
 import tarfile
 import tempfile
 import threading
-from collections.abc import Mapping
 from pathlib import Path
+from typing import IO, TYPE_CHECKING
 
-from ..model import ArchiveTooLarge, ContentError, ReadyReason, Root, SkillTree, TreeEntry
+from ..model import (
+    ArchiveTooLarge,
+    ContentError,
+    ReadyReason,
+    Root,
+    SkillTree,
+    TreeEntry,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 MAIN_REF = "refs/remotes/origin/main"
+
+
+def _stream_archive(proc: subprocess.Popen[bytes], out: IO[bytes], err: IO[bytes], *, max_bytes: int, treeish: str) -> int:
+    """자식의 stdout을 파일로 옮기고 쓴 바이트 수를 돌려준다.
+
+    상한을 넘으면 기다리지 않고 바로 죽이고, 어떤 경로로 나가도 자식을 회수한다. 실패한 git의 사유는 stderr 파일에서 읽는다(Codex 리뷰 2026-10-11).
+    """
+    assert proc.stdout is not None
+    total = 0
+    streamed = False
+    try:
+        while chunk := proc.stdout.read(65536):
+            total += len(chunk)
+            if total > max_bytes:
+                raise ArchiveTooLarge(treeish, max_bytes)
+            out.write(chunk)
+        streamed = True
+    finally:
+        proc.stdout.close()
+        if not streamed and proc.poll() is None:
+            proc.kill()  # 상한 초과·쓰기 실패·취소 — 어느 쪽이든 자식을 기다리지 않고 바로 끝낸다
+        rc = proc.wait(timeout=60 if not streamed else 600)
+    if rc != 0 and streamed:
+        err.seek(0)
+        raise GitError(["archive", treeish], err.read().decode(errors="replace"))
+    return total
 
 
 class GitError(ContentError):
@@ -199,6 +235,7 @@ class GitStore:
             when = self._text("show", "-s", "--format=%ct", "--end-of-options", commit).strip()
             if not when.isdigit():
                 raise GitError(["show", commit], "no commit time")
+            treeish = f"{commit}:{root}/{name}"
             fd, tmp = tempfile.mkstemp(prefix=".archive.", suffix=".tar", dir=dest.parent)
             total = 0
             proc: subprocess.Popen[bytes] | None = None
@@ -208,26 +245,10 @@ class GitStore:
                     # 바이트가 환경에 매이지 않게: tar.umask·속성 파일(export-ignore 등)·전역/시스템 설정을 고정한다
                     proc = subprocess.Popen(
                         ["git", "-C", str(self._dir), "-c", "tar.umask=0022", "-c", "core.attributesfile=/dev/null",
-                         "archive", "--format=tar", f"--mtime=@{when}", "--end-of-options", f"{commit}:{root}/{name}"],
+                         "archive", "--format=tar", f"--mtime=@{when}", "--end-of-options", treeish],
                         stdout=subprocess.PIPE, stderr=err, env=self._env(),  # _env()의 GIT_CONFIG_GLOBAL(safe.directory)은 그대로 — 바이트에 걸리는 설정은 -c로 고정했다
                     )
-                    assert proc.stdout is not None
-                    streamed = False
-                    try:
-                        while chunk := proc.stdout.read(65536):
-                            total += len(chunk)
-                            if total > max_bytes:
-                                raise ArchiveTooLarge(f"{commit}:{root}/{name}", max_bytes)
-                            out.write(chunk)
-                        streamed = True
-                    finally:
-                        proc.stdout.close()
-                        if not streamed and proc.poll() is None:
-                            proc.kill()  # 상한 초과·쓰기 실패·취소 — 어느 쪽이든 자식을 기다리지 않고 바로 끝낸다
-                        rc = proc.wait(timeout=60 if not streamed else 600)
-                    if rc != 0 and streamed:
-                        err.seek(0)
-                        raise GitError(["archive", f"{commit}:{root}/{name}"], err.read().decode(errors="replace"))
+                    total = _stream_archive(proc, out, err, max_bytes=max_bytes, treeish=treeish)
                 os.replace(tmp, dest)
                 return total
             except BaseException:

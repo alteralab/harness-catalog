@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import json
 import subprocess
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-from typer.testing import CliRunner
-
 from harness_catalog_cli import ci
 from harness_catalog_cli.__main__ import app
+from typer.testing import CliRunner
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def git(repo: Path, *args: str) -> str:
@@ -214,7 +216,7 @@ def test_cli_ci_evals_exit_codes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
         monkeypatch.setenv(k, v)
     calls: list[list[str]] = []
 
-    def fake_run_plan(plan: tuple[tuple[str, ...], ...], cwd: Path, env: object, **_: object) -> int:
+    def fake_run_plan(plan: tuple[tuple[str, ...], ...], cwd: Path, env: object, **_: object) -> int:  # noqa: ARG001 — 픽스처·콜백 시그니처가 요구하는 인자
         calls.extend(list(p) for p in plan)
         return 1
 

@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 import json
-
 import subprocess
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
+from harness_catalog_cli.__main__ import app
+from harness_catalog_cli.init import InitError, detect_host, init_repository
+from harness_catalog_core.toolbox import tool_json_schema
 from typer.testing import CliRunner
 
-from harness_catalog_cli.__main__ import app
-from harness_catalog_core.toolbox import tool_json_schema
-from harness_catalog_cli.init import InitError, detect_host, init_repository
 from tests.conftest import git
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 runner = CliRunner()
 

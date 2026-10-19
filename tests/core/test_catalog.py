@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-
 from harness_catalog_core.catalog import Catalog
 from harness_catalog_core.model import CatalogError, ErrorCode, ReadyReason
 
 from .fakes import FakeEmbedder, FakeStore, FakeValidator, MemoryFacts
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 SKILL_A = {"SKILL.md": b"---\nname: alpha\ndescription: first skill about youtube\nmetadata:\n  requires-tools: \"yt-dlp\"\n---\nbody A\n", "scripts/run.py": b"print(1)\n"}
 SKILL_B = {"SKILL.md": b"---\nname: beta\ndescription: second skill\n---\nbody B\n", "data.bin": bytes([0, 255, 1, 2])}

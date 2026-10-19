@@ -8,11 +8,12 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, Protocol
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from harbor.job import Job
     from harbor.models.job.result import JobResult
 
