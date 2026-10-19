@@ -1,11 +1,11 @@
 [project]
 name = "harness-catalog-cli"
-version = "0.9.1"
+version = "0.10.0"
 description = "harness-catalog command (hc): check, evals, init, toolbox, pin, config (author and operator machines, CI, loops)"
 requires-python = ">=3.12"
 license = "Apache-2.0"
 dependencies = [
-  "harness-catalog-core==0.9.1",
+  "harness-catalog-core==0.10.0",
   "typer==0.27.2",
   "mcp==2.3.0",  # hc toolbox: 로컬 도구를 MCP(stdio)로 내는 어댑터(§11 2026-10-18)
   "jsonschema==4.26.0",  # toolbox의 inputSchema·outputSchema 검증(core와 같은 판)
