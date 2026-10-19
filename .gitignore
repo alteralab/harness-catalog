@@ -14,6 +14,10 @@ __pycache__/
 dist/
 *.egg-info/
 
+# 문서 사이트 빌드 결과(mkdocs·zensical 이 같은 자리에 쓴다). 소스는 docs/ 와 루트의 README·DESIGN 이다
+site/
+.cache/
+
 # 개발 도구 — 재생성 가능
 node_modules/
 /graft/
@@ -26,3 +30,4 @@ openwiki/.run.json
 jobs/
 # 검색 벤치마크 장치·결과는 저장소 밖(로컬 전용, 2026-10-19 사용자 결정). 숫자는 plans/search.md 에 적는다
 bench/
+.claude/worktrees/

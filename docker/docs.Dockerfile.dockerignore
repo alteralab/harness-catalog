@@ -1,0 +1,32 @@
+# 문서 이미지 전용 컨텍스트 제외 목록. BuildKit 은 `<Dockerfile 경로>.dockerignore` 를 먼저 본다 —
+# 루트 .dockerignore 는 서버 이미지용이라 docs/·*.md·tools/ 를 지워 버리고, 그것들이 바로 문서의 소스다.
+# 문서 빌드가 읽는 것: pyproject.toml · uv.lock · packages/*/pyproject.toml · mkdocs.yml · docs/ · README.md · DESIGN.md · tools/mkdocs_hooks.py
+.git
+.venv
+.cache
+.env
+site/
+secrets/
+var/
+jobs/
+bench/
+node_modules/
+graft/
+openwiki/
+plans/
+tests/
+scripts/
+.github/
+.claude/
+.trail/
+packages/*/src/
+packages/*/tests/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+package.json
+package-lock.json
+.mcp.json
+.DS_Store

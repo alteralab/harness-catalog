@@ -118,6 +118,8 @@ curl -fsS http://127.0.0.1:8000/readyz
 
 ## 문서
 
+아래 전부가 사이트로도 올라가 있습니다: **<https://alteraui-macmini.tail2f9fe3.ts.net/docs/>** (tailnet 안에서만. 에이전트용 목차는 `/docs/llms.txt`, 전체 본문은 `/docs/llms-full.txt`).
+
 | 문서 | 누구에게 | 내용 |
 |---|---|---|
 | [docs/quickstart.md](docs/quickstart.md) | 처음 보는 사람 | 명령 둘로 로컬에 전체 띄우기, 로그인, 지우기 |
