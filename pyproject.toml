@@ -18,6 +18,11 @@ harness-catalog-server = { workspace = true }
 harbor-langfuse = { workspace = true }
 
 [dependency-groups]
+bench = [
+    "kiwipiepy>=0.20",
+    "rank-bm25>=0.2.2",
+    "sentence-transformers>=3.3",
+]
 dev = [
   "harness-catalog-core",
   "harness-catalog-cli",
@@ -40,7 +45,7 @@ markers = [
 ]
 
 [tool.pyright]
-include = ["packages", "tests", "tools", "bench"]
+include = ["packages", "tests", "tools"]
 venvPath = "."
 venv = ".venv"
 reportMissingTypeStubs = false  # skills_ref에 py.typed가 없다

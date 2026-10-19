@@ -24,3 +24,5 @@ openwiki/.run.json
 
 # Harbor 로컬 실행 결과(harbor run)
 jobs/
+# 검색 벤치마크 장치·결과는 저장소 밖(로컬 전용, 2026-10-19 사용자 결정). 숫자는 plans/search.md 에 적는다
+bench/

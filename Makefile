@@ -72,5 +72,5 @@ deploy: ## 운영 호스트에 한 판 배포. 예: make deploy HOST=mini TAG=1b
 	@test -n "$(HOST)" && test -n "$(TAG)" || { echo "HOST=<ssh host> TAG=<image tag> 가 필요하다"; exit 2; }
 	scripts/deploy.sh $(HOST) $(TAG) $(REPO) $(OVERLAY)
 
-bench-search: ## 검색 벤치마크(합성 말뭉치, Postgres testcontainer). 예: make bench-search N="100 1000"
+bench-search: ## 검색 벤치마크(로컬 전용 bench/ — .gitignore; 합성 말뭉치, Postgres testcontainer). 예: make bench-search N="100 1000"
 	TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=$${TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE:-/var/run/docker.sock} uv run python -m bench.search --n $(or $(N),100 1000)
