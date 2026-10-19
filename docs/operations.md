@@ -11,6 +11,7 @@
 | `registry` | `ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:<판 태그>` | MCP 서버 + 주기 fetch·색인 |
 | `postgres` | `postgres:17-alpine` | 색인(`harness_catalog`)과 Dex 저장소(별도 DB·역할) |
 | `dex` | `ghcr.io/dexidp/dex:v2.45.1` | LDAP을 OIDC로 감싸는 인가 서버 |
+| `docs` | `<레지스트리>/harness-catalog-docs:<판 태그>` | 문서 사이트(정적 nginx, `/docs/` 하위 경로). 레지스트리와 독립이라 죽어도 도구 호출에 영향이 없다 |
 
 TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mini의 `tailscale serve`이고 접근 통제는 tailnet ACL입니다. 백업 대상은 없습니다. 색인은 `main`에서 언제든 다시 짓고, 사용·평가 기록은 Langfuse에 있습니다.
 
@@ -147,6 +148,8 @@ docker compose -f docker/compose.yml exec registry harness-catalog-server reinde
 ```
 
 **이미지 올리기.** `.env`의 `REGISTRY_IMAGE`를 바꾸고 `docker compose -f docker/compose.yml up -d`. 몇 초 끊깁니다. 마이그레이션은 기동 때 자동으로 적용됩니다.
+
+**문서 사이트.** `docs` 서비스는 정적 파일만 섬기므로 상태도 비밀도 없습니다. 판을 올리려면 `.env`의 `DOCS_IMAGE`를 바꾸고 `docker compose -f docker/compose.yml up -d docs`. 앞의 경로는 `tailscale serve --bg --set-path /docs http://127.0.0.1:8001` 한 줄이고, 확인은 `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/healthz`입니다. 404만 나오면 이미지의 `site/`가 `/docs/` 하위에 들어갔는지(`docker compose exec docs ls /usr/share/nginx/html/docs`) 봅니다.
 
 **비밀 회전.** 값을 새로 만들어 `secrets/`의 파일을 바꾸고 그 값을 쓰는 컨테이너만 재기동합니다. 옛 값은 발급처에서 지웁니다. deploy key는 git 호스트에서, `ci-runner` 시크릿은 Dex 설정에서, DB 비밀번호는 PostgreSQL 역할에서. `docker compose -f docker/compose.yml config`의 출력은 비밀을 담으니 기록에 남기지 않습니다.
 

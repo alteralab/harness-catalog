@@ -83,3 +83,87 @@ U1·U2 는 동시에, U3 는 U1 병합 뒤. 각 단위의 끝 조건: 시험 전
 | 일자 | 단위 | 내용 | 근거 |
 |---|---|---|---|
 | 2026-10-20 | 계획 | 리서치 셋(plans/research/)·KB·코드 감사로 §1~3 작성; DESIGN §11 2026-10-20 행 | 이 문서 |
+| 2026-10-20 | U3 | 문서 사이트 + `llms.txt` 구현(R7). `mkdocs.yml`·`docs/index.md`(README include)·`docs/design.md`(DESIGN include)·`docs/stylesheets/extra.css`·`tools/mkdocs_hooks.py`·`docker/docs.Dockerfile`·`docker/docs.Dockerfile.dockerignore`·`docker/docs.nginx.conf` 신설, `pyproject.toml` `[dependency-groups] docs`(uv.lock 고정), Makefile `docs`·`docs-build`·`docs-image`, `.gitignore`·`.dockerignore` 에 `site/`·`.cache/`, docs/development.md "문서 사이트" 절·docs/operations.md 둘·README 사이트 주소 한 줄. **compose.yml·ci.yml·deploy.sh 는 손대지 않고 아래 제안으로 둔다**(U1 과 겹치는 파일) | 아래 §4.1·§4.2 |
+
+### 4.1 U3 가 내는 제안 — U1 과 겹치는 파일 셋(compose.yml · ci.yml · deploy.sh)
+
+U3 는 이 셋을 **고치지 않았다**. U1 이 같은 파일의 R1·R3 을 고치는 중이라, U1 병합 뒤 아래를 그대로 얹는다.
+
+**(1) `docker/compose.yml` — `docs` 서비스 추가** (`dex` 서비스 뒤, `secrets:` 앞).
+
+```yaml
+  docs:
+    image: ${DOCS_IMAGE:?.env의 DOCS_IMAGE (<레지스트리>/harness-catalog-docs:<판 태그>)}
+    ports:
+      - "127.0.0.1:${DOCS_PORT:-8001}:8080"   # 프록시: tailscale serve --bg --set-path /docs http://127.0.0.1:8001
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    # 비밀도 볼륨도 의존도 없다 — 정적 파일만 섬기고 레지스트리가 죽어도 살아 있다.
+```
+
+`docker/.env.example` 에는 한 줄: `DOCS_IMAGE=ghcr.io/<org>/harness-catalog-docs:<tag>` (R3 의 중립 표기와 같은 꼴).
+
+**(2) `.github/workflows/ci.yml` — `docs` 잡 추가**(ubuntu, PR·push 공통) 과 `image` 잡의 push 스텝 하나.
+
+```yaml
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.11.8"
+      - name: sync
+        run: uv sync --frozen -p 3.12 --group docs
+      # Zensical 을 먼저 — 둘 다 같은 site/ 에 쓴다. 배포물이 되어야 할 것은 MkDocs 의 결과다.
+      - name: "zensical build (전환 준비 — 비차단)"
+        run: uv run zensical build || true
+      - name: "mkdocs build --strict (링크·앵커가 깨지면 실패)"
+        run: uv run mkdocs build --strict
+      - name: llms.txt 확인
+        run: head -20 site/llms.txt && test -s site/llms-full.txt
+```
+
+`image` 잡(self-hosted mini 러너, main·태그에서만)의 `build · push` 스텝 뒤에 하나 더. 이미지 주소는 R3 의 저장소 변수를 쓰되 저장소 이름에 `-docs` 를 붙인다.
+
+```yaml
+      - name: build · push docs
+        run: |
+          IMG=${{ vars.IMAGE_REGISTRY }}/${{ vars.IMAGE_REPOSITORY }}-docs:${{ steps.tag.outputs.sha }}
+          docker build -f docker/docs.Dockerfile -t "$IMG" .
+          docker push "$IMG"
+          docker image inspect "$IMG" --format 'docs digest={{index .RepoDigests 0}}' | tee -a "$GITHUB_STEP_SUMMARY"
+```
+
+**(3) `scripts/deploy.sh` — docs 이미지 태그도 `.env` 에 쓴다.** `REGISTRY_IMAGE` 를 바꾸는 `sed` 바로 아래에 같은 모양으로 한 줄(그리고 `up -d registry` 를 `up -d registry docs` 로). 문서는 준비 판정이 따로 없다 — `/healthz` 가 늘 200 이라 compose 의 healthcheck 로 충분하다.
+
+```sh
+docs_image="$registry/$repository-docs:$tag"
+...
+grep -q '^DOCS_IMAGE=' docker/.env && sed -i '' "s|^DOCS_IMAGE=.*|DOCS_IMAGE=$docs_image|" docker/.env
+\$compose up -d registry docs
+```
+
+### 4.2 U3 실측 (2026-10-20, macOS · Python 3.12.13 · uv 0.11.8)
+
+판은 PyPI 최신을 받아 `uv.lock` 에 고정: mkdocs 1.6.1 · mkdocs-material 9.7.7 · mkdocs-llmstxt 0.5.1 · mkdocstrings 1.0.8(+python 2.0.10) · mkdocs-include-markdown-plugin 7.3.0 · pymdown-extensions 12.3 · zensical 0.0.71.
+
+| 잰 것 | 결과 |
+|---|---|
+| `uv run --group docs mkdocs build --strict` | **경고 0 · 1.2초.** 고치기 전에는 16건(앵커 11 · `docs_dir` 밖 링크 5) |
+| `site/llms.txt` · `site/llms-full.txt` | 생성됨. 목차 1.5K(절 넷 · 페이지 여덟, 절대 URL 은 `site_url` 에서) / 본문 648K · 2,334줄. 페이지마다 `.md` 원문도 여덟 개 |
+| `uv run --group docs zensical build` | **통과(0.35초, "No issues found").** include-markdown · llmstxt · 한국어 검색 · mermaid · slugify · `extra_css` 를 그대로 냈다 |
+| 한국어 검색(`search: {lang: ko}`) | **동작.** `lunr.ko.min.js` 가 함께 나가고 "레지스트리" 한 단어에 8개 문서 · 문서별 결과 수 · UI 문구까지 한국어 |
+| `docker build -f docker/docs.Dockerfile` → 실행 | 빌드·기동 통과. `/healthz` 200 · `/` 302→`/docs/` · `/docs/` 200 · `/docs/configuration/` 200 · `/docs/llms.txt` 200(`text/plain; charset=utf-8`) · `/docs/using/index.md` 200 · 없는 쪽수 404 · `id=101(nginx)` 비루트 |
+| 게이트 | `uvx pre-commit run --all-files` 넷 통과 · `pyright` 0 · `pytest` 186 통과 |
+
+스크린샷(흰 바탕 · 파란 액센트 `#006DDD` · Inter · 상단 탭 · 좌 nav · 우 TOC 분리 확인, 누런 색 없음):
+`/private/tmp/claude-501/-Users-angyojun-workspace-harness-catalog/dc4f4da2-bec5-44b5-9cb4-5c1b9be92623/scratchpad/docs-shot-{index-top,index,configuration,design,search-ko}.png`
+
+**Zensical 전환의 남은 비용(실측).** 0.0.71 은 **`hooks:` 를 무시하고 링크 검증도 하지 않는다** — `mkdocs build --strict` 가 잡는 깨진 링크를 조용히 통과시키고, 위 훅이 돌리는 README 의 `../DESIGN.md`·`../PLAN.md` 가 Zensical 결과물에서는 죽은 링크로 남는다. 또 `zensical build` 가 **같은 `site/`** 에 쓰므로 이어 돌릴 때는 Zensical 이 먼저다(남는 것이 배포물이어야 한다). 전환 전에 닫을 것: 훅을 대신할 자리, strict 링크 검증의 대체.
+
+**남은 미확인.** ① `site_url` 이 tailnet 호스트라 공개 전환 때 교체 필요(주석으로 표시). ② `docs/api/*.md`(mkdocstrings `:::` 페이지)는 아직 없다 — 플러그인만 꽂혀 있고 쓰는 쪽수가 없다. ③ mini 에 띄워 `tailscale serve --set-path /docs` 로 실제 경로 라우팅을 확인하지 않았다(compose 가 U1 뒤라서). ④ `pymdownx.tabbed` 의 Zensical 지원은 쓰는 쪽수가 없어 가려지지 않았다. ⑤ Material 이 `primary: white` 에서 잡는 링크 색은 `extra.css` 가 덮어 버려 기본값 자체는 재지 않았다.

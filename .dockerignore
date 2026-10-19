@@ -21,6 +21,9 @@ Makefile
 .github/
 .dockerignore
 # Dockerfile이 쓰는 것은 pyproject.toml · uv.lock · packages/ 뿐이다
+# (문서 이미지는 자기 제외 목록을 쓴다 — docker/docs.Dockerfile.dockerignore)
+site/
+.cache/
 .pytest_cache/
 docs/
 scripts/

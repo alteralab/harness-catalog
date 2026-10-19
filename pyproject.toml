@@ -36,6 +36,13 @@ dev = [
   "testcontainers[postgres]==4.15.0",
   "opentelemetry-sdk==1.45.0",
 ]
+docs = [
+    "mkdocs-include-markdown-plugin>=7.3.0",
+    "mkdocs-llmstxt>=0.5.1",
+    "mkdocs-material>=9.7.7",
+    "mkdocstrings[python]>=1.0.8",
+    "zensical>=0.0.71",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -98,6 +98,30 @@ make wiki-install     # 배선(.claude/skills/openwiki, .mcp.json)을 다시 쓸
 make wiki-claims      # 바꾼 파일을 인용하는 claim 페이지
 ```
 
+## 문서 사이트
+
+소스는 `docs/`의 마크다운 그대로입니다. 사이트용 사본을 따로 두지 않고, 루트의 `README.md`·`DESIGN.md`는 `docs/index.md`·`docs/design.md`가 `include-markdown`으로 끌어옵니다. **README·DESIGN·docs/\*.md를 사이트 때문에 고치지 않습니다** — 저장소에서 읽는 사람에게 맞는 링크는 그대로 두고, 사이트에서만 어긋나는 링크(`../DESIGN.md`·`../PLAN.md`·`../.github/runner.env.example`)는 `tools/mkdocs_hooks.py`의 표 한 곳에서 돌립니다. 그 표의 왼쪽이 원본에서 사라지면 빌드가 경고를 내므로 조용히 썩지 않습니다.
+
+```sh
+make docs          # 미리보기 — http://127.0.0.1:8001/docs/ (운영의 서빙 경로와 같다)
+make docs-build    # site/ 에 짓는다(strict). llms.txt·llms-full.txt 가 여기서 나온다
+make docs-image    # nginx 이미지(비루트, /docs/ 하위 경로)
+```
+
+의존성은 `uv sync --group docs`(mkdocs-material·mkdocs-llmstxt·mkdocstrings·include-markdown·zensical)이고 판은 `uv.lock`에 고정됩니다.
+
+**strict 규칙.** `mkdocs.yml`의 `strict: true`와 `validation`이 깨진 링크·없는 앵커·`docs_dir` 밖 상대 링크를 **경고 하나도 실패**로 만듭니다. CI가 같은 명령을 돌리므로 문서 링크가 깨진 PR은 병합되지 않습니다. 제목 id는 `pymdownx` slugify로 뽑아 한글이 그대로 앵커가 됩니다(기본 slugify는 한글을 떨어뜨려 `_1`·`_2`가 됩니다).
+
+**`llms.txt`.** `mkdocs-llmstxt`가 `site/llms.txt`(절별 목차 + 설명)와 `site/llms-full.txt`(전 페이지 본문), 그리고 페이지마다 `.md` 원문을 만듭니다. 절 구성은 `mkdocs.yml`의 `plugins.llmstxt.sections`이고, 링크의 절대 주소는 `site_url`에서 옵니다 — 공개 도메인으로 옮기면 `site_url` 한 줄을 바꿉니다.
+
+**Zensical 전환 계획.** Material은 2027-05까지 치명 버그만 고칩니다. 후속인 Zensical이 같은 `mkdocs.yml`을 읽으므로 CI가 `zensical build`를 **비차단**으로 함께 돌려 전환 비용을 0에 가깝게 둡니다. 2026-10-20 실측에서 Zensical 0.0.71은 include-markdown·llmstxt·한국어 검색·mermaid·slugify·`extra_css`를 그대로 냈지만 **`hooks:`를 무시하고 링크 검증을 하지 않습니다**. 전환하려면 위 링크 표를 다른 방법으로 옮겨야 합니다. 또 `zensical build`는 같은 `site/`에 쓰므로 둘을 이어 돌릴 때는 **Zensical을 먼저, MkDocs를 나중에** 돌립니다(남는 `site/`가 배포물이어야 합니다).
+
+**서빙.** 이미지는 `docker/docs.Dockerfile`(빌드 단계에서 `mkdocs build --strict` → `nginx:alpine`, 비루트 uid 101, 8080 포트)이고 설정은 `docker/docs.nginx.conf`입니다. 경로는 `/docs/` 하위로, `mkdocs.yml`의 `site_url` 경로와 같아야 합니다. 운영 호스트에서는 compose의 `docs` 서비스가 `127.0.0.1:8001`에 붙고 앞에 tailscale이 섭니다.
+
+```sh
+tailscale serve --bg --set-path /docs http://127.0.0.1:8001
+```
+
 ## 설계 문서와 원장
 
 설계 계약을 바꾸는 변경은 코드보다 DESIGN.md §11의 결정 행이 먼저입니다. 실행 계획은 PLAN.md(우산)와 `plans/{service,distribution,pilot,skills}.md`이고, 각 문서의 원장 절에 날짜·내용·근거를 남깁니다. 측정 결과(Dex 그랜트, LDAP, 하네스 첫 접촉)는 `plans/pilot/r1~r3.md`에 있습니다. 구현 단계마다 Codex 적대 리뷰를 걸어 반영했고 그 기록도 원장에 있습니다.
