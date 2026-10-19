@@ -937,7 +937,7 @@ wheels = [
 
 [[package]]
 name = "harbor-langfuse"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "packages/harbor-langfuse" }
 dependencies = [
     { name = "harbor" },
@@ -952,7 +952,7 @@ requires-dist = [
 
 [[package]]
 name = "harness-catalog-cli"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "packages/cli" }
 dependencies = [
     { name = "harness-catalog-core" },
@@ -971,7 +971,7 @@ requires-dist = [
 
 [[package]]
 name = "harness-catalog-core"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "anyio" },
@@ -994,7 +994,7 @@ requires-dist = [
 
 [[package]]
 name = "harness-catalog-server"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "packages/server" }
 dependencies = [
     { name = "harness-catalog-core" },
