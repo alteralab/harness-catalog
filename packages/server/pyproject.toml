@@ -1,11 +1,11 @@
 [project]
 name = "harness-catalog-server"
-version = "0.10.0"
+version = "0.10.1"
 description = "harness-catalog registry process: MCP server + scheduler (container image entry point)"
 requires-python = ">=3.12"
 license = "Apache-2.0"
 dependencies = [
-  "harness-catalog-core==0.10.0",
+  "harness-catalog-core==0.10.1",
   "mcp==2.3.0",
   "starlette==1.7.0",
   "uvicorn==0.54.0",
