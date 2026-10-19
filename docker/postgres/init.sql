@@ -9,6 +9,3 @@ SELECT 'CREATE DATABASE harness_catalog OWNER harness_catalog'
   WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'harness_catalog') \gexec
 SELECT 'CREATE DATABASE dex OWNER dex'
   WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'dex') \gexec
--- pg_trgm 확장은 슈퍼유저만 만들 수 있으므로 여기서 만든다 (서비스 마이그레이션은 CREATE EXTENSION IF NOT EXISTS로 확인만).
-\connect harness_catalog
-CREATE EXTENSION IF NOT EXISTS pg_trgm;

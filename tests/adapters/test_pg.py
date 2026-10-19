@@ -38,11 +38,9 @@ def test_schema_applied_as_contract(database_url: str) -> None:
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
         cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'skill_index' ORDER BY ordinal_position")
         cols = [r[0] for r in cur.fetchall()]
-        assert cols == ["name", "description", "compatibility", "metadata", "tree_sha", "commit_sha", "indexed_at", "search_text", "search", "embedding", "embedding_generation"]  # replaced_by·requires_tools는 0003에서 지웠고 벡터 둘은 0004
-        cur.execute("SELECT indexname FROM pg_indexes WHERE tablename = 'skill_index' ORDER BY 1")
-        assert {r[0] for r in cur.fetchall()} >= {"skill_index_search", "skill_index_trgm"}
-        cur.execute("SELECT extname FROM pg_extension WHERE extname = 'pg_trgm'")
-        assert cur.fetchone() is not None
+        assert cols == ["name", "description", "compatibility", "metadata", "tree_sha", "commit_sha", "indexed_at", "embedding", "embedding_generation"]  # replaced_by·requires_tools는 0003에서 지웠고 벡터 둘은 0004
+        cur.execute("SELECT indexname FROM pg_indexes WHERE tablename IN ('skill_index', 'tool_index') ORDER BY 1")
+        assert [r[0] for r in cur.fetchall()] == ["skill_index_pkey", "tool_index_pkey"]  # 0005: 어휘 검색의 GIN 인덱스 넷은 없다
     assert migrate(database_url) == 0  # 멱등
 
 
@@ -135,16 +133,12 @@ def test_concurrent_first_build_is_all_or_nothing(database_url: str) -> None:
 
 
 def test_ddl_expressions_match_contract(database_url: str) -> None:
-    """생성 열의 식·함수의 IMMUTABLE·인덱스 연산자 클래스까지 설계의 DDL 문자열과 같다."""
+    """0005 뒤: 생성 열도 metadata_values 함수도 없다(검색은 앱 메모리, DESIGN §11 2026-10-19 스키마 정리). CHECK 제약은 그대로."""
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
         cur.execute("SELECT column_name, pg_get_expr(d.adbin, d.adrelid) FROM pg_attribute a JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum JOIN information_schema.columns c ON c.column_name = a.attname AND c.table_name = 'skill_index' WHERE a.attrelid = 'skill_index'::regclass AND a.attgenerated = 's' ORDER BY a.attnum")
-        gen = dict(cur.fetchall())
-        assert set(gen) == {"search_text", "search"}
-        assert "to_tsvector('simple'::regconfig" in gen["search"] and "metadata_values(metadata)" in gen["search_text"]
-        cur.execute("SELECT provolatile FROM pg_proc WHERE proname = 'metadata_values'")
-        assert cur.fetchone() == ("i",)
-        cur.execute("SELECT indexdef FROM pg_indexes WHERE indexname = 'skill_index_trgm'")
-        assert "gin (search_text gin_trgm_ops)" in cur.fetchone()[0]  # type: ignore[index]
+        assert dict(cur.fetchall()) == {}  # 0005 뒤 생성 열은 없다(검색은 앱 메모리)
+        cur.execute("SELECT count(*) FROM pg_proc WHERE proname = 'metadata_values'")
+        assert cur.fetchone() == (0,)
         cur.execute("SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid = 'skill_index'::regclass AND contype = 'c'")
         assert any("length(compatibility) <= 500" in r[0] for r in cur.fetchall())
 
@@ -186,14 +180,11 @@ def test_tool_index_contract_and_search(database_url: str) -> None:
     """toolbox(D19): tool_index의 열·생성식·제약·인덱스가 설계의 DDL 문자열과 같고, 두 표가 한 트랜잭션에 바뀐다."""
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
         cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'tool_index' ORDER BY ordinal_position")
-        assert [r[0] for r in cur.fetchall()] == ["name", "description", "kind", "server", "metadata", "tree_sha", "commit_sha", "indexed_at", "search_text", "search", "embedding", "embedding_generation"]
+        assert [r[0] for r in cur.fetchall()] == ["name", "description", "kind", "server", "metadata", "tree_sha", "commit_sha", "indexed_at", "embedding", "embedding_generation"]
         cur.execute("SELECT a.attname, pg_get_expr(d.adbin, d.adrelid) FROM pg_attribute a JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum WHERE a.attrelid = 'tool_index'::regclass AND a.attgenerated = 's' ORDER BY a.attnum")
-        gen = dict(cur.fetchall())
-        assert set(gen) == {"search_text", "search"}
-        assert "to_tsvector('simple'::regconfig" in gen["search"] and "metadata_values(metadata)" in gen["search_text"]
-        cur.execute("SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'tool_index' ORDER BY 1")
-        idx = dict(cur.fetchall())
-        assert "gin (search_text gin_trgm_ops)" in idx["tool_index_trgm"] and "gin (search)" in idx["tool_index_search"]
+        assert dict(cur.fetchall()) == {}  # 0005 뒤 생성 열은 없다
+        cur.execute("SELECT indexname FROM pg_indexes WHERE tablename = 'tool_index' ORDER BY 1")
+        assert [r[0] for r in cur.fetchall()] == ["tool_index_pkey"]
         cur.execute("SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid = 'tool_index'::regclass AND contype = 'c'")
         defs = [r[0] for r in cur.fetchall()]
         assert any("'script'" in d and "'mcp'" in d for d in defs) and any("length(description) <= 1024" in d for d in defs)
@@ -227,7 +218,7 @@ def test_replace_is_all_or_nothing_across_both_tables(database_url: str) -> None
 
 
 def test_upgrade_from_0001_on_populated_db() -> None:
-    """0001만 적용된 채 데이터가 있는 DB에 0002·0003·0004가 올라가고, 다시 migrate는 0이다."""
+    """0001만 적용된 채 데이터가 있는 DB에 0002~0005가 올라가고, 다시 migrate는 0이다."""
     from importlib.resources import as_file, files
     from yoyo import get_backend, read_migrations  # pyright: ignore[reportUnknownVariableType]
 
@@ -243,7 +234,7 @@ def test_upgrade_from_0001_on_populated_db() -> None:
             cur.execute("INSERT INTO skill_index (name, description, metadata, tree_sha, commit_sha, indexed_at) VALUES ('old', 'd', '{}', %s, %s, now())", ("a" * 40, "b" * 40))
             cur.execute("INSERT INTO index_state (id, commit_sha, indexed_at) VALUES (1, %s, now())", ("b" * 40,))
             conn.commit()
-        assert migrate(url) == 3  # 0002·0003·0004
+        assert migrate(url) == 4  # 0002~0005
         assert migrate(url) == 0
         with psycopg.connect(url) as conn, conn.cursor() as cur:
             cur.execute("SELECT name FROM skill_index")

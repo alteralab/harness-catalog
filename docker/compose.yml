@@ -57,7 +57,7 @@ services:
       - ./postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
       - ./postgres/init.sql:/opt/harness-catalog/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "psql -U postgres -d harness_catalog -tAc \"select 1 from pg_extension where extname='pg_trgm'\" | grep -q 1 && psql -U postgres -d dex -tAc 'select 1' | grep -q 1"]
+      test: ["CMD-SHELL", "psql -U postgres -d harness_catalog -tAc 'select 1' | grep -q 1 && psql -U postgres -d dex -tAc 'select 1' | grep -q 1"]
       interval: 5s
       timeout: 3s
       retries: 10

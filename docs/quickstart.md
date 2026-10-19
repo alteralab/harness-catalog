@@ -93,4 +93,5 @@ docker compose -f docker/compose.quickstart.yml down -v
 | `Ports are not available: … 8000` 또는 `5556` | 그 포트를 쓰는 프로세스를 멈추거나 `REGISTRY_PORT=`·`DEX_PORT=`로 바꾼다 |
 | `registry-1 is unhealthy` | `docker compose -f docker/compose.quickstart.yml logs registry`와 `curl -s localhost:8000/readyz`의 `reasons` |
 | `/readyz`가 `repo_unreachable` | `catalog-init` 로그. 볼륨을 지우고(`down -v`) 다시 |
+| `/readyz`의 `degraded`에 `embedding_unavailable` | 빠른 시작에는 임베딩 서비스가 없어 검색이 BM25 만으로 돕니다. 정상입니다. dense 까지 보려면 호스트 Ollama 에 모델을 받고 `HC__EMBED_URL`을 주세요(docs/operations.md 전제 조건) |
 | 브라우저 로그인 뒤 "동적 등록을 지원하지 않는다" | `.mcp.json`에 `oauth.clientId`가 없다 |

@@ -146,7 +146,7 @@ flowchart LR
 | For validating a skill | 요구 포트 | "이 저장소가 구조를 갖췄고 이 디렉토리가 스펙에 맞고 비밀이 없으며 이름·대체 규칙을 지키는지 판정해 달라" | `typing.Protocol` |
 | OIDC 어댑터 | 피구동 어댑터 | issuer의 JWKS로 서명을 검증하고 `iss`·`aud`·`exp`·`nbf`·`scope`·`groups`를 확인해 주체를 만든다. 바깥 통신은 JWKS 가져오기뿐 | SDK `TokenVerifier` 구현 |
 | git 어댑터 | 피구동 어댑터 | 로컬 클론을 유지하고 fetch와 읽기를 한다. commit·push는 없다 | git CLI 호출 |
-| PostgreSQL 어댑터 | 피구동 어댑터 | 인덱스의 SQL — 행과 벡터(세대별)의 저장·읽기. 검색은 여기가 아니라 앱의 메모리 색인이다(§11 2026-10-19 검색 0.8.0; `tsvector`·`pg_trgm` 생성 열은 다음 스키마 정리 판까지만 남는다) | psycopg 3 + SQL 파일 |
+| PostgreSQL 어댑터 | 피구동 어댑터 | 인덱스의 SQL — 행과 벡터(세대별)의 저장·읽기. 검색은 여기가 아니라 앱의 메모리 색인이다(§11 2026-10-19 검색 0.8.0; 어휘 검색의 생성 열·인덱스는 0005가 지웠다) | psycopg 3 + SQL 파일 |
 | 검증 어댑터 | 피구동 어댑터 | `skills-ref validate`·시크릿 스캔·저장소 구조·크기·`tool.json`·`server.json` 검사(일곱)를 돌려 판정으로 바꾼다. 이력은 보지 않는다(§11 2026-10-18). 같은 구현이 `harness-catalog check` CLI다 | 라이브러리 호출 + 서브프로세스 |
 | Configurator | 패턴 밖, 필수 | 설정값 다섯(과 기본값 있는 하나)을 읽어 피구동 어댑터 넷을 만들고, 앱을 만들어 넷을 꽂고, 구동 어댑터 셋(MCP·운영·스케줄러)을 만들어 앱을 건넨다. 모든 참가자를 아는 유일한 자리. OTel exporter는 여기서 조립하지 않는다 — 표준 환경 변수(`OTEL_EXPORTER_OTLP_*`)를 읽는 `opentelemetry-sdk`의 자동 구성이 켜며, 변수가 없으면 스팬은 no-op이다 | `bootstrap(settings) -> App` 함수 하나 + uvicorn 기동 |
 
@@ -219,9 +219,9 @@ erDiagram
         jsonb metadata "NOT NULL. frontmatter의 문자열 맵. 없으면 {}"
         char(40) tree_sha "NOT NULL. main에 있는 스킬 디렉토리의 git tree SHA = 판"
         char(40) commit_sha "NOT NULL. 그 판을 넣은 커밋(병합 커밋)"
-        text search_text "생성 열: name, description, metadata 값들을 이은 텍스트"
-        tsvector search "생성 열: to_tsvector('simple', search_text)"
         timestamptz indexed_at "NOT NULL. 마지막 인덱스 갱신"
+        real[] embedding "nullable. 설명 임베딩(§11 2026-10-19 검색 0.8.0). 재기동 때 다시 임베딩하지 않기 위한 캐시"
+        text embedding_generation "nullable. 벡터 세대 <모델>/<문서형식 판>"
     }
     tool_index {
         varchar(64) name PK "tool.json의 name. 저장 경로 tools/name/ (§11 2026-10-11 toolbox)"
@@ -231,9 +231,9 @@ erDiagram
         jsonb metadata "NOT NULL. 문자열 맵. 없으면 {}"
         char(40) tree_sha "NOT NULL. tools/name/의 git tree SHA = 판"
         char(40) commit_sha "NOT NULL"
-        text search_text "생성 열"
-        tsvector search "생성 열"
         timestamptz indexed_at "NOT NULL"
+        real[] embedding "nullable. 설명 임베딩"
+        text embedding_generation "nullable. 벡터 세대"
     }
     index_state {
         int id PK "항상 1"
@@ -244,7 +244,7 @@ erDiagram
     index_state ||..o{ tool_index : "이 커밋에서 파생"
 ```
 
-생성 열과 인덱스는 다음 DDL이 계약이다. `[웹]` PostgreSQL 저장 생성 열은 IMMUTABLE 함수만 허용하므로 텍스트 검색 구성은 `'simple'`로 고정해 명시하고, `metadata` 값 추출은 IMMUTABLE로 선언한 SQL 함수 하나로 감싼다. `pg_trgm`의 연산자 클래스는 `text`용이라 트라이그램 인덱스는 `search`가 아니라 `search_text`에 건다.
+마이그레이션은 아래 DDL 다섯 판이 이력 그대로 계약이다(0001·0002 문장은 당시 것이고, 현행 표는 0003~0005를 적용한 모양 = 위 그림). 0001·0002의 생성 열·GIN 인덱스는 SQL 어휘 검색의 것이었고 — `[웹]` 저장 생성 열은 IMMUTABLE 함수만 허용해 `'simple'` 구성과 IMMUTABLE `metadata_values()`로 감쌌다 — 검색이 앱 메모리로 옮겨간 뒤(§11 2026-10-19) 0005가 지웠다. 현행 표에 생성 열은 없다.
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
@@ -299,17 +299,26 @@ ALTER TABLE tool_index DROP COLUMN IF EXISTS replaced_by, DROP COLUMN IF EXISTS 
 ALTER TABLE skill_index ADD COLUMN IF NOT EXISTS embedding real[], ADD COLUMN IF NOT EXISTS embedding_generation text;
 ALTER TABLE tool_index  ADD COLUMN IF NOT EXISTS embedding real[], ADD COLUMN IF NOT EXISTS embedding_generation text;
 
+-- 0005(§11 2026-10-19 스키마 정리 판): SQL 어휘 검색의 생성 열 둘·GIN 인덱스 넷·metadata_values 를 지운다. pg_trgm 확장은 슈퍼유저 소유라 마이그레이션이 지우지 않는다(쓰는 곳 없음)
+DROP INDEX IF EXISTS skill_index_search;
+DROP INDEX IF EXISTS skill_index_trgm;
+DROP INDEX IF EXISTS tool_index_search;
+DROP INDEX IF EXISTS tool_index_trgm;
+ALTER TABLE skill_index DROP COLUMN IF EXISTS search, DROP COLUMN IF EXISTS search_text;
+ALTER TABLE tool_index  DROP COLUMN IF EXISTS search, DROP COLUMN IF EXISTS search_text;
+DROP FUNCTION IF EXISTS metadata_values(jsonb);
+
 
 
 ```
 
 읽는 규칙 다섯. 근거 라벨은 KB 페이지와 절·쪽을 적었고, 그 원칙에서 이 설계가 끌어낸 판단은 "판단"이라고 표시했다.
 
-1. **`skill_index`는 저장 열에서 3정규형이고, 생성 열 둘(`search_text`·`search`)은 의도한 파생 열이다.** (2026-10-18까지는 넷이었다. `replaced_by`·`requires_tools`는 마이그레이션 0003이 지웠다. 아래 문장의 그 둘은 당시 근거다.) `[it]` 라이스(8장 pp.291–294): 3NF는 각 테이블이 자기 기본 키와 관련된 필드만 담고 이행 의존이 없는 것이며, "데이터베이스는 3정규형이면 보통 정규화됐다고 여겨진다". `[it]` 클레프만(3장 p.74): "작거나 중간 규모의 시스템에서는 정규화된 데이터 모델이 대체로 최선". 저장 열은 전부 `name`에만 의존한다. `replaced_by`·`requires_tools`·`search_text`·`search`는 비키 열에서 나오므로 형식상 3NF 위반인 비정규화 열이고, 그것을 알고 둔다. 넷 다 **생성 열**이라 애플리케이션이 따로 쓰지 않고 DB가 유도한다. `[it]` 클레프만(3장 p.74)이 비정규화를 "중복 사본을 갱신하는 프로세스가 필요한 파생 데이터"로 보라고 한 것의 그 프로세스가 생성 열이다. `metadata`를 jsonb로 둔 것은 `[it]` 클레프만(3장 p.80)의 판정("트리 전체가 한 번에 로드되고 중첩 항목을 직접 참조할 일이 없으면 문서 모델")에 맞는다. `compatibility`가 열 하나인 것은 `[웹]` 스펙이 그 필드를 문자열 하나(500자 이하)로 정했기 때문이다. 루프가 "이 머신에 ffmpeg가 있는가"를 문자열 해석 없이 거르려면 `metadata.requires-tools`에 공백 구분 목록을 적는 팀 규약을 쓴다(§5.1. 토큰 문법은 `[a-z0-9._+-]+`, 소문자, 버전 없음, 중복 무시). DB는 그것을 `requires_tools text[]` 생성 열로 쪼개 GIN 인덱스를 걸며("ffmpeg가 필요한 스킬"을 `@>`로 찾는다), `search_skills`가 배열로 돌려주므로 루프가 자기 환경과 대조한다.
+1. **`skill_index`는 3정규형이고, 생성 열은 이제 없다.** (2026-10-18까지 생성 열 넷이 있었다. `replaced_by`·`requires_tools`는 0003이, `search_text`·`search`는 0005(§11 2026-10-19 스키마 정리)가 지웠다. 아래 문장은 당시 근거이고, `embedding`·`embedding_generation`은 앱이 쓰는 저장 열(파생 캐시, 비면 다시 만든다)이다.) `[it]` 라이스(8장 pp.291–294): 3NF는 각 테이블이 자기 기본 키와 관련된 필드만 담고 이행 의존이 없는 것이며, "데이터베이스는 3정규형이면 보통 정규화됐다고 여겨진다". `[it]` 클레프만(3장 p.74): "작거나 중간 규모의 시스템에서는 정규화된 데이터 모델이 대체로 최선". 저장 열은 전부 `name`에만 의존한다. `replaced_by`·`requires_tools`·`search_text`·`search`는 비키 열에서 나오므로 형식상 3NF 위반인 비정규화 열이고, 그것을 알고 둔다. 넷 다 **생성 열**이라 애플리케이션이 따로 쓰지 않고 DB가 유도한다. `[it]` 클레프만(3장 p.74)이 비정규화를 "중복 사본을 갱신하는 프로세스가 필요한 파생 데이터"로 보라고 한 것의 그 프로세스가 생성 열이다. `metadata`를 jsonb로 둔 것은 `[it]` 클레프만(3장 p.80)의 판정("트리 전체가 한 번에 로드되고 중첩 항목을 직접 참조할 일이 없으면 문서 모델")에 맞는다. `compatibility`가 열 하나인 것은 `[웹]` 스펙이 그 필드를 문자열 하나(500자 이하)로 정했기 때문이다. 루프가 "이 머신에 ffmpeg가 있는가"를 문자열 해석 없이 거르려면 `metadata.requires-tools`에 공백 구분 목록을 적는 팀 규약을 쓴다(§5.1. 토큰 문법은 `[a-z0-9._+-]+`, 소문자, 버전 없음, 중복 무시). DB는 그것을 `requires_tools text[]` 생성 열로 쪼개 GIN 인덱스를 걸며("ffmpeg가 필요한 스킬"을 `@>`로 찾는다), `search_skills`가 배열로 돌려주므로 루프가 자기 환경과 대조한다.
 2. **은퇴한 이름은 표가 아니라 git 이력이고, 검사는 `harness-catalog check`가 한다.** §3의 "은퇴한 이름 재사용 금지"를 위해 표를 두지 않는다. `check`가 PR에서 `git log --diff-filter=D --name-only --format= -- 'skills/*/SKILL.md'`로 지워진 적 있는 이름을 얻어 새 디렉토리 이름과 대조하고, 인덱스 빌드도 같은 검사를 돌려 위반 스킬을 인덱스에서 뺀다. 지워진 `SKILL.md`의 경로에서 둘째 성분이 은퇴한 이름이다. 스크립트만 지운 커밋은 `SKILL.md`가 남아 걸리지 않고, 디렉토리 이름 바꾸기는 옛 `SKILL.md`의 삭제로 나타나 옛 이름이 은퇴한다(판단. 근거는 §7의 yagni와 `[it]` 클레프만의 "파생 데이터는 원본에서 다시 만든다").
 3. **인덱스 갱신은 트랜잭션 하나이고 뒤로 가지 않는다.** 기동·주기 fetch의 인덱스 빌드는 같은 `main` 스냅샷(commit 하나)에서 행 전체를 만들어 `DELETE` + `INSERT`를 한 트랜잭션으로 커밋한다. MVCC 덕에 읽는 쪽은 커밋 전에는 온전한 구판, 뒤에는 온전한 신판만 본다. 그 트랜잭션은 먼저 `index_state` 행을 `SELECT … FOR UPDATE`로 잠그고, 새 커밋이 저장된 `commit_sha`의 자손(`git merge-base --is-ancestor`)일 때만 덮어쓰며 아니면 아무것도 하지 않고 끝낸다. 인스턴스가 둘일 때 낡은 커밋으로 시작한 빌드가 최신 인덱스를 되돌리는 것을 이것이 막는다(Codex 지적). 단일 인스턴스에서는 같은 규칙이 공짜다. `main`이 강제 push로 되감기면(규율 위반) 자손 검사가 거짓이라 인덱스가 갱신되지 않고 `/readyz`의 `degraded`에 `main_rewound`로 적힌다. 운영자가 확인하고 되돌리거나 인덱스를 다시 짓는다(`harness-catalog reindex --accept-rewind`, 운영 명령).
 4. **외래 키를 걸지 않고, 선언할 수 있는 불변식은 제약으로 건다.** 인덱스 갱신이 표를 통째로 덮어쓰므로 자기 참조 외래 키는 재구축을 막는다(`[it]` 클레프만: 파생 데이터는 언제든 지우고 다시 만들 수 있어야 한다). 대신 `[it]` 클레프만(8장 p.281)의 처방대로 선언할 수 있는 불변식(NOT NULL, `compatibility` 길이)은 CHECK로 건다.
-5. **개인 데이터, 과거 판, 검색.** 이 DB에는 개인 데이터가 없다. 주체(`sub`)와 검색어(사람의 발화)는 v3.4까지 이 DB의 `usage_record`에 있었고 v3.5부터 도구 호출 스팬의 속성으로 Langfuse에 간다(§2 데이터 표). `[it]` 클레프만(1장 p.24, 3장 p.104)의 추가 전용 로그와 개인 데이터의 충돌은 그쪽 보존 정책의 것이 되고, 삭제 요구는 Langfuse 프로젝트에서 처리한다(v3.5는 그 절차를 정하지 않는다). 과거 판 `get_skill(name, sha)`는 이 표가 아니라 git에서 찾는다(§2 "SHA는 둘이다"). 벡터 열은 §7의 조건까지 없다. 평가 결과는 이 DB에 없다 — 정본은 Langfuse이고(§5.1) 카탈로그 응답에도 실리지 않는다(§3). 루프가 자기 모델·하네스의 결과로 후보를 거르려면 루프가 Langfuse를 읽는 것이 루프의 정책이며, 그것을 카탈로그 응답에 실어야 하는 날이 오면 §7의 재도입 행(주기 복사한 파생 열)이 자리다.
+5. **개인 데이터, 과거 판, 검색.** 이 DB에는 개인 데이터가 없다. 주체(`sub`)와 검색어(사람의 발화)는 v3.4까지 이 DB의 `usage_record`에 있었고 v3.5부터 도구 호출 스팬의 속성으로 Langfuse에 간다(§2 데이터 표). `[it]` 클레프만(1장 p.24, 3장 p.104)의 추가 전용 로그와 개인 데이터의 충돌은 그쪽 보존 정책의 것이 되고, 삭제 요구는 Langfuse 프로젝트에서 처리한다(v3.5는 그 절차를 정하지 않는다). 과거 판 `get_skill(name, sha)`는 이 표가 아니라 git에서 찾는다(§2 "SHA는 둘이다"). 벡터 열(`embedding`)은 검색용 색인이 아니라 임베딩 캐시다 — 검색은 앱 메모리에서(§11 2026-10-19), pgvector 는 항목이 수만을 넘을 때의 다음 단계. 평가 결과는 이 DB에 없다 — 정본은 Langfuse이고(§5.1) 카탈로그 응답에도 실리지 않는다(§3). 루프가 자기 모델·하네스의 결과로 후보를 거르려면 루프가 Langfuse를 읽는 것이 루프의 정책이며, 그것을 카탈로그 응답에 실어야 하는 날이 오면 §7의 재도입 행(주기 복사한 파생 열)이 자리다.
 
 **그림 4 — 권한 모델.** 인증·인가 표의 "무엇을 인가하는가" 행을 권한 → 역할 → 주체의 층으로 편 것이다. `[it]` 게이트웨이·신원 제공자가 할 수 있는 것은 굵은 인가(로그인 여부, 그룹 소속)까지이고 어느 연산을 허용할지는 서비스 자신이 정해야 하므로, 그룹은 신원 제공자가, 역할과 권한은 레지스트리가 소유한다. v3.3에서 레지스트리의 역할은 reader 하나다. 쓰기의 역할(write·admin)은 git 호스트의 저장소 권한이고 이 그림 밖이다. `[웹]` DataHub(Admin·Editor·Reader)·Langfuse(Owner·Admin·Member·Viewer)의 관례(2026-09-26 확인)에서 Reader 층만 레지스트리에 남고, Editor·Admin에 해당하는 것은 git 호스트의 권한이 된다.
 
@@ -386,7 +395,7 @@ flowchart LR
 | 항목 | 재도입 시 형태 |
 |---|---|
 | PostgreSQL | 매일 `pg_dumpall`(레지스트리 DB와 Dex DB 둘 다, 역할 포함)을 VM 밖 객체 저장소로. 보존 30일. 저장소의 정지 암호화를 쓴다. RPO 24시간(Dex의 상태는 리프레시 토큰·장치 코드 같은 단기 것이라 잃으면 재로그인이다), RTO 4시간 |
-| 관리형 DB로 옮길 때 | 위 PostgreSQL 행의 크론은 넣지 않는다. `[웹]` RDS는 백업 창에 저장 볼륨 스냅샷으로 인스턴스 전체를 자동 백업하고 보존 기간 안의 임의 시점으로 복구한다(2026-09-26 확인). git 번들 행은 그대로다. 어휘 검색의 `pg_trgm`은 `[웹]` RDS trusted extension이라 `rds_superuser` 없이 데이터베이스 `CREATE` 권한으로 설치되어 기동 시 마이그레이션이 그대로 돈다. 서비스 쪽 변경은 접속값 하나다(`[it]` 외부 설정: 외부 서비스 자격 증명은 코드 밖에) |
+| 관리형 DB로 옮길 때 | 위 PostgreSQL 행의 크론은 넣지 않는다. `[웹]` RDS는 백업 창에 저장 볼륨 스냅샷으로 인스턴스 전체를 자동 백업하고 보존 기간 안의 임의 시점으로 복구한다(2026-09-26 확인). git 번들 행은 그대로다. 확장은 더 쓰지 않으므로(0005) 기동 시 마이그레이션은 표·열만 만든다. 서비스 쪽 변경은 접속값 하나다(`[it]` 외부 설정: 외부 서비스 자격 증명은 코드 밖에) |
 | 복구 절차 | 새 VM에 compose를 올리고 덤프를 복원하고 PostgreSQL → Dex → 레지스트리 순으로 기동한다. 기동 시 fetch가 인덱스를 다시 짓는다. 분기마다 한 번 실제로 복원해 본다. 책임자는 플랫폼 팀 |
 | git 저장소 | 정본은 git 호스트다. v3.0은 호스트의 백업·미러에 기댄다(조직의 git 운영 정책). 재도입 시에는 그것과 **독립된** 사본을 하나 둔다. 백업 크론이 매일 `git bundle`(전체 refs)을 만들어 같은 객체 저장소에 올리고 보존 30일. 레지스트리의 로컬 클론은 같은 VM에 있어 DR 사본으로 세지 않는다. 복구는 새 저장소에 번들을 `git fetch`로 되밀고 무결성은 `git fsck`로 확인하며 분기 복원 훈련에 포함한다. `main` 강제 push 금지로 이력 파괴를 막는다 |
 
@@ -409,7 +418,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 | v3.0 워크로드 | 충분 | 충분 | `[it]` 임베디드 DB는 데이터가 한 기계에 들어가고 동시 트랜잭션이 많지 않으면 적절 |
 | Helm 칸(인스턴스 둘 이상) | **못 간다.** 파일 하나를 여러 인스턴스가 공유할 수 없어 엔진을 바꿔야 한다 | 그대로 간다 | `[it]` 파일럿과 운영에 다른 엔진을 쓰면 방언·공급자 차이로 초록 테스트가 운영에서 깨진다 |
 | 운영 표면 | 컨테이너 1, 자격 증명 없음, 백업은 파일 복사 | 컨테이너 2, 시크릿 하나 더, 메이저 업그레이드, `pg_dump` | 둘 다 앱 기동 시 마이그레이션으로 자동화된다 |
-| 어휘 검색 | FTS5 | tsvector + pg_trgm | 둘 다 된다. **가정:** 한국어 형태소 분석은 둘 다 없고 트라이그램으로 덮는다. 검색 품질은 파일럿에서 잰다(§9) |
+| 어휘 검색 | FTS5 | tsvector + pg_trgm | (당시 비교. 0.8.0부터 검색은 DB 밖 — 앱 메모리의 BM25 + dense, §11 2026-10-19. DB 는 행과 벡터 캐시만 든다) |
 | 선례 | `[웹]` Gitea 기본 compose는 SQLite3 | `[웹]` Langfuse·DataHub compose는 DB 컨테이너 | 둘 다 실무에서 쓰인다 |
 
 판정은 PostgreSQL이다. 이 문서가 Helm을 사다리에 올려 두었기 때문이고, SQLite는 그 칸에 오르는 날 엔진 교체를 강요한다. yagni와의 긴장은 인정한다. 지금 치르는 값(컨테이너 하나, 시크릿 하나)이 나중의 엔진 교체보다 싸다는 판단이다. 조직이 Helm 칸을 지우면 SQLite로 되돌린다.
@@ -449,7 +458,7 @@ Helm 칸을 지금 적어 두는 것은 그 칸을 미리 짓기 위해서가 �
 |---|---|---|
 | MCP 서버·HTTP | `mcp` v2의 `MCPServer` + SDK가 만든 Starlette 앱 + uvicorn | 2026-07-28과 2025년 세대를 함께 서빙. `/healthz`·`/readyz`는 그 Starlette 앱에 라우트 둘을 `Mount("/")` **앞에** 두고, 문서대로 세션 매니저의 lifespan을 호스트 lifespan에서 직접 연다 |
 | 인가 | SDK의 `AuthSettings` + `TokenVerifier` 구현. JWT 검증은 PyJWT(`PyJWKClient`가 JWKS 캐시와 `kid` 재조회를 한다) | 스펙 준수는 SDK, 서명 검증만 우리 것 |
-| DB | psycopg 3 + `psycopg_pool`. ORM 없음. 마이그레이션은 SQL 파일과 가벼운 러너(yoyo) 하나, 기동 시 적용 | 업무 테이블이 하나(인덱스. 그림 3)와 인덱스 상태 행 하나이고 그 밖은 마이그레이션 러너의 메타 테이블 하나뿐이라 ORM이 감출 것이 없다. 어휘 검색은 `tsvector`·`pg_trgm`을 SQL로 직접 |
+| DB | psycopg 3 + `psycopg_pool`. ORM 없음. 마이그레이션은 SQL 파일과 가벼운 러너(yoyo) 하나, 기동 시 적용 | 업무 테이블이 하나(인덱스. 그림 3)와 인덱스 상태 행 하나이고 그 밖은 마이그레이션 러너의 메타 테이블 하나뿐이라 ORM이 감출 것이 없다. 검색은 SQL 이 아니라 앱 메모리(§11 2026-10-19) |
 | git | 이미지 안의 `git` 바이너리를 서브프로세스로. 레지스트리는 fetch·읽기만 한다 | 순수 파이썬 구현보다 단순하고 검증됐다 |
 | 검증 | `skills_ref.validate()` 라이브러리 호출 + 시크릿 스캔은 gitleaks 정적 바이너리 서브프로세스 + 저장소 구조·크기·`tool.json`·`server.json` 검사. 같은 구현이 `harness-catalog check` CLI로 나가 pre-commit·CI가 부른다 | 참조 구현 한 곳(DRY). 세 자리(pre-commit·CI·인덱스 빌드)가 같은 코드를 돈다. gitleaks는 런타임이 아니라 바이너리 하나라 "런타임 하나" 원칙을 깨지 않는다 |
 | 동시성 | SDK가 쓰는 anyio. 블로킹 호출(git·DB·검증)은 `anyio.to_thread.run_sync` | 프레임워크를 더 들이지 않는다 |
@@ -1271,3 +1280,12 @@ skills/yt-subs/
 **관측.** 검색 스팬에 `langfuse.observation.metadata.candidates`(돌려준 이름 목록) 를 더한다. 후속 `get_skill`/`get_tool` 과 같은 trace 로 "보여 준 것 중 무엇을 골랐나"를 사후 결합하고, 그 실제 질의로 α·k 를 다시 잰다(`plans/search.md` §3 7).
 
 **바뀌는 것.** core `search.py`(토크나이저·BM25·결합 — 순수 함수, Postgres·모델 없이 시험), `ports.py`(`FactStore.search` → `load_embeddings`, `Embedder` 포트), `catalog.py`(색인 둘 `skills`·`tools`, `_embed_missing`), 설정 둘, server `adapters/embed.py`(`HttpEmbedder`), `adapters/pg.py`(검색 SQL 삭제, 벡터 열 읽기·쓰기), 0004, compose 기본값 `HC__EMBED_URL=http://host.docker.internal:11434/api/embed`, MCP 도구 설명. k 는 레지스트리가 모르고 kata 가 고정 5(`plans/search.md` §3 6).
+
+
+### 2026-10-19: 스키마 정리 판 — 어휘 검색의 생성 열·인덱스·함수를 0005 로 지운다
+
+**결정.** 검색 0.8.0(위 행)이 읽기 경로에서 뺀 SQL 어휘 검색의 잔재 — 두 표의 생성 열 `search_text`·`search`, GIN 인덱스 넷(`skill_index_search`·`skill_index_trgm`·`tool_index_search`·`tool_index_trgm`), IMMUTABLE 함수 `metadata_values` — 를 마이그레이션 0005 가 지운다. `pg_trgm` 확장은 슈퍼유저 소유라 앱 역할의 마이그레이션이 지울 수 없고 쓰는 곳도 없으므로 `docker/postgres/init.sql` 에서 만들기를 멈추고, 세 compose 의 postgres healthcheck 는 확장 대신 두 데이터베이스 접속으로 init 완료를 본다. 기존 DB 의 확장은 운영자가 슈퍼유저로 지우는 선택 절차(docs/operations.md). core `SkillEntry`·`ToolEntry` 의 죽은 `search_text` 속성도 뺀다.
+
+**근거.** `[it]` 기록 시스템과 파생 데이터 — 색인은 파생이고 생성 열은 그 파생의 파생이었다; 읽는 코드가 없는 열은 행 쓰기마다 tsvector·트라이그램을 계산하는 비용(쓰기 4열 → 2열)과 "무엇이 검색을 하는가"의 혼선만 남긴다. 0.8.0 에서 함께 지우지 않은 이유는 0.7.x 이미지로의 롤백 공존이었고, 0.8.0 이 배포·검증된 지금 그 창은 닫혔다.
+
+**바뀌는 것.** `migrations/0005_drop_search_columns.sql`; `docker/postgres/init.sql`·compose 셋의 healthcheck; `model.py`; 시험(열 목록·생성 열 없음·마이그레이션 다섯); §2.1 그림·DDL 이력·읽는 규칙 1·5. **롤백**: 0.8.0 이미지는 그 열을 읽지 않으므로 공존; 0.7.x 는 검색 SQL 이 열을 참조하므로 돌아갈 수 없다(가면 백업 복원).

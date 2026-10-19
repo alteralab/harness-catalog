@@ -2,7 +2,7 @@
 
 팀의 에이전트 스킬을 git 저장소에 두고, 각자의 하네스(Claude Code·Codex·Cursor)에서 MCP로 찾아 쓰게 하는 스킬 카탈로그입니다.
 
-상태: **파일럿** (v0.1.0). Claude Code 2.1.258 + Synology LDAP Server 조합으로 등록 → 로그인 → 검색 → PR → 병합 → 색인까지 끝에서 끝까지 실측했습니다. Codex·Cursor는 클라이언트만 등록되어 있고 아직 붙여 보지 않았습니다.
+상태: **운영 중** (v0.9.0). Claude Code + Synology LDAP Server 조합으로 등록 → 로그인 → 검색 → PR → 병합 → 색인까지 끝에서 끝까지 실측했고, 팀 레지스트리가 그 구성으로 돌고 있습니다. 검색은 BM25 와 한국어 임베딩(KURE-v1)의 하이브리드이고 도구 호출은 Langfuse 로 갑니다. Codex·Cursor는 클라이언트만 등록되어 있고 아직 붙여 보지 않았습니다.
 
 ## 목차
 
@@ -25,6 +25,8 @@
 **레지스트리**는 `main`을 주기적으로 받아 검사·색인하고, 하네스가 MCP로 물으면 답하는 서버입니다. 도구는 넷(스킬 둘 `search_skills`·`get_skill`, 도구 둘 `search_tools`·`get_tool`)이고 전부 읽기이며 쓰기 도구도 전체 목록 도구도 없습니다. 저장소에는 읽기 전용 deploy key로만 닿습니다. 레지스트리가 뚫려도 카탈로그는 바뀌지 않고, 레지스트리가 죽어도 카탈로그는 git에 그대로 있습니다.
 
 로그인은 팀 LDAP 계정으로 한 번 합니다. 레지스트리 앞의 Dex가 LDAP을 OIDC로 감싸고, LDAP 그룹 `harness-readers`에 든 사람만 도구를 부를 수 있습니다.
+
+검색은 레지스트리 프로세스 메모리에서 합니다. 이름·설명의 BM25(한글 2-gram)와 설명 임베딩(KURE-v1, 호스트의 Ollama 가 만든다)의 코사인을 섞어 "캡션 가져와"로 자막 스킬을 찾습니다. 임베딩 서비스가 없으면 BM25 만으로 돌고 `/readyz`가 그 사실을 알립니다. 벡터는 PostgreSQL 에 캐시되어 재기동 때 다시 만들지 않습니다.
 
 ```mermaid
 flowchart LR
@@ -102,7 +104,7 @@ PR의 CI가 같은 검사를 돌리고, 사람이 병합하면 레지스트리�
 
 ### 운영자: 레지스트리 띄우기
 
-운영 경로입니다. 필요한 것: Docker(compose v2), TLS를 맡을 리버스 프록시, LDAP(또는 정적 사용자), git 호스트의 카탈로그 저장소와 읽기 전용 deploy key.
+운영 경로입니다. 필요한 것: Docker(compose v2), TLS를 맡을 리버스 프록시, LDAP(또는 정적 사용자), git 호스트의 카탈로그 저장소와 읽기 전용 deploy key, 그리고 검색의 임베딩을 만들 호스트의 Ollama(`ollama pull hf.co/mykor/KURE-v1-gguf:BF16`. 없어도 뜨되 BM25 만).
 
 ```sh
 git clone https://github.com/alteralab/harness-catalog && cd harness-catalog
@@ -140,7 +142,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 │   ├── .env.example             #   설정값 견본 → docker/.env
 │   ├── synology-ldap/           #   우리 팀 변형: LDAP 연합 compose 오버레이 + Dex 설정 (운영은 compose.yml 위에 겹친다)
 │   ├── dex/                     #   Dex 설정 (gomplate, 정적 사용자)
-│   ├── postgres/                #   PostgreSQL 초기화 (DB·역할 둘)
+│   ├── postgres/                #   PostgreSQL 초기화 (DB·역할 둘. 표는 레지스트리의 마이그레이션 0001~0005가 만든다)
 │   └── quickstart/              #   빠른 시작의 카탈로그 심기 스크립트
 ├── docs/                        # 독자별 안내
 │   ├── quickstart.md            #   처음: 명령 둘로 전체 띄우기
@@ -153,17 +155,20 @@ curl -fsS http://127.0.0.1:8000/readyz
 │   ├── core/                    #   harness-catalog-core: 모델·카탈로그 앱·검사 항목·git/검증 어댑터
 │   ├── server/                  #   harness-catalog-server: MCP 서버·OIDC·PostgreSQL·스케줄러·마이그레이션
 │   ├── cli/                     #   harness-catalog-cli: check·init·config, 카탈로그 저장소 템플릿
-│   │   └── templates/           #     카탈로그 저장소 템플릿 + 기본 스킬 둘(skills/pin·write, 각자 evals)·기본 도구 하나(tools/scaffold)와 생성되는 schemas/tool.schema.json. init이 새 카탈로그에 함께 쓴다
+│   │   └── templates/           #     카탈로그 저장소 템플릿 + 기본 스킬 셋(skills/pin·write·review, 각자 evals)·기본 도구 하나(tools/scaffold)와 생성되는 schemas/tool.schema.json. init이 새 카탈로그에 함께 쓴다
 │   └── harbor-langfuse/         #   harbor-langfuse: Harbor 플러그인 → Langfuse
 ├── plans/                       # 실행 계획과 원장 (PLAN.md가 우산)
 │   ├── pilot/                   #   측정 결과 r1~r3 (Dex 그랜트, LDAP, 하네스 첫 접촉)
 │   ├── service.md
 │   ├── distribution.md
 │   ├── pilot.md
-│   └── skills.md
+│   ├── skills.md
+│   └── search.md                #   검색 리서치·벤치마크·결정(0.8.0 하이브리드)
 ├── scripts/
-│   ├── make-secrets.sh          #   운영 비밀 파일 여섯 생성 (멱등)
-│   └── dev-token.sh             #   기계 계정 토큰 (비밀번호 그랜트)
+│   ├── make-secrets.sh          #   운영 비밀 파일 생성 (멱등; Langfuse OTLP 헤더 포함)
+│   ├── dev-token.sh             #   기계 계정 토큰 (비밀번호 그랜트)
+│   ├── release.py               #   make release — 판 올리기·태그·push (CI가 이미지), Nexus 휠 업로드
+│   └── deploy.sh                #   make deploy — 호스트에 compose 적용, readyz·마이그레이션 확인
 ├── tests/                       # pytest (core는 가짜 어댑터, adapters는 testcontainers, http는 실제 서버)
 ├── tools/
 │   └── pilot/                   #   Dex 그랜트 실측 · 하네스 첫 접촉 캡처 stub
@@ -185,7 +190,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 
 네 패키지는 uv 워크스페이스의 lockstep 배포물이라 판이 같고 태그 `vX.Y.Z` 하나로 함께 나갑니다. 이미지에는 `server`만 들어가고, 카탈로그 저장소의 훅과 CI는 `core`와 `cli`를 그 태그로 설치합니다. 의존성은 전부 `==`로 고정합니다.
 
-실측한 조합은 Python 3.12, uv 0.11.8, gitleaks 8.30.1, Harbor 0.24.0, Dex v2.45.1, PostgreSQL 17, Claude Code 2.1.258, Synology DSM LDAP Server입니다.
+실측한 조합은 Python 3.12, uv 0.11.8, gitleaks 8.30.1, Harbor 0.24.0, Dex v2.45.1, PostgreSQL 17, Ollama 0.18.0(KURE-v1 GGUF BF16), Langfuse Cloud, Claude Code 2.1.258, Synology DSM LDAP Server입니다.
 
 ## 기여
 

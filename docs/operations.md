@@ -136,7 +136,9 @@ Dex에 등록된 클라이언트는 다음과 같습니다. 바꾸려면 설정 
 | `unsupported_layout` | 표지의 `layout`이 지원하지 않는 값 | 레지스트리 판을 올리거나 표지를 맞춘다 |
 | `layout_mismatch` | 표지와 실제 배치가 다름 | 저장소 구조를 본다 |
 
-`degraded`는 준비는 됐지만 온전하지 않은 상태입니다. `db_unavailable`이면 PostgreSQL이 끊긴 것이고 레지스트리는 메모리 사본으로 계속 섬기며 브레이커가 30초 뒤 재시도합니다. `main_rewound`는 아래 되감기입니다. `rebuild_failed:…`는 새 커밋의 색인 빌드가 실패해 이전 색인으로 섬기는 중입니다. `embedding_unavailable`이면 임베딩 서비스(`HC__EMBED_URL`)에 닿지 못해 어휘(BM25)만으로 답하는 중입니다 — Ollama 가 떠 있고 모델이 내려받아져 있는지(`curl -s http://127.0.0.1:11434/api/tags`) 본 뒤 다음 재빌드(fetch 간격)에서 사유가 사라집니다.
+`degraded`는 준비는 됐지만 온전하지 않은 상태입니다. `db_unavailable`이면 PostgreSQL이 끊긴 것이고 레지스트리는 메모리 사본으로 계속 섬기며 브레이커가 30초 뒤 재시도합니다. `main_rewound`는 아래 되감기입니다. `rebuild_failed:…`는 새 커밋의 색인 빌드가 실패해 이전 색인으로 섬기는 중입니다. `embedding_unavailable`이면 임베딩 서비스(`HC__EMBED_URL`)에 닿지 못했거나 그 값이 비어 어휘(BM25)만으로 답하는 중입니다 — Ollama 가 떠 있고 모델이 내려받아져 있는지(`curl -s http://127.0.0.1:11434/api/tags`) 본 뒤 다음 재빌드(fetch 간격)에서 사유가 사라집니다.
+
+**0.9.0 으로 올린 뒤(선택).** 마이그레이션 0005 가 어휘 검색의 열·인덱스·함수를 지웁니다. `pg_trgm` 확장만 슈퍼유저 소유라 남는데 쓰는 곳이 없으니 원하면 한 번 지웁니다: `docker compose -f docker/compose.yml exec postgres psql -U postgres -d harness_catalog -c 'DROP EXTENSION IF EXISTS pg_trgm'`. 새로 세우는 DB 에는 처음부터 없습니다.
 
 **`main`이 되감겼을 때**(강제 push 등). 레지스트리는 색인을 멈추고 `/readyz`에 알립니다. 의도한 것이면 받아들이고 재기동합니다.
 

@@ -155,11 +155,6 @@ class ToolEntry:
     def __post_init__(self) -> None:
         object.__setattr__(self, "metadata", _freeze(self.metadata))
 
-    @property
-    def search_text(self) -> str:
-        values = " ".join(v for _, v in sorted(self.metadata.items()))
-        return f"{self.name} {self.description} {values}".lower()
-
 
 @dataclass(frozen=True)
 class SkillEntry:
@@ -175,11 +170,6 @@ class SkillEntry:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "metadata", _freeze(self.metadata))
-
-    @property
-    def search_text(self) -> str:
-        values = " ".join(v for _, v in sorted(self.metadata.items()))
-        return f"{self.name} {self.description} {values}".lower()
 
 
 @dataclass(frozen=True)

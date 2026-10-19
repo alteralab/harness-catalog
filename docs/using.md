@@ -46,9 +46,9 @@ claude mcp add --transport http --scope user harness-catalog https://<레지스�
 
 | 도구 | 하는 일 |
 |---|---|
-| `search_skills(query, limit?)` | 스킬 어휘 검색(기본 10, 상한 20): 이름·설명·`sha`(판)·`compatibility`·`has_scripts` |
+| `search_skills(query, limit?)` | 스킬 검색 — 이름·설명·metadata 의 BM25 와 설명 임베딩(KURE-v1)의 결합이라 바꿔 말한 질의("캡션" → 자막)도 잡힌다(기본 10, 상한 20): 이름·설명·`sha`(판)·`compatibility`·`has_scripts` |
 | `get_skill(id, sha?, path?, archive?)` | 기본은 SKILL.md 본문과 메타데이터·파일 목록. `path`를 주면 그 파일 하나(1 MB, 본문은 null). `archive=true`면 한 판 전체를 tar로 받는 다운로드 명세(URI + 5분 헤더 토큰 + sha256)를 함께 — 파일은 모델을 지나지 않습니다. §4 pin이 씁니다. `sha`를 주면 그 판 |
-| `search_tools(query, limit?)` | 도구 어휘 검색: 이름·설명·`sha`·`kind`·`server`. §5.5 |
+| `search_tools(query, limit?)` | 도구 검색(엔진은 스킬과 같다): 이름·설명·`sha`·`kind`·`server`. §5.5 |
 | `get_tool(id, sha?)` | `tool.json` 전체. `kind: mcp`면 참조하는 `server.json`을, `kind: script`면 다운로드 명세를 함께. §5.5 |
 
 네 도구 모두 `tools/list`에 `outputSchema`를 싣습니다. 성공 응답의 `structuredContent`는 그 스키마에 맞고, `content[0].text`에 같은 JSON이 있습니다. 오류는 `isError`와 `{code, detail}`입니다. 스키마의 정본은 서버의 `driving/responses.py`입니다.

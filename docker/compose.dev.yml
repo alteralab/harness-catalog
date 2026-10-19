@@ -24,7 +24,7 @@ services:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       # 초기화 결과까지 본다: 데이터베이스 둘과 확장이 있어야 healthy
-      test: ["CMD-SHELL", "psql -U postgres -d harness_catalog -tAc \"select 1 from pg_extension where extname='pg_trgm'\" | grep -q 1 && psql -U postgres -d dex -tAc 'select 1' | grep -q 1"]
+      test: ["CMD-SHELL", "psql -U postgres -d harness_catalog -tAc 'select 1' | grep -q 1 && psql -U postgres -d dex -tAc 'select 1' | grep -q 1"]
       interval: 5s
       timeout: 3s
       retries: 10

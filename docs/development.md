@@ -105,4 +105,10 @@ make wiki-claims      # 바꾼 파일을 인용하는 claim 페이지
 
 ## 검색 벤치마크
 
-`make bench-search N="100 1000"` — 합성 말뭉치(`bench/search/`)로 `search_skills`·`search_tools` 의 recall@k·MRR·지연을 잰다. 검색 엔진을 바꾸는 PR 은 이 숫자를 함께 적는다(DESIGN §11 2026-10-19). 방법과 한계는 `bench/search/README.md`.
+`bench/search/`(로컬 전용, .gitignore)는 합성 말뭉치로 `search_skills`·`search_tools` 의 recall@k·MRR·지연을 잰다. 의존성은 `uv sync --group bench`(sentence-transformers·rank_bm25·kiwipiepy). 검색을 바꾸는 PR 의 게이트는 서버 모듈을 그대로 꽂는 다음 명령이고, 그 표를 `plans/search.md` §2 에 적는다(DESIGN §11 2026-10-19; 기대 app-hybrid R@3 ≈ 0.98, app-bm25 ≈ 0.94):
+
+```sh
+TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock uv run --group bench python -m bench.search --n 720 --app --expanded --good-only --alphas 0.85
+```
+
+모델·리랭커·토크나이저 변형은 `--models`·`--rerank`·`--jev`·`--kiwi`·`--late`·`--ollama`. 방법과 한계는 `bench/search/README.md`.
