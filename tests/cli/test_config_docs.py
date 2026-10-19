@@ -8,7 +8,7 @@ from harness_catalog_cli.config import GENERATED_BEGIN, GENERATED_END, merge_doc
 def test_fresh_file_has_title_and_table() -> None:
     out = merge_docs(None, render_docs())
     assert out.startswith("# 설정값")
-    assert out.count("| `HC__") == 8
+    assert out.count("| `HC__") == 9
     assert GENERATED_BEGIN in out and GENERATED_END in out
 
 
@@ -17,5 +17,5 @@ def test_merge_keeps_hand_written_sections() -> None:
     out = merge_docs(existing, render_docs())
     assert "머리말" in out and "## 2. 관측" in out and "손으로 쓴 절" in out
     assert "| 옛 표 |" not in out
-    assert out.count("| `HC__") == 8
+    assert out.count("| `HC__") == 9
     assert merge_docs(out, render_docs()) == out  # 멱등

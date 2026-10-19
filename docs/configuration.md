@@ -13,16 +13,16 @@ harness-catalog의 설정 표면 전부를 층별로 적은 참조입니다. 층
 | `REGISTRY_IMAGE` | `.env` | 항상 |
 | `HC__CATALOG_REPO_URL` · `HC__OIDC_ISSUER` · `HC__PUBLIC_URL` | `.env` | 항상 |
 | `git_deploy_key` | `${SECRETS_DIR}/git_deploy_key` (`make-secrets.sh`의 둘째 인자) | 항상 |
-| `LDAP_HOST` · `LDAP_BIND_DN` · `LDAP_USER_BASE_DN` · `LDAP_GROUP_BASE_DN` | `.env` | LDAP 오버레이를 쓰고 기본값(우리 NAS)과 다를 때 |
+| `LDAP_HOST` · `LDAP_BIND_DN` · `LDAP_USER_BASE_DN` · `LDAP_GROUP_BASE_DN` | `.env` | LDAP 오버레이를 쓸 때 항상(기본값이 없다 — 한 팀의 디렉터리 주소가 다른 팀의 기본값일 수 없다) |
 | `ldap_bind_pw` | `${SECRETS_DIR}/ldap_bind_pw` | LDAP 오버레이를 쓸 때 |
-| `HC_PUBLIC_HOSTNAME` · `HC_HOST_TAILSCALE_IP` | `.env` | 프록시가 같은 호스트에 있어 hairpin이 필요할 때 |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` + `otlp_headers` 파일 | `.env` + `${SECRETS_DIR}/otlp_headers` | Langfuse로 스팬을 보낼 때 |
+| `HC_PUBLIC_HOSTNAME` · `HC_HOST_TAILSCALE_IP` | `.env` | LDAP 오버레이를 쓸 때 항상(hairpin. 기본값 없음) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` + `otlp_headers` 파일 | `.env` + `${SECRETS_DIR}/otlp_headers` | 스팬을 내보낼 때(기본값이 비어 있어 적지 않으면 내보내지 않는다) |
 
 빠른 시작은 아무것도 채우지 않습니다. 개발 compose는 비밀 넷(`POSTGRES_PASSWORD`·`HC_DB_PASSWORD`·`DEX_DB_PASSWORD`·`DEX_CI_RUNNER_SECRET`)을 직접 만들어 적습니다(운영과 같은 "임의값 생성" 습관을 유지하기 위해 기본값을 두지 않습니다).
 
 ## 1. 레지스트리 설정값 (`HC__*`)
 
-레지스트리 프로세스가 환경 변수로 읽습니다. 비밀은 `<이름>_FILE=<경로>`로 파일에서도 읽습니다(docker secrets). 필수 다섯 중 하나라도 비면 기동하지 않고 어느 것이 비었는지 말합니다. `HC__OIDC_ISSUER`·`HC__PUBLIC_URL`은 끝에 `/`를 붙이면 거부됩니다. Dex와 레지스트리가 글자까지 같은 값을 봐야 하기 때문입니다.
+레지스트리 프로세스가 환경 변수로 읽습니다. 비밀은 `<이름>_FILE=<경로>`로 파일에서도 읽습니다(docker secrets). 필수 다섯 중 하나라도 비면 기동하지 않고 어느 것이 비었는지 말합니다. 선택 넷에는 기본값이 있습니다. `HC__OIDC_ISSUER`·`HC__PUBLIC_URL`은 끝에 `/`를 붙이면 거부됩니다. Dex와 레지스트리가 글자까지 같은 값을 봐야 하기 때문입니다.
 
 <!-- generated: harness-catalog config docs — 이 표만 생성된다. 바깥은 손으로 쓴다 -->
 
@@ -33,6 +33,7 @@ harness-catalog의 설정 표면 전부를 층별로 적은 참조입니다. 층
 | `HC__OIDC_ISSUER` | 예 |  | OIDC issuer URL (토큰의 iss, JWKS 발견) |
 | `HC__PUBLIC_URL` | 예 |  | 레지스트리 공개 URL = 토큰의 audience = RFC 9728 resource |
 | `HC__DATABASE_URL` | 예 |  | PostgreSQL 접속 문자열 |
+| `HC__READER_GROUP` | 아니오 | harness-readers | 읽기 권한을 주는 디렉터리의 그룹 이름 — 환경값. 토큰의 groups에 이 이름이 있으면 reader다 |
 | `HC__FETCH_INTERVAL_SECONDS` | 아니오 | 60 | 주기 fetch 간격(초) |
 | `HC__EMBED_URL` | 아니오 |  | 임베딩 서비스 주소(외부 서비스 — Ollama `…/api/embed` 또는 TEI `…/embed`). 비면 BM25 만(§11 2026-10-19 검색 0.8.0) |
 | `HC__EMBED_MODEL` | 아니오 | hf.co/mykor/KURE-v1-gguf:BF16 | 임베딩 모델 이름(Ollama 요청에 실리고 벡터 세대 키가 된다) |
@@ -43,11 +44,11 @@ harness-catalog의 설정 표면 전부를 층별로 적은 참조입니다. 층
 
 ## 2. 관측 (OpenTelemetry → Langfuse)
 
-레지스트리의 설정값이 아니라 OTel SDK의 표준 변수입니다. 운영 compose는 `OTEL_EXPORTER_OTLP_ENDPOINT`의 기본값으로 팀 Langfuse(Cloud US, `https://us.cloud.langfuse.com/api/public/otel`)를 넣어 두므로 `.env`에 아무것도 안 적으면 켜져 있습니다. `.env`에서 빈 값으로 주면 스팬은 no-op이고 아무것도 나가지 않습니다(2026-10-19).
+레지스트리의 설정값이 아니라 OTel SDK의 표준 변수입니다. `OTEL_EXPORTER_OTLP_ENDPOINT`는 compose 셋 전부에서 **비어 있는 것이 기본**이고, 비면 스팬은 no-op이라 아무것도 나가지 않습니다. 모든 배포에 맞는 수집기 주소는 없으므로 수신처는 운영자가 `.env`에 적습니다(§11 2026-10-20 — 2026-10-19의 "기본값 = 팀 Langfuse US"를 거둔 결정).
 
 | 변수 | 기본값 | 뜻 |
 |---|---|---|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | 운영 compose: 팀 Langfuse US(빈 값 = 끔) · 빠른 시작·개발: 비움 | OTLP/HTTP 수신 주소. Langfuse Cloud는 `https://cloud.langfuse.com/api/public/otel`(EU) · `https://us.cloud.langfuse.com/api/public/otel`(US), 셀프호스팅은 `<host>/api/public/otel` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | 비움(= 내보내지 않음) | OTLP/HTTP 수신 주소. Langfuse Cloud는 `https://us.cloud.langfuse.com/api/public/otel`(US) · `https://cloud.langfuse.com/api/public/otel`(EU), 셀프호스팅은 `https://<host>/api/public/otel`, OTel Collector는 `http://<host>:4318` |
 | `OTEL_EXPORTER_OTLP_HEADERS` | | `k=v,k2=v2`. Langfuse는 `Authorization=Basic <base64(public_key:secret_key)>`. 개발·빠른 시작용 |
 | `OTEL_EXPORTER_OTLP_HEADERS_FILE` | | 같은 내용을 파일에서(운영 compose는 비밀 파일 `otlp_headers`). 비어 있으면 무시하고 위 변수를 쓴다 |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/protobuf` | Langfuse는 gRPC를 받지 않는다 |
@@ -76,10 +77,11 @@ compose 파일은 `.env`(같은 디렉토리)와 셸 환경에서 변수를 채�
 
 | 변수 | 필수 | 기본값 | 뜻 |
 |---|---|---|---|
-| `REGISTRY_IMAGE` | 예 | | `ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:vX.Y.Z`(판 태그) 또는 짧은 SHA, 또는 로컬 태그 |
+| `REGISTRY_IMAGE` | 예 | | 이미지 주소 `<registry>/<org>/harness-catalog:<tag>`(판 태그 `vX.Y.Z` 또는 짧은 SHA), 또는 로컬 태그. 우리 팀 값은 NAS Harbor다 |
 | `HC__CATALOG_REPO_URL` · `HC__OIDC_ISSUER` · `HC__PUBLIC_URL` | 예 | | §1 그대로. Dex의 issuer와 audience 클라이언트 ID도 이 둘에서 채워진다 |
+| `HC__READER_GROUP` | 아니오 | `harness-readers` | §1. Dex 설정의 그룹 이름과 같은 값이어야 한다 |
 | `HC__FETCH_INTERVAL_SECONDS` | 아니오 | 60 | §1 |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` · `_PROTOCOL` | 아니오 | §2 | 헤더는 변수가 아니라 비밀 파일 `otlp_headers` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` · `_PROTOCOL` | 아니오 | §2(endpoint는 비움) | 헤더는 변수가 아니라 비밀 파일 `otlp_headers` |
 | `REGISTRY_PORT` | 아니오 | 8000 | 호스트 `127.0.0.1`에 여는 레지스트리 포트(프록시가 받는다) |
 | `DEX_PORT` | 아니오 | 5556 | 호스트 `127.0.0.1`에 여는 Dex 포트 |
 | `SECRETS_DIR` | 아니오 | `../secrets` | 비밀 파일 디렉토리(0700). `docker/.env` 기준 상대 경로라 기본값이 저장소 루트의 `secrets/`다 |
@@ -125,19 +127,21 @@ fetch 주기는 10초로 고정이고, 심는 카탈로그의 템플릿에 박�
 
 ## 5. Dex와 LDAP
 
-Dex 설정 파일(`docker/dex/config.yaml`, LDAP 판은 `docker/synology-ldap/dex/config.yaml`)은 gomplate로 환경 변수를 읽습니다. 운영자가 적는 것은 `LDAP_*`과 hairpin 둘뿐입니다.
+Dex 설정 파일(`docker/dex/config.yaml`, LDAP 판은 `docker/synology-ldap/dex/config.yaml`)은 gomplate로 환경 변수를 읽습니다. 운영자가 적는 것은 `LDAP_*`과 hairpin 둘뿐이고, LDAP 오버레이를 쓰면 둘 다 필수입니다(기본값이 없어 비면 compose가 그 자리에서 멈춥니다).
 
 | 변수 | 출처 | 뜻 |
 |---|---|---|
-| `LDAP_HOST` | `.env` | 기본 `192.168.3.95:636`(LDAPS) |
-| `LDAP_BIND_DN` | `.env` | 검색용 바인드 DN |
+| `LDAP_HOST` | `.env` | 필수. LDAPS면 `<host>:636`, 평문이면 `<host>:389` |
+| `LDAP_BIND_DN` | `.env` | 필수. 검색용 바인드 DN |
 | `LDAP_BIND_PW` / `LDAP_BIND_PW_FILE` | `.env` / 비밀 파일 | 파일이 있고 비어 있지 않으면 파일, 아니면 변수 |
-| `LDAP_USER_BASE_DN` · `LDAP_GROUP_BASE_DN` | `.env` | 사용자·그룹 검색 베이스 |
+| `LDAP_USER_BASE_DN` · `LDAP_GROUP_BASE_DN` | `.env` | 필수. 사용자·그룹 검색 베이스 |
 | `LDAP_INSECURE_NO_SSL` | `.env`(`false`) | 평문 389로 되돌릴 때 `true` |
 | `LDAP_INSECURE_SKIP_VERIFY` | `.env`(`true`) | 자체 서명 인증서면 `true` |
-| `HC_PUBLIC_HOSTNAME` · `HC_HOST_TAILSCALE_IP` | `.env` | 오버레이의 hairpin: 레지스트리 컨테이너 안에서 공개 호스트 이름을 호스트 IP로 푼다 |
+| `HC_PUBLIC_HOSTNAME` · `HC_HOST_TAILSCALE_IP` | `.env` | 필수. 오버레이의 hairpin: 레지스트리 컨테이너 안에서 공개 호스트 이름을 호스트 IP로 푼다 |
 
-고정된 규약이라 설정값이 아닌 것: 읽기 그룹 이름 `harness-readers`, 클라이언트 ID `claude-code`·`codex`·`cursor`·`ci-runner`, 토큰 수명(1시간).
+읽기 그룹 이름은 설정값입니다 — `HC__READER_GROUP`(기본 `harness-readers`, §1). Dex 설정의 그룹 이름과 이 설정값은 같아야 합니다.
+
+고정된 규약이라 설정값이 아닌 것: 클라이언트 ID `claude-code`·`codex`·`cursor`·`ci-runner`, 토큰 수명(1시간), 역할 하나(reader).
 
 <details>
 <summary>자동 배선 — compose가 Dex 설정 파일에 채우는 변수(진단용, 직접 적지 않는다)</summary>

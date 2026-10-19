@@ -68,7 +68,7 @@ staticPasswords:
     hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
     username: dev
     userID: 2d9c2a8e-0b1c-4f3e-9a5e-000000000001
-    groups: [harness-readers]
+    groups: [harness-readers]   # 레지스트리 설정 HC__READER_GROUP의 기본값. 다른 이름으로 바꿀 때는 이 줄과 그 설정값을 같이 바꾼다
   - email: outsider@example.com
     hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
     username: outsider

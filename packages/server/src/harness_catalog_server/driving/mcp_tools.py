@@ -19,7 +19,7 @@ from pydantic import AnyHttpUrl, BaseModel
 from harness_catalog_core.authz import authorize, principal_from_claims
 from harness_catalog_core.archive_token import TOKEN_HEADER, ArchiveSigner
 from harness_catalog_core.catalog import Catalog
-from harness_catalog_core.model import ArchiveInfo, CatalogError, ErrorCode, Principal, required_scopes
+from harness_catalog_core.model import HARNESS_READERS, ArchiveInfo, CatalogError, ErrorCode, Principal, required_scopes
 from harness_catalog_core.toolbox import ServerSpec, ToolSpec
 
 from .responses import (
@@ -75,17 +75,18 @@ def _error(code: ErrorCode, detail: str) -> CallToolResult:
 class ToolBindings:
     """인가 → 앱 호출 → 응답. 도구마다 메서드 하나."""
 
-    def __init__(self, catalog: Catalog, *, signer: ArchiveSigner | None = None, public_url: str = "") -> None:
+    def __init__(self, catalog: Catalog, *, signer: ArchiveSigner | None = None, public_url: str = "", reader_group: str = HARNESS_READERS) -> None:
         self._catalog = catalog
         self._signer = signer
         self._public_url = public_url.rstrip("/")
+        self._reader_group = reader_group  # 설정값 HC__READER_GROUP이 부트스트랩을 거쳐 여기까지 온다(§11 2026-10-20). core의 정책 함수는 설정을 모른다
 
     def _principal(self, tool: str) -> Principal | CallToolResult:
         token = get_access_token()
         claims: Mapping[str, Any] = token.claims if token is not None and token.claims is not None else {}
         principal = principal_from_claims(claims)
         trace.get_current_span().set_attribute(ATTR_USER, principal.subject)
-        decision = authorize(principal, tool)
+        decision = authorize(principal, tool, reader_group=self._reader_group)
         if not decision.allowed:
             return _error(decision.code or ErrorCode.NOT_A_MEMBER, decision.detail)
         return principal
@@ -186,11 +187,11 @@ class ToolBindings:
         ))
 
 
-def build_server(catalog: Catalog, *, issuer: str, public_url: str, verifier: TokenVerifier, signer: ArchiveSigner | None = None) -> MCPServer[None]:
+def build_server(catalog: Catalog, *, issuer: str, public_url: str, verifier: TokenVerifier, signer: ArchiveSigner | None = None, reader_group: str = HARNESS_READERS) -> MCPServer[None]:
     """도구 넷을 등록한 MCPServer. 인가 설정은 SDK가 RFC 9728·챌린지로 낸다(scopes_supported = required_scopes)."""
     auth = AuthSettings(issuer_url=AnyHttpUrl(issuer), resource_server_url=AnyHttpUrl(public_url), required_scopes=list(required_scopes(public_url)), validate_token_resource=True)
     server: MCPServer[None] = MCPServer(name="harness-catalog", instructions="Skill and tool catalog: search skills and get one (body, a file, or a tar descriptor); search tools and get one definition (toolbox). No full-listing tools: search by topic.", auth=auth, token_verifier=verifier)
-    b = ToolBindings(catalog, signer=signer, public_url=public_url)
+    b = ToolBindings(catalog, signer=signer, public_url=public_url, reader_group=reader_group)
     server.tool(name="search_skills", description="Search over id, description and metadata values (BM25 + description embeddings when the embedding service is up, else BM25); each hit: id, description, sha (tree), compatibility, has_scripts. There is no full-listing tool: search by topic. limit 1..20 (default 10).")(b.search_skills)
     server.tool(name="get_skill", description="One skill version: SKILL.md body with sha, commit, metadata and file list (default); with `path`, that one file instead of the body (text or base64; traversal and symlinks rejected, 1 MB); with `archive=true`, also a tar download descriptor (uri + headers with a 5-minute token, size, sha256) — fetch it with curl, the files never pass through the model. sha optional (default: current main).")(b.get_skill)
     server.tool(name="search_tools", description="Toolbox: search over tool definitions (same engine as search_skills) (name, description, metadata). Each hit: name, description, sha (tree), kind (script|mcp), server. limit 1..20 (default 10).")(b.search_tools)

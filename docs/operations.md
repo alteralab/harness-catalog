@@ -8,7 +8,7 @@
 
 | 서비스 | 이미지 | 역할 |
 |---|---|---|
-| `registry` | `ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:<판 태그>` | MCP 서버 + 주기 fetch·색인 |
+| `registry` | `<registry>/<org>/harness-catalog:<판 태그>` (`.env`의 `REGISTRY_IMAGE`. 우리 팀은 NAS Harbor) | MCP 서버 + 주기 fetch·색인 |
 | `postgres` | `postgres:17-alpine` | 색인(`harness_catalog`)과 Dex 저장소(별도 DB·역할) |
 | `dex` | `ghcr.io/dexidp/dex:v2.45.1` | LDAP을 OIDC로 감싸는 인가 서버 |
 
@@ -18,7 +18,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
 
 - Docker와 compose v2. 컨테이너가 git 호스트와 LDAP에 닿을 것(macOS는 colima가 LAN에 닿았고 Docker Desktop은 닿지 않았습니다).
 - 리버스 프록시(TLS 종단). 경로 셋을 열 수 있어야 합니다(§3).
-- LDAP: 그룹 `harness-readers`, 기계 계정 하나, 바인드 DN. 없으면 `docker/dex/config.yaml`의 정적 사용자로 시작할 수 있습니다.
+- LDAP: 읽기 그룹 하나(설정 `HC__READER_GROUP`, 기본 `harness-readers`), 기계 계정 하나, 바인드 DN. 없으면 `docker/dex/config.yaml`의 정적 사용자로 시작할 수 있습니다.
 - 카탈로그 저장소와 읽기 전용 deploy key.
 - 임베딩 서비스(검색의 dense 쪽, DESIGN §11 2026-10-19). 호스트의 Ollama 에 `ollama pull hf.co/mykor/KURE-v1-gguf:BF16` 한 번이면 됩니다(1.2 GB; Mac 에서는 컨테이너가 GPU 에 닿지 못하므로 호스트 앱). compose 기본값 `HC__EMBED_URL=http://host.docker.internal:11434/api/embed` 가 그것을 가리킵니다. 없어도 레지스트리는 뜨되 `/readyz` 가 `degraded: embedding_unavailable` 로 BM25 만 씁니다.
 
@@ -39,7 +39,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
    ssh-keygen -t ed25519 -N '' -f ~/.ssh/catalog-deploy-key
    gh repo deploy-key add ~/.ssh/catalog-deploy-key.pub --repo <org>/<catalog> --title "registry (read)"
    ```
-4. 저자에게 write, 병합할 사람에게 admin을 줍니다. 저장소를 읽을 수 있는 명단과 LDAP 그룹 `harness-readers`를 같게 유지합니다. 이것이 접근 통제의 전부입니다.
+4. 저자에게 write, 병합할 사람에게 admin을 줍니다. 저장소를 읽을 수 있는 명단과 읽기 그룹(`HC__READER_GROUP`, 기본 `harness-readers`)을 같게 유지합니다. 이것이 접근 통제의 전부입니다.
 5. 코드 저장소가 비공개인 동안 카탈로그 CI가 `harness-catalog check`를 설치하려면 읽기 자격이 필요합니다. 코드 저장소에 읽기 전용 deploy key를 하나 더 등록하고 개인 키를 카탈로그 시크릿 `HARNESS_CATALOG_DEPLOY_KEY`에 넣습니다.
 
    ```sh
@@ -75,7 +75,7 @@ TLS와 라우팅은 앞의 리버스 프록시가 맡습니다. 우리 팀은 mi
    ```
 
    `/healthz`는 프로세스가 살아 있는지, `/readyz`는 섬길 준비가 됐는지입니다. 준비되면 본문에 색인한 `commit`과 거부된 스킬 목록이 실립니다.
-4. 이미지는 `main` 병합마다 self-hosted 러너가 빌드해 NAS의 Harbor(`ds923plus.tail2f9fe3.ts.net:9443`, portainer 저장소 `stacks/harbor`)에 올립니다(짧은 SHA 태그와 판 태그; 보존은 Harbor 프로젝트 규칙). 프로젝트가 public이라 pull에는 로그인이 필요 없고, push는 robot 계정(GitHub 시크릿 `HARBOR_ROBOT_NAME`·`HARBOR_ROBOT_SECRET`)입니다. 같은 호스트에서 `docker build -t harness-catalog:current .`로 만들어 써도 됩니다.
+4. 이미지는 `main` 병합마다 self-hosted 러너가 빌드해 **저장소 변수** `IMAGE_REGISTRY`·`IMAGE_REPOSITORY`가 가리키는 레지스트리에 올립니다(짧은 SHA 태그와 판 태그). 둘 중 하나가 없으면 그 잡이 그 자리에서 실패합니다 — 빈 주소로 push하지 않습니다. 우리 팀 값은 NAS Harbor(`ds923plus.tail2f9fe3.ts.net:9443` · `alteralab/harness-catalog`, portainer 저장소 `stacks/harbor`)이고 보존은 그 프로젝트의 태그 보존 규칙입니다. 프로젝트가 public이라 pull에는 로그인이 필요 없고, push는 robot 계정(GitHub 시크릿 `HARBOR_ROBOT_NAME`·`HARBOR_ROBOT_SECRET`)입니다. `scripts/deploy.sh`·`scripts/release.py`도 같은 이름의 환경 변수를 읽습니다(없으면 우리 팀 값). 같은 호스트에서 `docker build -t harness-catalog:current .`로 만들어 써도 됩니다.
 
 `HC__PUBLIC_URL`은 토큰의 audience이자 RFC 9728의 resource이고, Dex 설정의 audience 클라이언트 ID도 같은 값입니다. compose가 한 값에서 둘을 채우므로 어긋날 길이 없습니다.
 
@@ -107,7 +107,7 @@ tailscale serve --bg --set-path /dex http://127.0.0.1:5556/dex
 docker compose -f docker/compose.yml -f docker/synology-ldap/compose.override.yml up -d
 ```
 
-`.env`의 `LDAP_HOST`(LDAPS 636 기본)·`LDAP_BIND_DN`·`LDAP_USER_BASE_DN`·`LDAP_GROUP_BASE_DN`을 채우고, 바인드 비밀번호는 `secrets/ldap_bind_pw`에 둡니다. Synology LDAP Server의 인증서를 신뢰하지 않으면 `LDAP_INSECURE_SKIP_VERIFY=true`(기본)입니다.
+`.env`의 `LDAP_HOST`(LDAPS면 `<host>:636`)·`LDAP_BIND_DN`·`LDAP_USER_BASE_DN`·`LDAP_GROUP_BASE_DN`과 hairpin 둘(`HC_PUBLIC_HOSTNAME`·`HC_HOST_TAILSCALE_IP`)을 채우고, 바인드 비밀번호는 `secrets/ldap_bind_pw`에 둡니다. 이 여섯은 **기본값이 없습니다** — 한 팀의 디렉터리 주소가 다른 팀의 기본값일 수 없어, 비면 `docker compose`가 그 자리에서 어느 변수가 비었는지 말하고 멈춥니다(§11 2026-10-20). 예시 값은 `docker/.env.example`의 자리표시자입니다. LDAP Server의 인증서를 신뢰하지 않으면 `LDAP_INSECURE_SKIP_VERIFY=true`(기본)입니다.
 
 Dex에 등록된 클라이언트는 다음과 같습니다. 바꾸려면 설정 파일을 고치고 `dex`를 재기동합니다.
 
@@ -117,7 +117,7 @@ Dex에 등록된 클라이언트는 다음과 같습니다. 바꾸려면 설정 
 | `ci-runner` | 기밀(시크릿 `secrets/dex_ci_runner_secret`) | 기계 계정의 비밀번호 그랜트 |
 | `<HC_PUBLIC_URL>` | 공개, `trustedPeers`에 위 넷 | 토큰의 `aud`에 레지스트리 URL이 실리게 하는 audience 등록 |
 
-인가는 레지스트리 안에서 토큰의 `groups`에 `harness-readers`가 있는지로만 판정합니다. 스코프는 보지 않습니다. 기계 계정(우리 팀은 `svc-harness`)도 같은 그룹에 넣습니다.
+인가는 레지스트리 안에서 토큰의 `groups`에 읽기 그룹(`HC__READER_GROUP`, 기본 `harness-readers`)이 있는지로만 판정합니다. 스코프는 보지 않습니다. 기계 계정(우리 팀은 `svc-harness`)도 같은 그룹에 넣습니다.
 
 사내 IdP로 옮기면 Dex와 이 절이 사라지고 `HC__OIDC_ISSUER`만 바뀝니다.
 
@@ -150,14 +150,16 @@ docker compose -f docker/compose.yml exec registry harness-catalog-server reinde
 
 **비밀 회전.** 값을 새로 만들어 `secrets/`의 파일을 바꾸고 그 값을 쓰는 컨테이너만 재기동합니다. 옛 값은 발급처에서 지웁니다. deploy key는 git 호스트에서, `ci-runner` 시크릿은 Dex 설정에서, DB 비밀번호는 PostgreSQL 역할에서. `docker compose -f docker/compose.yml config`의 출력은 비밀을 담으니 기록에 남기지 않습니다.
 
-**관측(Langfuse).** 레지스트리가 Langfuse를 직접 알지는 않습니다. 도구 호출마다 OpenTelemetry 스팬(`tools/call <tool>`, 속성 `langfuse.user.id`·`langfuse.observation.metadata.skill`·`sha`·`query`·`result_count`)을 내고, 표준 OTLP 환경 변수가 있을 때만 내보냅니다. Langfuse로 보내려면 `.env`에 셋을 둡니다.
+**관측(Langfuse).** 레지스트리가 Langfuse를 직접 알지는 않습니다. 도구 호출마다 OpenTelemetry 스팬(`tools/call <tool>`, 속성 `langfuse.user.id`·`langfuse.observation.metadata.skill`·`sha`·`query`·`result_count`)을 내고, 표준 OTLP 환경 변수가 있을 때만 내보냅니다. 수신처는 **기본값이 비어 있습니다** — 모든 배포에 맞는 수집기 주소는 없으므로 운영자가 자기 주소를 `.env`에 적습니다(§11 2026-10-20).
+
+**0.10.0 이행 한 줄.** 0.9.x까지는 compose가 팀 Langfuse Cloud US를 기본값으로 넣었습니다. 0.10.0을 배포하기 **전에** 운영 호스트의 `docker/.env`에 `OTEL_EXPORTER_OTLP_ENDPOINT`를 넣지 않으면 배포 즉시 트레이스가 끊깁니다(DB 마이그레이션은 없습니다).
 
 ```sh
-# 수신처는 compose.yml 기본값(팀 Langfuse Cloud US)이라 .env 에 적을 것이 없다. 끄려면 .env 에 OTEL_EXPORTER_OTLP_ENDPOINT= (빈 값), 셀프호스팅으로 옮기면 <host>/api/public/otel
+# .env 에 수신처를 적는다: OTEL_EXPORTER_OTLP_ENDPOINT=https://us.cloud.langfuse.com/api/public/otel  (EU 는 https://cloud.langfuse.com/..., 셀프호스팅은 https://<host>/api/public/otel)
 LANGFUSE_PUBLIC_KEY=$(gopass show -o nas/langfuse-public) LANGFUSE_SECRET_KEY=$(gopass show -o nas/langfuse-secret) scripts/make-secrets.sh ./secrets   # otlp_headers 에 Basic 헤더(D10). 이미 채워져 있으면 그대로
-# 배포 뒤 deploy.sh 가 'tracing: tracing on: otlp/http -> <수신처>' 를 찍는다. 빈 줄이면 꺼진 것
+# 배포 뒤 deploy.sh 가 'tracing: on -> <수신처>' 또는 'tracing: off (OTEL_EXPORTER_OTLP_ENDPOINT 비어 있음)' 를 찍는다 — 끈 것과 못 보낸 것을 가른다
 ```
 
-`.env`에서 `ENDPOINT`를 빈 값으로 주면 스팬은 no-op이고 아무 데도 가지 않습니다(`secrets/otlp_headers`가 비어 있어도 됩니다). 셀프호스팅으로 옮기는 것은 수신처와 헤더 파일만 바꾸는 일이고 과거 trace 는 옮겨지지 않습니다(Langfuse 는 export API 만). 평가 결과는 다른 경로입니다. `harbor run`의 플러그인이 러너 환경의 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`로 Langfuse에 직접 씁니다. 같은 Langfuse 프로젝트의 키 한 쌍이면 둘 다 됩니다.
+`.env`에서 `ENDPOINT`를 비우면(또는 적지 않으면) 스팬은 no-op이고 아무 데도 가지 않습니다(`secrets/otlp_headers`가 비어 있어도 됩니다). 셀프호스팅으로 옮기는 것은 수신처와 헤더 파일만 바꾸는 일이고 과거 trace 는 옮겨지지 않습니다(Langfuse 는 export API 만). 평가 결과는 다른 경로입니다. `harbor run`의 플러그인이 러너 환경의 `LANGFUSE_PUBLIC_KEY`·`LANGFUSE_SECRET_KEY`·`LANGFUSE_HOST`로 Langfuse에 직접 씁니다. 같은 Langfuse 프로젝트의 키 한 쌍이면 둘 다 됩니다.
 
-**팀원 온보딩.** LDAP 계정을 `harness-readers`에 넣고, 카탈로그 저장소 read를 줍니다. 두 명단은 같아야 합니다. 그다음 [using.md](using.md)를 건넵니다.
+**팀원 온보딩.** LDAP 계정을 읽기 그룹(`HC__READER_GROUP`, 기본 `harness-readers`)에 넣고, 카탈로그 저장소 read를 줍니다. 두 명단은 같아야 합니다. 그다음 [using.md](using.md)를 건넵니다.

@@ -26,10 +26,14 @@ def principal_from_claims(claims: Mapping[str, Any]) -> Principal:
     return Principal(sub, groups, client_id)
 
 
-def authorize(principal: Principal, tool: str) -> Decision:
-    """reader = 그룹 harness-readers. 스코프는 보지 않는다(토큰에 없다)."""
+def authorize(principal: Principal, tool: str, *, reader_group: str = HARNESS_READERS) -> Decision:
+    """reader = 그룹 `reader_group`(기본 harness-readers). 스코프는 보지 않는다(토큰에 없다).
+
+    그룹 이름은 운영자의 디렉터리가 정하는 환경값이라 설정값 `HC__READER_GROUP`이다(§11 2026-10-20). core는 설정 객체를 모르므로
+    값은 인자로만 들어온다 — 넘기는 자리는 부트스트랩(Configurator)과 MCP 어댑터 하나다.
+    """
     if tool not in READ_TOOLS:
         return Decision(False, ErrorCode.NOT_FOUND, f"unknown tool {tool}")
-    if HARNESS_READERS in principal.groups:
+    if reader_group in principal.groups:
         return Decision(True, None, "")
-    return Decision(False, ErrorCode.NOT_A_MEMBER, f"not in group {HARNESS_READERS}")
+    return Decision(False, ErrorCode.NOT_A_MEMBER, f"not in group {reader_group}")

@@ -78,7 +78,7 @@ def _freeze(m: Mapping[str, str]) -> Mapping[str, str]:
     return MappingProxyType(dict(m))
 
 
-HARNESS_READERS = "harness-readers"
+HARNESS_READERS = "harness-readers"  # 읽기 그룹 이름의 기본값일 뿐이다 — 쓰는 값은 설정 `HC__READER_GROUP`이고 authz는 인자로 받는다(§11 2026-10-20)
 SUPPORTED_LAYOUT = 1
 BASE_SCOPES = ("openid", "groups")
 

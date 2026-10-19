@@ -88,6 +88,10 @@ def install_like_pip(tmp: Path) -> None:
 NEXUS_PUBLISH_URL = "https://ds923plus.tail2f9fe3.ts.net:8443/repository/pypi-internal/"
 NEXUS_SIMPLE_URL = "https://ds923plus.tail2f9fe3.ts.net:8443/repository/pypi-public/simple/"
 
+# 이미지 주소는 환경이 정한다(§11 2026-10-20) — CI 의 저장소 변수·deploy.sh 와 같은 이름 둘. 우리 값(NAS Harbor)이 기본값이라 지금 동작은 그대로다.
+IMAGE_REGISTRY = os.environ.get("IMAGE_REGISTRY") or "ds923plus.tail2f9fe3.ts.net:9443"
+IMAGE_REPOSITORY = os.environ.get("IMAGE_REPOSITORY") or "alteralab/harness-catalog"
+
 
 def publish(version: str) -> bool:
     """core·cli 휠을 NAS Nexus pypi-internal 에 올린다(2026-10-18 결정 — hc 는 git+ssh 가 아니라 인덱스로 받는다).
@@ -145,7 +149,7 @@ def main(argv: list[str]) -> int:
     run("git", "commit", "-q", "-m", f"release: {tag}\n\n판 넷과 내부 핀을 {version}으로. pip 경로 설치 실측 통과(scripts/release.py).")
     run("git", "tag", "-a", tag, "-m", f"{tag}")
     run("git", "push", "--atomic", "origin", "main", tag)  # main과 태그가 함께 가거나 둘 다 안 간다
-    print(f"release: {tag} pushed — CI가 이미지 ds923plus.tail2f9fe3.ts.net:9443/alteralab/harness-catalog:<짧은 SHA>·:{tag}를 NAS Harbor에 올린다", file=sys.stderr)
+    print(f"release: {tag} pushed — CI가 이미지 {IMAGE_REGISTRY}/{IMAGE_REPOSITORY}:<짧은 SHA>·:{tag}를 레지스트리에 올린다", file=sys.stderr)
     publish(version)
     return 0
 

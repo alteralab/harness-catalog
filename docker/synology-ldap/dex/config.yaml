@@ -76,7 +76,7 @@ connectors:
         nameAttr: cn
       groupSearch:
         baseDN: "{{ getenv "LDAP_GROUP_BASE_DN" }}"
-        filter: ""                 # 비워 둔다(선례). 그룹 하나만 거르려면 "(cn=harness-readers)"
+        filter: ""                 # 비워 둔다(선례). 그룹 하나만 거르려면 "(cn=<읽기 그룹>)" — 레지스트리의 HC__READER_GROUP과 같은 이름(기본 harness-readers)
         userMatchers:
           - userAttr: dn
             groupAttr: member
