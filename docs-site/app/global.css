@@ -1,0 +1,380 @@
+@import 'tailwindcss';
+/* fumadocs 의 색 프리셋(neutral·ocean·default-colors)은 들이지 않는다 — 그쪽 `.dark` 규칙이
+   뒤에 와서 다크의 --color-fd-* 를 되돌려 놓았다(실측: 다크에서 primary 가 흰색이 됐다).
+   `bg-fd-*` 유틸리티를 등록하는 일까지 아래 @theme 하나가 맡는다. */
+@import 'fumadocs-ui/css/preset.css';
+
+@source '../app';
+@source '../components';
+
+/* ───────────────────────────────────────────────────────────────────────────
+   harness-catalog 문서 테마 — "색인 카드와 대장(臺帳)"
+
+   바탕은 순백이 아닌 아주 옅은 쿨 그레이, 카드는 그 위에 놓인 흰 색인 카드다. 잉크는 청록이
+   살짝 도는 근청흑. 강조색은 깊은 틸 하나뿐이고 링크·활성 네비·쪽당 강조 한 곳에만 쓴다.
+   본문에 식별자(`search_skills`·`HC__READER_GROUP`·40자 SHA)가 아주 많은 문서라서, 인라인 코드를
+   옅은 틸 틴트의 칩으로 세운다 — 이 저장소의 글에서는 그것이 실제로 읽기를 돕는다.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* 본문·UI 는 Pretendard Variable(한글·라틴 모두), 코드·식별자는 JetBrains Mono.
+     둘 다 자체 호스팅이고(public/fonts, next/font) 폴백은 OS 한글 서체까지 내려간다. */
+  --font-sans:
+    'Pretendard Variable', Pretendard, var(--hc-font-ui, ui-sans-serif), -apple-system,
+    BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', system-ui,
+    sans-serif;
+  --font-mono:
+    var(--hc-font-code, ui-monospace), 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono',
+    Menlo, Consolas, monospace;
+
+  /* 레이아웃 전체 폭. 사이드바 268 + 본문 + TOC 268 이라, 이 값이 곧 설정값 표가 쓸 수 있는 칸이다
+     (1440px 창에서 본문 칸 ≈ 840px). 글줄 폭은 따로 --hc-measure 가 잡는다. */
+  --fd-layout-width: 90rem;
+
+  /* fumadocs 의 색 토큰을 이 저장소의 것으로 돌린다. 값은 --hc-* 한 벌만 있고 라이트·다크가
+     그 한 벌을 각자 채운다 — 컴포넌트는 --color-fd-* 만 쓰므로 여기 말고 색을 적는 자리가 없다. */
+  --color-fd-background: var(--hc-paper);
+  --color-fd-foreground: var(--hc-ink);
+  --color-fd-muted: var(--hc-sunken);
+  --color-fd-muted-foreground: var(--hc-ink-soft);
+  --color-fd-popover: var(--hc-card);
+  --color-fd-popover-foreground: var(--hc-ink);
+  --color-fd-card: var(--hc-card);
+  --color-fd-card-foreground: var(--hc-ink);
+  --color-fd-border: var(--hc-line);
+  --color-fd-primary: var(--hc-teal);
+  --color-fd-primary-foreground: var(--hc-on-teal);
+  --color-fd-secondary: var(--hc-sunken);
+  --color-fd-secondary-foreground: var(--hc-ink);
+  --color-fd-accent: var(--hc-teal-tint);
+  --color-fd-accent-foreground: var(--hc-teal-strong);
+  --color-fd-ring: var(--hc-teal);
+  --color-fd-overlay: var(--hc-overlay);
+
+  /* 뜻을 가진 색들(callout·diff). 지금 docs/ 에는 쓰는 자리가 없지만 컴포넌트가 유틸리티를
+     참조하므로 등록은 해 둔다. 누런 amber 는 피한다(2026-10-20 사용자 결정) — warning 은
+     붉은 기가 도는 호박색으로 내린다. */
+  --color-fd-info: oklch(58% 0.09 220);
+  --color-fd-warning: oklch(66% 0.15 48);
+  --color-fd-error: oklch(58% 0.19 24);
+  --color-fd-success: oklch(60% 0.12 162);
+  --color-fd-idea: oklch(58% 0.09 220);
+  --color-fd-diff-remove: rgb(190 30 70 / 12%);
+  --color-fd-diff-remove-symbol: rgb(205 45 85);
+  --color-fd-diff-add: rgb(10 160 130 / 12%);
+  --color-fd-diff-add-symbol: rgb(10 170 140);
+}
+
+:root {
+  /* 바탕과 잉크 */
+  --hc-paper: #f3f5f6;
+  --hc-card: #ffffff;
+  --hc-sunken: #e9edee;
+  --hc-line: #d8dfe1;
+  --hc-line-strong: #bfcacd;
+  --hc-ink: #0f1c1f;
+  --hc-ink-soft: #52656a;
+  --hc-ink-faint: #7b8d92;
+
+  /* 강조색 하나 — 깊은 틸 */
+  --hc-teal: #0a6a6c;
+  --hc-teal-strong: #084f52;
+  --hc-teal-tint: rgb(10 106 108 / 7%);
+  --hc-teal-edge: rgb(10 106 108 / 18%);
+  --hc-on-teal: #ffffff;
+  --hc-overlay: rgb(15 28 31 / 32%);
+
+  /* 한국어 혼합 본문의 한 줄 길이. 라틴보다 좁아야 읽힌다(계측: scripts/measure-measure.mjs). */
+  --hc-measure: 45rem;
+
+  color-scheme: light;
+}
+
+.dark {
+  /* 순흑이 아니라 깊은 슬레이트. 카드는 바탕보다 한 단 밝다 — 라이트의 관계를 뒤집지 않는다. */
+  --hc-paper: #0f1619;
+  --hc-card: #151e22;
+  --hc-sunken: #1a2429;
+  --hc-line: #27343a;
+  --hc-line-strong: #38474e;
+  --hc-ink: #dde6e8;
+  --hc-ink-soft: #92a5ab;
+  --hc-ink-faint: #6e8187;
+
+  --hc-teal: #3fb8ae;
+  --hc-teal-strong: #6fd2c8;
+  --hc-teal-tint: rgb(63 184 174 / 11%);
+  --hc-teal-edge: rgb(63 184 174 / 26%);
+  --hc-on-teal: #06201f;
+  --hc-overlay: rgb(5 10 12 / 56%);
+
+  color-scheme: dark;
+}
+
+/* ── 기본 조판 ───────────────────────────────────────────────────────────── */
+
+html {
+  scrollbar-gutter: stable;
+  /* 한글은 자간이 조금 좁아야 빽빽해 보이지 않는다. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--hc-paper);
+  color: var(--hc-ink);
+  font-family: var(--font-sans);
+  /* 한국어 본문: 줄바꿈을 어절 단위로. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0 !important;
+  --removed-body-scroll-bar-size: 0 !important;
+}
+
+::selection {
+  background-color: var(--hc-teal-edge);
+}
+
+/* ── 문서 본문 ───────────────────────────────────────────────────────────── */
+
+/* 글줄만 한국어에 맞춰 좁힌다 — 표·코드·mermaid 는 칸이 모자라면 못 읽으므로 폭을 다 쓴다
+   (설정값 표가 이 문서의 주 매체다). 계측: 45rem 에서 한 줄 66~72자(실제 문장 둘). */
+#nd-page .prose {
+  max-width: none;
+  font-size: 0.975rem;
+  line-height: 1.85;
+}
+
+#nd-page .prose > :is(h1, h2, h3, h4, p, ul, ol, blockquote, hr) {
+  max-width: var(--hc-measure);
+}
+
+/* 쪽 제목은 본문의 h1 이다(docs/*.md 가 GitHub 에서도 읽혀야 해서 h1 을 그대로 둔다). */
+#nd-page .prose h1 {
+  margin-top: 0.75rem;
+  margin-bottom: 0.9rem;
+  font-size: 1.85rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
+}
+
+/* 제목 바로 뒤 첫 문단은 요약 구실을 한다 — 한 단 크게, 조금 연하게. */
+#nd-page .prose h1 + p {
+  font-size: 1.025rem;
+  line-height: 1.8;
+  color: var(--hc-ink-soft);
+}
+
+#nd-page .prose h2 {
+  margin-top: 2.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--hc-line);
+  font-size: 1.3rem;
+  font-weight: 650;
+  letter-spacing: -0.012em;
+}
+
+#nd-page .prose h3 {
+  margin-top: 2rem;
+  font-size: 1.06rem;
+  font-weight: 650;
+  letter-spacing: -0.008em;
+}
+
+/* 첫 h2 는 제목 블록 바로 아래라 윗선을 겹치지 않게. */
+#nd-page .prose > h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+#nd-page .prose a {
+  color: var(--hc-teal);
+  font-weight: 500;
+  text-decoration-line: underline;
+  text-decoration-color: var(--hc-teal-edge);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+#nd-page .prose a:hover {
+  text-decoration-color: var(--hc-teal);
+}
+
+/* 제목은 통째로 앵커 링크다(fumadocs) — 링크 꾸밈이 제목에 묻으면 제목이 파랗게 밑줄 쳐진다. */
+#nd-page .prose :is(h1, h2, h3, h4, h5, h6) a {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+#nd-page .prose :is(h2, h3, h4) a:hover {
+  color: var(--hc-teal);
+}
+
+/* ── 식별자 칩 — 이 테마의 중심 디테일 ──────────────────────────────────── */
+
+/* 본문 속 인라인 코드는 스킬 이름·환경변수·40자 SHA 다. 옅은 틸 틴트의 칩으로 세우고,
+   SHA 처럼 긴 것이 폭을 터뜨리지 않게 어디서든 꺾이게 한다. */
+.prose :not(pre) > code,
+.hc-chip {
+  padding: 0.1em 0.38em;
+  border: 1px solid var(--hc-teal-edge);
+  border-radius: 4px;
+  background-color: var(--hc-teal-tint);
+  color: var(--hc-teal-strong);
+  font-family: var(--font-mono);
+  font-size: 0.855em;
+  font-weight: 450;
+  overflow-wrap: anywhere;
+}
+
+.prose :not(pre) > code::before,
+.prose :not(pre) > code::after {
+  content: none;
+}
+
+/* 링크 안의 식별자는 링크임이 먼저 보여야 한다. */
+.prose a > code {
+  border-color: var(--hc-teal);
+  color: var(--hc-teal);
+}
+
+/* 제목 속 식별자는 칩을 벗긴다 — 제목이 울퉁불퉁해진다. */
+.prose :is(h1, h2, h3, h4) code {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 0.92em;
+}
+
+/* ── 표: 대장(臺帳) ──────────────────────────────────────────────────────── */
+
+.prose table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--hc-line);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 0.875rem;
+}
+
+.prose thead th {
+  background-color: var(--hc-sunken);
+  border-bottom: 1px solid var(--hc-line);
+  color: var(--hc-ink-soft);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-align: start;
+}
+
+.prose :is(th, td) {
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+}
+
+.prose tbody tr + tr :is(th, td) {
+  border-top: 1px solid var(--hc-line);
+}
+
+.prose tbody tr:nth-child(2n) {
+  background-color: color-mix(in srgb, var(--hc-sunken) 45%, transparent);
+}
+
+/* 설정값 표의 첫 칸은 변수 이름이다 — 모노로 두고 꺾이지 않게. */
+.prose tbody td:first-child code {
+  white-space: nowrap;
+}
+
+/* ── 코드 블록 ───────────────────────────────────────────────────────────── */
+
+.prose pre {
+  border: 1px solid var(--hc-line);
+  border-radius: 6px;
+  font-size: 0.83rem;
+  line-height: 1.7;
+}
+
+:is(figure, div)[data-rehype-pretty-code-figure] {
+  border-color: var(--hc-line);
+}
+
+/* shiki 이중 테마: .dark 에서 어두운 쪽 값을 쓴다. */
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+
+/* ── 사이드바·헤더 ───────────────────────────────────────────────────────── */
+
+#nd-sidebar {
+  background-color: color-mix(in srgb, var(--hc-paper) 70%, var(--hc-card));
+  border-inline-end: 1px solid var(--hc-line);
+}
+
+/* 활성 항목은 틸 한 줄로 — 배경을 칠하지 않는다(대장의 표시선). */
+#nd-sidebar a[data-active='true'] {
+  background-color: transparent;
+  color: var(--hc-teal);
+  font-weight: 600;
+}
+
+#nd-sidebar a[data-active='true']::before {
+  background-color: var(--hc-teal) !important;
+  width: 2px !important;
+}
+
+#nd-sidebar p[data-sidebar-section],
+#nd-sidebar .hc-sidebar-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--hc-ink-faint);
+  text-transform: uppercase;
+}
+
+/* ── 공용 조각 ───────────────────────────────────────────────────────────── */
+
+/* 모노 소자 라벨(번호·분류). 랜딩의 색인 카드와 사이드바가 같은 것을 쓴다. */
+.hc-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--hc-ink-faint);
+  text-transform: uppercase;
+}
+
+/* mermaid 그림틀 */
+[data-hc-mermaid] {
+  margin-block: 1.75rem;
+  padding: 1.25rem;
+  border: 1px solid var(--hc-line);
+  border-radius: 6px;
+  background-color: var(--hc-card);
+  overflow-x: auto;
+}
+
+[data-hc-mermaid] svg {
+  display: block;
+  margin-inline: auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* 종이 위의 격자 — 랜딩 히어로 뒤에만 아주 옅게. */
+.hc-grid-field {
+  background-image:
+    linear-gradient(to right, var(--hc-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--hc-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(120% 80% at 10% 0%, #000 0%, transparent 72%);
+  opacity: 0.5;
+}

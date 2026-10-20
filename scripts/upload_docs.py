@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""`site/`(mkdocs 산출물)를 S3 호환 저장소의 버킷으로 올린다 — 거울처럼. 멱등.
+"""문서 사이트 산출물(`docs-site/out`)을 S3 호환 저장소의 버킷으로 올린다 — 거울처럼. 멱등.
 
 DESIGN §11 2026-10-20: 문서 사이트는 앱 배포와 분리된 정적 호스팅에 둔다. 우리 설치의 그 자리는
 NAS 의 MinIO 버킷이고, 앞의 nginx 가 S3 "웹사이트 엔드포인트"를 대신한다(portainer repo 의 stacks/minio).
@@ -8,7 +8,7 @@ NAS 의 MinIO 버킷이고, 앞의 nginx 가 S3 "웹사이트 엔드포인트"�
     MINIO_ENDPOINT=https://ds923plus.tail2f9fe3.ts.net:9800 \
     MINIO_BUCKET=harness-catalog-docs \
     MINIO_ACCESS_KEY=… MINIO_SECRET_KEY=… \
-    uv run python scripts/upload_docs.py site
+    uv run --no-project python scripts/upload_docs.py docs-site/out
 
 하는 일: 올리고(바뀐 것만), 로컬에 없는 원격 키는 지운다. 그래서 문서를 지운 PR 이 사이트에도 반영된다.
 
@@ -130,9 +130,9 @@ class Client:
 
 
 def main(argv: list[str]) -> int:
-    root = Path(argv[1] if len(argv) > 1 else "site")
+    root = Path(argv[1] if len(argv) > 1 else "docs-site/out")
     if not root.is_dir():
-        sys.exit(f"{root} 가 없다 — 먼저 mkdocs build 로 만들 것")
+        sys.exit(f"{root} 가 없다 — 먼저 `make docs-build` 로 만들 것")
 
     client = Client()
     local = {str(p.relative_to(root)): p for p in root.rglob("*") if p.is_file()}
