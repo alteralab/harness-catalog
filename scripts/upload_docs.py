@@ -61,7 +61,14 @@ def _env(name: str) -> str:
     return value
 
 
-def content_type(path: Path) -> str:
+# 확장자가 없는 데이터 파일. 검색 색인이 그렇다(`/api/search`) — 확장자가 없어 추측이 octet-stream 으로
+# 떨어진다. 브라우저의 res.json() 은 타입을 안 보지만, 저장된 타입이 틀린 채로 남는 것은 그 자체로 결함이다.
+EXTRA_BY_KEY = {"api/search": "application/json"}
+
+
+def content_type(path: Path, key: str = "") -> str:
+    if key in EXTRA_BY_KEY:
+        return EXTRA_BY_KEY[key]
     suffix = path.suffix.lower()
     if suffix in EXTRA_TYPES:
         return EXTRA_TYPES[suffix]
@@ -123,7 +130,11 @@ class Client:
                 sys.exit(f"목록 실패 {status}: {body[:200]!r}")
             root = ET.fromstring(body)
             for item in root.iter(f"{NS}Contents"):
-                out[item.findtext(f"{NS}Key")] = (item.findtext(f"{NS}ETag") or "").strip('"')
+                # Key 가 없는 Contents 는 S3 응답으로 성립하지 않지만 findtext 의 타입은 None 을 허용한다 — 건너뛴다.
+                remote_key = item.findtext(f"{NS}Key")
+                if remote_key is None:
+                    continue
+                out[remote_key] = (item.findtext(f"{NS}ETag") or "").strip('"')
             if root.findtext(f"{NS}IsTruncated") != "true":
                 return out
             token = root.findtext(f"{NS}NextContinuationToken")
@@ -145,7 +156,7 @@ def main(argv: list[str]) -> int:
         if remote.get(key) == hashlib.md5(data).hexdigest():  # noqa: S324 — S3 ETag 는 MD5 다(보안 용도 아님)
             return None
         status, body = client.request("PUT", key, body=data,
-                                      headers={"content-type": content_type(path)})
+                                      headers={"content-type": content_type(path, key)})
         return None if status in (200, 204) else f"PUT {key} -> {status} {body[:120]!r}"
 
     with ThreadPoolExecutor(max_workers=8) as pool:

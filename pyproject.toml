@@ -47,7 +47,7 @@ markers = [
 ]
 
 [tool.pyright]
-include = ["packages", "tests", "tools"]
+include = ["packages", "tests", "tools", "scripts"]  # scripts 가 빠져 있어 upload_docs.py 의 타입 결함을 놓쳤다(2026-10-20)
 venvPath = "."
 venv = ".venv"
 reportMissingTypeStubs = false  # skills_ref에 py.typed가 없다
