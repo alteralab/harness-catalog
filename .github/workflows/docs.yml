@@ -31,21 +31,29 @@ jobs:
         run: uv run mkdocs build --strict
       - name: llms.txt 확인
         run: head -20 site/llms.txt && test -s site/llms-full.txt
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
+          name: site
           path: site
 
-  # GitHub Pages 배포. 비공개 저장소는 조직이 Pro/Team 이상일 때만 Pages 가 켜진다 — 그 밖에는 이 잡이 건너뛰고 위 산출물만 남는다.
-  deploy:
-    if: github.event_name != 'pull_request' && github.event.repository.visibility == 'public'
+  # 문서 사이트는 tailnet 안 NAS 의 MinIO 버킷에 올린다(DESIGN §11 2026-10-20 4항).
+  # 그래서 호스팅 러너가 아니라 tailnet 안의 self-hosted 러너에서 돈다. 주소·버킷은 저장소 변수,
+  # 자격은 시크릿이다 — 비어 있으면(포크 등) 조용히 건너뛴다.
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DOCS_MINIO_ENDPOINT != ''
     needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: [self-hosted, harness-catalog]
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.11.8"
+      - run: uv sync --frozen -p 3.12 --group docs
+      - run: uv run mkdocs build --strict
+      - name: "MinIO 버킷으로 거울 올리기(없어진 쪽수는 지운다)"
+        env:
+          MINIO_ENDPOINT: ${{ vars.DOCS_MINIO_ENDPOINT }}
+          MINIO_BUCKET: ${{ vars.DOCS_MINIO_BUCKET }}
+          MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+        run: uv run python scripts/upload_docs.py site
