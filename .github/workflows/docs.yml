@@ -40,7 +40,7 @@ jobs:
   # 그래서 호스팅 러너가 아니라 tailnet 안의 self-hosted 러너에서 돈다. 주소·버킷은 저장소 변수,
   # 자격은 시크릿이다 — 비어 있으면(포크 등) 조용히 건너뛴다.
   publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DOCS_MINIO_ENDPOINT != ''
+    if: (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && vars.DOCS_MINIO_ENDPOINT != ''
     needs: build
     runs-on: [self-hosted, harness-catalog]
     steps:
@@ -54,6 +54,7 @@ jobs:
         env:
           MINIO_ENDPOINT: ${{ vars.DOCS_MINIO_ENDPOINT }}
           MINIO_BUCKET: ${{ vars.DOCS_MINIO_BUCKET }}
+          # 전용 사용자다 — 버킷 하나에만 읽기·쓰기(정책 harness-catalog-docs-rw). root 가 아니다.
           MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
           MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
         run: uv run python scripts/upload_docs.py site
