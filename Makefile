@@ -53,7 +53,7 @@ docs-serve: ## 지은 것을 운영과 같은 하위 경로로 서빙한다(http
 	cd docs-site && npm run serve
 
 
-trail: ## Trail 코드 지도(graft/)를 (다시) 만든다 — 판은 package.json에 고정(npm ci로 받는다). 이미지와 무관
+trail: ## Trail 코드 지도(.trail/cache/)를 (다시) 만든다 — 판은 package.json에 고정(npm ci로 받는다). 이미지와 무관
 	npm ci --silent
 	npx trail build
 
