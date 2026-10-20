@@ -9,10 +9,10 @@ name: docs
 
 on:
   pull_request:
-    paths: ["docs/**", "docs-site/**", "README.md", ".github/workflows/docs.yml"]
+    paths: ["docs/**", "docs-site/**", "README.md", "scripts/upload_docs.py", ".github/workflows/docs.yml"]
   push:
     branches: [main]
-    paths: ["docs/**", "docs-site/**", "README.md", ".github/workflows/docs.yml"]
+    paths: ["docs/**", "docs-site/**", "README.md", "scripts/upload_docs.py", ".github/workflows/docs.yml"]
   workflow_dispatch:
 
 permissions:
