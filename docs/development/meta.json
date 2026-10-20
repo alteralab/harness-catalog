@@ -1,0 +1,5 @@
+{
+  "title": "개발",
+  "description": "이 저장소에 손대는 사람의 과제들.",
+  "pages": ["testing", "release", "tooling", "docs-site"]
+}

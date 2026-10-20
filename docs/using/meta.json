@@ -1,0 +1,5 @@
+{
+  "title": "하네스에서 스킬 쓰기",
+  "description": "팀원이 자기 하네스에서 카탈로그를 쓰는 과제들.",
+  "pages": ["connect", "find", "pin", "toolbox", "machine"]
+}

@@ -6,13 +6,13 @@ audience: 처음 보는 사람
 
 # 빠른 시작
 
-명령 둘로 레지스트리 전체를 내 머신에 띄우고, 하네스에서 로그인해 스킬을 찾아보는 10분 코스입니다. **평가·데모 전용**입니다. 비밀번호가 공개된 값이고 TLS가 없습니다. 운영 설치는 [operations.md](operations.md)입니다.
+명령 둘로 레지스트리 전체를 내 머신에 띄우고, 하네스에서 로그인해 스킬을 찾아보는 10분 코스입니다. **평가·데모 전용**입니다. 비밀번호가 공개된 값이고 TLS가 없습니다. 운영 설치는 [operations/index.md](operations/index.md)입니다.
 
 ## 필요한 것
 
 - Docker와 compose v2 (`docker compose version`)
 - git
-- Claude Code 2.1 이상 (다른 하네스는 [using.md](using.md)의 클라이언트 ID 표)
+- Claude Code 2.1 이상 (다른 하네스는 [using/connect.md](using/connect.md)의 클라이언트 ID 표)
 
 ## 1. 띄우기
 
@@ -70,7 +70,7 @@ git clone /tmp/catalog.git /tmp/catalog && cd /tmp/catalog                      
 docker compose -f docker/compose.quickstart.yml cp /tmp/catalog.git catalog-init:/catalog/catalog.git
 ```
 
-레지스트리는 10초마다(`HC__FETCH_INTERVAL_SECONDS`) 받아 색인합니다. 진짜 흐름(브랜치·PR·CI·병합)은 git 호스트의 카탈로그 저장소에서 하며 [authoring.md](authoring.md)에 있습니다.
+레지스트리는 10초마다(`HC__FETCH_INTERVAL_SECONDS`) 받아 색인합니다. 진짜 흐름(브랜치·PR·CI·병합)은 git 호스트의 카탈로그 저장소에서 하며 [authoring/submit.md](authoring/submit.md)에 있습니다.
 
 ## 5. 지우기
 
@@ -99,5 +99,5 @@ docker compose -f docker/compose.quickstart.yml down -v
 | `Ports are not available: … 8000` 또는 `5556` | 그 포트를 쓰는 프로세스를 멈추거나 `REGISTRY_PORT=`·`DEX_PORT=`로 바꾼다 |
 | `registry-1 is unhealthy` | `docker compose -f docker/compose.quickstart.yml logs registry`와 `curl -s localhost:8000/readyz`의 `reasons` |
 | `/readyz`가 `repo_unreachable` | `catalog-init` 로그. 볼륨을 지우고(`down -v`) 다시 |
-| `/readyz`의 `degraded`에 `embedding_unavailable` | 빠른 시작에는 임베딩 서비스가 없어 검색이 BM25 만으로 돕니다. 정상입니다. dense 까지 보려면 호스트 Ollama 에 모델을 받고 `HC__EMBED_URL`을 주세요(docs/operations.md 전제 조건) |
+| `/readyz`의 `degraded`에 `embedding_unavailable` | 빠른 시작에는 임베딩 서비스가 없어 검색이 BM25 만으로 돕니다. 정상입니다. dense 까지 보려면 호스트 Ollama 에 모델을 받고 `HC__EMBED_URL`을 주세요([operations/index.md](operations/index.md) 전제 조건) |
 | 브라우저 로그인 뒤 "동적 등록을 지원하지 않는다" | `.mcp.json`에 `oauth.clientId`가 없다 |

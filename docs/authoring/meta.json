@@ -1,0 +1,5 @@
+{
+  "title": "스킬 만들어 올리기",
+  "description": "저자가 카탈로그에 스킬·도구를 올리고 돌보는 과제들.",
+  "pages": ["skill", "submit", "checks", "evals", "tool", "lifecycle"]
+}

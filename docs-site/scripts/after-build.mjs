@@ -43,7 +43,25 @@ for (const rel of ['index.html', 'docs/index.html', 'llms.txt', 'llms-full.txt',
 }
 
 // 콘텐츠 쪽이 전부 디렉토리 + index.html 로 났는가.
-const slugs = ['quickstart', 'using', 'authoring', 'operations', 'configuration', 'development'];
+// 목록을 손으로 적지 않고 콘텐츠 루트(../docs)에서 샌다 — 쪽을 더하거나 과제 단위로 가를 때
+// 이 배열을 같이 고치지 않으면 점검이 조용히 뒤처진다(2026-10-20: 쪽이 여섯에서 스물여섯으로).
+async function markdownSlugs(dir, prefix = '') {
+  const entries = await readdir(dir, { withFileTypes: true });
+  const found = [];
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      found.push(...(await markdownSlugs(path.join(dir, entry.name), `${prefix}${entry.name}/`)));
+      continue;
+    }
+    if (!entry.name.endsWith('.md')) continue;
+    // 묶음의 index.md 는 그 묶음의 URL 자체다.
+    const stem = entry.name.slice(0, -3);
+    found.push(stem === 'index' ? prefix.replace(/\/$/, '') : `${prefix}${stem}`);
+  }
+  return found;
+}
+
+const slugs = (await markdownSlugs(path.join(root, '..', 'docs'))).filter(Boolean);
 for (const slug of slugs) {
   const size = await exists(`docs/${slug}/index.html`);
   if (!size) problems.push(`없다: out/docs/${slug}/index.html`);

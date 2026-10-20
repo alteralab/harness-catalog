@@ -86,7 +86,7 @@ docker compose -f docker/compose.quickstart.yml up -d --build --wait    # 또는
 claude mcp add --transport http --scope user harness-catalog https://<레지스트리 호스트>/mcp
 ```
 
-`~/.claude.json`의 그 항목에 `"oauth": { "clientId": "claude-code" }`를 더하고 Claude Code를 새로 시작합니다. `/mcp`에서 harness-catalog를 고르면 브라우저가 열리고, LDAP 계정으로 한 번 로그인하면 끝입니다. 이제 "카탈로그에 어떤 스킬 있어?"라고 물으면 됩니다. 자세한 것은 [docs/using.md](docs/using.md).
+`~/.claude.json`의 그 항목에 `"oauth": { "clientId": "claude-code" }`를 더하고 Claude Code를 새로 시작합니다. `/mcp`에서 harness-catalog를 고르면 브라우저가 열리고, LDAP 계정으로 한 번 로그인하면 끝입니다. 이제 "카탈로그에 어떤 스킬 있어?"라고 물으면 됩니다. 자세한 것은 [docs/using/connect.md](docs/using/connect.md).
 
 ### 저자: 스킬 올리기
 
@@ -100,7 +100,7 @@ hc check . --rev HEAD                                # 직접 돌릴 때 (hc = h
 gh pr create
 ```
 
-PR의 CI가 같은 검사를 돌리고, 사람이 병합하면 레지스트리가 한 주기(기본 60초) 안에 색인합니다. 하네스에서 `write` 스킬을 불러 "이 절차를 스킬로 만들자"나 "도구 새로 만들자"라고 하면 뼈대를 잡아 줍니다. 규약과 검사 항목은 [docs/authoring.md](docs/authoring.md).
+PR의 CI가 같은 검사를 돌리고, 사람이 병합하면 레지스트리가 한 주기(기본 60초) 안에 색인합니다. 하네스에서 `write` 스킬을 불러 "이 절차를 스킬로 만들자"나 "도구 새로 만들자"라고 하면 뼈대를 잡아 줍니다. 규약과 검사 항목은 [docs/authoring/index.md](docs/authoring/index.md).
 
 ### 운영자: 레지스트리 띄우기
 
@@ -114,7 +114,7 @@ docker compose -f docker/compose.yml up -d
 curl -fsS http://127.0.0.1:8000/readyz
 ```
 
-카탈로그 저장소가 아직 없으면 `hc init <repo-url>`이 세웁니다(`hc`와 `harness-catalog`는 같은 명령입니다. 사람이 치는 자리는 `hc`, pre-commit·CI 설정 같은 기계가 읽는 자리는 긴 이름을 씁니다). 프록시 경로·LDAP 연동·런북은 [docs/operations.md](docs/operations.md).
+카탈로그 저장소가 아직 없으면 `hc init <repo-url>`이 세웁니다(`hc`와 `harness-catalog`는 같은 명령입니다. 사람이 치는 자리는 `hc`, pre-commit·CI 설정 같은 기계가 읽는 자리는 긴 이름을 씁니다). 프록시 경로·LDAP 연동·런북은 [docs/operations/index.md](docs/operations/index.md).
 
 ## 문서
 
@@ -123,11 +123,11 @@ curl -fsS http://127.0.0.1:8000/readyz
 | 문서 | 누구에게 | 내용 |
 |---|---|---|
 | [docs/quickstart.md](docs/quickstart.md) | 처음 보는 사람 | 명령 둘로 로컬에 전체 띄우기, 로그인, 지우기 |
-| [docs/using.md](docs/using.md) | 팀원 | 등록, 로그인, 찾기·적재, 곁에 두기(pin), 기계 계정, 문제 해결 |
-| [docs/authoring.md](docs/authoring.md) | 스킬 저자 | 스킬의 모양, 팀 규약, 올리는 절차, 검사 항목, evals, 갱신·은퇴 |
-| [docs/operations.md](docs/operations.md) | 운영자 | 구성, 카탈로그 저장소 신설, 설치, 프록시, Dex·LDAP, 런북 |
+| [docs/using/](docs/using/index.md) | 팀원 | 등록·로그인 · 찾아 세션에 넣기 · 곁에 두기(pin) · 도구 · 기계 계정 |
+| [docs/authoring/](docs/authoring/index.md) | 스킬 저자 | 스킬의 모양과 규약 · 올리는 절차 · 검사 · evals · 도구 · 갱신·은퇴 |
+| [docs/operations/](docs/operations/index.md) | 운영자 | 카탈로그 저장소 · 설치 · 프록시 · Dex/LDAP · 런북 |
 | [docs/configuration.md](docs/configuration.md) | 운영자 | 설정 표면 전체의 참조: 레지스트리 설정값(생성), 관측, compose 변수·비밀 파일, Dex·LDAP, CI·러너 |
-| [docs/development.md](docs/development.md) | 개발자 | 배치, 개발 환경, 시험, 게이트, 릴리스 |
+| [docs/development/](docs/development/index.md) | 개발자 | 배치·환경 · 시험과 게이트 · 판 내기 · Trail/OpenWiki · 문서 사이트 |
 | [DESIGN.md](DESIGN.md) | 모두 | 설계와 결정의 근거 |
 | [PLAN.md](PLAN.md), `plans/` | 개발자 | 실행 계획, 측정 결과, 결정 원장 |
 
@@ -146,14 +146,14 @@ curl -fsS http://127.0.0.1:8000/readyz
 │   ├── dex/                     #   Dex 설정 (gomplate, 정적 사용자)
 │   ├── postgres/                #   PostgreSQL 초기화 (DB·역할 둘. 표는 레지스트리의 마이그레이션 0001~0005가 만든다)
 │   └── quickstart/              #   빠른 시작의 카탈로그 심기 스크립트
-├── docs/                        # 독자별 안내
+├── docs/                        # 과제 하나에 쪽 하나. 묶음 넷은 독자별이다
 │   ├── quickstart.md            #   처음: 명령 둘로 전체 띄우기
-│   ├── using.md                 #   팀원: 등록·로그인·찾기·pin
-│   ├── authoring.md             #   저자: 규약·절차·검사 항목·evals
-│   ├── operations.md            #   운영자: 설치·프록시·Dex/LDAP·런북
-│   ├── configuration.md         #   설정값 참조 (harness-catalog config docs 생성)
-│   ├── development.md           #   개발자: 배치·시험·게이트·릴리스
-│   └── meta.json                #   사이트 왼쪽 네비게이션의 순서
+│   ├── using/                   #   팀원: 등록·로그인 · 찾기 · pin · 도구 · 기계 계정
+│   ├── authoring/               #   저자: 모양과 규약 · 절차 · 검사 · evals · 도구 · 갱신·은퇴
+│   ├── operations/              #   운영자: 저장소 · 설치 · 프록시 · Dex/LDAP · 런북
+│   ├── configuration.md         #   설정값 참조 (harness-catalog config docs 생성 — 경로가 코드에 박혀 루트 고정)
+│   ├── development/             #   개발자: 배치·환경 · 시험 · 판 내기 · Trail/OpenWiki · 문서 사이트
+│   └── meta.json                #   사이트 왼쪽 네비게이션의 순서 (묶음마다 하나씩 더 있다)
 ├── docs-site/                   # 문서 사이트 앱 (Fumadocs + Next 정적 내보내기). 콘텐츠는 위 docs/ 를 그대로 읽는다
 │   ├── app/                     #   랜딩 · /docs · llms.txt · 검색 색인 라우트, 테마 토큰(global.css)
 │   ├── components/ lib/         #   테마 조각, 링크 다시 쓰기, mermaid
@@ -182,7 +182,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 ├── Dockerfile                   # registry 이미지 (python:3.12-slim + git + gitleaks)
 ├── Makefile                     # make help — 자주 치는 명령의 이름
 ├── package.json                 # 개발 도구 고정(Trail Code 0.23.0 · OpenWiki 0.6.1). 배포물 아님, 이미지에 안 들어감
-├── .mcp.json · .claude/ · .trail/  # Trail(코드 지도 + 세션 학습)·OpenWiki의 Claude Code 배선(훅·skill·MCP). docs/development.md
+├── .mcp.json · .claude/ · .trail/  # Trail(코드 지도 + 세션 학습)·OpenWiki의 Claude Code 배선(훅·skill·MCP). docs/development/
 ├── CLAUDE.md                    # 에이전트 지시: Trail(위치)·OpenWiki(이유) 역할 분담
 ├── openwiki/                    # 설계 이유 위키(한국어, claim에 file:line 증거). 커밋됨
 ├── pyproject.toml               # 워크스페이스 루트 (배포물 아님)
@@ -201,7 +201,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 
 ## 기여
 
-브랜치를 따고 PR을 엽니다. 커밋 훅(`pre-commit install`)이 altera-rules 게이트(ruff·ast-grep·shellcheck·선언 드리프트)를 돌리고, CI가 pyright와 pytest를 돌립니다. 설계 계약을 바꾸는 변경은 코드보다 DESIGN.md §11의 결정 행이 먼저입니다. 개발 환경은 [docs/development.md](docs/development.md).
+브랜치를 따고 PR을 엽니다. 커밋 훅(`pre-commit install`)이 altera-rules 게이트(ruff·ast-grep·shellcheck·선언 드리프트)를 돌리고, CI가 pyright와 pytest를 돌립니다. 설계 계약을 바꾸는 변경은 코드보다 DESIGN.md §11의 결정 행이 먼저입니다. 개발 환경은 [docs/development/index.md](docs/development/index.md).
 
 ## 라이선스
 

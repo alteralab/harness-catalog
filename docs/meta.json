@@ -1,5 +1,5 @@
 {
   "title": "문서",
-  "description": "독자별로 갈린 쪽 여섯. 왼쪽 네비게이션의 순서가 이 배열이다.",
+  "description": "과제 하나에 쪽 하나. 왼쪽 네비게이션의 순서가 이 배열이다. 묶음 넷은 독자별이고, 빠른 시작과 설정값은 어느 독자든 보는 쪽이라 바깥에 둔다.",
   "pages": ["quickstart", "using", "authoring", "operations", "configuration", "development"]
 }
