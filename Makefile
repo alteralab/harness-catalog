@@ -5,7 +5,7 @@ COMPOSE_DEV := docker compose -f docker/compose.dev.yml
 
 
 .PHONY: mcp-pin
-.PHONY: bench-search release deploy help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image docs docs-build trail trail-init wiki-claims wiki-install
+.PHONY: bench-search release deploy docs-serve help quickstart quickstart-logs quickstart-down dev-up dev-down serve test typecheck gates check image docs docs-build trail trail-init wiki-claims wiki-install
 
 help: ## 이 목록
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[1m%-16s\033[0m %s\n", $$1, $$2}'
@@ -43,11 +43,14 @@ check: gates typecheck test ## 게이트 + 타입 + 시험 (CI와 같다)
 image: ## 레지스트리 이미지를 로컬 태그로 빌드한다
 	docker build -t harness-catalog:current .
 
-docs: ## 문서 사이트를 미리 본다(http://127.0.0.1:8001/docs/ — 운영의 서빙 경로와 같다). 고치면 다시 빌드한다
-	uv run --group docs mkdocs serve -a 127.0.0.1:8001
+docs: ## 문서 사이트를 미리 본다(http://127.0.0.1:3000/harness-catalog/ — 고치면 바로 반영된다)
+	cd docs-site && npm install --silent && npm run dev
 
-docs-build: ## 문서 사이트를 site/ 에 짓는다(strict — 링크·앵커가 깨지면 실패). llms.txt·llms-full.txt 도 여기서 나온다
-	uv run --group docs mkdocs build --strict
+docs-build: ## 문서 사이트를 docs-site/out 에 짓는다. 깨진 링크·없는 쪽·basePath 어긋남이면 실패. llms.txt·llms-full.txt 도 여기서 나온다
+	cd docs-site && npm ci --silent && npm run build
+
+docs-serve: ## 지은 것을 운영과 같은 하위 경로로 서빙한다(http://127.0.0.1:8810/harness-catalog/)
+	cd docs-site && npm run serve
 
 
 trail: ## Trail 코드 지도(graft/)를 (다시) 만든다 — 판은 package.json에 고정(npm ci로 받는다). 이미지와 무관

@@ -36,13 +36,8 @@ dev = [
   "testcontainers[postgres]==4.15.0",
   "opentelemetry-sdk==1.45.0",
 ]
-docs = [
-    "mkdocs-include-markdown-plugin>=7.3.0",
-    "mkdocs-llmstxt>=0.5.1",
-    "mkdocs-material>=9.7.7",
-    "mkdocstrings[python]>=1.0.8",
-    "zensical>=0.0.71",
-]
+# 문서 사이트는 파이썬이 아니다 — docs-site/ 의 Node 앱(Fumadocs + Next 정적 내보내기)이고
+# 판은 docs-site/package-lock.json 에 고정된다. 올리는 쪽(scripts/upload_docs.py)만 표준 라이브러리.
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

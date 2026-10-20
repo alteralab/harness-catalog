@@ -1,0 +1,8 @@
+# Next·fumadocs 산출물과 베껴 온 폰트는 커밋하지 않는다(판은 package.json 의 핀이 정본이다).
+/node_modules
+/.next
+/.source
+/out
+/public/fonts
+next-env.d.ts
+*.tsbuildinfo

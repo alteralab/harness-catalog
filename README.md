@@ -118,7 +118,7 @@ curl -fsS http://127.0.0.1:8000/readyz
 
 ## 문서
 
-아래 전부가 문서 사이트로도 만들어집니다(`mkdocs`, 워크플로 `docs.yml`): **<https://ds923plus.tail2f9fe3.ts.net:9810/harness-catalog/>** (tailnet 안에서만). 에이전트용 목차는 `llms.txt`, 전체 본문은 `llms-full.txt`.
+아래 전부가 문서 사이트로도 만들어집니다(`docs-site/`의 Fumadocs, 워크플로 `docs.yml`): **<https://ds923plus.tail2f9fe3.ts.net:9810/harness-catalog/>** (tailnet 안에서만). 에이전트용 목차는 `llms.txt`, 전체 본문은 `llms-full.txt`.
 
 | 문서 | 누구에게 | 내용 |
 |---|---|---|
@@ -152,7 +152,12 @@ curl -fsS http://127.0.0.1:8000/readyz
 │   ├── authoring.md             #   저자: 규약·절차·검사 항목·evals
 │   ├── operations.md            #   운영자: 설치·프록시·Dex/LDAP·런북
 │   ├── configuration.md         #   설정값 참조 (harness-catalog config docs 생성)
-│   └── development.md           #   개발자: 배치·시험·게이트·릴리스
+│   ├── development.md           #   개발자: 배치·시험·게이트·릴리스
+│   └── meta.json                #   사이트 왼쪽 네비게이션의 순서
+├── docs-site/                   # 문서 사이트 앱 (Fumadocs + Next 정적 내보내기). 콘텐츠는 위 docs/ 를 그대로 읽는다
+│   ├── app/                     #   랜딩 · /docs · llms.txt · 검색 색인 라우트, 테마 토큰(global.css)
+│   ├── components/ lib/         #   테마 조각, 링크 다시 쓰기, mermaid
+│   └── package.json             #   판 고정(package-lock.json). 파이썬 의존성 없음
 ├── packages/                    # uv 워크스페이스, lockstep 배포물 넷
 │   ├── core/                    #   harness-catalog-core: 모델·카탈로그 앱·검사 항목·git/검증 어댑터
 │   ├── server/                  #   harness-catalog-server: MCP 서버·OIDC·PostgreSQL·스케줄러·마이그레이션
