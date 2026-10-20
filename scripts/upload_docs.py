@@ -153,7 +153,9 @@ def main(argv: list[str]) -> int:
     def put(item: tuple[str, Path]) -> str | None:
         key, path = item
         data = path.read_bytes()
-        if remote.get(key) == hashlib.md5(data).hexdigest():  # noqa: S324 — S3 ETag 는 MD5 다(보안 용도 아님)
+        # 내용이 같으면 건너뛴다. 단 타입을 못박은 키는 늘 다시 올린다 — ETag 는 내용만 보므로
+        # Content-Type 만 고친 변경이 영영 반영되지 않는다(2026-10-20 실측: /api/search 가 octet-stream 으로 남았다).
+        if key not in EXTRA_BY_KEY and remote.get(key) == hashlib.md5(data).hexdigest():  # noqa: S324 — S3 ETag 는 MD5 다(보안 용도 아님)
             return None
         status, body = client.request("PUT", key, body=data,
                                       headers={"content-type": content_type(path, key)})
@@ -170,7 +172,7 @@ def main(argv: list[str]) -> int:
         failed += [r for r in pool.map(drop, stale) if r]
 
     uploaded = sum(1 for key, path in local.items()
-                   if remote.get(key) != hashlib.md5(path.read_bytes()).hexdigest())  # noqa: S324
+                   if key in EXTRA_BY_KEY or remote.get(key) != hashlib.md5(path.read_bytes()).hexdigest())  # noqa: S324
     print(f"올림 {uploaded}개 · 지움 {len(stale)}개 · 그대로 {len(local) - uploaded}개")
 
     if failed:
