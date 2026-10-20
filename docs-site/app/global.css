@@ -343,6 +343,17 @@ html > body[data-scroll-locked] {
 /* ── 공용 조각 ───────────────────────────────────────────────────────────── */
 
 /* 모노 소자 라벨(번호·분류). 랜딩의 색인 카드와 사이드바가 같은 것을 쓴다. */
+/* 색인 카드의 명령 한 줄. 카드 전체가 링크라 이 글자는 선택도 복사도 되지 않는다 — 신호다.
+   그래서 줄을 바꾸지 않고 칸에 맞춰 자른다. 자른 표시는 브라우저의 text-overflow 가 단다:
+   손으로 `…` 를 박아 넣으면(옛 판: `docker compose … up -d`) 명령의 **가운데**가 사라져
+   읽는 사람이 무엇이 빠졌는지 모른다. 꼬리를 자르면 앞부분은 늘 온전하다. */
+.hc-cmd {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .hc-label {
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -370,6 +381,61 @@ html > body[data-scroll-locked] {
 }
 
 /* 종이 위의 격자 — 랜딩 히어로 뒤에만 아주 옅게. */
+/* 랜딩의 판(히어로 검색 판, 구조 그림의 칸). 카드와 같은 재질이되 모서리가 한 단 부드럽고
+   라이트에서만 아주 옅은 그림자를 얹는다 — 다크에서는 테두리가 이미 떠 보인다. */
+.hc-panel {
+  border: 1px solid var(--hc-line);
+  border-radius: 8px;
+  background-color: var(--hc-card);
+  box-shadow: 0 1px 2px rgb(15 28 31 / 4%), 0 8px 24px -16px rgb(15 28 31 / 18%);
+}
+.dark .hc-panel {
+  box-shadow: none;
+}
+
+/* 이름 붙은 연결선. 좁은 화면에서는 세로로 서고 md 이상에서 가로로 눕는다.
+   화살촉은 ::after 의 두 변을 45도 돌린 것 — 이미지도 SVG 도 쓰지 않는다. */
+.hc-connector {
+  position: relative;
+  display: block;
+  width: 1px;
+  height: 1.4rem;
+  background: linear-gradient(to bottom, transparent, var(--hc-line-strong), transparent);
+}
+.hc-connector::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: 50%;
+  bottom: 1px;
+  width: 5px;
+  height: 5px;
+  border-inline-end: 1px solid var(--hc-line-strong);
+  border-block-end: 1px solid var(--hc-line-strong);
+  transform: translateX(-50%) rotate(45deg);
+}
+@media (width >= 48rem) {
+  .hc-connector {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--hc-line-strong) 12%,
+      var(--hc-line-strong) 88%,
+      transparent
+    );
+  }
+  .hc-connector::after {
+    inset-inline-start: auto;
+    inset-inline-end: 1px;
+    top: 50%;
+    bottom: auto;
+    border-block-end: 0;
+    border-block-start: 1px solid var(--hc-line-strong);
+    transform: translateY(-50%) rotate(45deg);
+  }
+}
+
 .hc-grid-field {
   background-image:
     linear-gradient(to right, var(--hc-line) 1px, transparent 1px),

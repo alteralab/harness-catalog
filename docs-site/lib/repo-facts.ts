@@ -18,9 +18,3 @@ export function repoVersion(): string | null {
   const toml = read('packages/core/pyproject.toml');
   return toml?.match(/^version\s*=\s*"([^"]+)"/m)?.[1] ?? null;
 }
-
-/** README 의 첫 mermaid 울타리(레지스트리 구성도). 원본이 정본이고 여기서 베끼지 않는다. */
-export function architectureDiagram(): string | null {
-  const readme = read('README.md');
-  return readme?.match(/```mermaid\n([\s\S]*?)\n```/)?.[1] ?? null;
-}
