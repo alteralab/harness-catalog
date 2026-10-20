@@ -189,9 +189,12 @@ total is parsed from.
   exhaustive where it matters, so reach for them first.
 
 When the trail MCP server is connected, these are exposed as tools too:
-`graft_find_code`, `graft_find_all`, `graft_file_api`, `graft_trace_calls` (with
-`direction` / `depth`), `graft_repo_map`, `graft_check_freshness`. Use whichever surface is
-available; the guidance is identical.
+`trail_find_code`, `trail_find_all`, `trail_file_api`, `trail_trace_calls` (with
+`direction` / `depth`), `trail_repo_map`, `trail_check_freshness`. Use whichever surface is
+available; the guidance is identical. (They used to be spelled `graft_*`. The pinned
+`@trailhq/trail-code@0.23.0` ships one bin, `trail`, which sets the brand to trail, so this
+repo's server only ever answers to the `trail_*` names — read back from its own `tools/list`
+on 2026-10-20.)
 
 ## Learnings
 Past sessions on this repo leave learnings in `.trail/learnings/`: what they
